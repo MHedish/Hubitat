@@ -27,7 +27,7 @@ metadata {
     	name: "Springs Window Fashions Roller Shade",
     	namespace: "MHedish",
     	author: "Marc Hedish",
-    	importUrl: "https://raw.githubusercontent.com/MHedish/hubitat-springs-windows-fashions/main/springs-window-fashions-roller-shade.groovy") {
+    	importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Springs-Window-Fashions/springs-window-fashions-roller-shade.groovy") {
         capability "Actuator"
         capability "Battery"
         capability "HealthCheck"
