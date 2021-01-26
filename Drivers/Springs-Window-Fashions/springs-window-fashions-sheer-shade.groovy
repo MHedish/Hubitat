@@ -28,7 +28,7 @@ metadata {
     	name: "Springs Window Fashions Sheer Shade",
     	namespace: "MHedish",
     	author: "Marc Hedish",
-    	importUrl: "https://raw.githubusercontent.com/MHedish/hubitat-springs-windows-fashions/main/springs-window-fashions-sheer-shade.groovy") {
+    	importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Springs-Window-Fashions/springs-window-fashions-sheer-shade.groovy") {
         capability "Actuator"
         capability "Battery"
         capability "HealthCheck"
