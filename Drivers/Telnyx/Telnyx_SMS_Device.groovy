@@ -27,7 +27,7 @@ metadata {
         name: "Telnyx SMS Device",
         namespace: "MHedish",
         author: "Marc Hedish",
-        importUrl: "https://raw.githubusercontent.com/MHedish/TBD") {
+        importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Telnyx/Telnyx_SMS_Device.groovy") {
         
         capability "Notification"
         capability "SpeechSynthesis"
