@@ -9,7 +9,7 @@ Levels may be set to exact positions (Set Position [0:99]) or as a percentage of
 1 - Go to your Hubitat Hub.
 2 - Click on the hamburger menu in the top left corner and select "Drivers Code."
 3 - Click "New Driver" in the top right.
-4 - Paste the raw content of the file "hubitat-springs-window-fashions-sheer-shade.groovy" into the blank area in the middle or click on Import import the URL to the raw content.
+4 - Paste the raw content of the file "springs-window-fashions-sheer-shade.groovy" into the blank area in the middle or click on Import import the URL to the raw content.
 5 - Click on "Save" in the top right.
 6 - Once the driver is added either connect your shade or, for an existing shade, select the new "Springs Window Fashions Sheer Shade" driver.
 7 - Complete the and save preference settings.
