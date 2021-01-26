@@ -26,7 +26,7 @@ metadata {
         name: "Telnyx SMS Container",
         namespace: "MHedish",
         author: "Marc Hedish",
-        importUrl: "https://raw.githubusercontent.com/MHedish/TBD" ) {
+        importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Telnyx/Telnyx_SMS_Container.groovy" ) {
 
         attribute "containerSize", "number"	//stores the total number of children created by the container
 
