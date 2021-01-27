@@ -19,7 +19,7 @@
 
 def setVersion(){
     state.name = "Telnyx SMS Device"
-	state.version = "2021.01.26"
+	state.version = "2021.01.26.1"
 }
 
 metadata {
@@ -30,7 +30,6 @@ metadata {
         importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Telnyx/Telnyx_SMS_Device.groovy") {
         
         capability "Notification"
-        capability "SpeechSynthesis"
 
         attribute "lastMessage", "string"
   	}
@@ -61,9 +60,4 @@ def deleteDevice() {
 def deviceNotification(message) {
     lastMessage == message
   	parent.sendNotification(toNumber, message, device.deviceNetworkId)
-}
-
-def speak(message) {
-    lastMessage == message
-    parent.makeCall(toNumber, message, device.deviceNetworkId)
 }
