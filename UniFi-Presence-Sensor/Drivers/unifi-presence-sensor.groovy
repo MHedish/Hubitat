@@ -28,29 +28,18 @@ metadata {
 
 	    capability "Presence Sensor"
 		capability "Sensor"
-        capability "Switch"
 
         command "arrived"
         command "departed"
 	}
 }
 
-def on() {
-    sendEvent(name: "presence", value: "present")
-    sendEvent(name: "switch", value: "on")
-}
-
-def off() {
-    sendEvent(name: "presence", value: "not present")
-    sendEvent(name: "switch", value: "off")
-}
-
 def arrived() {
-	on()
+    sendEvent(name: "presence", value: "present")
 }
 
 def departed() {
-	off()
+    sendEvent(name: "presence", value: "not present")
 }
 
 def setPresence(status) {	
