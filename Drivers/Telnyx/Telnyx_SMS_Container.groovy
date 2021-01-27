@@ -46,7 +46,6 @@ metadata {
             }
         }
         input name: "logDebugEnabled", type: "bool", title: "Enable debug logging?", defaultValue: false, required: false
-//      input("TwiMLBinURL", "string", title: "TwiML Bin URL", description: "To support voice calls, please setup a TwiML Bin in the Twilio Console and paste in the URL here.", required: false)
     }
 }
 
@@ -78,7 +77,7 @@ def deleteDevice(deviceID){
 
 def installed() {
 	logDebug "Installing and configuring Virtual Container"
-    state.vsIndex = 0 //stores an index value so that each newly created Virtual Switch has a unique name (simply incremements as each new device is added and attached as a suffix to DNI)
+    state.vsIndex = 0
     initialize()
 }
 
