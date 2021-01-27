@@ -16,7 +16,7 @@
 
 def setVersion(){
     state.name = "UniFi Presence Sensor"
-	state.version = "2021.01.27.1
+	state.version = "2021.01.27.1"
 }
 
 metadata {
