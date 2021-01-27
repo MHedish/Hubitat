@@ -24,7 +24,7 @@ metadata {
     name: "Enhanced Z-Wave Thermostat",
     namespace: "MHedish",
     author: "Marc Hedish"
-    importUrl: "" ) {
+    importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/z-wave-thermostat/enhanced_z-wave_thermostat.groovy" ) {
 
     capability "Actuator"
     capability "Battery"
