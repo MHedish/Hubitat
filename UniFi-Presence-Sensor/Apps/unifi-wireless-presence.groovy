@@ -16,7 +16,7 @@
  
 def setVersion(){
     state.name = "UniFi Wireless Presence"
-    state.version = "2021.01.26.2"
+    state.version = "2021.01.26.3"
 }
  
 definition(
@@ -258,7 +258,7 @@ def addDevice(List toAdd) {
         }
         def child = getChildDevice(dni)
         if (!child) {
-            addChildDevice("xtreme22886", "UniFi Presence Sensor", dni, getLocationID(), ["label": name])    
+            addChildDevice("MHedish", "UniFi Presence Sensor", dni, getLocationID(), ["label": name])    
          }
     }
 }
@@ -286,14 +286,14 @@ mappings {
     path("/update")                         { action: [POST: "updateDevice"]  }
 }
 
-private logDebug(debugText){
+private logDebug(logText){
     if(settings.logDebug) { 
-        log.debug "${debugText}"
+        log.debug "${logText}"
     }
 }
 
-private logInfo(infoText){
+private logInfo(logText){
     if(settings.logInfo) { 
-        log.info "${infoText}"
+        log.info "${logText}"
     }
 }
