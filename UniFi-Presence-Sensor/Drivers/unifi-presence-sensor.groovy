@@ -19,11 +19,10 @@ metadata {
 		name: "UniFi Presence Sensor",
 		namespace: "MHedish",
 		author: "Marc Hedish",
-		importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/main/UniFi-Presence-Sensor/Drivers/unifi-presence-sensor.groovy",
-		ocfDeviceType: "x.com.st.d.mobile.presence") {
+		importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/main/UniFi-Presence-Sensor/Drivers/unifi-presence-sensor.groovy") {
 
-	capability "Presence Sensor"
-	capability "Sensor"
+	    capability "Presence Sensor"
+		capability "Sensor"
         capability "Switch"
 
         command "arrived"
@@ -31,12 +30,15 @@ metadata {
 	}
 }
 
-def setPresence(status) {	
-	if (status == false) {
-		status = "not present"
-	} else {
-		status = "present"
-	}
+def on() {
+    sendEvent(name: "presence", value: "present")
+    sendEvent(name: "switch", value: "on")
+}
+
+def off() {
+    sendEvent(name: "presence", value: "not present")
+    sendEvent(name: "switch", value: "off")
+}
 
 def arrived() {
 	on()
@@ -46,16 +48,13 @@ def departed() {
 	off()
 }
 
-def on() {
-    	sendEvent(name: "presence", value: "present")
-    	sendEvent(name: "switch", value: "on")
-}
-
-def off() {
-    	sendEvent(name: "presence", value: "not present")
-    	sendEvent(name: "switch", value: "off")
-}	
-	
+def setPresence(status) {	
+	if (status == false) {
+		status = "not present"
+	} else {
+		status = "present"
+	}
+    
 def old = device.latestValue("presence")
     
 // Do nothing if already in that state
