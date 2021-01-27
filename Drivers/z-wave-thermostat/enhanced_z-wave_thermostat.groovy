@@ -23,7 +23,7 @@ metadata {
     definition (
     name: "Enhanced Z-Wave Thermostat",
     namespace: "MHedish",
-    author: "Marc Hedish"
+    author: "Marc Hedish",
     importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/z-wave-thermostat/enhanced_z-wave_thermostat.groovy" ) {
 
     capability "Actuator"
