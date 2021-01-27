@@ -1,2 +1,2 @@
 # Telnyx SMS Driver
-This is an SMS driver for Telnyx.  Documentation to follow.
+Telnyx SMS allows you to send SMS messages from Rule Machine, webCoRE, and the HE device pages.
