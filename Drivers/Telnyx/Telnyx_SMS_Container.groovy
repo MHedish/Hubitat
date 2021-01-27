@@ -199,43 +199,7 @@ def sendNotification(toNumber, message, deviceID) {
     	logError "API Key '${APIKey}' may not be properly formatted."
   	}
 }
-/*
-def makeCall(toNumber, message, deviceID) {
-  	def postBody = [
-        From: "${fromNumber}",
-		To: "${toNumber}",
-        Url: "${TwiMLBinURL}?VoiceMessage=" + URLEncoder.encode(message)
-  	]
-    
-  	def params = [
-		uri: "https://" + accountSID + ":" + authToken + "@api.twilio.com/2010-04-01/Accounts/" + accountSID + "/Calls.json",
-    	contentType: "application/x-www-form-urlencoded",
-        body: postBody
-  	]
-    
-    if (APIKey =~ /[A-Za-z0-9]{50}/) {
-        try {
-            httpPostJson(params){response ->
-                if (response.status != 201) {
-                    logError "Received HTTP error ${response.status}. Check your API Credentials!"
-                } else {
-                    def childDevice = getChildDevice(deviceID)
-					if (childDevice) {
-						childDevice.sendEvent(name:"message", value: "${message}", displayed: false)
-					} else {
-						logError "Could not find child device: ${deviceID}"
-					}
-                    logDebug "Message Received by Telnyx: ${message}"
-                }
-            }
-        } catch (Exception e) {
-        	logError "deviceNotification: Telnyx Server Returned: ${e.getMessage()}"
-		}
-  	} else {
-    	logError "API Key '${APIKey}' may not be properly formatted."
-  	}
-}
-*/
+
 private logInfo(logText) {
     log.info "${logText}"
 }
