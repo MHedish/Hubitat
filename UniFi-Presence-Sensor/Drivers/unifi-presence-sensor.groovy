@@ -23,7 +23,11 @@ metadata {
 		ocfDeviceType: "x.com.st.d.mobile.presence") {
 
 	capability "Presence Sensor"
-		capability "Sensor"
+	capability "Sensor"
+        capability "Switch"
+
+        command "arrived"
+        command "departed"
 	}
 }
 
@@ -33,7 +37,25 @@ def setPresence(status) {
 	} else {
 		status = "present"
 	}
-    
+
+def arrived() {
+	on()
+}
+
+def departed() {
+	off()
+}
+
+def on() {
+    	sendEvent(name: "presence", value: "present")
+    	sendEvent(name: "switch", value: "on")
+}
+
+def off() {
+    	sendEvent(name: "presence", value: "not present")
+    	sendEvent(name: "switch", value: "off")
+}	
+	
 def old = device.latestValue("presence")
     
 // Do nothing if already in that state
