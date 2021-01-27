@@ -24,7 +24,7 @@ metadata{
     name: "UniFi Wireless Presence",
     namespace: "MHedish",
     author: "Marc Hedish",
-    importUrl: "",
+    importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/main/UniFi-Presence-Sensor/Apps/unifi-wireless-presence.groovy",
     description: "Use UniFi wireless clients as presence sensor",
     category: "My Apps",
     singleInstance: true,
