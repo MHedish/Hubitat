@@ -14,6 +14,11 @@
 *
 */
 
+def setVersion(){
+    state.name = "UniFi Presence Sensor"
+	state.version = "2021.01.27.1
+}
+
 metadata {
 	definition (
 		name: "UniFi Presence Sensor",
