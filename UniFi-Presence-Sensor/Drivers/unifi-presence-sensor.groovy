@@ -16,28 +16,28 @@
 
 metadata {
 	definition (
-      name: "UniFi Presence Sensor",
-      namespace: "MHedish",
-      author: "Marc Hedish",
-      importUrl: "",
-      ocfDeviceType: "x.com.st.d.mobile.presence") {
+		name: "UniFi Presence Sensor",
+		namespace: "MHedish",
+		author: "Marc Hedish",
+		importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/main/UniFi-Presence-Sensor/Drivers/unifi-presence-sensor.groovy",
+		ocfDeviceType: "x.com.st.d.mobile.presence") {
 
-      capability "Presence Sensor"
-		  capability "Sensor"
+	capability "Presence Sensor"
+		capability "Sensor"
 	}
 }
 
 def setPresence(status) {	
-    if (status == false) {
-        status = "not present"
-    } else {
-        status = "present"
-    }
+	if (status == false) {
+		status = "not present"
+	} else {
+		status = "present"
+	}
     
-    def old = device.latestValue("presence")
+def old = device.latestValue("presence")
     
-    // Do nothing if already in that state
-    if ( old != status ) {
+// Do nothing if already in that state
+	if ( old != status ) {
 	sendEvent(displayed: true,  isStateChange: true, name: "presence", value: status, descriptionText: "$device.displayName is $status")
-    } 
+	}
 }
