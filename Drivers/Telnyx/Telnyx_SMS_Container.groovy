@@ -18,7 +18,7 @@
 
 def setVersion(){
     state.name = "Telnyx SMS Container"
-	state.version = "2021.01.26.2"
+	state.version = "2021.01.28.1"
 }
 
 metadata {
@@ -46,6 +46,7 @@ metadata {
             }
         }
         input name: "logDebugEnabled", type: "bool", title: "Enable debug logging?", defaultValue: false, required: false
+//      input("TwiMLBinURL", "string", title: "TwiML Bin URL", description: "To support voice calls, please setup a TwiML Bin in the Twilio Console and paste in the URL here.", required: false)
     }
 }
 
@@ -77,7 +78,7 @@ def deleteDevice(deviceID){
 
 def installed() {
 	logDebug "Installing and configuring Virtual Container"
-    state.vsIndex = 0
+    state.vsIndex = 0 //stores an index value so that each newly created Virtual Switch has a unique name (simply incremements as each new device is added and attached as a suffix to DNI)
     initialize()
 }
 
@@ -182,7 +183,7 @@ def sendNotification(toNumber, message, deviceID) {
                 } else {
                     def childDevice = getChildDevice(deviceID)
 		    if (childDevice) {
-		        childDevice.sendEvent(name:"message", value: "${message}", displayed: false)
+                childDevice.sendEvent(name:"${response.data.data.record_type}", value: "${response.data.data.type}", unit: "${response.data.data.parts}", descriptionText: "${message}", displayed: false)
 		        } else {
 		            logError "Could not find child device: ${deviceID}"
 		        }
