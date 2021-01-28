@@ -16,7 +16,7 @@
 
 def setVersion(){
     state.name = "UniFi Presence Sensor"
-	state.version = "2021.01.27.1"
+	state.version = "2021.01.28.1"
 }
 
 metadata {
@@ -35,11 +35,11 @@ metadata {
 }
 
 def arrived() {
-    sendEvent(name: "presence", value: "present")
+    setPresence(true)
 }
 
 def departed() {
-    sendEvent(name: "presence", value: "not present")
+    setPresence(false)
 }
 
 def setPresence(status) {	
@@ -53,6 +53,7 @@ def old = device.latestValue("presence")
     
 // Do nothing if already in that state
 	if ( old != status ) {
-	sendEvent(displayed: true,  isStateChange: true, name: "presence", value: status, descriptionText: "$device.displayName is $status")
+        state.lastSeen == 
+        sendEvent(displayed: true,  isStateChange: true, name: "presence", value: status, descriptionText: "$device.displayName is $status")
 	}
 }
