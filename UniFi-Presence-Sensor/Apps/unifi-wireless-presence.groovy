@@ -13,12 +13,12 @@
 *  for the specific language governing permissions and limitations under the License.
 *
 */
- 
+
 def setVersion(){
     state.name = "UniFi Wireless Presence"
-    state.version = "2021.01.26.3"
+    state.version = "2021.02.02.1"
 }
- 
+
 definition(
     name: "UniFi Wireless Presence",
     namespace: "MHedish",
@@ -41,7 +41,7 @@ preferences {
 def mainPage() {
     dynamicPage(name: "mainPage", title: "", nextPage: null, uninstall: true, install: true) {
    	section(""){
-            input name: "bridgeAddress", type: "text", title: "Bridge Address", required: true, description:"ex: 192.168.0.100:9443"
+//          input name: "bridgeAddress", type: "text", title: "Bridge Address", required: true, description:"ex: 192.168.0.100:9443"
             input name: "unifiAddress", type: "text", title: "UniFi Controller Address", required: true, description:"ex: 192.168.0.100:8443"
             input name: "unifiUsername", type: "text", title: "UniFi Controller Username", required: true, description:"UniFi Controller Username"
             input name: "unifiPassword", type: "password", title: "UniFi Controller Password", required: true, description:"UniFi Controller Password"
@@ -51,10 +51,6 @@ def mainPage() {
             input name: "logDebug", type: "bool", title: "Enable debug logging?", description: "Log detailed troubleshooting information.", defaultValue: false, displayDuringSetup: true
             input name: "monitorGuest", type: "bool", title: "Enable to monitor hotspot clients.", required: false, description:""
         }
-       	//section() {
-            //paragraph "View this SmartApp's configuration to use it in other places"
-            //href url:"${apiServerUrl("/api/smartapps/installations/${app.id}/config?access_token=${state.accessToken}")}", style:"embedded", required:false, title:"Config", description:"Tap, select, copy, then click back"
-       	//}
     }
 }
 
@@ -112,7 +108,7 @@ def updated() {
             addDevice(state.monitored)
         }
     }
-    
+
     logDebug "toMonitor = $toMonitor"
 
     sendToUniFiBridge()
@@ -120,7 +116,7 @@ def updated() {
 
 def initialize() {
     logDebug "Initialize"
-    
+
     def options = [
      	"method": "POST",
         "path": "/settings",
@@ -139,14 +135,14 @@ def initialize() {
             "offlineDelay": settings.offlineDelay
         ]
     ]
-    
+
     def myhubAction = new hubitat.device.HubAction(options, null, [callback: null])
     sendHubCommand(myhubAction)
 }
 
 def unifiClientsPage() {
     logDebug "Getting list of UniFi clients"
-    
+
     def options = [
      	"method": "GET",
         "path": "/unificlients",
@@ -155,10 +151,10 @@ def unifiClientsPage() {
             "Content-Type": "application/json"
         ]
     ]
-    
+
     def myhubAction = new hubitat.device.HubAction(options, null, [callback: parseClients])
     sendHubCommand(myhubAction)
-    
+
     dynamicPage(name: "unifiClientsPage", title:"UniFi Clients", refreshInterval:60) {
         section("") {
             input(name: "toMonitor", type: "enum", title: "Tap to choose clients to monitor", options: state.unifiClients, multiple: true, required: false)
@@ -178,14 +174,14 @@ def getLocationID() {
     def locationID = null
     try {
         locationID = location.hubs[0].id
-    } catch(err) { 
+    } catch(err) {
     }
     return locationID
 }
 
 def sendToUniFiBridge() {
     logInfo "Telling the UniFi Bridge to monitor the following device(s): ${state.monitored}"
-       
+
     def options = [
      	"method": "POST",
         "path": "/monitor",
@@ -195,7 +191,7 @@ def sendToUniFiBridge() {
         ],
         "body": ["toMonitor": state.monitored]
     ]
-    
+
     def myhubAction = new hubitat.device.HubAction(options, null, [callback: null])
     sendHubCommand(myhubAction)
 }
@@ -226,7 +222,7 @@ def getDeviceList() {
         def label = child.label
         resultList.push(label)
     }
-    
+
     def dataString = new groovy.json.JsonOutput().toJson("devices": resultList)
     render contentType: "application/json", data: dataString
 }
@@ -238,7 +234,7 @@ def updateDevice() {
         def chlid = getChildDevice(device.id)
         chlid.setPresence(device.present)
     }
-	
+
     def dataString = new groovy.json.JsonOutput().toJson("result":"success")
     render contentType: "application/json", data: dataString
 }
@@ -258,7 +254,7 @@ def addDevice(List toAdd) {
         }
         def child = getChildDevice(dni)
         if (!child) {
-            addChildDevice("MHedish", "UniFi Presence Sensor", dni, getLocationID(), ["label": name])    
+            addChildDevice("MHedish", "UniFi Presence Sensor", dni, getLocationID(), ["label": name])
          }
     }
 }
@@ -287,13 +283,13 @@ mappings {
 }
 
 private logDebug(logText){
-    if(settings.logDebug) { 
+    if(settings.logDebug) {
         log.debug "${logText}"
     }
 }
 
 private logInfo(logText){
-    if(settings.logInfo) { 
+    if(settings.logInfo) {
         log.info "${logText}"
     }
 }
