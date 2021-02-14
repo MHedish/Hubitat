@@ -12,14 +12,15 @@
 *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
 *  for the specific language governing permissions an limitations under the License.
 *
-
+*
 *  https://paypal.me/MHedish
 *
 */
 
 def setVersion(){
     state.name = "Telnyx SMS Device"
-	state.version = "2021.01.26.1"
+    state.version = "1.0.0"
+    state.modified = "2021.02.02"
 }
 
 metadata {
@@ -51,6 +52,7 @@ def updated() {
 
 def initialize() {
     log.info "Receiving address set to: ${toNumber}"
+    setVersion()
 }
 
 def deleteDevice() {
