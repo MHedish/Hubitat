@@ -1,0 +1,16 @@
+{
+  "author": "Marc Hedish",
+  "gitHubUrl": "https://github.com/MHedish/Hubitat",
+  "packages": [
+    {
+      "id": "6e5251ae-6faf-42f6-94a5-341806660b76",
+      "name": "Telnyx SMS",
+      "category": "Notifications",
+      "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Telnyx/packageManifest.json",
+      "description": "Telnyx SMS allows you to send SMS messages from Rule Machine, webCoRE, and the HE device pages.",
+      "tags": [
+        "Notifications"
+      ]
+    }
+  ]
+}
