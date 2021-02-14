@@ -1,0 +1,24 @@
+{
+  "packageName": "Telnyx SMS",
+  "author": "Marc Hedish",
+  "version": "1.0",
+  "minimumHEVersion": "2.2.1",
+  "dateReleased": "2021-01-28",
+  "releaseNotes": "Initial Release."
+  "drivers": [
+    {
+      "id": "6271bae9-31dd-423e-acaa-494c7b08962e",
+      "name": "Telnyx SMS Container",
+      "namespace": "MHedish",
+      "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Telnyx/Telnyx_SMS_Container.groovy",
+      "required": true
+    },
+    {
+      "id": "08f4e749-6442-4e07-8346-08d8c61f8502",
+      "name": "Telnyx SMS Device",
+      "namespace": "MHedish",
+      "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Telnyx/Telnyx_SMS_Device.groovy",
+      "required": true
+    }
+  ]
+}
