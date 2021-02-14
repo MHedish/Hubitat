@@ -18,7 +18,8 @@
 
 def setVersion(){
     state.name = "Telnyx SMS Container"
-	state.version = "2021.01.28.1"
+	state.version = "1.0.0"
+    state.modified = "2021.02.02"
 }
 
 metadata {
@@ -28,7 +29,7 @@ metadata {
         author: "Marc Hedish",
         importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Telnyx/Telnyx_SMS_Container.groovy" ) {
 
-        attribute "containerSize", "number"	//stores the total number of children created by the container
+        attribute "containerSize", "number"	//Stores the total number of child devices created by the container.
 
         command "createDevice", ["DEVICE LABEL", "PHONE NUMBER"] //create new child device
     }
@@ -46,13 +47,12 @@ metadata {
             }
         }
         input name: "logDebugEnabled", type: "bool", title: "Enable debug logging?", defaultValue: false, required: false
-//      input("TwiMLBinURL", "string", title: "TwiML Bin URL", description: "To support voice calls, please setup a TwiML Bin in the Twilio Console and paste in the URL here.", required: false)
     }
 }
 
 def createDevice(deviceLabel, devicePhoneNumber){
     try{
-    	state.vsIndex = state.vsIndex + 1	//increment even on invalid device type
+    	state.vsIndex = state.vsIndex + 1
 	    def deviceID = deviceLabel.toString().trim().toLowerCase().replace(" ", "_")
 	    logDebug "Attempting to create Virtual Device: Label: ${deviceLabel}, Phone Number: ${devicePhoneNumber}"
 	    childDevice = addChildDevice("MHedish", "Telnyx SMS Device", "${deviceID}-${state.vsIndex}", [label: "${deviceLabel}", isComponent: true])
@@ -78,7 +78,7 @@ def deleteDevice(deviceID){
 
 def installed() {
 	logDebug "Installing and configuring Virtual Container"
-    state.vsIndex = 0 //stores an index value so that each newly created Virtual Switch has a unique name (simply incremements as each new device is added and attached as a suffix to DNI)
+    state.vsIndex = 0 //Stores an index value so that each newly created child device has a unique name.
     initialize()
 }
 
@@ -89,6 +89,7 @@ def updated() {
 def initialize() {
 	logDebug "Initializing Virtual Container"
 	updateSize()
+    setVersion()
 }
 
 def updateSize() {
