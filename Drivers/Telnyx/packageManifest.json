@@ -4,7 +4,9 @@
   "version": "1.0",
   "minimumHEVersion": "2.2.1",
   "dateReleased": "2021-01-28",
-  "releaseNotes": "Initial Release."
+  "releaseNotes": "Initial Release.",
+  "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/Telnyx/README.md",
+  "communityLink": "https://community.hubitat.com/t/release-telnyx-sms-notification-driver/63106",
   "drivers": [
     {
       "id": "6271bae9-31dd-423e-acaa-494c7b08962e",
