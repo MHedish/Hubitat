@@ -18,7 +18,7 @@
 
 def setVersion(){
     state.name = "Telnyx SMS Container"
-	state.version = "1.0.0"
+    state.version = "1.0.0"
     state.modified = "2021.02.02"
 }
 
