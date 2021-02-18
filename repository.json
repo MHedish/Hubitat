@@ -11,6 +11,18 @@
       "tags": [
         "Notifications"
       ]
+    },
+    {
+      "id": "3e9ba706-857a-4f84-ab3b-2ddce486aaca",
+      "name": "Springs Window Fashions Shade Drivers",
+      "category": "Control",
+      "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Springs-Window-Fashions/packageManifest.json",
+      "description": "Drivers specifically for Sheer and Roller Shade window coverings. Fixes the issue where the standard drivers report 'partially open' when they are opaque and 'closed' when actually sheer.",
+      "tags": [
+        "Doors & Windows",
+        "Window Coverings",
+        "ZWave"
+      ]
     }
   ]
 }
