@@ -1,0 +1,28 @@
+{
+  "packageName": "Springs Window Fashions",
+  "author": "Marc Hedish",
+  "version": "1.0",
+  "minimumHEVersion": "2.2.1",
+  "dateReleased": "2021-01-19",
+  "releaseNotes": "Initial Release.",
+  "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/Springs-Window-Fashions/README.md",
+  "communityLink": "https://community.hubitat.com/t/release-springs-window-fashions-sheer-shade-driver/62341",
+  "drivers": [
+    {
+      "id": "74627c52-756c-41ae-93f4-39ce8365e1bd",
+      "name": "Springs Window Fashions Roller Shade",
+      "namespace": "MHedish",
+      "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Springs-Window-Fashions/springs-window-fashions-roller-shade.groovy",
+      "required": false,
+      "version": "1.0.0"
+    },
+    {
+      "id": "46d24cdb-0e1b-4d62-89e3-73edc65ddc6f",
+      "name": "Springs Window Fashions Sheer Shade",
+      "namespace": "MHedish",
+      "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Springs-Window-Fashions/springs-window-fashions-sheer-shade.groovy",
+      "required": false,
+      "version": "1.0.0"
+    }
+  ]
+}
