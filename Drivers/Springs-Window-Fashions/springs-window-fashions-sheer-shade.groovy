@@ -20,7 +20,7 @@
  
 def setVersion(){
     state.name = "Springs Window Fashions Sheer Shade"
-	state.version = "0.14"
+	state.version = "1.0.0"
 }
 
 metadata {
