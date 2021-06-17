@@ -1,9 +1,9 @@
 /**
 *  Springs Window Fashions - Sheer Roller Shade Driver
 *  Author: Marc Hedish / Hubitat: MHedish
-*  Date: 01/19/21
+*  Date: 06/17/21
 *
-*  Copyright 2020 Marc Hedish
+*  Copyright 2021 Marc Hedish
 *
 *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 *  in compliance with the License. You may obtain a copy of the License at:
@@ -16,11 +16,15 @@
 *
 *  https://paypal.me/MHedish
 *
+*  Changelog:
+* 
+*  20210617 -- Added stopPositionChange()
+*
 */
  
 def setVersion(){
     state.name = "Springs Window Fashions Sheer Shade"
-	state.version = "1.0.0"
+	state.version = "1.0.1"
 }
 
 metadata {
@@ -187,6 +191,11 @@ def setPosition(value, duration = null) {
 def stop() {
     logDebug "Stop command issued."
     zwave.switchMultilevelV3.switchMultilevelStopLevelChange().format()
+}
+
+def stopPositionChange() {
+    logDebug "StopPositionChange command issued."
+    stop()
 }
 
 def preset() {
