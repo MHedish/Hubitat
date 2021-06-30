@@ -3,7 +3,7 @@
   "author": "Marc Hedish",
   "version": "1.1",
   "minimumHEVersion": "2.2.1",
-  "dateReleased": "2021-06-17",
+  "dateReleased": "2021-06-30",
   "releaseNotes": "Added stopPositionChange().",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/Springs-Window-Fashions/README.md",
   "communityLink": "https://community.hubitat.com/t/release-springs-window-fashions-sheer-shade-driver/62341",
@@ -14,7 +14,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Springs-Window-Fashions/springs-window-fashions-roller-shade.groovy",
       "required": false,
-      "version": "1.0.1"
+      "version": "1.1.0"
     },
     {
       "id": "46d24cdb-0e1b-4d62-89e3-73edc65ddc6f",
@@ -22,7 +22,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Springs-Window-Fashions/springs-window-fashions-sheer-shade.groovy",
       "required": false,
-      "version": "1.0.1"
+      "version": "1.1.0"
     }
   ]
 }
