@@ -4,7 +4,7 @@
   "version": "1.1",
   "minimumHEVersion": "2.2.1",
   "dateReleased": "2021-06-30",
-  "releaseNotes": "Added stopPositionChange().",
+  "releaseNotes": "Added switch event to force tile color update in Hubitat dashboards.",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/Springs-Window-Fashions/README.md",
   "communityLink": "https://community.hubitat.com/t/release-springs-window-fashions-sheer-shade-driver/62341",
   "drivers": [
