@@ -1,7 +1,7 @@
-/**
+/*
 *  Springs Window Fashions - Sheer Roller Shade Driver
 *  Author: Marc Hedish / Hubitat: MHedish
-*  Date: 06/17/21
+*  Date: 06/30/21
 *
 *  Copyright 2021 Marc Hedish
 *
@@ -19,12 +19,13 @@
 *  Changelog:
 * 
 *  20210617 -- Added stopPositionChange()
+*  20210630 -- Fixed Hubitat Dashboard tile colors update when open/closed/partially open.
 *
 */
  
 def setVersion(){
     state.name = "Springs Window Fashions Sheer Shade"
-	state.version = "1.0.1"
+	state.version = "1.1.0"
 }
 
 metadata {
@@ -224,12 +225,16 @@ private handleLevelReport(hubitat.zwave.Command cmd) {
     if (level >= 99) {
         level = 100
         shadeValue = "open"
+        sendEvent(name: "switch", value: "on")
     } else if (level == closedLevel) {
         shadeValue = "closed"
+        sendEvent(name: "switch", value: "off")        
     } else if (level < closedLevel) {
         shadeValue = "sheer"
+        sendEvent(name: "switch", value: "on")        
     } else {
         shadeValue = "partially open"
+        sendEvent(name: "switch", value: "on")        
     }
     def position = level
     level = relativeLevels ? Math.round((level < closedLevel ? 1 - (level / closedLevel) : (level - closedLevel) / (99 - closedLevel)) * 100) : level
