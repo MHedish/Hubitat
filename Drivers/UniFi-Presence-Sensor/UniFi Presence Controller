@@ -18,6 +18,7 @@
 *  20250826 -- v1.3.2: Fixed refreshFromChild(mac) to restore compatibility with Child driver
 *  20250826 -- v1.3.3: Improved Networking/Query error handling with logError
 *  20250826 -- v1.3.4: Strengthened queryClients + httpExecWithAuthCheck error logging
+*  20250827 -- v1.3.5: Added HTTP Request Timeout preference (default=10s)
 */
 
 import groovy.transform.Field
@@ -25,8 +26,8 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.3.4"
-@Field static final String DRIVER_MODIFIED = "2025.08.26"
+@Field static final String DRIVER_VERSION  = "1.3.5"
+@Field static final String DRIVER_MODIFIED = "2025.08.27"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
 @Field List disconnectingEvents = ["EVT_WU_Disconnected", "EVT_WG_Disconnected"]
@@ -91,6 +92,9 @@ preferences {
         input "disconnectDebounce", "number", title: "Disconnect debounce (seconds, default=10)", defaultValue: 10
     }
     section {
+        input "httpTimeout", "number", title: "HTTP Request Timeout (seconds, default=10)", defaultValue: 10, required: true
+    }
+    section {
         input "monitorHotspot", "bool", title: "Monitor HotSpot Clients", defaultValue: false
     }
 }
@@ -104,7 +108,6 @@ private logError(msg) { log.error "[${DRIVER_NAME}] $msg" }
 private emitEvent(String name, def value, String descriptionText = null) {
     sendEvent(name: name, value: value, descriptionText: descriptionText)
 }
-
 /* ===============================
    Lifecycle
    =============================== */
@@ -226,18 +229,44 @@ def refreshHotspotPresence() {
 
     def guests = queryHotspotClients()
     def guestCount = guests?.size() ?: 0
+    def delay = (disconnectDebounce ?: 10).toInteger()
 
     if (guestCount > 0) {
+        // Cancel pending disconnect if guests reappeared
+        if (state.hotspotDisconnectTimer) {
+            unschedule("markHotspotNotPresent")
+            state.hotspotDisconnectTimer = false
+            logDebug "HotSpot debounce cancelled (guests reconnected)"
+        }
         child.refreshFromParent([
             presence: "present",
             guestCount: guestCount
         ])
     } else {
-        child.refreshFromParent([
-            presence: "not present",
-            guestCount: 0
-        ])
+        // Schedule disconnect if not already pending
+        if (!state.hotspotDisconnectTimer) {
+            state.hotspotDisconnectTimer = true
+            logDebug "Scheduling HotSpot not present after ${delay}s debounce"
+            runIn(delay, "markHotspotNotPresent")
+        }
     }
+}
+
+def markHotspotNotPresent() {
+    def child = getChildDevice("UniFi-hotspot")
+    if (!child) return
+
+    state.hotspotDisconnectTimer = false
+    if (child.currentValue("presence") == "not present") {
+        logDebug "HotSpot already marked not present"
+        return
+    }
+
+    logDebug "Marking HotSpot not present (after debounce)"
+    child.refreshFromParent([
+        presence: "not present",
+        guestCount: 0
+    ])
 }
 
 /* ===============================
@@ -532,7 +561,8 @@ def genParamsAuth(op) {
         uri: getBaseURI() + (op == "login" ? getLoginSuffix() : getLogoutSuffix()),
         headers: ['Content-Type': "application/json"],
         body: JsonOutput.toJson([username: username, password: password, strict: true]),
-        ignoreSSLIssues: true
+        ignoreSSLIssues: true,
+        timeout: (httpTimeout ?: 10)
     ]
 }
 
@@ -540,7 +570,8 @@ def genParamsMain(suffix, body=null) {
     def params = [
         uri: getBaseURI() + getKnownClientsSuffix() + suffix,
         headers: [(cookieNameToSend()): getCookie(), (csrfTokenNameToSend()): getCsrf()],
-        ignoreSSLIssues: true
+        ignoreSSLIssues: true,
+        timeout: (httpTimeout ?: 10)
     ]
     if (body) params.body = body
     params
