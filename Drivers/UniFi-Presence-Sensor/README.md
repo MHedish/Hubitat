@@ -4,7 +4,7 @@ Hubitat drivers for tracking UniFi client and HotSpot device presence using the 
 
 ---
 
-## 📦 Drivers Included
+## Drivers Included
 - **UniFi Presence Controller (Parent)**
   - Version: v1.3.5 (2025-08-27)
   - Manages connection to UniFi Controller via WebSocket + REST API
@@ -21,7 +21,7 @@ Hubitat drivers for tracking UniFi client and HotSpot device presence using the 
 
 ---
 
-## 🚀 Features
+## Features
 - Presence tracking for UniFi clients (via WebSocket events + REST fallback)
 - Disconnect debounce (default 10s, configurable)
 - SSID extraction from UniFi event stream + REST data
@@ -31,7 +31,7 @@ Hubitat drivers for tracking UniFi client and HotSpot device presence using the 
 
 ---
 
-## ⚙️ Preferences
+## Preferences
 **Parent Driver**
 - UniFi Controller IP
 - Site Name (default `default`)
@@ -50,7 +50,7 @@ Hubitat drivers for tracking UniFi client and HotSpot device presence using the 
 
 ---
 
-## 🔑 Version Notes
+## Version Notes
 - **Parent v1.3.5**
   - New preference: HTTP Request Timeout (default 10s)
   - Improved error logging in `queryClients` and `httpExecWithAuthCheck`
@@ -60,7 +60,7 @@ Hubitat drivers for tracking UniFi client and HotSpot device presence using the 
 
 ---
 
-## 📖 Usage
+## Usage
 1. Install **Parent Driver** (`UniFi Presence Controller`)  
 2. Install **Child Driver** (`UniFi Presence Device`)  
 3. Add a new Virtual Device in Hubitat, select `UniFi Presence Controller` as the type  
@@ -70,13 +70,13 @@ Hubitat drivers for tracking UniFi client and HotSpot device presence using the 
 
 ---
 
-## 🛠 Known Issues
+## Known Issues
 - Occasional timeouts may occur under heavy UniFi Controller load. Increase **HTTP Request Timeout** if necessary.  
 - SSID extraction depends on event messages; some controller versions may format these differently.  
 
 ---
 
-## 📜 License
+## License
 Apache License, Version 2.0  
 See [LICENSE](https://www.apache.org/licenses/LICENSE-2.0) for details.  
 
