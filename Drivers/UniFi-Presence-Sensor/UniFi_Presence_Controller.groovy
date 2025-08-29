@@ -1,6 +1,5 @@
 /*
 *  UniFi Presence Controller
-*  Compatible Child: v1.3.1+
 *
 *  Copyright 2025 MHedish
 *  Licensed under the Apache License, Version 2.0
@@ -12,13 +11,27 @@
 *  20250813 -- Initial version based on tomw
 *  20250818 -- Added driver info tile
 *  20250819 -- Optimized, unified queries, debounce + logging improvements
-*  20250822 -- v1.2.4 ? v1.2.17 various improvements (see history)
-*  20250826 -- v1.3.0: Baseline version sync with Child driver
-*  20250826 -- v1.3.1: Added HotSpot client monitoring + child device support
-*  20250826 -- v1.3.2: Fixed refreshFromChild(mac) to restore compatibility with Child driver
-*  20250826 -- v1.3.3: Improved Networking/Query error handling with logError
-*  20250826 -- v1.3.4: Strengthened queryClients + httpExecWithAuthCheck error logging
-*  20250827 -- v1.3.5: Added HTTP Request Timeout preference (default=10s)
+*  20250822 -- v1.2.4: Added childDni() helper; unified logging/events with child
+*  20250822 -- v1.2.5: Added SSID extraction from UniFi events; cleared on disconnect
+*  20250822 -- v1.2.6: Added SSID to REST refresh; always cleared when not present
+*  20250822 -- v1.2.7: disconnectDebounce default=10; refined markNotPresent logic
+*  20250822 -- v1.2.8: (bug) tried dynamic debounce scheduling – unsupported
+*  20250822 -- v1.2.9: Fixed debounce handling; reconnect cancels pending disconnects
+*  20250822 -- v1.2.10: SSID values sanitized (quotes stripped)
+*  20250822 -- v1.2.11: Updated parse() ordering (debounce cancel before duplicate check)
+*  20250822 -- v1.2.12: Presence only set if evt.ap is non-null
+*  20250822 -- v1.2.13: Presence not present if client missing OR ap_mac missing
+*  20250825 -- v1.2.14: Track only Wireless User + Guest events (drop LAN events)
+*  20250825 -- v1.2.15: Child DNI uses rightmost 8 characters of MAC
+*  20250825 -- v1.2.16: Child DNI uses rightmost 6 characters of MAC
+*  20250826 -- v1.2.17: Updated getKnownClientsSuffix
+*  20250828 -- v1.3.0: HotSpot monitoring framework introduced
+*  20250828 -- v1.3.5: Added timeout preference for HTTP requests
+*  20250828 -- v1.3.7: Better error handling in httpExecWithAuthCheck
+*  20250828 -- v1.3.9: HotSpot event handling with debounce
+*  20250829 -- v1.3.13: Stable rollback point
+*  20250829 -- v1.3.14: HotSpot child detection via Device Data flag
+*  20250829 -- v1.3.15: Restored deleteHotspotChild(), updated disconnectDebounce (30s) + httpTimeout (15s) defaults
 */
 
 import groovy.transform.Field
@@ -26,8 +39,8 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.3.5"
-@Field static final String DRIVER_MODIFIED = "2025.08.27"
+@Field static final String DRIVER_VERSION  = "1.3.15"
+@Field static final String DRIVER_MODIFIED = "2025.08.29"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
 @Field List disconnectingEvents = ["EVT_WU_Disconnected", "EVT_WG_Disconnected"]
@@ -89,10 +102,8 @@ preferences {
         input "customPortNum", "number", title: "Custom port number", required: false
     }
     section {
-        input "disconnectDebounce", "number", title: "Disconnect debounce (seconds, default=10)", defaultValue: 10
-    }
-    section {
-        input "httpTimeout", "number", title: "HTTP Request Timeout (seconds, default=10)", defaultValue: 10, required: true
+        input "disconnectDebounce", "number", title: "Disconnect debounce (seconds, default=30)", defaultValue: 30
+        input "httpTimeout", "number", title: "HTTP Timeout (seconds, default=15)", defaultValue: 15
     }
     section {
         input "monitorHotspot", "bool", title: "Monitor HotSpot Clients", defaultValue: false
@@ -104,28 +115,41 @@ preferences {
    =============================== */
 private logDebug(msg) { if (logEnable) log.debug "[${DRIVER_NAME}] $msg" }
 private logInfo(msg)  { log.info  "[${DRIVER_NAME}] $msg" }
+private logWarn(msg)  { log.warn  "[${DRIVER_NAME}] $msg" }
 private logError(msg) { log.error "[${DRIVER_NAME}] $msg" }
+
 private emitEvent(String name, def value, String descriptionText = null) {
     sendEvent(name: name, value: value, descriptionText: descriptionText)
 }
+
 /* ===============================
    Lifecycle
    =============================== */
 def installed() {
     logInfo "Installed"
+    logInfo "Driver v${DRIVER_VERSION} (${DRIVER_MODIFIED}) loaded successfully"
     setVersion()
 }
 
 def updated() {
     logInfo "Preferences updated"
+    logInfo "Driver v${DRIVER_VERSION} (${DRIVER_MODIFIED}) loaded successfully"
     configure()
     setVersion()
-    handleHotspotChild()
+
+    // Handle hotspot child creation/removal based on preference
+    if (monitorHotspot) {
+        createHotspotChild()
+    } else {
+        deleteHotspotChild()
+    }
 
     if (logEnable) {
+        logInfo "Debug logging enabled for 30 minutes"
         runIn(1800, autoDisableDebugLogging)
     }
     if (logRawEvents) {
+        logInfo "Raw UniFi event logging enabled for 30 minutes"
         runIn(1800, autoDisableRawEventLogging)
     }
 }
@@ -134,8 +158,13 @@ def configure() {
     state.clear()
     initialize()
     setVersion()
-    handleHotspotChild()
-}
+
+    if (monitorHotspot) {
+        createHotspotChild()
+    } else {
+        deleteHotspotChild()
+    }
+}    
 
 /* ===============================
    Logging Disable
@@ -170,7 +199,16 @@ def childDni(String mac) {
     return "UniFi-${shortMac}"
 }
 
-def refreshChildren() { getChildDevices()?.each { it.refresh() } }
+def refreshChildren() {
+    getChildDevices()?.each { child ->
+        if (child.getDataValue("hotspot") == "true") {
+            refreshHotspotChild()
+        } else {
+            child.refresh()
+        }
+    }
+}
+
 def findChildDevice(mac) { getChildDevice(childDni(mac)) }
 
 def createClientDevice(name, mac) {
@@ -186,114 +224,64 @@ def createClientDevice(name, mac) {
     catch (e) { logDebug "createClientDevice() failed: ${e.message}" }
 }
 
-/* ===============================
-   HotSpot Child Handling
-   =============================== */
-def handleHotspotChild() {
-    def child = getChildDevice("UniFi-hotspot")
-    if (monitorHotspot) {
-        if (!child) {
-            logInfo "Creating HotSpot Presence child"
-            addChildDevice("UniFi Presence Device", "UniFi-hotspot", [
-                label: "Hot Spot", isComponent: false, name: "UniFi Presence Device"
-            ])
-        }
-    } else {
-        if (child) {
-            logInfo "Deleting HotSpot Presence child"
-            deleteChildDevice("UniFi-hotspot")
-        }
-    }
-}
-
-def queryHotspotClients() {
-    def clients = []
+def createHotspotChild() {
     try {
-        def resp = runQuery("stat/guest", true)
-        def data = resp?.data?.data ?: []
-        data.each { guest ->
-            if (guest.expired == false && guest.mac) {
-                clients << guest.mac
-            }
-        }
-    } catch (e) {
-        logError "queryHotspotClients() failed: ${e.message}"
-    }
-    return clients
-}
-
-def refreshHotspotPresence() {
-    if (!monitorHotspot) return
-    def child = getChildDevice("UniFi-hotspot")
-    if (!child) return
-
-    def guests = queryHotspotClients()
-    def guestCount = guests?.size() ?: 0
-    def delay = (disconnectDebounce ?: 10).toInteger()
-
-    if (guestCount > 0) {
-        // Cancel pending disconnect if guests reappeared
-        if (state.hotspotDisconnectTimer) {
-            unschedule("markHotspotNotPresent")
-            state.hotspotDisconnectTimer = false
-            logDebug "HotSpot debounce cancelled (guests reconnected)"
-        }
-        child.refreshFromParent([
-            presence: "present",
-            guestCount: guestCount
+        if (getChildDevices()?.find { it.getDataValue("hotspot") == "true" }) return
+        def newChild = addChildDevice("UniFi Presence Device", "UniFi-hotspot", [
+            label: "Guest", isComponent: false, name: "UniFi Hotspot"
         ])
-    } else {
-        // Schedule disconnect if not already pending
-        if (!state.hotspotDisconnectTimer) {
-            state.hotspotDisconnectTimer = true
-            logDebug "Scheduling HotSpot not present after ${delay}s debounce"
-            runIn(delay, "markHotspotNotPresent")
+        newChild.updateDataValue("hotspot", "true")
+        logInfo "Created HotSpot child device"
+    }
+    catch (e) { logError "createHotspotChild() failed: ${e.message}" }
+}
+
+def deleteHotspotChild() {
+    try {
+        def child = getChildDevices()?.find { it.getDataValue("hotspot") == "true" }
+        if (child) {
+            deleteChildDevice(child.deviceNetworkId)
+            logInfo "Deleted HotSpot child device"
         }
     }
+    catch (e) { logError "deleteHotspotChild() failed: ${e.message}" }
 }
 
-def markHotspotNotPresent() {
-    def child = getChildDevice("UniFi-hotspot")
-    if (!child) return
-
-    state.hotspotDisconnectTimer = false
-    if (child.currentValue("presence") == "not present") {
-        logDebug "HotSpot already marked not present"
-        return
-    }
-
-    logDebug "Marking HotSpot not present (after debounce)"
-    child.refreshFromParent([
-        presence: "not present",
-        guestCount: 0
-    ])
-}
-
-/* ===============================
-   Refresh Override
-   =============================== */
-def refresh() {
-    unschedule("refresh")
-    refreshChildren()
-    refreshHotspotPresence()
-    scheduleOnce(refreshInterval, "refresh")
-}
-
-/* ===============================
-   Refresh from Child
-   =============================== */
 def refreshFromChild(mac) {
     def client = queryClientByMac(mac)
     logDebug "refreshFromChild(${mac}) ? ${client ?: 'offline/null'}"
 
     def states = [
-        presence: (client && client.ap_mac ? "present" : "not present"),
+        presence: (client?.ap_mac ? "present" : "not present"),
         ap      : client?.ap_mac ?: "unknown",
         apName  : client?.ap_displayName ?: client?.last_uplink_name ?: "unknown",
-        ssid    : (client && client.essid) ? client.essid.replaceAll(/^"+|"+$/, '') : null,
+        ssid    : client?.essid ? client.essid.replaceAll(/^\"+|\"+$/, '') : null,
         switch  : (client && client.blocked == false) ? "on" : null
     ]
-    findChildDevice(mac)?.refreshFromParent(states)
+
+    def child = findChildDevice(mac)
+    if (!child) {
+        logWarn "refreshFromChild(): no child found for ${mac}"
+        return
+    }
+
+    child.refreshFromParent(states)
+}
+
+def refreshHotspotChild() {
+    try {
+        def guests = queryClients("stat/guest", false)
+        def activeGuests = guests.findAll { !it.expired }
+        def guestCount = activeGuests?.size() ?: 0
+
+        def child = getChildDevices()?.find { it.getDataValue("hotspot") == "true" }
+        if (!child) return
+
+        def presence = guestCount > 0 ? "present" : "not present"
+        child.refreshFromParent([presence: presence, hotspotGuests: guestCount])
+        logDebug "refreshHotspotChild(): ${guestCount} active guests"
+    }
+    catch (e) { logError "refreshHotspotChild() failed: ${e.message}" }
 }
 
 /* ===============================
@@ -317,6 +305,25 @@ void parse(String message) {
             def id = evt.user ?: evt.guest
             if (!id) return
 
+            // HotSpot child?
+            def hotspotChild = getChildDevices()?.find { it.getDataValue("hotspot") == "true" }
+            if (hotspotChild && evt.guest) {
+                def guestCount = (state.guestCount ?: 0)
+                if (evt.key in connectingEvents) {
+                    guestCount++
+                } else if (evt.key in disconnectingEvents && guestCount > 0) {
+                    guestCount--
+                }
+                state.guestCount = guestCount
+                hotspotChild.refreshFromParent([
+                    presence: guestCount > 0 ? "present" : "not present",
+                    hotspotGuests: guestCount
+                ])
+                logDebug "Updated hotspot child from event: ${guestCount} active guests"
+                return
+            }
+
+            // Normal client
             def child = findChildDevice(id)
             if (!child) return
 
@@ -324,7 +331,7 @@ void parse(String message) {
             def currentPresence = child.currentValue("presence")
 
             if (!isConnect) {
-                def delay = (disconnectDebounce ?: 10).toInteger()
+                def delay = (disconnectDebounce ?: 30).toInteger()
                 logDebug "Delaying disconnect for ${id} (${delay}s debounce)"
 
                 state.disconnectTimers = state.disconnectTimers ?: [:]
@@ -350,7 +357,7 @@ void parse(String message) {
             if (evt.msg) {
                 def matcher = (evt.msg =~ /SSID\s+([^\s]+)/)
                 if (matcher.find()) {
-                    ssidVal = matcher.group(1)?.replaceAll(/^"+|"+$/, '')
+                    ssidVal = matcher.group(1)?.replaceAll(/^\"+|\"+$/, '')
                 }
             }
 
@@ -358,7 +365,7 @@ void parse(String message) {
                 presence: "present",
                 ap      : evt.ap ?: "unknown",
                 apName  : evt.ap_displayName ?: "unknown",
-                ssid    : ssidVal ?: (evt.essid ? evt.essid.replaceAll(/^"+|"+$/, '') : "unknown")
+                ssid    : ssidVal ?: (evt.essid ? evt.essid.replaceAll(/^\"+|\"+$/, '') : "unknown")
             ])
         }
     }
@@ -367,9 +374,6 @@ void parse(String message) {
     }
 }
 
-/* ===============================
-   markNotPresent
-   =============================== */
 def markNotPresent(data) {
     def id = data.mac
     def evt = data.evt
@@ -393,7 +397,7 @@ def markNotPresent(data) {
         presence: "not present",
         ap      : evt.ap ?: "unknown",
         apName  : evt.ap_displayName ?: "unknown",
-        ssid    : null   // Always cleared on disconnect
+        ssid    : null   // always cleared on disconnect
     ])
 }
 
@@ -453,6 +457,13 @@ def uninstalled() {
     invalidateCookie()
 }
 
+def refresh() {
+    unschedule("refresh")
+    refreshChildren()
+    refreshHotspotChild()
+    scheduleOnce(refreshInterval, "refresh")
+}
+
 def scheduleOnce(sec, handler) {
     runIn(sec.toInteger(), handler)
 }
@@ -471,11 +482,11 @@ def queryClients(endpoint, single = false) {
         if (e.response?.status == 400 && single) {
             return null
         } else {
-            logError "queryClients(${endpoint}) HttpResponseException: ${e.message}"
+            logDebug "queryClients(${endpoint}) error: ${e}"
         }
     }
     catch (Exception e) {
-        logError "queryClients(${endpoint}) failed: ${e.message}"
+        logDebug "queryClients(${endpoint}) error: ${e}"
     }
     return single ? null : []
 }
@@ -548,7 +559,7 @@ def runQuery(suffix, throwToCaller = false) {
         return httpExecWithAuthCheck("GET", genParamsMain(suffix), true)
     } catch (e) {
         if (!throwToCaller) {
-            logError "runQuery(${suffix}) failed: ${e.message}"
+            logDebug e
             emitEvent("commStatus", "error")
             return
         }
@@ -556,13 +567,16 @@ def runQuery(suffix, throwToCaller = false) {
     }
 }
 
+/* ===============================
+   HTTP / WebSocket Helpers
+   =============================== */
 def genParamsAuth(op) {
     [
         uri: getBaseURI() + (op == "login" ? getLoginSuffix() : getLogoutSuffix()),
         headers: ['Content-Type': "application/json"],
         body: JsonOutput.toJson([username: username, password: password, strict: true]),
         ignoreSSLIssues: true,
-        timeout: (httpTimeout ?: 10)
+        timeout: (httpTimeout ?: 15)
     ]
 }
 
@@ -571,7 +585,7 @@ def genParamsMain(suffix, body=null) {
         uri: getBaseURI() + getKnownClientsSuffix() + suffix,
         headers: [(cookieNameToSend()): getCookie(), (csrfTokenNameToSend()): getCsrf()],
         ignoreSSLIssues: true,
-        timeout: (httpTimeout ?: 10)
+        timeout: (httpTimeout ?: 15)
     ]
     if (body) params.body = body
     params
@@ -603,7 +617,7 @@ def httpExecWithAuthCheck(op, params, throwToCaller=false) {
             params.ignoreSSLIssues = true
             return httpExec(op, params)
         }
-        logError "httpExecWithAuthCheck() HttpResponseException: ${e.message}"
+        logDebug "httpExecWithAuthCheck() HttpResponseException: ${e.message}"
         if (throwToCaller) throw e
     } 
     catch (Exception e) {
@@ -613,6 +627,9 @@ def httpExecWithAuthCheck(op, params, throwToCaller=false) {
     }
 }
 
+/* ===============================
+   Base URI & Endpoint Helpers
+   =============================== */
 def getBaseURI() {
     return getUniFiOS()
         ? "https://${controllerIP}:${(customPort ? customPortNum : 443)}/"
@@ -629,6 +646,9 @@ def getWssURI(site) {
         : "wss://${controllerIP}:${(customPort ? customPortNum : 8443)}/wss/s/${site}/events"
 }
 
+/* ===============================
+   Platform Detection
+   =============================== */
 def isUniFiOS() {
     def os
     try {
