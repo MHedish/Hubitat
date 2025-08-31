@@ -24,14 +24,31 @@ The parent driver connects to your UniFi Controller, listens for events, and man
 ---
 
 ## 🛠️ Installation
-1. Copy the **Parent Driver (`UniFi Presence Controller`)** into Hubitat’s **Drivers Code** section.
-2. Copy the **Child Driver (`UniFi Presence Device`)** into Hubitat’s **Drivers Code** section.
-3. Add a new virtual device in Hubitat using the **UniFi Presence Controller** as the type.
-4. Configure the following preferences in the parent driver:
+
+You can install these drivers into **Hubitat Elevation** using the **Import URL** feature.
+
+1. In Hubitat, go to **Drivers Code → New Driver**.
+2. Paste the **Import URL** for each driver into the code editor and click **Import**.
+3. Save the driver.
+
+### Import URLs
+- **Parent Driver (UniFi Presence Controller):**  
+  [UniFi_Presence_Controller.groovy](https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy)
+
+- **Child Driver (UniFi Presence Device):**  
+  [UniFi_Presence_Device.groovy](https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy)
+
+---
+
+### Setup
+1. After importing both drivers, create a **Virtual Device** in Hubitat.
+2. Assign the type as **UniFi Presence Controller (Parent)**.
+3. Configure the following preferences in the Parent driver:
    - **Controller IP** (your UniFi Controller / UDM IP)
-   - **Site Name** (default is `default`)
-   - **Username/Password** (API user with appropriate rights)
+   - **Site Name** (default = `default`)
+   - **Username / Password** (API user with appropriate rights)
    - Optional: Custom port, refresh interval, debounce, hotspot monitoring.
+4. Child devices are automatically created for clients and hotspot guests.
 
 ---
 
@@ -68,6 +85,7 @@ Both drivers track version and modification date in `driverInfo`.
 ---
 
 ## 🚦 Changelog Highlights
+- **v1.4.7 (2025.08.31)** – Child MAC normalization, synced version/date with parent  
 - **v1.4.5 (2025.08.30)** – Stable release, added hotspot guest `_last_seen_by_uap` validation  
 - **v1.3.x** – Added hotspot monitoring framework, error handling improvements  
 - **v1.2.x** – SSID extraction, debounce disconnects, refined presence tracking  
