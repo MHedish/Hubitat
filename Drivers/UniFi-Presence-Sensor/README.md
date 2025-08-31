@@ -1,85 +1,90 @@
-# UniFi Presence Controller & Device Drivers
+# UniFi Presence Controller & Device Drivers for Hubitat
 
-Hubitat drivers for tracking UniFi client and HotSpot device presence using the UniFi Controller / UniFi OS API.
+## Overview
+These drivers integrate your **UniFi Controller / UniFi OS (UDM, UDM-Pro, Cloud Key Gen2+)** with **Hubitat Elevation**, allowing you to track presence of wireless clients and hotspot guests in real time.
 
----
+- **Parent Driver:** `UniFi Presence Controller`
+- **Child Driver:** `UniFi Presence Device`
 
-## Drivers Included
-- **UniFi Presence Controller (Parent)**
-  - Version: v1.3.5 (2025-08-27)
-  - Manages connection to UniFi Controller via WebSocket + REST API
-  - Creates child devices for each client + optional HotSpot child
-  - Handles presence updates, AP mapping, SSID tracking
-  - Includes disconnect debounce, error handling, and configurable HTTP timeout
-
-- **UniFi Presence Device (Child)**
-  - Version: v1.3.1 (stable baseline)
-  - Represents an individual UniFi client or the special HotSpot group
-  - Attributes: `presence`, `accessPoint`, `accessPointName`, `ssid`, `switch`, `driverInfo`
-  - HotSpot child also has attribute: `guestCount`
-  - Manual commands: `arrived`, `departed`, `on`, `off`, `disableDebugLoggingNow`
+The parent driver connects to your UniFi Controller, listens for events, and manages child devices. Each client or hotspot guest is represented as a child device with **Presence, Switch, and Access Point metadata**.
 
 ---
 
-## Features
-- Presence tracking for UniFi clients (via WebSocket events + REST fallback)
-- Disconnect debounce (default 10s, configurable)
-- SSID extraction from UniFi event stream + REST data
-- HotSpot monitoring (optional child device, presence + guest count)
-- Debug logging auto-disables after 30 minutes
-- Configurable HTTP request timeout (default 10s, adjustable in preferences)
+## ✨ Features
+- Tracks presence for UniFi **Wireless Users** and **Wireless Guests**
+- Supports **Hotspot Guest tracking** (connected vs total guest clients)
+- **Debounced disconnects** to prevent false “departed” events
+- **SSID extraction** from UniFi events
+- Auto-creates **Child Devices** for each UniFi client
+- Optional **Hotspot Child Device** to summarize guest activity
+- **Switch control** to block/unblock clients directly from Hubitat
+- Built-in **logging controls** (debug + raw UniFi event logging with auto-disable)
+- **Version info tile** on both parent and child devices
 
 ---
 
-## Preferences
-**Parent Driver**
-- UniFi Controller IP
-- Site Name (default `default`)
-- Username / Password
-- Refresh Interval (default 300s)
-- Enable Debug Logging
-- Enable Raw Event Logging
-- Custom Port (optional)
-- Disconnect Debounce (default 10s)
-- **HTTP Request Timeout (default 10s)** ← new in v1.3.5
-- Monitor HotSpot Clients (true/false)
-
-**Child Driver**
-- Device MAC (auto-populated by parent)
-- Enable Debug Logging
+## 🛠️ Installation
+1. Copy the **Parent Driver (`UniFi Presence Controller`)** into Hubitat’s **Drivers Code** section.
+2. Copy the **Child Driver (`UniFi Presence Device`)** into Hubitat’s **Drivers Code** section.
+3. Add a new virtual device in Hubitat using the **UniFi Presence Controller** as the type.
+4. Configure the following preferences in the parent driver:
+   - **Controller IP** (your UniFi Controller / UDM IP)
+   - **Site Name** (default is `default`)
+   - **Username/Password** (API user with appropriate rights)
+   - Optional: Custom port, refresh interval, debounce, hotspot monitoring.
 
 ---
 
-## Version Notes
-- **Parent v1.3.5**
-  - New preference: HTTP Request Timeout (default 10s)
-  - Improved error logging in `queryClients` and `httpExecWithAuthCheck`
-  - HotSpot presence now debounced, prevents flapping
-- **Child v1.3.1**
-  - Stable baseline, compatible with Parent v1.3.5
+## ⚙️ Preferences (Parent)
+- **UniFi Controller IP Address**  
+- **Site Name**  
+- **Username / Password**  
+- **Refresh Interval** (seconds, default 300)  
+- **Disconnect Debounce** (seconds, default 30)  
+- **HTTP Timeout** (seconds, default 15)  
+- **Monitor Hotspot Clients** (on/off)  
+- **Enable Debug Logging** (auto disables after 30 min)  
+- **Enable Raw Event Logging** (auto disables after 30 min)  
 
 ---
 
-## Usage
-1. Install **Parent Driver** (`UniFi Presence Controller`)  
-2. Install **Child Driver** (`UniFi Presence Device`)  
-3. Add a new Virtual Device in Hubitat, select `UniFi Presence Controller` as the type  
-4. Configure controller IP, credentials, site name, etc. in preferences  
-5. Children are created automatically for clients when discovered by the controller  
-6. If HotSpot monitoring is enabled, a `UniFi-hotspot` child will be created automatically  
+## 📡 Hotspot Tracking
+- Tracks both:
+  - **`hotspotGuests`** → currently connected (verified via `_last_seen_by_uap`)
+  - **`totalHotspotClients`** → total non-expired hotspot clients
+- Helps distinguish between devices that are still *registered* vs actually *connected*.
 
 ---
 
-## Known Issues
-- Occasional timeouts may occur under heavy UniFi Controller load. Increase **HTTP Request Timeout** if necessary.  
-- SSID extraction depends on event messages; some controller versions may format these differently.  
+## 🔄 Versioning
+Both drivers track version and modification date in `driverInfo`.
+
+### Current Release
+- **v1.4.7 (2025.08.31)**
+  - Synced parent & child version numbers
+  - Child driver normalizes `clientMAC` (replaces `-` with `:` and lowercases)  
+  - No functional changes to parent, version bump for consistency
 
 ---
 
-## License
-Apache License, Version 2.0  
-See [LICENSE](https://www.apache.org/licenses/LICENSE-2.0) for details.  
+## 🚦 Changelog Highlights
+- **v1.4.5 (2025.08.30)** – Stable release, added hotspot guest `_last_seen_by_uap` validation  
+- **v1.3.x** – Added hotspot monitoring framework, error handling improvements  
+- **v1.2.x** – SSID extraction, debounce disconnects, refined presence tracking  
 
 ---
 
-© 2025 Marc Hedish
+## 🙏 Credits
+- Original foundation by **@tomw**  
+- Enhancements, optimizations, and hotspot monitoring by **Marc Hedish (MHedish)**
+
+---
+
+## 📜 License
+Apache License 2.0 — see [LICENSE](https://www.apache.org/licenses/LICENSE-2.0)
+
+---
+
+## 💡 Support
+If you find this useful, consider supporting development:  
+👉 [paypal.me/MHedish](https://paypal.me/MHedish)
