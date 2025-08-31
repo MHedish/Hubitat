@@ -1,5 +1,5 @@
 /*
-*  UniFi Presence Device (Optimized + Logging Control + Persistent Version Info)
+*  UniFi Presence Device (Child Driver)
 *
 *  Copyright 2025 MHedish
 *  Licensed under the Apache License, Version 2.0
@@ -18,13 +18,15 @@
 *  20250828 -- v1.3.5: Unified setPresence for refreshFromParent + commands
 *  20250829 -- v1.3.9: Preferences hide clientMAC for hotspot child; refresh() checks hotspot flag
 *  20250829 -- v1.3.9: Updated logging utilities
+*  20250830 -- v1.4.5: Stable release aligned with parent
+*  20250831 -- v1.4.7: Normalize clientMAC (convert '-' to ':' + lowercase) on preference update and parent setup
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.3.9"
-@Field static final String DRIVER_MODIFIED = "2025.08.29"
+@Field static final String DRIVER_VERSION  = "1.4.7"
+@Field static final String DRIVER_MODIFIED = "2025.08.31"
 
 /* ===============================
    Version Info
@@ -61,6 +63,7 @@ metadata {
         attribute "driverInfo", "string"
         attribute "ssid", "string"
         attribute "hotspotGuests", "number"
+        attribute "totalHotspotClients", "number"
     }
 }
 
@@ -68,24 +71,35 @@ metadata {
    Preferences
    =============================== */
 preferences {
-    section {
+    section("Device Settings") {
         // Only show MAC preference for normal clients, not hotspot child
         if (getDataValue("hotspot") != "true") {
-            input "clientMAC", "text", title: "Device MAC", required: true
+            input "clientMAC", "text", title: "Device MAC Address", required: true
         }
     }
-    section {
-        input "logEnable", "bool", title: "Enable debug logging", defaultValue: false
+    section("Logging") {
+        input "logEnable", "bool", title: "Enable Debug Logging", defaultValue: false
     }
 }
 
 /* ===============================
    Logging Utilities
    =============================== */
-private logDebug(msg) { if (logEnable) log.debug "[${DRIVER_NAME}] $msg" }
-private logInfo(msg)  { log.info  "[${DRIVER_NAME}] $msg" }
-private logWarn(msg)  { log.warn  "[${DRIVER_NAME}] $msg" }
-private logError(msg) { log.error "[${DRIVER_NAME}] $msg" }
+private logDebug(msg) { 
+    if (logEnable) log.debug "[${DRIVER_NAME}] $msg" 
+}
+
+private logInfo(msg)  { 
+    log.info  "[${DRIVER_NAME}] $msg" 
+}
+
+private logWarn(msg)  { 
+    log.warn  "[${DRIVER_NAME}] $msg" 
+}
+
+private logError(msg) { 
+    log.error "[${DRIVER_NAME}] $msg" 
+}
 
 private emitEvent(String name, def value, String descriptionText = null) {
     sendEvent(name: name, value: value, descriptionText: descriptionText)
@@ -102,8 +116,21 @@ def installed() {
 
 def updated() {
     logDebug "Preferences updated"
+
+    // ? Normalize MAC formatting silently (replace '-' with ':', lowercase)
+    if (settings.clientMAC) {
+        def normalized = settings.clientMAC.replaceAll("-", ":").toLowerCase()
+        if (normalized != settings.clientMAC) {
+            device.updateSetting("clientMAC", [value: normalized, type: "text"])
+            logInfo "Normalized clientMAC to ${normalized}"
+        }
+    }
+
     if (getDataValue("hotspot") != "true" && clientMAC) {
         device.setDeviceNetworkId(parent?.childDni(clientMAC))
+        logInfo "Configured as Normal client child"
+    } else {
+        logInfo "Configured as Hotspot client child"        
     }
     configure()
 
@@ -151,8 +178,10 @@ def setupFromParent(clientDetails) {
     if (!clientDetails) return
     if (getDataValue("hotspot") == "true") return  // skip for hotspot
 
-    device.setDeviceNetworkId(parent?.childDni(clientDetails.mac))
-    device.updateSetting("clientMAC", [value: clientDetails.mac, type: "text"])
+    // ? Normalize MAC formatting from parent input too
+    def normalized = clientDetails.mac?.replaceAll("-", ":")?.toLowerCase()
+    device.setDeviceNetworkId(parent?.childDni(normalized))
+    device.updateSetting("clientMAC", [value: normalized, type: "text"])
     refresh()
 }
 
@@ -166,9 +195,10 @@ def refreshFromParent(clientDetails) {
     }
 
     if (clientDetails.accessPoint) emitEvent("accessPoint", clientDetails.accessPoint)
-    if (clientDetails.apName) emitEvent("accessPointName", clientDetails.apName)
+    if (clientDetails.accessPointName) emitEvent("accessPointName", clientDetails.accessPointName)
     if (clientDetails.ssid != null) emitEvent("ssid", clientDetails.ssid)
     if (clientDetails.hotspotGuests != null) emitEvent("hotspotGuests", clientDetails.hotspotGuests)
+    if (clientDetails.totalHotspotClients != null) emitEvent("totalHotspotClients", clientDetails.totalHotspotClients)
 
     if (clientDetails.switch) emitEvent("switch", clientDetails.switch)
 }
