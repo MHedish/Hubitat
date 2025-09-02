@@ -1,5 +1,5 @@
 /*
-*  UniFi Presence Device (Child Driver)
+*  UniFi Presence Device
 *
 *  Copyright 2025 MHedish
 *  Licensed under the Apache License, Version 2.0
@@ -18,15 +18,15 @@
 *  20250828 -- v1.3.5: Unified setPresence for refreshFromParent + commands
 *  20250829 -- v1.3.9: Preferences hide clientMAC for hotspot child; refresh() checks hotspot flag
 *  20250829 -- v1.3.9: Updated logging utilities
-*  20250830 -- v1.4.5: Stable release aligned with parent
-*  20250831 -- v1.4.7: Normalize clientMAC (convert '-' to ':' + lowercase) on preference update and parent setup
+*  20250831 -- v1.4.7: Normalize clientMAC (dashes ? colons), aligned logging
+*  20250901 -- v1.4.8: Synced with parent driver (2025.09.01 release)
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.4.7"
-@Field static final String DRIVER_MODIFIED = "2025.08.31"
+@Field static final String DRIVER_VERSION  = "1.4.8"
+@Field static final String DRIVER_MODIFIED = "2025.09.01"
 
 /* ===============================
    Version Info
@@ -47,7 +47,12 @@ private updateVersionInfo() {
    Metadata
    =============================== */
 metadata {
-    definition(name: DRIVER_NAME, namespace: "MHedish", author: "Marc Hedish", importUrl: "") {
+    definition(
+        name: DRIVER_NAME,
+        namespace: "MHedish",
+        author: "Marc Hedish",
+        importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy"
+    ) {
         capability "PresenceSensor"
         capability "Refresh"
         capability "Switch"
