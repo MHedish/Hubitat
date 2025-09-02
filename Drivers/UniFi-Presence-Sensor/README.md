@@ -1,108 +1,125 @@
-# UniFi Presence Controller & Device Drivers for Hubitat
+# UniFi Presence Sensor for Hubitat
 
-## Overview
-These drivers integrate your **UniFi Controller / UniFi OS (UDM, UDM-Pro, Cloud Key Gen2+)** with **Hubitat Elevation**, allowing you to track presence of wireless clients and hotspot guests in real time.
+This project provides a **Hubitat parent/child driver pair** that integrates with a UniFi Controller or UniFi OS Console to track device presence and hotspot guests in real time.  
 
-- **Parent Driver:** `UniFi Presence Controller`
-- **Child Driver:** `UniFi Presence Device`
-
-The parent driver connects to your UniFi Controller, listens for events, and manages child devices. Each client or hotspot guest is represented as a child device with **Presence, Switch, and Access Point metadata**.
+- **Parent Driver** → Manages connection to UniFi Controller (via WebSocket + REST).  
+- **Child Driver(s)** → Represent individual clients (phones, laptops, IoT devices) and an optional hotspot guest tracker.  
 
 ---
 
-## ✨ Features
-- Tracks presence for UniFi **Wireless Users** and **Wireless Guests**
-- Supports **Hotspot Guest tracking** (connected vs total guest clients)
-- **Debounced disconnects** to prevent false “departed” events
-- **SSID extraction** from UniFi events
-- Auto-creates **Child Devices** for each UniFi client
-- Optional **Hotspot Child Device** to summarize guest activity
-- **Switch control** to block/unblock clients directly from Hubitat
-- Built-in **logging controls** (debug + raw UniFi event logging with auto-disable)
-- **Version info tile** on both parent and child devices
+## Features
+
+- Real-time presence detection using UniFi WebSocket events.  
+- Debounce handling to smooth transient disconnects.  
+- SSID, Access Point MAC + Display Name reporting.  
+- **Hotspot support**:  
+  - `hotspotGuests` → actively connected clients.  
+  - `totalHotspotClients` → non-expired clients (still on guest list).  
+- Switch capability for clients → block/unblock devices directly from Hubitat.  
+- Debug logging (auto-disables after 30 minutes).  
+- Automatic cookie/session refresh to prevent 2-hour flapping (v1.4.8).  
+- Import URLs for one-click installation via Hubitat.  
 
 ---
 
-## 🛠️ Installation
+## Installation
 
-You can install these drivers into **Hubitat Elevation** using the **Import URL** feature.
+### 1. Add Drivers
+In Hubitat:  
+- Go to **Drivers Code → New Driver → Import**.  
+- Import each driver using its `importUrl`:  
 
-1. In Hubitat, go to **Drivers Code → New Driver**.
-2. Paste the **Import URL** for each driver into the code editor and click **Import**.
-3. Save the driver.
+**Parent Driver:**
+https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy?utm_source=chatgpt.com
 
-### Import URLs
-- **Parent Driver (UniFi Presence Controller):**  
-  [UniFi_Presence_Controller.groovy](https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy)
+**Child Driver:**
+https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy?utm_source=chatgpt.com
 
-- **Child Driver (UniFi Presence Device):**  
-  [UniFi_Presence_Device.groovy](https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy)
-
----
-
-### Setup
-1. After importing both drivers, create a **Virtual Device** in Hubitat.
-2. Assign the type as **UniFi Presence Controller (Parent)**.
-3. Configure the following preferences in the Parent driver:
-   - **Controller IP** (your UniFi Controller / UDM IP)
-   - **Site Name** (default = `default`)
-   - **Username / Password** (API user with appropriate rights)
-   - Optional: Custom port, refresh interval, debounce, hotspot monitoring.
-4. Child devices are automatically created for clients and hotspot guests.
+Click **Save** for each driver.  
 
 ---
 
-## ⚙️ Preferences (Parent)
-- **UniFi Controller IP Address**  
-- **Site Name**  
-- **Username / Password**  
-- **Refresh Interval** (seconds, default 300)  
-- **Disconnect Debounce** (seconds, default 30)  
-- **HTTP Timeout** (seconds, default 15)  
-- **Monitor Hotspot Clients** (on/off)  
-- **Enable Debug Logging** (auto disables after 30 min)  
-- **Enable Raw Event Logging** (auto disables after 30 min)  
+### 2. Create Parent Device
+- Go to **Devices → Add Virtual Device**.  
+- Name it (e.g. `UniFi Presence Controller`).  
+- Assign the **UniFi Presence Controller** driver.  
 
 ---
 
-## 📡 Hotspot Tracking
-- Tracks both:
-  - **`hotspotGuests`** → currently connected (verified via `_last_seen_by_uap`)
-  - **`totalHotspotClients`** → total non-expired hotspot clients
-- Helps distinguish between devices that are still *registered* vs actually *connected*.
+### 3. Configure Parent Device
+In the parent device settings:  
+- Enter **UniFi Controller IP**.  
+- Enter **Site Name** (default = `default`).  
+- Enter **Username / Password**.  
+- Adjust preferences (refresh interval, debounce time, logging).  
+- Enable **Hotspot Clients** if desired.  
+
+Click **Save Preferences**.  
 
 ---
 
-## 🔄 Versioning
-Both drivers track version and modification date in `driverInfo`.
-
-### Current Release
-- **v1.4.7 (2025.08.31)**
-  - Synced parent & child version numbers
-  - Child driver normalizes `clientMAC` (replaces `-` with `:` and lowercases)  
-  - No functional changes to parent, version bump for consistency
+### 4. Create Child Devices
+- From the parent device page, run `createClientDevice("Device Name", "aa:bb:cc:dd:ee:ff")`.  
+- The parent will create child devices using the **UniFi Presence Device** driver.  
+- A special **Hotspot child** is created automatically if hotspot monitoring is enabled.  
 
 ---
 
-## 🚦 Changelog Highlights
-- **v1.4.7 (2025.08.31)** – Child MAC normalization, synced version/date with parent  
-- **v1.4.5 (2025.08.30)** – Stable release, added hotspot guest `_last_seen_by_uap` validation  
-- **v1.3.x** – Added hotspot monitoring framework, error handling improvements  
-- **v1.2.x** – SSID extraction, debounce disconnects, refined presence tracking  
+## Attributes
+
+### Parent Device
+- `commStatus` → Communication status with UniFi.  
+- `driverInfo` → Driver version and last modified date.  
+- `eventStream` → Raw UniFi events (optional logging).  
+
+### Child Device
+- `presence` → present / not present.  
+- `accessPoint` → AP MAC.  
+- `accessPointName` → Friendly AP name.  
+- `ssid` → Wi-Fi SSID (if available).  
+- `switch` → on/off = allow/block device.  
+- `hotspotGuests` → actively connected hotspot clients (only for hotspot child).  
+- `totalHotspotClients` → all non-expired hotspot clients.  
 
 ---
 
-## 🙏 Credits
-- Original foundation by **@tomw**  
-- Enhancements, optimizations, and hotspot monitoring by **Marc Hedish (MHedish)**
+## Commands
+
+### Parent Device
+- `createClientDevice(name, mac)` → manually add a child.  
+- `disableDebugLoggingNow()` → turn off debug logging immediately.  
+- `disableRawEventLoggingNow()` → turn off raw UniFi event logging immediately.  
+
+### Child Device
+- `arrived()` → manually set presence to present.  
+- `departed()` → manually set presence to not present.  
+- `on()` → allow device network access (unblock-sta).  
+- `off()` → disallow device network access (block-sta).  
 
 ---
 
-## 📜 License
-Apache License 2.0 — see [LICENSE](https://www.apache.org/licenses/LICENSE-2.0)
+## Known Good Version
+
+**Current release:**  
+- Parent: v1.4.8 (2025.09.01)  
+- Child: v1.4.8 (2025.09.01)  
+
+Stable: proactive cookie refresh + presence flapping fix.  
 
 ---
 
-## 💡 Support
-If you find this useful, consider supporting development:  
-👉 [paypal.me/MHedish](https://paypal.me/MHedish)
+## Notes
+
+- Requires HTTPS access to UniFi Controller or UniFi OS Console.  
+- Tested against UniFi OS with site API `proxy/network/api/s/[site]`.  
+- Debug logs will auto-disable after 30 minutes to reduce noise.  
+
+---
+
+## Changelog (Highlights)
+
+- **v1.4.8 (2025.09.01)**:  
+  - Parent: proactive cookie refresh (110m), cleaned refreshFromChild logging.  
+  - Child: MAC normalization, synced attributes, aligned with parent release.  
+- **v1.4.5 (2025.08.30)**: Stable release, hotspot presence verified via `_last_seen_by_uap`.  
+- **v1.3.x**: Introduced hotspot framework, error handling improvements.
