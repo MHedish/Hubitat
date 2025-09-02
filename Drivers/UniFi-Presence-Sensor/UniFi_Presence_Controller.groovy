@@ -11,29 +11,12 @@
 *  20250813 -- Initial version based on tomw
 *  20250818 -- Added driver info tile
 *  20250819 -- Optimized, unified queries, debounce + logging improvements
-*  20250822 -- v1.2.4: Added childDni() helper; unified logging/events with child
-*  20250822 -- v1.2.5: Added SSID extraction from UniFi events; cleared on disconnect
-*  20250822 -- v1.2.6: Added SSID to REST refresh; always cleared when not present
-*  20250822 -- v1.2.7: disconnectDebounce default=10; refined markNotPresent logic
-*  20250822 -- v1.2.8: (bug) tried dynamic debounce scheduling – unsupported
-*  20250822 -- v1.2.9: Fixed debounce handling; reconnect cancels pending disconnects
-*  20250822 -- v1.2.10: SSID values sanitized (quotes stripped)
-*  20250822 -- v1.2.11: Updated parse() ordering (debounce cancel before duplicate check)
-*  20250822 -- v1.2.12: Presence only set if evt.ap is non-null
-*  20250822 -- v1.2.13: Presence not present if client missing OR ap_mac missing
-*  20250825 -- v1.2.14: Track only Wireless User + Guest events (drop LAN events)
-*  20250825 -- v1.2.15: Child DNI uses rightmost 8 characters of MAC
-*  20250825 -- v1.2.16: Child DNI uses rightmost 6 characters of MAC
-*  20250826 -- v1.2.17: Updated getKnownClientsSuffix
-*  20250828 -- v1.3.0: HotSpot monitoring framework introduced
-*  20250828 -- v1.3.5: Added timeout preference for HTTP requests
-*  20250828 -- v1.3.7: Better error handling in httpExecWithAuthCheck
-*  20250828 -- v1.3.9: HotSpot event handling with debounce
-*  20250829 -- v1.3.13: Stable rollback point
-*  20250829 -- v1.3.14: HotSpot child detection via Device Data flag
-*  20250829 -- v1.3.15: Restored deleteHotspotChild(), updated disconnectDebounce (30s) + httpTimeout (15s) defaults
-*  20250830 -- v1.4.5: Stable release aligned with child
-*  20250831 -- v1.4.7: Synced version/date with child driver (no functional changes)
+*  20250822 -- v1.2.4–1.2.13: SSID handling, debounce refinements, LAN event filtering
+*  20250825 -- v1.2.14–1.2.16: Hotspot monitoring tweaks, child DNI changes
+*  20250828 -- v1.3.0–1.3.9: Hotspot monitoring framework + debounce handling
+*  20250829 -- v1.3.13–1.3.15: Hotspot child detection, disconnectDebounce default=30s, httpTimeout=15s
+*  20250830 -- v1.4.5: Stable release; hotspot presence verification via _last_seen_by_uap
+*  20250901 -- v1.4.8: Proactive cookie refresh (110 min), quiet null handling in refreshFromChild(), refined logging
 */
 
 import groovy.transform.Field
@@ -41,8 +24,8 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.4.7"
-@Field static final String DRIVER_MODIFIED = "2025.08.31"
+@Field static final String DRIVER_VERSION  = "1.4.8"
+@Field static final String DRIVER_MODIFIED = "2025.09.01"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
 @Field List disconnectingEvents = ["EVT_WU_Disconnected", "EVT_WG_Disconnected"]
@@ -66,7 +49,12 @@ def setVersion() {
    Metadata
    =============================== */
 metadata {
-    definition(name: DRIVER_NAME, namespace: "MHedish", author: "Marc Hedish", importUrl: "") {
+    definition(
+        name: DRIVER_NAME,
+        namespace: "MHedish",
+        author: "Marc Hedish",
+        importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy"
+    ) {
         capability "Initialize"
         capability "Refresh"
 
@@ -308,17 +296,25 @@ def refreshChildren() {
 
 def refreshFromChild(mac) {
     def client = queryClientByMac(mac)
+    logDebug "refreshFromChild(${mac}) ? ${client ?: 'offline/null'}"
+
+    if (!client) return
+
     def states = [
         presence: (client?.ap_mac ? "present" : "not present"),
-        accessPoint: client?.ap_mac ?: "unknown",
-        accessPointName: client?.ap_displayName ?: client?.last_uplink_name ?: "unknown",
-        ssid: client?.essid ? client.essid.replaceAll(/^\"+|\"+$/, '') : null,
-        switch: (client && client.blocked == false) ? "on" : null
+        ap      : client?.ap_mac ?: "unknown",
+        apName  : client?.ap_displayName ?: client?.last_uplink_name ?: "unknown",
+        ssid    : client?.essid ? client.essid.replaceAll(/^\"+|\"+$/, '') : null,
+        switch  : (client && client.blocked == false) ? "on" : null
     ]
+
     def child = findChildDevice(mac)
-    if (child) {
-        child.refreshFromParent(states)
+    if (!child) {
+        logWarn "refreshFromChild(): no child found for ${mac}"
+        return
     }
+
+    child.refreshFromParent(states)
 }
 
 def refreshHotspotChild() {
@@ -588,6 +584,12 @@ def login() {
         }
         setCookie(cookie)
         setCsrf(csrf)
+
+        // Proactively refresh cookie before UniFi invalidates (~2h). Schedule at 110 minutes (6600s).
+        runIn(6600, refreshCookie)
+
+        logDebug "[${DRIVER_NAME}] login() succeeded"
+        logDebug "[${DRIVER_NAME}] Scheduled cookie refresh in 6600s"
     }
     catch (e) {
         logError "login() failed: ${e.message}"
