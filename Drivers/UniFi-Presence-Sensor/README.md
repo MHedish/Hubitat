@@ -1,39 +1,3 @@
-# UniFi Presence Sensor for Hubitat
-
-This project provides a **Hubitat parent/child driver pair** that integrates with a UniFi Controller or UniFi OS Console to track device presence and hotspot guests in real time.  
-
-- **Parent Driver** → Manages connection to UniFi Controller (via WebSocket + REST).  
-- **Child Driver(s)** → Represent individual clients (phones, laptops, IoT devices) and an optional hotspot guest tracker.  
-
----
-
-## Features
-
-- Real-time presence detection using UniFi WebSocket events.  
-- Debounce handling to smooth transient disconnects.  
-- SSID, Access Point MAC + Display Name reporting.  
-- **Hotspot support**:  
-  - `hotspotGuests` → actively connected clients.  
-  - `totalHotspotClients` → non-expired clients (still on guest list).  
-- Switch capability for clients → block/unblock devices directly from Hubitat.  
-- Debug logging (auto-disables after 30 minutes).  
-- Automatic cookie/session refresh to prevent 2-hour flapping (v1.4.8).  
-- Import URLs for one-click installation via Hubitat.  
-
----
-
-## Installation
-
-### 1. Add Drivers
-In Hubitat:  
-- Go to **Drivers Code → New Driver → Import**.  
-- Import each driver using its `importUrl`:  
-
-**Parent Driver:**
-https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy?utm_source=chatgpt.com
-
-**Child Driver:**
-https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy?utm_source=chatgpt.com
 
 Click **Save** for each driver.  
 
@@ -65,12 +29,16 @@ Click **Save Preferences**.
 
 ---
 
-## Attributes
+## 📊 Attributes
 
 ### Parent Device
 - `commStatus` → Communication status with UniFi.  
 - `driverInfo` → Driver version and last modified date.  
 - `eventStream` → Raw UniFi events (optional logging).  
+- `deviceType` → UniFi device type (e.g., `udm`).  
+- `hostName` → Hostname of UniFi console.  
+- `UniFiOS` → Console display version (e.g., `3.2.12`).  
+- `Network` → UniFi Network version (e.g., `8.1.127`).  
 
 ### Child Device
 - `presence` → present / not present.  
@@ -83,7 +51,7 @@ Click **Save Preferences**.
 
 ---
 
-## Commands
+## 🛠️ Commands
 
 ### Parent Device
 - `createClientDevice(name, mac)` → manually add a child.  
@@ -98,17 +66,17 @@ Click **Save Preferences**.
 
 ---
 
-## Known Good Version
+## 🧪 Known Good Version
 
-**Current release:**  
-- Parent: v1.4.8 (2025.09.01)  
-- Child: v1.4.8 (2025.09.01)  
+**Current rollback release:**  
+- Parent: v1.4.9 (2025.09.02)  
+- Child: v1.4.9 (2025.09.02)  
 
-Stable: proactive cookie refresh + presence flapping fix.  
+✅ Stable: includes sysinfo attributes and cleaned preferences.  
 
 ---
 
-## Notes
+## 💡 Notes
 
 - Requires HTTPS access to UniFi Controller or UniFi OS Console.  
 - Tested against UniFi OS with site API `proxy/network/api/s/[site]`.  
@@ -116,10 +84,9 @@ Stable: proactive cookie refresh + presence flapping fix.
 
 ---
 
-## Changelog (Highlights)
+## 📝 Changelog (Highlights)
 
-- **v1.4.8 (2025.09.01)**:  
-  - Parent: proactive cookie refresh (110m), cleaned refreshFromChild logging.  
-  - Child: MAC normalization, synced attributes, aligned with parent release.  
+- **v1.4.9 (2025.09.02)**: Rollback anchor release. Sysinfo attributes added; preferences cleaned.  
+- **v1.4.8.x (2025.09.01–09.02)**: Incremental sysinfo work + cleanup.  
 - **v1.4.5 (2025.08.30)**: Stable release, hotspot presence verified via `_last_seen_by_uap`.  
-- **v1.3.x**: Introduced hotspot framework, error handling improvements.
+- **v1.3.x**: Introduced hotspot framework, error handling improvements.  
