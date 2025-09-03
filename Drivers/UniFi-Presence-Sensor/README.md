@@ -1,3 +1,41 @@
+# UniFi Presence Sensor for Hubitat
+
+This project provides a **Hubitat parent/child driver pair** that integrates with a UniFi Controller or UniFi OS Console to track device presence and hotspot guests in real time.  
+
+- **Parent Driver** → Manages connection to UniFi Controller (via WebSocket + REST).  
+- **Child Driver(s)** → Represent individual clients (phones, laptops, IoT devices) and an optional hotspot guest tracker.  
+
+---
+
+## ✨ Features
+
+- Real-time presence detection using UniFi WebSocket events.  
+- Debounce handling to smooth transient disconnects.  
+- SSID, Access Point MAC + Display Name reporting.  
+- **Hotspot support**:  
+  - `hotspotGuests` → actively connected clients.  
+  - `totalHotspotClients` → non-expired clients (still on guest list).  
+- Switch capability for clients → block/unblock devices directly from Hubitat.  
+- Debug logging (auto-disables after 30 minutes).  
+- Automatic cookie/session refresh to prevent 2-hour flapping.  
+- Import URLs for one-click installation via Hubitat.  
+- Sysinfo attributes exposed on Parent device (`deviceType`, `hostName`, `UniFiOS`, `Network`).  
+
+---
+
+## 📥 Installation
+
+### 1. Add Drivers
+In Hubitat:  
+- Go to **Drivers Code → New Driver → Import**.  
+- Import each driver using its `importUrl`:  
+
+**Parent Driver:**
+https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy
+
+**Child Driver:**
+https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy
+
 
 Click **Save** for each driver.  
 
@@ -89,4 +127,4 @@ Click **Save Preferences**.
 - **v1.4.9 (2025.09.02)**: Rollback anchor release. Sysinfo attributes added; preferences cleaned.  
 - **v1.4.8.x (2025.09.01–09.02)**: Incremental sysinfo work + cleanup.  
 - **v1.4.5 (2025.08.30)**: Stable release, hotspot presence verified via `_last_seen_by_uap`.  
-- **v1.3.x**: Introduced hotspot framework, error handling improvements.  
+- **v1.3.x**: Introduced hotspot framework, error handling improvements.
