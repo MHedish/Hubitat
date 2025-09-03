@@ -21,12 +21,14 @@
 *  20250831 -- v1.4.7: Normalize clientMAC (dashes ? colons), aligned logging
 *  20250901 -- v1.4.8: Synced with parent driver (2025.09.01 release)
 *  20250902 -- v1.4.8.1: Cleaned preferences (removed invalid section blocks)
+*  20250902 -- v1.4.9: Rollback anchor release. Includes cleaned preferences.
+*  20250902 -- v1.4.9.1: Added presenceTimestamp attribute (updated from parent presence changes)
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.4.8.1"
+@Field static final String DRIVER_VERSION  = "1.4.9.1"
 @Field static final String DRIVER_MODIFIED = "2025.09.02"
 
 /* ===============================
@@ -70,6 +72,7 @@ metadata {
         attribute "ssid", "string"
         attribute "hotspotGuests", "number"
         attribute "totalHotspotClients", "number"
+        attribute "presenceTimestamp", "string"   // v1.4.9.1
     }
 }
 
@@ -121,7 +124,7 @@ def installed() {
 def updated() {
     logDebug "Preferences updated"
 
-    // ? Normalize MAC formatting silently (replace '-' with ':', lowercase)
+    // Normalize MAC formatting silently (replace '-' with ':', lowercase)
     if (settings.clientMAC) {
         def normalized = settings.clientMAC.replaceAll("-", ":").toLowerCase()
         if (normalized != settings.clientMAC) {
@@ -203,8 +206,9 @@ def refreshFromParent(clientDetails) {
     if (clientDetails.ssid != null) emitEvent("ssid", clientDetails.ssid)
     if (clientDetails.hotspotGuests != null) emitEvent("hotspotGuests", clientDetails.hotspotGuests)
     if (clientDetails.totalHotspotClients != null) emitEvent("totalHotspotClients", clientDetails.totalHotspotClients)
-
+    if (clientDetails.presenceTimestamp) emitEvent("presenceTimestamp", clientDetails.presenceTimestamp)   // v1.4.9.1
     if (clientDetails.switch) emitEvent("switch", clientDetails.switch)
+
 }
 
 /* ===============================
