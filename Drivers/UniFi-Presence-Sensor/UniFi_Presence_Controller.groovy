@@ -17,6 +17,8 @@
 *  20250829 -- v1.3.13–1.3.15: Hotspot child detection, disconnectDebounce default=30s, httpTimeout=15s
 *  20250830 -- v1.4.5: Stable release; hotspot presence verification via _last_seen_by_uap
 *  20250901 -- v1.4.8: Proactive cookie refresh (110 min), quiet null handling in refreshFromChild(), refined logging
+*  20250902 -- v1.4.8.3: Exposed sysinfo fields as attributes (deviceType, hostName, UniFiOS, Network)
+*  20250902 -- v1.4.8.4: Cleaned preferences (removed invalid section blocks, replaced with comments)
 */
 
 import groovy.transform.Field
@@ -24,8 +26,8 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.4.8"
-@Field static final String DRIVER_MODIFIED = "2025.09.01"
+@Field static final String DRIVER_VERSION  = "1.4.8.4"
+@Field static final String DRIVER_MODIFIED = "2025.09.02"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
 @Field List disconnectingEvents = ["EVT_WU_Disconnected", "EVT_WG_Disconnected"]
@@ -49,18 +51,21 @@ def setVersion() {
    Metadata
    =============================== */
 metadata {
-    definition(
-        name: DRIVER_NAME,
-        namespace: "MHedish",
-        author: "Marc Hedish",
-        importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy"
-    ) {
+    definition(name: DRIVER_NAME, namespace: "MHedish", author: "Marc Hedish", 
+               importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy") {
         capability "Initialize"
         capability "Refresh"
 
         attribute "commStatus", "string"
         attribute "eventStream", "string"
+        attribute "silentModeStatus", "string"
         attribute "driverInfo", "string"
+
+        // New sysinfo attributes
+        attribute "deviceType", "string"
+        attribute "hostName", "string"
+        attribute "UniFiOS", "string"
+        attribute "Network", "string"
 
         command "createClientDevice", ["name", "mac"]
         command "disableDebugLoggingNow"
@@ -72,31 +77,30 @@ metadata {
    Preferences
    =============================== */
 preferences {
-    section("Controller Settings") {
-        input "controllerIP", "text", title: "UniFi Controller IP Address", required: true
-        input "siteName", "text", title: "Site Name", defaultValue: "default", required: true
-        input "logEvents", "bool", title: "Log all events", defaultValue: false
-    }
-    section("Authentication") {
-        input "username", "text", title: "Username", required: true
-        input "password", "password", title: "Password", required: true
-    }
-    section("General & Logging") {
-        input "refreshInterval", "number", title: "Refresh/Reconnect Interval (seconds, recommended=300)", defaultValue: 300
-        input "logEnable", "bool", title: "Enable Debug Logging", defaultValue: false
-        input "logRawEvents", "bool", title: "Enable raw UniFi event debug logging", defaultValue: false
-    }
-    section("Networking") {
-        input "customPort", "bool", title: "Use Custom Port? (uncommon)", defaultValue: false
-        input "customPortNum", "number", title: "Custom Port Number", required: false
-    }
-    section("Timeouts & Debounce") {
-        input "disconnectDebounce", "number", title: "Disconnect Debounce (seconds, default=30)", defaultValue: 30
-        input "httpTimeout", "number", title: "HTTP Timeout (seconds, default=15)", defaultValue: 15
-    }
-    section("Hotspot Monitoring") {
-        input "monitorHotspot", "bool", title: "Monitor Hotspot Clients", defaultValue: false
-    }
+    // Controller connection
+    input "controllerIP", "text", title: "UniFi Controller IP Address", required: true
+    input "siteName", "text", title: "Site Name", defaultValue: "default", required: true
+    input "logEvents", "bool", title: "Log all events", defaultValue: false
+
+    // Authentication
+    input "username", "text", title: "Username", required: true
+    input "password", "password", title: "Password", required: true
+
+    // Refresh & Logging
+    input "refreshInterval", "number", title: "Refresh/Reconnect Interval (seconds, recommended=300)", defaultValue: 300
+    input "logEnable", "bool", title: "Enable Debug Logging", defaultValue: false
+    input "logRawEvents", "bool", title: "Enable raw UniFi event debug logging", defaultValue: false
+
+    // Custom Port (optional)
+    input "customPort", "bool", title: "Use Custom Port? (uncommon)", defaultValue: false
+    input "customPortNum", "number", title: "Custom Port Number", required: false
+
+    // Timeouts & Debounce
+    input "disconnectDebounce", "number", title: "Disconnect Debounce (seconds, default=30)", defaultValue: 30
+    input "httpTimeout", "number", title: "HTTP Timeout (seconds, default=15)", defaultValue: 15
+
+    // Hotspot Monitoring
+    input "monitorHotspot", "bool", title: "Monitor Hotspot Clients", defaultValue: false
 }
 
 /* ===============================
@@ -143,6 +147,9 @@ def updated() {
     } else {
         deleteHotspotChild()
     }
+
+    // Refresh system info from controller
+    querySysInfo()
 
     if (logEnable) {
         logInfo "Debug logging enabled for 30 minutes"
@@ -233,7 +240,7 @@ def createHotspotChild() {
             [label: "Guest", isComponent: false, name: "UniFi Hotspot"]
         )
         newChild.updateDataValue("hotspot", "true")
-        logInfo "Created HotSpot child device"
+        logInfo "Created Hotspot child device"
     }
     catch (e) { 
         logError "createHotspotChild() failed: ${e.message}" 
@@ -245,7 +252,7 @@ def deleteHotspotChild() {
         def child = getChildDevices()?.find { it.getDataValue("hotspot") == "true" }
         if (child) { 
             deleteChildDevice(child.deviceNetworkId) 
-            logInfo "Deleted HotSpot child device" 
+            logInfo "Deleted Hotspot child device" 
         }
     }
     catch (e) { 
@@ -526,6 +533,37 @@ def queryClientByMac(mac) { queryClients("stat/sta/${mac}", true) }
 def queryActiveClients()  { queryClients("stat/sta", false) }
 def queryKnownClients()   { queryClients("rest/user", false) }
 
+def querySysInfo() {
+    try {
+        def resp = runQuery("stat/sysinfo", true)
+        def sysinfo = resp?.data?.data?.getAt(0)
+        if (!sysinfo) return
+
+        def udmVersion = sysinfo.udm_version
+        def consoleDisplayVersion = sysinfo.console_display_version
+        def networkVersion = sysinfo.version
+        def deviceType = sysinfo.ubnt_device_type
+        def hostName = sysinfo.hostname
+
+        // Debug log
+        logDebug "sysinfo.udm_version = ${udmVersion}"
+
+        // Set attributes (and also mirror to state if you want history)
+        sendEvent(name: "deviceType", value: deviceType)
+        sendEvent(name: "hostName", value: hostName)
+        sendEvent(name: "UniFiOS", value: consoleDisplayVersion)
+        sendEvent(name: "Network", value: networkVersion)
+
+        state.deviceType = deviceType
+        state.hostName = hostName
+        state.UniFiOS = consoleDisplayVersion
+        state.Network = networkVersion
+
+    } catch (e) {
+        logError "querySysInfo() failed: ${e.message}"
+    }
+}
+
 def reinitialize() {
     def delay = Math.min((state.reconnectDelay ?: 1) * 2, 600)
     state.reconnectDelay = delay
@@ -587,6 +625,9 @@ def login() {
 
         // Proactively refresh cookie before UniFi invalidates (~2h). Schedule at 110 minutes (6600s).
         runIn(6600, refreshCookie)
+
+        // Pull sysinfo from controller
+        querySysInfo()
 
         logDebug "[${DRIVER_NAME}] login() succeeded"
         logDebug "[${DRIVER_NAME}] Scheduled cookie refresh in 6600s"
