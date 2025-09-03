@@ -19,6 +19,8 @@
 *  20250901 -- v1.4.8: Proactive cookie refresh (110 min), quiet null handling in refreshFromChild(), refined logging
 *  20250902 -- v1.4.8.3: Exposed sysinfo fields as attributes (deviceType, hostName, UniFiOS, Network)
 *  20250902 -- v1.4.8.4: Cleaned preferences (removed invalid section blocks, replaced with comments)
+*  20250902 -- v1.4.9: Rollback anchor release. Includes sysinfo attributes and cleaned preferences.
+*  20250902 -- v1.4.9.1: Added presenceTimestamp support (formatted string on presence changes)
 */
 
 import groovy.transform.Field
@@ -26,7 +28,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.4.8.4"
+@Field static final String DRIVER_VERSION  = "1.4.9.1"
 @Field static final String DRIVER_MODIFIED = "2025.09.02"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
@@ -313,6 +315,7 @@ def refreshFromChild(mac) {
         apName  : client?.ap_displayName ?: client?.last_uplink_name ?: "unknown",
         ssid    : client?.essid ? client.essid.replaceAll(/^\"+|\"+$/, '') : null,
         switch  : (client && client.blocked == false) ? "on" : null
+        // no presenceTimestamp here; only set on event-based changes
     ]
 
     def child = findChildDevice(mac)
@@ -330,7 +333,7 @@ def refreshHotspotChild() {
         def activeGuests = guests.findAll { !it.expired }
         def totalGuests = activeGuests?.size() ?: 0
 
-        // ? Verify via _last_seen_by_uap
+        // Verify via _last_seen_by_uap
         def connectedGuests = activeGuests.findAll { g -> g?.mac && isGuestConnected(g.mac) }*.mac
         def connectedCount = connectedGuests.size()
         def presence = connectedCount > 0 ? "present" : "not present"
@@ -367,7 +370,7 @@ void parse(String message) {
 
             if (logRawEvents) logDebug "parse() raw event: ${evt}"
 
-            // ? Hotspot guest events
+            // Hotspot guest events
             def hotspotChild = getChildDevices()?.find { it.getDataValue("hotspot") == "true" }
             if (hotspotChild && evt.guest) {
                 logDebug "Hotspot event detected ? ${evt.key} for guest=${evt.guest}"
@@ -375,7 +378,7 @@ void parse(String message) {
                 return
             }
 
-            // ? Normal client
+            // Normal client
             def child = findChildDevice(evt.user)
             if (!child) return
 
@@ -407,7 +410,8 @@ void parse(String message) {
                 presence: "present",
                 accessPoint: evt.ap ?: "unknown",
                 accessPointName: evt.ap_displayName ?: "unknown",
-                ssid: ssidVal
+                ssid: ssidVal,
+                presenceTimestamp: formatTimestamp(evt.time)
             ])
         }
     }
@@ -438,8 +442,19 @@ def markNotPresent(data) {
         presence: "not present",
         accessPoint: data.evt.ap ?: "unknown",
         accessPointName: data.evt.ap_displayName ?: "unknown",
-        ssid: null
+        ssid: null,
+        presenceTimestamp: formatTimestamp(data.evt.time)
     ])
+}
+
+private formatTimestamp(rawTime) {
+    if (!rawTime) return "unknown"
+    try {
+        def date = new Date(rawTime as Long)
+        return date.format("yyyy-MM-dd HH:mm:ss", location.timeZone)
+    } catch (e) {
+        return "unknown"
+    }
 }
 
 /* ===============================
@@ -545,19 +560,12 @@ def querySysInfo() {
         def deviceType = sysinfo.ubnt_device_type
         def hostName = sysinfo.hostname
 
-        // Debug log
         logDebug "sysinfo.udm_version = ${udmVersion}"
 
-        // Set attributes (and also mirror to state if you want history)
         sendEvent(name: "deviceType", value: deviceType)
         sendEvent(name: "hostName", value: hostName)
         sendEvent(name: "UniFiOS", value: consoleDisplayVersion)
         sendEvent(name: "Network", value: networkVersion)
-
-        state.deviceType = deviceType
-        state.hostName = hostName
-        state.UniFiOS = consoleDisplayVersion
-        state.Network = networkVersion
 
     } catch (e) {
         logError "querySysInfo() failed: ${e.message}"
