@@ -20,13 +20,14 @@
 *  20250829 -- v1.3.9: Updated logging utilities
 *  20250831 -- v1.4.7: Normalize clientMAC (dashes ? colons), aligned logging
 *  20250901 -- v1.4.8: Synced with parent driver (2025.09.01 release)
+*  20250902 -- v1.4.8.1: Cleaned preferences (removed invalid section blocks)
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.4.8"
-@Field static final String DRIVER_MODIFIED = "2025.09.01"
+@Field static final String DRIVER_VERSION  = "1.4.8.1"
+@Field static final String DRIVER_MODIFIED = "2025.09.02"
 
 /* ===============================
    Version Info
@@ -76,15 +77,13 @@ metadata {
    Preferences
    =============================== */
 preferences {
-    section("Device Settings") {
-        // Only show MAC preference for normal clients, not hotspot child
-        if (getDataValue("hotspot") != "true") {
-            input "clientMAC", "text", title: "Device MAC Address", required: true
-        }
+    // Client MAC (not shown for hotspot child)
+    if (getDataValue("hotspot") != "true") {
+        input "clientMAC", "text", title: "Device MAC", required: true
     }
-    section("Logging") {
-        input "logEnable", "bool", title: "Enable Debug Logging", defaultValue: false
-    }
+
+    // Debug Logging
+    input "logEnable", "bool", title: "Enable Debug Logging", defaultValue: false
 }
 
 /* ===============================
