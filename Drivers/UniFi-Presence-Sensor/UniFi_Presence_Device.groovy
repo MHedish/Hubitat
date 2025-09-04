@@ -18,18 +18,20 @@
 *  20250828 -- v1.3.5: Unified setPresence for refreshFromParent + commands
 *  20250829 -- v1.3.9: Preferences hide clientMAC for hotspot child; refresh() checks hotspot flag
 *  20250829 -- v1.3.9: Updated logging utilities
-*  20250831 -- v1.4.7: Normalize clientMAC (dashes ? colons), aligned logging
+*  20250831 -- v1.4.7: Normalize clientMAC (dashes → colons), aligned logging
 *  20250901 -- v1.4.8: Synced with parent driver (2025.09.01 release)
 *  20250902 -- v1.4.8.1: Cleaned preferences (removed invalid section blocks)
 *  20250902 -- v1.4.9: Rollback anchor release. Includes cleaned preferences.
 *  20250902 -- v1.4.9.1: Added presenceTimestamp attribute (updated from parent presence changes)
+*  20250903 -- v1.5.0: Added hotspotGuestList attribute (list of connected guest MACs for hotspot child)
+*  20250904 -- v1.5.2: Synced with parent driver; supports "empty" string for cleared hotspotGuestList
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.4.9.1"
-@Field static final String DRIVER_MODIFIED = "2025.09.02"
+@Field static final String DRIVER_VERSION  = "1.5.2"
+@Field static final String DRIVER_MODIFIED = "2025.09.04"
 
 /* ===============================
    Version Info
@@ -46,9 +48,6 @@ private updateVersionInfo() {
     emitEvent("driverInfo", info)
 }
 
-/* ===============================
-   Metadata
-   =============================== */
 metadata {
     definition(
         name: DRIVER_NAME,
@@ -72,7 +71,8 @@ metadata {
         attribute "ssid", "string"
         attribute "hotspotGuests", "number"
         attribute "totalHotspotClients", "number"
-        attribute "presenceTimestamp", "string"   // v1.4.9.1
+        attribute "presenceTimestamp", "string"
+        attribute "hotspotGuestList", "string"
     }
 }
 
@@ -92,20 +92,20 @@ preferences {
 /* ===============================
    Logging Utilities
    =============================== */
-private logDebug(msg) { 
-    if (logEnable) log.debug "[${DRIVER_NAME}] $msg" 
+private logDebug(msg) {
+    if (logEnable) log.debug "[${DRIVER_NAME}] $msg"
 }
 
-private logInfo(msg)  { 
-    log.info  "[${DRIVER_NAME}] $msg" 
+private logInfo(msg)  {
+    log.info  "[${DRIVER_NAME}] $msg"
 }
 
-private logWarn(msg)  { 
-    log.warn  "[${DRIVER_NAME}] $msg" 
+private logWarn(msg)  {
+    log.warn  "[${DRIVER_NAME}] $msg"
 }
 
-private logError(msg) { 
-    log.error "[${DRIVER_NAME}] $msg" 
+private logError(msg) {
+    log.error "[${DRIVER_NAME}] $msg"
 }
 
 private emitEvent(String name, def value, String descriptionText = null) {
@@ -137,7 +137,7 @@ def updated() {
         device.setDeviceNetworkId(parent?.childDni(clientMAC))
         logInfo "Configured as Normal client child"
     } else {
-        logInfo "Configured as Hotspot client child"        
+        logInfo "Configured as Hotspot client child"
     }
     configure()
 
@@ -181,22 +181,10 @@ def refresh() {
 /* ===============================
    Parent Callbacks
    =============================== */
-def setupFromParent(clientDetails) {
-    if (!clientDetails) return
-    if (getDataValue("hotspot") == "true") return  // skip for hotspot
-
-    // ? Normalize MAC formatting from parent input too
-    def normalized = clientDetails.mac?.replaceAll("-", ":")?.toLowerCase()
-    device.setDeviceNetworkId(parent?.childDni(normalized))
-    device.updateSetting("clientMAC", [value: normalized, type: "text"])
-    refresh()
-}
-
 def refreshFromParent(clientDetails) {
     logDebug "refreshFromParent(${clientDetails})"
     if (!clientDetails) return
 
-    // Use setPresence for consistency (handles arrived/departed events)
     if (clientDetails.presence != null) {
         setPresence(clientDetails.presence == "present")
     }
@@ -206,9 +194,13 @@ def refreshFromParent(clientDetails) {
     if (clientDetails.ssid != null) emitEvent("ssid", clientDetails.ssid)
     if (clientDetails.hotspotGuests != null) emitEvent("hotspotGuests", clientDetails.hotspotGuests)
     if (clientDetails.totalHotspotClients != null) emitEvent("totalHotspotClients", clientDetails.totalHotspotClients)
-    if (clientDetails.presenceTimestamp) emitEvent("presenceTimestamp", clientDetails.presenceTimestamp)   // v1.4.9.1
     if (clientDetails.switch) emitEvent("switch", clientDetails.switch)
+    if (clientDetails.presenceTimestamp) emitEvent("presenceTimestamp", clientDetails.presenceTimestamp)
 
+    // Always emit hotspotGuestList if parent includes it (even "empty" or null)
+    if (clientDetails.containsKey("hotspotGuestList")) {
+        emitEvent("hotspotGuestList", clientDetails.hotspotGuestList)
+    }
 }
 
 /* ===============================
