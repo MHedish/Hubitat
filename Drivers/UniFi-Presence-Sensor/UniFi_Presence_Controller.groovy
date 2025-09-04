@@ -21,6 +21,9 @@
 *  20250902 -- v1.4.8.4: Cleaned preferences (removed invalid section blocks, replaced with comments)
 *  20250902 -- v1.4.9: Rollback anchor release. Includes sysinfo attributes and cleaned preferences.
 *  20250902 -- v1.4.9.1: Added presenceTimestamp support (formatted string on presence changes)
+*  20250903 -- v1.5.0: Added hotspotGuestList support (list of connected guest MACs for hotspot child)
+*  20250904 -- v1.5.1: Fixed hotspotGuestList clearing when no connected guests remain
+*  20250904 -- v1.5.2: Stabilized hotspotGuestList reporting (uses "empty" string when list clears)
 */
 
 import groovy.transform.Field
@@ -28,8 +31,8 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.4.9.1"
-@Field static final String DRIVER_MODIFIED = "2025.09.02"
+@Field static final String DRIVER_VERSION  = "1.5.2"
+@Field static final String DRIVER_MODIFIED = "2025.09.04"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
 @Field List disconnectingEvents = ["EVT_WU_Disconnected", "EVT_WG_Disconnected"]
@@ -38,8 +41,8 @@ import groovy.json.JsonOutput
 /* ===============================
    Version Info
    =============================== */
-def driverInfoString() { 
-    "${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})" 
+def driverInfoString() {
+    "${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"
 }
 
 def setVersion() {
@@ -53,7 +56,7 @@ def setVersion() {
    Metadata
    =============================== */
 metadata {
-    definition(name: DRIVER_NAME, namespace: "MHedish", author: "Marc Hedish", 
+    definition(name: DRIVER_NAME, namespace: "MHedish", author: "Marc Hedish",
                importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy") {
         capability "Initialize"
         capability "Refresh"
@@ -108,20 +111,20 @@ preferences {
 /* ===============================
    Logging Utilities
    =============================== */
-private logDebug(msg) { 
-    if (logEnable) log.debug "[${DRIVER_NAME}] $msg" 
+private logDebug(msg) {
+    if (logEnable) log.debug "[${DRIVER_NAME}] $msg"
 }
 
-private logInfo(msg)  { 
-    log.info  "[${DRIVER_NAME}] $msg" 
+private logInfo(msg)  {
+    log.info  "[${DRIVER_NAME}] $msg"
 }
 
-private logWarn(msg)  { 
-    log.warn  "[${DRIVER_NAME}] $msg" 
+private logWarn(msg)  {
+    log.warn  "[${DRIVER_NAME}] $msg"
 }
 
-private logError(msg) { 
-    log.error "[${DRIVER_NAME}] $msg" 
+private logError(msg) {
+    log.error "[${DRIVER_NAME}] $msg"
 }
 
 private emitEvent(String name, def value, String desc = null) {
@@ -184,7 +187,7 @@ def autoDisableDebugLogging() {
 }
 
 def disableDebugLoggingNow() {
-    try { unschedule(autoDisableDebugLogging) } 
+    try { unschedule(autoDisableDebugLogging) }
     catch (ignored) { logDebug "unschedule(autoDisableDebugLogging) ignored" }
     device.updateSetting("logEnable", [value:"false", type:"bool"])
     logInfo "Debug logging disabled (manual command)"
@@ -196,7 +199,7 @@ def autoDisableRawEventLogging() {
 }
 
 def disableRawEventLoggingNow() {
-    try { unschedule(autoDisableRawEventLogging) } 
+    try { unschedule(autoDisableRawEventLogging) }
     catch (ignored) { logDebug "unschedule(autoDisableRawEventLogging) ignored" }
     device.updateSetting("logRawEvents", [value:"false", type:"bool"])
     logInfo "Raw event logging disabled (manual command)"
@@ -212,9 +215,9 @@ def childDni(String mac) {
     return "UniFi-${cleaned[-6..-1]}"
 }
 
-def findChildDevice(mac) { 
-    def id = childDni(mac) 
-    return id ? getChildDevice(id) : null 
+def findChildDevice(mac) {
+    def id = childDni(mac)
+    return id ? getChildDevice(id) : null
 }
 
 def createClientDevice(name, mac) {
@@ -222,14 +225,14 @@ def createClientDevice(name, mac) {
         def shortMac = childDni(mac)
         if (!shortMac) return
         def child = addChildDevice(
-            "UniFi Presence Device", 
-            shortMac, 
+            "UniFi Presence Device",
+            shortMac,
             [label: name, isComponent: false, name: name]
         )
         child?.setupFromParent([mac: mac])
     }
-    catch (e) { 
-        logError "createClientDevice() failed: ${e.message}" 
+    catch (e) {
+        logError "createClientDevice() failed: ${e.message}"
     }
 }
 
@@ -237,28 +240,28 @@ def createHotspotChild() {
     try {
         if (getChildDevices()?.find { it.getDataValue("hotspot") == "true" }) return
         def newChild = addChildDevice(
-            "UniFi Presence Device", 
-            "UniFi-hotspot", 
+            "UniFi Presence Device",
+            "UniFi-hotspot",
             [label: "Guest", isComponent: false, name: "UniFi Hotspot"]
         )
         newChild.updateDataValue("hotspot", "true")
         logInfo "Created Hotspot child device"
     }
-    catch (e) { 
-        logError "createHotspotChild() failed: ${e.message}" 
+    catch (e) {
+        logError "createHotspotChild() failed: ${e.message}"
     }
 }
 
 def deleteHotspotChild() {
     try {
         def child = getChildDevices()?.find { it.getDataValue("hotspot") == "true" }
-        if (child) { 
-            deleteChildDevice(child.deviceNetworkId) 
-            logInfo "Deleted Hotspot child device" 
+        if (child) {
+            deleteChildDevice(child.deviceNetworkId)
+            logInfo "Deleted Hotspot child device"
         }
     }
-    catch (e) { 
-        logError "deleteHotspotChild() failed: ${e.message}" 
+    catch (e) {
+        logError "deleteHotspotChild() failed: ${e.message}"
     }
 }
 
@@ -269,9 +272,9 @@ def writeDeviceMacCmd(mac, cmd) {
         logInfo "Sent ${cmd} for ${mac}"
         return true
     }
-    catch (e) { 
-        logError "writeDeviceMacCmd(${mac}, ${cmd}) failed: ${e.message}" 
-        return false 
+    catch (e) {
+        logError "writeDeviceMacCmd(${mac}, ${cmd}) failed: ${e.message}"
+        return false
     }
 }
 
@@ -287,6 +290,42 @@ def isGuestConnected(mac) {
     catch (e) {
         logError "isGuestConnected(${mac}) failed: ${e.message}"
         return false
+    }
+}
+
+def refreshHotspotChild() {
+    try {
+        def guests = queryClients("stat/guest", false)
+        def activeGuests = guests.findAll { !it.expired }
+        def totalGuests = activeGuests?.size() ?: 0
+
+        // Verify via _last_seen_by_uap
+        def connectedGuests = activeGuests.findAll { g -> g?.mac && isGuestConnected(g.mac) }.collect { it.mac }
+        def connectedCount = connectedGuests.size()
+        def presence = connectedCount > 0 ? "present" : "not present"
+
+        // Build guest list as raw MAC addresses, clear when empty
+        def guestList = connectedGuests ? connectedGuests.join(", ") : "empty"
+
+        def child = getChildDevices()?.find { it.getDataValue("hotspot") == "true" }
+        if (!child) return
+
+        child.refreshFromParent([
+            presence: presence,
+            hotspotGuests: connectedCount,
+            totalHotspotClients: totalGuests,
+            hotspotGuestList: guestList
+        ])
+
+        if (logEnable) {
+            logDebug "Hotspot: total non-expired guests (${totalGuests})"
+            logDebug "Hotspot: connected MACs (${connectedCount}) -> ${connectedGuests}"
+            logDebug "Hotspot summary -> presence=${presence}, connected=${connectedCount}, total=${totalGuests}"
+            logDebug "Hotspot guest list -> ${guestList}"
+        }
+    }
+    catch (e) {
+        logError "refreshHotspotChild() failed: ${e.message}"
     }
 }
 
@@ -325,37 +364,6 @@ def refreshFromChild(mac) {
     }
 
     child.refreshFromParent(states)
-}
-
-def refreshHotspotChild() {
-    try {
-        def guests = queryClients("stat/guest", false)
-        def activeGuests = guests.findAll { !it.expired }
-        def totalGuests = activeGuests?.size() ?: 0
-
-        // Verify via _last_seen_by_uap
-        def connectedGuests = activeGuests.findAll { g -> g?.mac && isGuestConnected(g.mac) }*.mac
-        def connectedCount = connectedGuests.size()
-        def presence = connectedCount > 0 ? "present" : "not present"
-
-        def child = getChildDevices()?.find { it.getDataValue("hotspot") == "true" }
-        if (!child) return
-
-        child.refreshFromParent([
-            presence: presence,
-            hotspotGuests: connectedCount,
-            totalHotspotClients: totalGuests
-        ])
-
-        if (logEnable) {
-            logDebug "Hotspot: total non-expired guests (${totalGuests})"
-            logDebug "Hotspot: connected MACs (${connectedCount}) ? ${connectedGuests}"
-            logDebug "Hotspot summary ? presence=${presence}, connected=${connectedCount}, total=${totalGuests}"
-        }
-    }
-    catch (e) {
-        logError "refreshHotspotChild() failed: ${e.message}"
-    }
 }
 
 void parse(String message) {
@@ -581,9 +589,9 @@ def reinitialize() {
 def openEventSocket() {
     logDebug "Connecting websocket ? ${getWssURI(siteName)}"
     interfaces.webSocket.connect(
-        getWssURI(siteName), 
+        getWssURI(siteName),
         headers: genHeadersWss(),
-        ignoreSSLIssues: true, 
+        ignoreSSLIssues: true,
         perMessageDeflate: false
     )
 }
@@ -647,8 +655,8 @@ def login() {
 }
 
 def logout() {
-    try { 
-        httpExec("POST", genParamsAuth("logout")) 
+    try {
+        httpExec("POST", genParamsAuth("logout"))
     } catch (e) { }
 }
 
@@ -712,7 +720,7 @@ def httpExec(op, params) {
 def httpExecWithAuthCheck(op, params, throwToCaller=false) {
     try {
         return httpExec(op, params)
-    } 
+    }
     catch (groovyx.net.http.HttpResponseException e) {
         if (e.response?.status == 401) {
             logWarn "Auth failed (401), refreshing cookie"
@@ -722,7 +730,7 @@ def httpExecWithAuthCheck(op, params, throwToCaller=false) {
             return httpExec(op, params)
         }
         if (throwToCaller) throw e
-    } 
+    }
     catch (Exception e) {
         logError "httpExecWithAuthCheck() general error: ${e.message}"
         if (throwToCaller) throw e
@@ -732,25 +740,25 @@ def httpExecWithAuthCheck(op, params, throwToCaller=false) {
 /* ===============================
    Base URI & Endpoint Helpers
    =============================== */
-def getBaseURI() { 
-    return getUniFiOS() 
-        ? "https://${controllerIP}:${(customPort ? customPortNum : 443)}/" 
-        : "https://${controllerIP}:${(customPort ? customPortNum : 8443)}/" 
+def getBaseURI() {
+    return getUniFiOS()
+        ? "https://${controllerIP}:${(customPort ? customPortNum : 443)}/"
+        : "https://${controllerIP}:${(customPort ? customPortNum : 8443)}/"
 }
 
 def getLoginSuffix()  { getUniFiOS() ? "api/auth/login"  : "api/login" }
 def getLogoutSuffix() { getUniFiOS() ? "api/auth/logout" : "api/logout" }
 
-def getKnownClientsSuffix() { 
-    return getUniFiOS() 
-        ? "proxy/network/api/s/${siteName}/" 
-        : "api/s/${siteName}/" 
+def getKnownClientsSuffix() {
+    return getUniFiOS()
+        ? "proxy/network/api/s/${siteName}/"
+        : "api/s/${siteName}/"
 }
 
-def getWssURI(site) { 
-    return getUniFiOS() 
-        ? "wss://${controllerIP}:${(customPort ? customPortNum : 443)}/proxy/network/wss/s/${site}/events" 
-        : "wss://${controllerIP}:${(customPort ? customPortNum : 8443)}/wss/s/${site}/events" 
+def getWssURI(site) {
+    return getUniFiOS()
+        ? "wss://${controllerIP}:${(customPort ? customPortNum : 443)}/proxy/network/wss/s/${site}/events"
+        : "wss://${controllerIP}:${(customPort ? customPortNum : 8443)}/wss/s/${site}/events"
 }
 
 /* ===============================
