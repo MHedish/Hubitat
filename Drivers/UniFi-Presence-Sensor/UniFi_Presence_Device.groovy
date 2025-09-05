@@ -24,13 +24,15 @@
 *  20250902 -- v1.4.9: Rollback anchor release. Includes cleaned preferences.
 *  20250902 -- v1.4.9.1: Added presenceTimestamp attribute (updated from parent presence changes)
 *  20250903 -- v1.5.0: Added hotspotGuestList attribute (list of connected guest MACs for hotspot child)
-*  20250904 -- v1.5.2: Synced with parent driver; supports "empty" string for cleared hotspotGuestList
+*  20250904 -- v1.5.3: Added hotspotGuestListRaw attribute (raw MAC addresses for hotspot child)
+*  20250904 -- v1.5.4: Synced with parent versioning
+*  20250904 -- v1.5.6: Placeholder sync with parent (no functional child changes in this release)
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.5.2"
+@Field static final String DRIVER_VERSION  = "1.5.6"
 @Field static final String DRIVER_MODIFIED = "2025.09.04"
 
 /* ===============================
@@ -72,7 +74,8 @@ metadata {
         attribute "hotspotGuests", "number"
         attribute "totalHotspotClients", "number"
         attribute "presenceTimestamp", "string"
-        attribute "hotspotGuestList", "string"
+        attribute "hotspotGuestList", "string"     // Friendly names or placeholder
+        attribute "hotspotGuestListRaw", "string"  // Raw MAC addresses
     }
 }
 
@@ -181,10 +184,26 @@ def refresh() {
 /* ===============================
    Parent Callbacks
    =============================== */
+def setupFromParent(clientDetails) {
+    if (!clientDetails) return
+    if (getDataValue("hotspot") == "true") return  // skip for hotspot children
+
+    // Normalize MAC formatting from parent
+    def normalized = clientDetails.mac?.replaceAll("-", ":")?.toLowerCase()
+    if (normalized) {
+        device.setDeviceNetworkId(parent?.childDni(normalized))
+        device.updateSetting("clientMAC", [value: normalized, type: "text"])
+        logInfo "setupFromParent(): Configured clientMAC = ${normalized}"
+    }
+
+    refresh()
+}
+
 def refreshFromParent(clientDetails) {
     logDebug "refreshFromParent(${clientDetails})"
     if (!clientDetails) return
 
+    // Use setPresence for consistency (handles arrived/departed events)
     if (clientDetails.presence != null) {
         setPresence(clientDetails.presence == "present")
     }
@@ -192,14 +211,18 @@ def refreshFromParent(clientDetails) {
     if (clientDetails.accessPoint) emitEvent("accessPoint", clientDetails.accessPoint)
     if (clientDetails.accessPointName) emitEvent("accessPointName", clientDetails.accessPointName)
     if (clientDetails.ssid != null) emitEvent("ssid", clientDetails.ssid)
+
     if (clientDetails.hotspotGuests != null) emitEvent("hotspotGuests", clientDetails.hotspotGuests)
     if (clientDetails.totalHotspotClients != null) emitEvent("totalHotspotClients", clientDetails.totalHotspotClients)
     if (clientDetails.switch) emitEvent("switch", clientDetails.switch)
     if (clientDetails.presenceTimestamp) emitEvent("presenceTimestamp", clientDetails.presenceTimestamp)
 
-    // Always emit hotspotGuestList if parent includes it (even "empty" or null)
-    if (clientDetails.containsKey("hotspotGuestList")) {
+    // Hotspot lists
+    if (clientDetails.hotspotGuestList != null) {
         emitEvent("hotspotGuestList", clientDetails.hotspotGuestList)
+    }
+    if (clientDetails.hotspotGuestListRaw != null) {
+        emitEvent("hotspotGuestListRaw", clientDetails.hotspotGuestListRaw)
     }
 }
 
