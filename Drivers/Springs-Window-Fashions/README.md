@@ -15,4 +15,4 @@ The drivers are availble via the Hubitat Package Manager or can be installed man
 5 - Click on "Save" in the top right.
 6 - Once the driver is added either connect your shade or, for an existing shade, select the new "Springs Window Fashions Sheer Shade" driver.
 
-Once isntalled be sure to configure and save your preference settings.
+Once installed be sure to configure and save your preference settings.
