@@ -27,28 +27,28 @@
 *  20250904 -- v1.5.3: Added hotspotGuestListRaw attribute (raw MAC addresses for hotspot child)
 *  20250904 -- v1.5.4: Synced with parent versioning
 *  20250904 -- v1.5.6: Placeholder sync with parent (no functional child changes in this release)
+*  20250905 -- v1.5.7: Version info now auto-refreshes on refresh()
+*  20250905 -- v1.5.8: Logging overlap fix; presenceTimestamp renamed to presenceChanged
+*  20250905 -- v1.5.9: Normalized version handling (removed redundant state, aligned with parent)
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.5.6"
-@Field static final String DRIVER_MODIFIED = "2025.09.04"
+@Field static final String DRIVER_VERSION  = "1.5.9"
+@Field static final String DRIVER_MODIFIED = "2025.09.05"
 
 /* ===============================
    Version Info
    =============================== */
-def setVersion() {
-    state.name     = DRIVER_NAME
-    state.version  = DRIVER_VERSION
-    state.modified = DRIVER_MODIFIED
-    updateVersionInfo()
+def driverInfoString() {
+    "${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"
 }
 
-private updateVersionInfo() {
-    def info = "${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"
-    emitEvent("driverInfo", info)
+def setVersion() {
+    emitEvent("driverInfo", driverInfoString())
 }
+
 
 metadata {
     definition(
@@ -73,9 +73,10 @@ metadata {
         attribute "ssid", "string"
         attribute "hotspotGuests", "number"
         attribute "totalHotspotClients", "number"
-        attribute "presenceTimestamp", "string"
+        attribute "presenceChanged", "string"
         attribute "hotspotGuestList", "string"     // Friendly names or placeholder
         attribute "hotspotGuestListRaw", "string"  // Raw MAC addresses
+        attribute "switch", "string"               // Added to align with parent updates
     }
 }
 
@@ -146,6 +147,7 @@ def updated() {
 
     if (logEnable) {
         logInfo "${DRIVER_NAME}: Debug logging enabled for 30 minutes"
+        unschedule(logsOff)
         runIn(1800, logsOff)   // auto-disable after 30 minutes
     }
     setVersion()
@@ -215,7 +217,7 @@ def refreshFromParent(clientDetails) {
     if (clientDetails.hotspotGuests != null) emitEvent("hotspotGuests", clientDetails.hotspotGuests)
     if (clientDetails.totalHotspotClients != null) emitEvent("totalHotspotClients", clientDetails.totalHotspotClients)
     if (clientDetails.switch) emitEvent("switch", clientDetails.switch)
-    if (clientDetails.presenceTimestamp) emitEvent("presenceTimestamp", clientDetails.presenceTimestamp)
+    if (clientDetails.presenceChanged) emitEvent("presenceChanged", clientDetails.presenceChanged)
 
     // Hotspot lists
     if (clientDetails.hotspotGuestList != null) {
