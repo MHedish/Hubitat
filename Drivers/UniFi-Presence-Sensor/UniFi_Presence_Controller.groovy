@@ -22,8 +22,9 @@
 *  20250902 -- v1.4.9: Rollback anchor release. Includes sysinfo attributes and cleaned preferences.
 *  20250902 -- v1.4.9.1: Added presenceTimestamp support (formatted string on presence changes)
 *  20250903 -- v1.5.0: Added hotspotGuestList support (list of connected guest MACs for hotspot child)
-*  20250904 -- v1.5.1: Fixed hotspotGuestList clearing when no connected guests remain
-*  20250904 -- v1.5.2: Stabilized hotspotGuestList reporting (uses "empty" string when list clears)
+*  20250904 -- v1.5.4: Added bulk management (refresh/reconnect all), hotspotGuestListRaw support
+*  20250904 -- v1.5.5: Added autoCreateClients() framework with last-seen filter (default 30d)
+*  20250904 -- v1.5.6: Refined autoCreateClients() to use discovered name for label and hostname for child name
 */
 
 import groovy.transform.Field
@@ -31,7 +32,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.5.2"
+@Field static final String DRIVER_VERSION  = "1.5.6"
 @Field static final String DRIVER_MODIFIED = "2025.09.04"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
@@ -66,7 +67,7 @@ metadata {
         attribute "silentModeStatus", "string"
         attribute "driverInfo", "string"
 
-        // New sysinfo attributes
+        // Sysinfo attributes
         attribute "deviceType", "string"
         attribute "hostName", "string"
         attribute "UniFiOS", "string"
@@ -75,6 +76,17 @@ metadata {
         command "createClientDevice", ["name", "mac"]
         command "disableDebugLoggingNow"
         command "disableRawEventLoggingNow"
+
+        // Bulk management
+        command "refreshAllChildren"
+        command "reconnectAllChildren"
+
+        // Auto-create clients
+        command "autoCreateClients", [[
+            name: "Last Seen (days)",
+            type: "NUMBER",
+            description: "Create wireless clients seen in the last X days (default 30)"
+        ]]
     }
 }
 
@@ -279,6 +291,84 @@ def writeDeviceMacCmd(mac, cmd) {
 }
 
 /* ===============================
+   Bulk Management
+   =============================== */
+def refreshAllChildren() {
+    logInfo "Refreshing all children (bulk action)"
+    getChildDevices()?.each { child ->
+        if (child.getDataValue("hotspot") == "true") {
+            refreshHotspotChild()
+        } else {
+            def mac = child?.getSetting("clientMAC")
+            if (mac) refreshFromChild(mac)
+        }
+    }
+}
+
+def reconnectAllChildren() {
+    logInfo "Reconnecting all children (bulk action)"
+    state.disconnectTimers = [:]  // clear disconnect timers for all
+    getChildDevices()?.each { child ->
+        if (child.getDataValue("hotspot") == "true") {
+            refreshHotspotChild()
+        } else {
+            def mac = child?.getSetting("clientMAC")
+            if (mac) refreshFromChild(mac)
+        }
+    }
+}
+
+/* ===============================
+   Auto-Creation
+   =============================== */
+def autoCreateClients(days = null) {
+    try {
+        // Default to 30 days if no input
+        def lookbackDays = (days && days.toInteger() > 0) ? days.toInteger() : 30
+        logInfo "Auto-creating clients last seen within ${lookbackDays} days (wireless only)"
+
+        // Use Hubitat's now() instead of System.currentTimeMillis()
+        def since = (now() / 1000) - (lookbackDays * 86400)
+
+        def knownClients = queryKnownClients()
+        if (!knownClients) {
+            logWarn "autoCreateClients(): no clients returned by controller"
+            return
+        }
+
+        def wirelessCandidates = knownClients.findAll { c ->
+            c?.mac && !c.is_wired && (c.last_seen ?: 0) >= since
+        }
+
+        logInfo "Found ${wirelessCandidates.size()} eligible wireless clients"
+
+        wirelessCandidates.each { c ->
+            def mac = c.mac.replaceAll("-", ":").toLowerCase()
+            def existing = findChildDevice(mac)
+            if (existing) {
+                logDebug "Skipping ${mac}, child already exists"
+                return
+            }
+
+            // Friendly vs technical distinction
+            def label   = c.name ?: c.hostname ?: mac     // user-friendly label
+            def devName = c.hostname ?: c.name ?: mac     // technical device name
+
+            logInfo "Creating new child -> Label='${label}', Name='${devName}', MAC=${mac}"
+            def child = addChildDevice(
+                "UniFi Presence Device",
+                childDni(mac),
+                [label: label, name: devName, isComponent: false]
+            )
+            child?.setupFromParent([mac: mac])
+        }
+    }
+    catch (e) {
+        logError "autoCreateClients() failed: ${e.message}"
+    }
+}
+
+/* ===============================
    Hotspot Presence Validation
    =============================== */
 def isGuestConnected(mac) {
@@ -300,12 +390,19 @@ def refreshHotspotChild() {
         def totalGuests = activeGuests?.size() ?: 0
 
         // Verify via _last_seen_by_uap
-        def connectedGuests = activeGuests.findAll { g -> g?.mac && isGuestConnected(g.mac) }.collect { it.mac }
+        def connectedGuests = activeGuests.findAll { g -> g?.mac && isGuestConnected(g.mac) }
         def connectedCount = connectedGuests.size()
         def presence = connectedCount > 0 ? "present" : "not present"
 
-        // Build guest list as raw MAC addresses, clear when empty
-        def guestList = connectedGuests ? connectedGuests.join(", ") : "empty"
+        // Build raw MAC list
+        def guestListRaw = connectedGuests.collect { it.mac }
+        def guestListRawStr = guestListRaw ? guestListRaw.join(", ") : "empty"
+
+        // Friendly list (use name if available, else MAC)
+        def guestListFriendly = connectedGuests.collect { g ->
+            g?.hostname ?: g?.name ?: g?.mac
+        }
+        def guestListFriendlyStr = guestListFriendly ? guestListFriendly.join(", ") : "empty"
 
         def child = getChildDevices()?.find { it.getDataValue("hotspot") == "true" }
         if (!child) return
@@ -314,14 +411,15 @@ def refreshHotspotChild() {
             presence: presence,
             hotspotGuests: connectedCount,
             totalHotspotClients: totalGuests,
-            hotspotGuestList: guestList
+            hotspotGuestList: guestListFriendlyStr,
+            hotspotGuestListRaw: guestListRawStr
         ])
 
         if (logEnable) {
             logDebug "Hotspot: total non-expired guests (${totalGuests})"
-            logDebug "Hotspot: connected MACs (${connectedCount}) -> ${connectedGuests}"
+            logDebug "Hotspot: connected guests (${connectedCount}) -> ${guestListFriendlyStr}"
+            logDebug "Hotspot raw list -> ${guestListRawStr}"
             logDebug "Hotspot summary -> presence=${presence}, connected=${connectedCount}, total=${totalGuests}"
-            logDebug "Hotspot guest list -> ${guestList}"
         }
     }
     catch (e) {
