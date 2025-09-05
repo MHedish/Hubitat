@@ -3,6 +3,30 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 
 ---
 
+## v1.5.6 (2025-09-04)
+**Parent Driver**
+- Added `autoCreateClients(days)` command for automated child creation.
+  - Creates only wireless clients (`is_wired=false`) seen within the last X days (default = 30).
+  - Uses discovered **name** for the child label and **hostname** for the child device name, falling back to MAC if missing.
+  - Skips any clients that already have an associated child device.
+
+**Child Driver**
+- Version bump for alignment with parent.  
+  - No functional changes in this release.
+
+---
+
+## v1.5.5 (2025-09-04)
+**Parent Driver**
+- Added Bulk Management commands:
+  - `refreshAllChildren()` to refresh presence for all child devices.
+  - `reconnectAllChildren()` to reconnect and clear disconnect timers for all child devices.
+
+**Child Driver**
+- No functional changes; remained at v1.5.4.
+
+---
+
 ## [1.5.4] - 2025-09-04
 ### Added
 - **Parent Driver (UniFi Presence Controller)**
