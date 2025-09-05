@@ -25,6 +25,9 @@
 *  20250904 -- v1.5.4: Added bulk management (refresh/reconnect all), hotspotGuestListRaw support
 *  20250904 -- v1.5.5: Added autoCreateClients() framework with last-seen filter (default 30d)
 *  20250904 -- v1.5.6: Refined autoCreateClients() to use discovered name for label and hostname for child name
+*  20250905 -- v1.5.7: Version info now auto-refreshes on refresh() and refreshAllChildren()
+*  20250905 -- v1.5.8: Logging overlap fix; presenceTimestamp renamed to presenceChanged
+*  20250905 -- v1.5.9: Normalized version handling (removed redundant state, aligned with child)
 */
 
 import groovy.transform.Field
@@ -32,12 +35,8 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.5.6"
-@Field static final String DRIVER_MODIFIED = "2025.09.04"
-
-@Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
-@Field List disconnectingEvents = ["EVT_WU_Disconnected", "EVT_WG_Disconnected"]
-@Field List allConnectionEvents = connectingEvents + disconnectingEvents
+@Field static final String DRIVER_VERSION  = "1.5.9"
+@Field static final String DRIVER_MODIFIED = "2025.09.05"
 
 /* ===============================
    Version Info
@@ -47,9 +46,6 @@ def driverInfoString() {
 }
 
 def setVersion() {
-    state.name     = DRIVER_NAME
-    state.version  = DRIVER_VERSION
-    state.modified = DRIVER_MODIFIED
     emitEvent("driverInfo", driverInfoString())
 }
 
@@ -170,10 +166,12 @@ def updated() {
 
     if (logEnable) {
         logInfo "Debug logging enabled for 30 minutes"
+        unschedule(autoDisableDebugLogging)
         runIn(1800, autoDisableDebugLogging)
     }
     if (logRawEvents) {
         logInfo "Raw UniFi event logging enabled for 30 minutes"
+        unschedule(autoDisableDebugLogging)
         runIn(1800, autoDisableRawEventLogging)
     }
 }
@@ -295,6 +293,7 @@ def writeDeviceMacCmd(mac, cmd) {
    =============================== */
 def refreshAllChildren() {
     logInfo "Refreshing all children (bulk action)"
+    setVersion()
     getChildDevices()?.each { child ->
         if (child.getDataValue("hotspot") == "true") {
             refreshHotspotChild()
@@ -302,9 +301,13 @@ def refreshAllChildren() {
             def mac = child?.getSetting("clientMAC")
             if (mac) refreshFromChild(mac)
         }
+        try {
+            child.setVersion()
+        } catch (ignored) {
+            logDebug "Child ${child.displayName} does not support setVersion()"
+        }
     }
 }
-
 def reconnectAllChildren() {
     logInfo "Reconnecting all children (bulk action)"
     state.disconnectTimers = [:]  // clear disconnect timers for all
@@ -446,13 +449,13 @@ def refreshFromChild(mac) {
 
     if (!client) return
 
-    def states = [
-        presence: (client?.ap_mac ? "present" : "not present"),
-        ap      : client?.ap_mac ?: "unknown",
-        apName  : client?.ap_displayName ?: client?.last_uplink_name ?: "unknown",
-        ssid    : client?.essid ? client.essid.replaceAll(/^\"+|\"+$/, '') : null,
-        switch  : (client && client.blocked == false) ? "on" : null
-        // no presenceTimestamp here; only set on event-based changes
+def states = [
+    presence: (client?.ap_mac ? "present" : "not present"),
+    accessPoint: client?.ap_mac ?: "unknown",
+    accessPointName: client?.ap_displayName ?: client?.last_uplink_name ?: "unknown",
+    ssid: (client?.essid ? client.essid.replaceAll(/^\"+|\"+$/, '') : "unknown"),
+    switch: (client?.blocked == true) ? "off" : "on"
+    // no presenceChanged here; only set on event-based changes
     ]
 
     def child = findChildDevice(mac)
@@ -517,7 +520,7 @@ void parse(String message) {
                 accessPoint: evt.ap ?: "unknown",
                 accessPointName: evt.ap_displayName ?: "unknown",
                 ssid: ssidVal,
-                presenceTimestamp: formatTimestamp(evt.time)
+                presenceChanged: formatTimestamp(evt.time)
             ])
         }
     }
@@ -549,7 +552,7 @@ def markNotPresent(data) {
         accessPoint: data.evt.ap ?: "unknown",
         accessPointName: data.evt.ap_displayName ?: "unknown",
         ssid: null,
-        presenceTimestamp: formatTimestamp(data.evt.time)
+        presenceChanged: formatTimestamp(data.evt.time)
     ])
 }
 
@@ -621,6 +624,7 @@ def uninstalled() {
 
 def refresh() {
     unschedule("refresh")
+    setVersion()
     refreshChildren()
     refreshHotspotChild()
     scheduleOnce(refreshInterval, "refresh")
@@ -704,13 +708,14 @@ def closeEventSocket() {
 
 def refreshCookie() {
     try {
+        unschedule("refreshCookie")   // prevent overlapping refresh schedules
         login()
         emitEvent("commStatus", "good")
     }
     catch (e) {
         logError "refreshCookie() failed: ${e.message}"
         emitEvent("commStatus", "error")
-        throw e
+        reinitialize()
     }
 }
 
@@ -738,6 +743,7 @@ def login() {
         setCsrf(csrf)
 
         // Proactively refresh cookie before UniFi invalidates (~2h). Schedule at 110 minutes (6600s).
+        unschedule("refreshCookie")
         runIn(6600, refreshCookie)
 
         // Pull sysinfo from controller
