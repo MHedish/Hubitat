@@ -1,27 +1,43 @@
-# UniFi Presence Sensor for Hubitat
+# UniFi Presence Drivers
 
-This project provides a **Hubitat parent/child driver pair** that integrates with a UniFi Controller or UniFi OS Console to track device presence and hotspot guests in real time.  
-
-- **Parent Driver** → Manages connection to UniFi Controller (via WebSocket + REST).  
-- **Child Driver(s)** → Represent individual clients (phones, laptops, IoT devices) and an optional hotspot guest tracker.  
+Hubitat driver pair for detecting presence using a UniFi Network Controller or UniFi OS Console.  
+Supports wireless clients and hotspot guest monitoring with automatic child device creation.
 
 ---
 
 ## ✨ Features
 
-- Real-time presence detection using UniFi WebSocket events.  
-- Debounce handling to smooth transient disconnects.  
-- SSID, Access Point MAC + Display Name reporting.  
-- **Hotspot support**:  
-  - `hotspotGuests` → actively connected clients.  
-  - `totalHotspotClients` → non-expired clients (still on guest list).  
-- Switch capability for clients → block/unblock devices directly from Hubitat.  
-- Debug logging (auto-disables after 30 minutes).  
-- Automatic cookie/session refresh to prevent 2-hour flapping.  
-- Import URLs for one-click installation via Hubitat.  
-- Sysinfo attributes exposed on Parent device (`deviceType`, `hostName`, `UniFiOS`, `Network`).  
+### Parent Driver: UniFi Presence Controller
+- Connects to UniFi Controller / UniFi OS.
+- Tracks wireless clients for presence detection.
+- Supports hotspot guest monitoring (optional child device).
+- Bulk management:
+  - `refreshAllChildren()`
+  - `reconnectAllChildren()`
+- Automatic child device creation via `autoCreateClients(days)`.
+- Exposes UniFi sysinfo:
+  - `deviceType`, `hostName`, `UniFiOS`, `Network`.
+- Resilient cookie refresh (every 110 minutes).
+
+### Child Driver: UniFi Presence Device
+- Presence sensor with **Arrived** / **Departed** buttons.
+- Tracks access point, SSID, and hotspot guest details.
+- Switch capability for blocking/unblocking client devices.
+- Attributes:
+  - `presence`
+  - `presenceChanged` (timestamp of last change)
+  - `accessPoint`, `accessPointName`
+  - `ssid`
+  - `hotspotGuests`, `totalHotspotClients`
+  - `hotspotGuestList`, `hotspotGuestListRaw`
+  - `switch`
 
 ---
+
+## 📦 Installation (via HPM)
+
+The drivers are availble via the Hubitat Package Manager
+https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/packageManifest.json
 
 ## 📥 Installation
 
@@ -35,7 +51,6 @@ https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-
 
 **Child Driver:**
 https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy
-
 
 Click **Save** for each driver.  
 
@@ -61,70 +76,60 @@ Click **Save Preferences**.
 ---
 
 ### 4. Create Child Devices
-- From the parent device page, run `createClientDevice("Device Name", "aa:bb:cc:dd:ee:ff")`.  
+- From the parent device page, you can automatically create the child devices via **Auto Create Clients**
+This will read list of wireless devices that have been connected in the past XX days.  The default is 30 days.
+NOTE -- This can create a large number of devices.  You can manually delete the child devices to prune the list.
+
+Alternatively, you can manually enter a name and MAC address for the wireless devices you want to monitor via the **Create Client Device** option.
+
 - The parent will create child devices using the **UniFi Presence Device** driver.  
 - A special **Hotspot child** is created automatically if hotspot monitoring is enabled.  
 
 ---
 
-## 📊 Attributes
+## ⚙️ Configuration
 
-### Parent Device
-- `commStatus` → Communication status with UniFi.  
-- `driverInfo` → Driver version and last modified date.  
-- `eventStream` → Raw UniFi events (optional logging).  
-- `deviceType` → UniFi device type (e.g., `udm`).  
-- `hostName` → Hostname of UniFi console.  
-- `UniFiOS` → Console display version (e.g., `3.2.12`).  
-- `Network` → UniFi Network version (e.g., `8.1.127`).  
+### Required (Parent Driver)
+- **Controller IP** – UniFi Controller or UniFi OS hostname/IP.
+- **Username** / **Password** – UniFi account credentials.
+- **Site Name** – Typically `default`, or the name of your UniFi site.
 
-### Child Device
-- `presence` → present / not present.  
-- `accessPoint` → AP MAC.  
-- `accessPointName` → Friendly AP name.  
-- `ssid` → Wi-Fi SSID (if available).  
-- `switch` → on/off = allow/block device.  
-- `hotspotGuests` → actively connected hotspot clients (only for hotspot child).  
-- `totalHotspotClients` → all non-expired hotspot clients.  
+### Optional
+- **Custom Port** – Use uncommon ports if required.
+- **Disconnect Debounce** – Delay before marking devices “not present” (default 30s).
+- **Hotspot Monitoring** – Enable hotspot child device for guest tracking.
+- **Logging** – Enable debug or raw event logging (auto-disables after 30 min).
 
 ---
 
-## 🛠️ Commands
+## 📊 Attributes & Commands
 
-### Parent Device
-- `createClientDevice(name, mac)` → manually add a child.  
-- `disableDebugLoggingNow()` → turn off debug logging immediately.  
-- `disableRawEventLoggingNow()` → turn off raw UniFi event logging immediately.  
+### Parent Driver
+- **Attributes**: `commStatus`, `eventStream`, `driverInfo`, sysinfo fields.
+- **Commands**:  
+- `createClientDevice(name, mac)`  
+- `refreshAllChildren()` / `reconnectAllChildren()`  
+- `autoCreateClients(days)`  
 
-### Child Device
-- `arrived()` → manually set presence to present.  
-- `departed()` → manually set presence to not present.  
-- `on()` → allow device network access (unblock-sta).  
-- `off()` → disallow device network access (block-sta).  
-
----
-
-## 🧪 Known Good Version
-
-**Current rollback release:**  
-- Parent: v1.4.9 (2025.09.02)  
-- Child: v1.4.9 (2025.09.02)  
-
-✅ Stable: includes sysinfo attributes and cleaned preferences.  
+### Child Driver
+- **Attributes**: presence, access point info, SSID, hotspot guest details.  
+- **Commands**:  
+- `arrived()` / `departed()`  
+- `on()` / `off()` (block/unblock client access)  
 
 ---
 
-## 💡 Notes
-
-- Requires HTTPS access to UniFi Controller or UniFi OS Console.  
-- Tested against UniFi OS with site API `proxy/network/api/s/[site]`.  
-- Debug logs will auto-disable after 30 minutes to reduce noise.  
+## 📝 Version History
+See [Changelog](../../changelog.md) for full release notes.  
+Latest release: **v1.5.9 (2025-09-05)**  
+- Normalized version handling.  
+- Logging overlap fix.  
+- Presence timestamp renamed to `presenceChanged`.  
+- Cookie refresh scheduling hardened.  
 
 ---
 
-## 📝 Changelog (Highlights)
+## 📜 License
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)  
 
-- **v1.4.9 (2025.09.02)**: Rollback anchor release. Sysinfo attributes added; preferences cleaned.  
-- **v1.4.8.x (2025.09.01–09.02)**: Incremental sysinfo work + cleanup.  
-- **v1.4.5 (2025.08.30)**: Stable release, hotspot presence verified via `_last_seen_by_uap`.  
-- **v1.3.x**: Introduced hotspot framework, error handling improvements.
+© 2025 Marc Hedish
