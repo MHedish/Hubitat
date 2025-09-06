@@ -31,10 +31,11 @@
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/packageManifest.json",
       "description": "Hubitat driver pair for UniFi presence detection with client and hotspot monitoring"
       "tags": [
-        "Presence",
+        "Presence & Location",
         "Network",
         "UniFi"
       ]
     }
   ]
 }
+
