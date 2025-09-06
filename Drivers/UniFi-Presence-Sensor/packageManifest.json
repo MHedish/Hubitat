@@ -18,6 +18,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy",
       "required": true
+      "version": "1.5.9"      
     },
     {
       "id": "8e7c50a6-d3aa-11ef-b6e1-234567890002",
@@ -25,6 +26,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy",
       "required": true
+      "version": "1.5.9"            
     }
   ]
 }
