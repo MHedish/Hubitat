@@ -10,7 +10,7 @@
   "licenseFile": "https://www.apache.org/licenses/LICENSE-2.0",
   "description": "Hubitat driver pair for UniFi presence detection with client and hotspot monitoring.",
   "category": "Integrations",
-  "tags": ["Presence", "Network", "UniFi", "Hubitat"],
+  "tags": ["Presence & Location", "Network", "UniFi", "Hubitat"],
   "drivers": [
     {
       "id": "8e7c4f02-d3aa-11ef-b6e1-234567890001",
