@@ -23,6 +23,18 @@
         "Window Coverings",
         "ZWave"
       ]
+    },
+    {
+      "id": "b68d2d46-e199-46c9-a654-68ec7a1884a6",
+      "name": "UniFi Presence Drivers",
+      "category": "Utility",
+      "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/packageManifest.json",
+      "description": "Hubitat driver pair for UniFi presence detection with client and hotspot monitoring"
+      "tags": [
+        "Presence",
+        "Network",
+        "UniFi"
+      ]
     }
   ]
 }
