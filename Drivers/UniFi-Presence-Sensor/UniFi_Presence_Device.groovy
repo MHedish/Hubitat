@@ -30,13 +30,14 @@
 *  20250905 -- v1.5.7: Version info now auto-refreshes on refresh()
 *  20250905 -- v1.5.8: Logging overlap fix; presenceTimestamp renamed to presenceChanged
 *  20250905 -- v1.5.9: Normalized version handling (removed redundant state, aligned with parent)
+*  20250907 -- v1.5.10: Applied configurable httpTimeout to all HTTP calls
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.5.9"
-@Field static final String DRIVER_MODIFIED = "2025.09.05"
+@Field static final String DRIVER_VERSION  = "1.5.10"
+@Field static final String DRIVER_MODIFIED = "2025.09.07"
 
 /* ===============================
    Version Info
@@ -48,7 +49,6 @@ def driverInfoString() {
 def setVersion() {
     emitEvent("driverInfo", driverInfoString())
 }
-
 
 metadata {
     definition(
