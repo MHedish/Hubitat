@@ -28,6 +28,7 @@
 *  20250905 -- v1.5.7: Version info now auto-refreshes on refresh() and refreshAllChildren()
 *  20250905 -- v1.5.8: Logging overlap fix; presenceTimestamp renamed to presenceChanged
 *  20250905 -- v1.5.9: Normalized version handling (removed redundant state, aligned with child)
+*  20250907 -- v1.5.10: Applied configurable httpTimeout to all HTTP calls (httpExec, httpExecWithAuthCheck, isUniFiOS)
 */
 
 import groovy.transform.Field
@@ -35,8 +36,8 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.5.9"
-@Field static final String DRIVER_MODIFIED = "2025.09.05"
+@Field static final String DRIVER_VERSION  = "1.5.10"
+@Field static final String DRIVER_MODIFIED = "2025.09.07"
 
 /* ===============================
    Version Info
@@ -810,6 +811,11 @@ def genHeadersWss() {
 
 def httpExec(op, params) {
     def result
+    // Ensure timeout is always applied
+    if (!params.timeout) {
+        params.timeout = (httpTimeout ?: 15)
+    }
+
     logDebug "httpExec(${op}, ${params})"
     def cb = { resp -> result = resp }
     if (op == "POST") {
@@ -823,6 +829,11 @@ def httpExec(op, params) {
 
 def httpExecWithAuthCheck(op, params, throwToCaller=false) {
     try {
+        // Ensure timeout is always applied
+        if (!params.timeout) {
+            params.timeout = (httpTimeout ?: 15)
+        }
+
         return httpExec(op, params)
     }
     catch (groovyx.net.http.HttpResponseException e) {
@@ -871,13 +882,21 @@ def getWssURI(site) {
 def isUniFiOS() {
     def os
     try {
-        httpPost([uri: "https://${controllerIP}:${(customPort ? customPortNum : 8443)}", ignoreSSLIssues: true]) { resp ->
+        httpPost([
+            uri: "https://${controllerIP}:${(customPort ? customPortNum : 8443)}",
+            ignoreSSLIssues: true,
+            timeout: (httpTimeout ?: 15)
+        ]) { resp ->
             if (resp.status == 302) os = false
         }
     } catch (e) { }
 
     try {
-        httpPost([uri: "https://${controllerIP}:${(customPort ? customPortNum : 443)}/proxy/network/api/s/default/self", ignoreSSLIssues: true]) { resp ->
+        httpPost([
+            uri: "https://${controllerIP}:${(customPort ? customPortNum : 443)}/proxy/network/api/s/default/self",
+            ignoreSSLIssues: true,
+            timeout: (httpTimeout ?: 15)
+        ]) { resp ->
             if (resp.status == 200) os = true
         }
     }
