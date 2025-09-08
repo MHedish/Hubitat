@@ -18,7 +18,7 @@
 *  20250828 -- v1.3.5: Unified setPresence for refreshFromParent + commands
 *  20250829 -- v1.3.9: Preferences hide clientMAC for hotspot child; refresh() checks hotspot flag
 *  20250829 -- v1.3.9: Updated logging utilities
-*  20250831 -- v1.4.7: Normalize clientMAC (dashes → colons), aligned logging
+*  20250831 -- v1.4.7: Normalize clientMAC (dashes ? colons), aligned logging
 *  20250901 -- v1.4.8: Synced with parent driver (2025.09.01 release)
 *  20250902 -- v1.4.8.1: Cleaned preferences (removed invalid section blocks)
 *  20250902 -- v1.4.9: Rollback anchor release. Includes cleaned preferences.
@@ -31,13 +31,15 @@
 *  20250905 -- v1.5.8: Logging overlap fix; presenceTimestamp renamed to presenceChanged
 *  20250905 -- v1.5.9: Normalized version handling (removed redundant state, aligned with parent)
 *  20250907 -- v1.5.10: Applied configurable httpTimeout to all HTTP calls
+*  20250908 -- v1.5.10.1: Testing build – aligned with parent (no functional changes)
+*  20250908 -- v1.5.10.2: Synced with parent driver (restored event declarations in parent)
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.5.10"
-@Field static final String DRIVER_MODIFIED = "2025.09.07"
+@Field static final String DRIVER_VERSION  = "1.6.0"
+@Field static final String DRIVER_MODIFIED = "2025.09.08"
 
 /* ===============================
    Version Info
