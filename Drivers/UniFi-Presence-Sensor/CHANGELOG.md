@@ -2,6 +2,41 @@
 All notable changes to the UniFi Presence Drivers will be documented in this file.
 
 ---
+## v1.6.0 (2025-09-08)
+**Parent Driver**
+- Version bump for new development cycle (no functional changes).
+
+**Child Driver**
+- Version bump for new development cycle (no functional changes).
+
+---
+
+## v1.5.10.2 (2025-09-08)
+**Parent Driver**
+- Restored missing @Field event declarations (connectingEvents, disconnectingEvents, allConnectionEvents).
+
+**Child Driver**
+- Synced with parent driver (no functional changes).
+
+---
+
+## v1.5.10.1 (2025-09-08)
+**Parent Driver**
+- Testing build – fixed refreshFromChild not marking offline clients as not present (400 handling in queryClientByMac).
+
+**Child Driver**
+- Aligned with parent driver (no functional changes).
+
+---
+
+## v1.5.10 (2025-09-07)
+**Parent Driver**
+- Applied configurable httpTimeout to all HTTP calls (httpExec, httpExecWithAuthCheck, isUniFiOS).
+
+**Child Driver**
+- Synced with parent driver (no functional changes).
+
+---
 
 ## v1.5.9 (2025-09-05)
 ### Changed
