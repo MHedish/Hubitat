@@ -35,12 +35,13 @@
 *  20250908 -- v1.5.10.2: Synced with parent driver (restored event declarations in parent)
 *  20250908 -- v1.6.0: Version bump for new development cycle
 *  20250908 -- v1.6.0.1: Switch handling fix — child now queries parent after block/unblock to stay in sync
+*  20250908 -- v1.6.1: Consolidated fixes through v1.6.0.1 into stable release
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.6.0.1"
+@Field static final String DRIVER_VERSION  = "1.6.1"
 @Field static final String DRIVER_MODIFIED = "2025.09.08"
 
 /* ===============================
