@@ -37,6 +37,7 @@
 *  20250908 -- v1.6.0.3: Hardened login() — ensure refreshCookie is always rescheduled via finally block
 *  20250908 -- v1.6.0.4: Removed duplicate hotspot refresh call in refresh() to avoid double execution; added warning if UniFi login() returns no cookie
 *  20250908 -- v1.6.0.5: Improved resiliency — reset WebSocket backoff after stable connection; retry HTTP auth on 401/403
+*  20250908 -- v1.6.1: Consolidated fixes through v1.6.0.5 into stable release
 */
 
 import groovy.transform.Field
@@ -44,7 +45,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.6.0.5"
+@Field static final String DRIVER_VERSION  = "1.6.1"
 @Field static final String DRIVER_MODIFIED = "2025.09.08"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
