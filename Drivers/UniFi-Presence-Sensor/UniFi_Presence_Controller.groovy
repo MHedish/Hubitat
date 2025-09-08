@@ -33,6 +33,10 @@
 *  20250908 -- v1.5.10.2: Restored missing @Field event declarations (connectingEvents, disconnectingEvents, allConnectionEvents)
 *  20250908 -- v1.6.0: Version bump for new development cycle
 *  20250908 -- v1.6.0.1: Fixed incorrect unschedule() call for raw event logging auto-disable
+*  20250908 -- v1.6.0.2: Improved autoCreateClients() — prevent blank labels/names when UniFi reports empty strings
+*  20250908 -- v1.6.0.3: Hardened login() — ensure refreshCookie is always rescheduled via finally block
+*  20250908 -- v1.6.0.4: Removed duplicate hotspot refresh call in refresh() to avoid double execution; added warning if UniFi login() returns no cookie
+*  20250908 -- v1.6.0.5: Improved resiliency — reset WebSocket backoff after stable connection; retry HTTP auth on 401/403
 */
 
 import groovy.transform.Field
@@ -40,7 +44,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.6.0.1"
+@Field static final String DRIVER_VERSION  = "1.6.0.5"
 @Field static final String DRIVER_MODIFIED = "2025.09.08"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
@@ -361,9 +365,9 @@ def autoCreateClients(days = null) {
                 return
             }
 
-            // Friendly vs technical distinction
-            def label   = c.name ?: c.hostname ?: mac     // user-friendly label
-            def devName = c.hostname ?: c.name ?: mac     // technical device name
+            // Friendly vs technical distinction (avoid blank names/labels)
+            def label   = c.name?.trim() ? c.name : (c.hostname?.trim() ?: mac)
+            def devName = c.hostname?.trim() ? c.hostname : (c.name?.trim() ?: mac)
 
             logInfo "Creating new child -> Label='${label}', Name='${devName}', MAC=${mac}"
             def child = addChildDevice(
@@ -592,7 +596,7 @@ def webSocketStatus(String message) {
 
     if (message.startsWith("status: open")) {
         emitEvent("commStatus", "good")
-        state.reconnectDelay = 1
+        state.reconnectDelay = 1   // reset backoff after stable connection
         setWasExpectedClose(false)
 
     } else if (message.startsWith("status: closing")) {
@@ -644,7 +648,6 @@ def refresh() {
     unschedule("refresh")
     setVersion()
     refreshChildren()
-    refreshHotspotChild()
     scheduleOnce(refreshInterval, "refresh")
 }
 
@@ -776,22 +779,27 @@ def login() {
                 csrf = it.value.split('=')?.getAt(1)?.split(';')?.getAt(0)
             }
         }
-        setCookie(cookie)
-        setCsrf(csrf)
+		setCookie(cookie)
+		setCsrf(csrf)
 
-        // Proactively refresh cookie before UniFi invalidates (~2h). Schedule at 110 minutes (6600s).
-        unschedule("refreshCookie")
-        runIn(6600, refreshCookie)
+		if (!cookie) {
+		    logWarn "[${DRIVER_NAME}] login() did not receive a session cookie — UniFi may require multiple login attempts"
+		}
 
         // Pull sysinfo from controller
         querySysInfo()
 
         logDebug "[${DRIVER_NAME}] login() succeeded"
-        logDebug "[${DRIVER_NAME}] Scheduled cookie refresh in 6600s"
     }
     catch (e) {
         logError "login() failed: ${e.message}"
         throw e
+    }
+    finally {
+        // Proactively refresh cookie before UniFi invalidates (~2h). Schedule at 110 minutes (6600s).
+        unschedule("refreshCookie")
+        runIn(6600, refreshCookie)
+        logDebug "[${DRIVER_NAME}] Scheduled cookie refresh in 6600s"
     }
 }
 
@@ -872,16 +880,16 @@ def httpExecWithAuthCheck(op, params, throwToCaller=false) {
 
         return httpExec(op, params)
     }
-    catch (groovyx.net.http.HttpResponseException e) {
-        if (e.response?.status == 401) {
-            logWarn "Auth failed (401), refreshing cookie"
-            refreshCookie()
-            params.headers[cookieNameToSend()] = getCookie()
-            params.headers[csrfTokenNameToSend()] = getCsrf()
-            return httpExec(op, params)
-        }
-        if (throwToCaller) throw e
-    }
+	catch (groovyx.net.http.HttpResponseException e) {
+	    if (e.response?.status in [401, 403]) {
+	        logWarn "Auth failed (${e.response?.status}), refreshing cookie"
+	        refreshCookie()
+	        params.headers[cookieNameToSend()] = getCookie()
+	        params.headers[csrfTokenNameToSend()] = getCsrf()
+	        return httpExec(op, params)
+	    }
+	    if (throwToCaller) throw e
+	}
     catch (Exception e) {
         logError "httpExecWithAuthCheck() general error: ${e.message}"
         if (throwToCaller) throw e
