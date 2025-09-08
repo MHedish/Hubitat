@@ -23,12 +23,15 @@
 *  20250902 -- v1.4.9.1: Added presenceTimestamp support (formatted string on presence changes)
 *  20250903 -- v1.5.0: Added hotspotGuestList support (list of connected guest MACs for hotspot child)
 *  20250904 -- v1.5.4: Added bulk management (refresh/reconnect all), hotspotGuestListRaw support
-*  20250904 -- v1.5.5: Added autoCreateClients() framework with last-seen filter (default 30d)
+*  20250904 -- v1.5.5: Added autoCreateClients() framework with last-seen filter (default 30d → 7d)
 *  20250904 -- v1.5.6: Refined autoCreateClients() to use discovered name for label and hostname for child name
 *  20250905 -- v1.5.7: Version info now auto-refreshes on refresh() and refreshAllChildren()
 *  20250905 -- v1.5.8: Logging overlap fix; presenceTimestamp renamed to presenceChanged
 *  20250905 -- v1.5.9: Normalized version handling (removed redundant state, aligned with child)
 *  20250907 -- v1.5.10: Applied configurable httpTimeout to all HTTP calls (httpExec, httpExecWithAuthCheck, isUniFiOS)
+*  20250908 -- v1.5.10.1: Testing build – fixed refreshFromChild not marking offline clients as not present (400 handling in queryClientByMac)
+*  20250908 -- v1.5.10.2: Restored missing @Field event declarations (connectingEvents, disconnectingEvents, allConnectionEvents)
+*  20250908 -- v1.6.0: Version bump for new development cycle
 */
 
 import groovy.transform.Field
@@ -36,8 +39,12 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.5.10"
-@Field static final String DRIVER_MODIFIED = "2025.09.07"
+@Field static final String DRIVER_VERSION  = "1.6.0"
+@Field static final String DRIVER_MODIFIED = "2025.09.08"
+
+@Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
+@Field List disconnectingEvents = ["EVT_WU_Disconnected", "EVT_WG_Disconnected"]
+@Field List allConnectionEvents = connectingEvents + disconnectingEvents
 
 /* ===============================
    Version Info
@@ -55,7 +62,7 @@ def setVersion() {
    =============================== */
 metadata {
     definition(name: DRIVER_NAME, namespace: "MHedish", author: "Marc Hedish",
-               importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy") {
+        importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy") {
         capability "Initialize"
         capability "Refresh"
 
@@ -82,7 +89,7 @@ metadata {
         command "autoCreateClients", [[
             name: "Last Seen (days)",
             type: "NUMBER",
-            description: "Create wireless clients seen in the last X days (default 30)"
+            description: "Create wireless clients seen in the last X days (default 7)"
         ]]
     }
 }
@@ -327,11 +334,10 @@ def reconnectAllChildren() {
    =============================== */
 def autoCreateClients(days = null) {
     try {
-        // Default to 30 days if no input
-        def lookbackDays = (days && days.toInteger() > 0) ? days.toInteger() : 30
+        // Default to 7 days if no input
+        def lookbackDays = (days && days.toInteger() > 0) ? days.toInteger() : 7
         logInfo "Auto-creating clients last seen within ${lookbackDays} days (wireless only)"
 
-        // Use Hubitat's now() instead of System.currentTimeMillis()
         def since = (now() / 1000) - (lookbackDays * 86400)
 
         def knownClients = queryKnownClients()
@@ -448,22 +454,32 @@ def refreshFromChild(mac) {
     def client = queryClientByMac(mac)
     logDebug "refreshFromChild(${mac}) ? ${client ?: 'offline/null'}"
 
-    if (!client) return
-
-def states = [
-    presence: (client?.ap_mac ? "present" : "not present"),
-    accessPoint: client?.ap_mac ?: "unknown",
-    accessPointName: client?.ap_displayName ?: client?.last_uplink_name ?: "unknown",
-    ssid: (client?.essid ? client.essid.replaceAll(/^\"+|\"+$/, '') : "unknown"),
-    switch: (client?.blocked == true) ? "off" : "on"
-    // no presenceChanged here; only set on event-based changes
-    ]
-
     def child = findChildDevice(mac)
     if (!child) {
         logWarn "refreshFromChild(): no child found for ${mac}"
         return
     }
+
+    if (!client) {
+        logDebug "refreshFromChild(${mac}): marking device as not present (offline)"
+        child.refreshFromParent([
+            presence: "not present",
+            accessPoint: "unknown",
+            accessPointName: "unknown",
+            ssid: null
+        ])
+        return
+    }
+
+    // Client found -> mark as present
+    def states = [
+        presence: (client?.ap_mac ? "present" : "not present"),
+        accessPoint: client?.ap_mac ?: "unknown",
+        accessPointName: client?.ap_displayName ?: client?.last_uplink_name ?: "unknown",
+        ssid: (client?.essid ? client.essid.replaceAll(/^\"+|\"+$/, '') : "unknown"),
+        switch: (client?.blocked == true) ? "off" : "on"
+        // presenceChanged timestamp only set on event-based changes
+    ]
 
     child.refreshFromParent(states)
 }
@@ -639,7 +655,6 @@ def queryClients(endpoint, single = false) {
     try {
         def resp = runQuery(endpoint, true)
         def clients = resp?.data?.data ?: []
-
         return single ? (clients ? clients[0] : null) : clients
     }
     catch (groovyx.net.http.HttpResponseException e) {
@@ -655,7 +670,27 @@ def queryClients(endpoint, single = false) {
     return single ? null : []
 }
 
-def queryClientByMac(mac) { queryClients("stat/sta/${mac}", true) }
+def queryClientByMac(mac) {
+    try {
+        def resp = runQuery("stat/sta/${mac}", true)
+        return resp?.data?.data?.getAt(0)  // return the first client record if found
+    }
+    catch (groovyx.net.http.HttpResponseException e) {
+        if (e.response?.status == 400) {
+            // 400 = client is offline (normal UniFi behavior)
+            logDebug "queryClientByMac(${mac}): client reported offline by controller (HTTP 400)"
+            return null
+        } else {
+            logDebug "queryClientByMac(${mac}) error: ${e}"
+        }
+    }
+    catch (Exception e) {
+        logDebug "queryClientByMac(${mac}) general error: ${e}"
+    }
+    return null
+}
+
+
 def queryActiveClients()  { queryClients("stat/sta", false) }
 def queryKnownClients()   { queryClients("rest/user", false) }
 
