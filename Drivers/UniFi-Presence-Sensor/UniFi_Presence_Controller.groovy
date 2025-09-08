@@ -32,6 +32,7 @@
 *  20250908 -- v1.5.10.1: Testing build – fixed refreshFromChild not marking offline clients as not present (400 handling in queryClientByMac)
 *  20250908 -- v1.5.10.2: Restored missing @Field event declarations (connectingEvents, disconnectingEvents, allConnectionEvents)
 *  20250908 -- v1.6.0: Version bump for new development cycle
+*  20250908 -- v1.6.0.1: Fixed incorrect unschedule() call for raw event logging auto-disable
 */
 
 import groovy.transform.Field
@@ -39,7 +40,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.6.0"
+@Field static final String DRIVER_VERSION  = "1.6.0.1"
 @Field static final String DRIVER_MODIFIED = "2025.09.08"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
@@ -179,7 +180,7 @@ def updated() {
     }
     if (logRawEvents) {
         logInfo "Raw UniFi event logging enabled for 30 minutes"
-        unschedule(autoDisableDebugLogging)
+        unschedule(autoDisableRawEventLogging)
         runIn(1800, autoDisableRawEventLogging)
     }
 }
