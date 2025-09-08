@@ -33,12 +33,14 @@
 *  20250907 -- v1.5.10: Applied configurable httpTimeout to all HTTP calls
 *  20250908 -- v1.5.10.1: Testing build – aligned with parent (no functional changes)
 *  20250908 -- v1.5.10.2: Synced with parent driver (restored event declarations in parent)
+*  20250908 -- v1.6.0: Version bump for new development cycle
+*  20250908 -- v1.6.0.1: Switch handling fix — child now queries parent after block/unblock to stay in sync
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.6.0"
+@Field static final String DRIVER_VERSION  = "1.6.0.1"
 @Field static final String DRIVER_MODIFIED = "2025.09.08"
 
 /* ===============================
@@ -255,7 +257,8 @@ private toggleDeviceAccess(boolean allow) {
 
     def cmd = allow ? "unblock-sta" : "block-sta"
     if (parent?.writeDeviceMacCmd(mac, cmd)) {
-        emitEvent("switch", allow ? "on" : "off")
+        // Instead of assuming success, confirm by refreshing from parent
+        parent?.refreshFromChild(mac)
     } else {
         logDebug "toggleDeviceAccess failed for client: ${mac}"
     }
