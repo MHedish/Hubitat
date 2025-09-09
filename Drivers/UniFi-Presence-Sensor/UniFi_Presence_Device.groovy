@@ -8,45 +8,45 @@
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  20250813 -- Initial version (based on tomw)
-*  20250814 -- Added manual Arrived/Departed buttons; Added AP Display Name
-*  20250816 -- Optimized code (cleanup, helpers, reduced redundancy)
-*  20250816 -- Added auto-disable logging after 30 minutes
-*  20250816 -- Added Version Info tile (driverInfo attribute)
-*  20250816 -- Ensure driverInfo appears immediately (on install/update/configure)
+*  20250813 -- v1.0.0: Initial version (based on tomw)
+*  20250814 -- v1.1.0: Added manual Arrived/Departed buttons; Added AP Display Name
+*  20250816 -- v1.2.0: Optimized code, helpers, reduced redundancy
+*  20250816 -- v1.2.1: Added auto-disable logging after 30 minutes
+*  20250816 -- v1.2.2: Added Version Info tile (driverInfo attribute)
+*  20250816 -- v1.2.3: Ensure driverInfo appears immediately on install/update/configure
 *  20250827 -- v1.3.3: Added hotspot guest support attributes
-*  20250828 -- v1.3.5: Unified setPresence for refreshFromParent + commands
+*  20250828 -- v1.3.5: Unified setPresence for refreshFromParent and commands
 *  20250829 -- v1.3.9: Preferences hide clientMAC for hotspot child; refresh() checks hotspot flag
-*  20250829 -- v1.3.9: Updated logging utilities
+*  20250829 -- v1.3.9.1: Updated logging utilities
 *  20250831 -- v1.4.7: Normalize clientMAC (dashes → colons), aligned logging
 *  20250901 -- v1.4.8: Synced with parent driver (2025.09.01 release)
 *  20250902 -- v1.4.8.1: Cleaned preferences (removed invalid section blocks)
-*  20250902 -- v1.4.9: Rollback anchor release. Includes cleaned preferences.
-*  20250902 -- v1.4.9.1: Added presenceTimestamp attribute (updated from parent presence changes)
-*  20250903 -- v1.5.0: Added hotspotGuestList attribute (list of connected guest MACs for hotspot child)
+*  20250902 -- v1.4.9: Rollback anchor release with cleaned preferences
+*  20250902 -- v1.4.9.1: Added presenceTimestamp attribute from parent presence changes
+*  20250903 -- v1.5.0: Added hotspotGuestList attribute (connected guest MACs for hotspot child)
 *  20250904 -- v1.5.3: Added hotspotGuestListRaw attribute (raw MAC addresses for hotspot child)
 *  20250904 -- v1.5.4: Synced with parent versioning
-*  20250904 -- v1.5.6: Placeholder sync with parent (no functional child changes in this release)
-*  20250905 -- v1.5.7: Version info now auto-refreshes on refresh()
+*  20250904 -- v1.5.6: Placeholder sync with parent (no functional changes)
+*  20250905 -- v1.5.7: Version info auto-refreshes on refresh()
 *  20250905 -- v1.5.8: Logging overlap fix; presenceTimestamp renamed to presenceChanged
 *  20250905 -- v1.5.9: Normalized version handling (removed redundant state, aligned with parent)
 *  20250907 -- v1.5.10: Applied configurable httpTimeout to all HTTP calls
-*  20250908 -- v1.5.10.1: Testing build – aligned with parent (no functional changes)
-*  20250908 -- v1.5.10.2: Synced with parent driver (restored event declarations in parent)
+*  20250908 -- v1.5.10.1: Synced with parent (no functional changes)
+*  20250908 -- v1.5.10.2: Synced with parent (restored event declarations in parent)
 *  20250908 -- v1.6.0: Version bump for new development cycle
-*  20250908 -- v1.6.0.1: Switch handling fix — child now queries parent after block/unblock to stay in sync
+*  20250908 -- v1.6.0.1: Switch handling fix — child queries parent after block/unblock
 *  20250908 -- v1.6.1: Consolidated fixes through v1.6.0.1 into stable release
-*  20250908 -- v1.6.4.0: Applied fixes to presenceChanged timestamp handling and switch sync improvements
-*  20250908 -- v1.6.4.1: Improved switch handling — relies on parent’s immediate refresh for accurate state
+*  20250908 -- v1.6.4.0: Applied fixes to presenceChanged timestamp handling and switch sync
+*  20250908 -- v1.6.4.1: Improved switch handling — relies on parent’s immediate refresh
 *  20250908 -- v1.7.0.0: Removed Switch capability and on/off commands
-*  20250908 -- v1.7.1.0: Added sync of device name/label to data values in refreshed()
+*  20250908 -- v1.7.1.0: Added sync of device name/label to data values in refresh()
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.7.1.0"
-@Field static final String DRIVER_MODIFIED = "2025.09.08"
+@Field static final String DRIVER_VERSION  = "1.7.1.1"
+@Field static final String DRIVER_MODIFIED = "2025.09.09"
 
 /* ===============================
    Version Info
