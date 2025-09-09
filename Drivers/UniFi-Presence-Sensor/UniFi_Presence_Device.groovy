@@ -18,7 +18,7 @@
 *  20250828 -- v1.3.5: Unified setPresence for refreshFromParent + commands
 *  20250829 -- v1.3.9: Preferences hide clientMAC for hotspot child; refresh() checks hotspot flag
 *  20250829 -- v1.3.9: Updated logging utilities
-*  20250831 -- v1.4.7: Normalize clientMAC (dashes ? colons), aligned logging
+*  20250831 -- v1.4.7: Normalize clientMAC (dashes → colons), aligned logging
 *  20250901 -- v1.4.8: Synced with parent driver (2025.09.01 release)
 *  20250902 -- v1.4.8.1: Cleaned preferences (removed invalid section blocks)
 *  20250902 -- v1.4.9: Rollback anchor release. Includes cleaned preferences.
@@ -36,12 +36,16 @@
 *  20250908 -- v1.6.0: Version bump for new development cycle
 *  20250908 -- v1.6.0.1: Switch handling fix — child now queries parent after block/unblock to stay in sync
 *  20250908 -- v1.6.1: Consolidated fixes through v1.6.0.1 into stable release
+*  20250908 -- v1.6.4.0: Applied fixes to presenceChanged timestamp handling and switch sync improvements
+*  20250908 -- v1.6.4.1: Improved switch handling — relies on parent’s immediate refresh for accurate state
+*  20250908 -- v1.7.0.0: Removed Switch capability and on/off commands
+*  20250908 -- v1.7.1.0: Added sync of device name/label to data values in refreshed()
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.6.1"
+@Field static final String DRIVER_VERSION  = "1.7.1.0"
 @Field static final String DRIVER_MODIFIED = "2025.09.08"
 
 /* ===============================
@@ -64,10 +68,7 @@ metadata {
     ) {
         capability "PresenceSensor"
         capability "Refresh"
-        capability "Switch"
 
-        command "on", [[name: "Allow device network connectivity"]]
-        command "off", [[name: "Disallow device network connectivity"]]
         command "arrived"
         command "departed"
         command "disableDebugLoggingNow"
@@ -81,7 +82,6 @@ metadata {
         attribute "presenceChanged", "string"
         attribute "hotspotGuestList", "string"     // Friendly names or placeholder
         attribute "hotspotGuestListRaw", "string"  // Raw MAC addresses
-        attribute "switch", "string"               // Added to align with parent updates
     }
 }
 
@@ -131,7 +131,7 @@ def installed() {
 }
 
 def updated() {
-    logDebug "Preferences updated"
+    logDebug "Preferences"
 
     // Normalize MAC formatting silently (replace '-' with ':', lowercase)
     if (settings.clientMAC) {
@@ -148,6 +148,7 @@ def updated() {
     } else {
         logInfo "Configured as Hotspot client child"
     }
+
     configure()
 
     if (logEnable) {
@@ -179,6 +180,24 @@ def disableDebugLoggingNow() {
    Refresh
    =============================== */
 def refresh() {
+    // Always sync metadata first, log only if changed
+    if (device.getName()) {
+        def oldName = getDataValue("name")
+        def newName = device.getName()
+        if (oldName != newName) {
+            device.updateDataValue("name", newName)
+            logInfo "Device name updated in data values: '${oldName}' → '${newName}'"
+        }
+    }
+    if (device.getLabel()) {
+        def oldLabel = getDataValue("label")
+        def newLabel = device.getLabel()
+        if (oldLabel != newLabel) {
+            device.updateDataValue("label", newLabel)
+            logInfo "Device label updated in data values: '${oldLabel}' → '${newLabel}'"
+        }
+    }
+
     if (getDataValue("hotspot") == "true") {
         parent?.refreshHotspotChild()
     } else if (settings.clientMAC) {
@@ -221,7 +240,6 @@ def refreshFromParent(clientDetails) {
 
     if (clientDetails.hotspotGuests != null) emitEvent("hotspotGuests", clientDetails.hotspotGuests)
     if (clientDetails.totalHotspotClients != null) emitEvent("totalHotspotClients", clientDetails.totalHotspotClients)
-    if (clientDetails.switch) emitEvent("switch", clientDetails.switch)
     if (clientDetails.presenceChanged) emitEvent("presenceChanged", clientDetails.presenceChanged)
 
     // Hotspot lists
@@ -246,24 +264,7 @@ private setPresence(boolean status) {
 
     if (oldStatus != currentStatus) {
         emitEvent("presence", currentStatus, "${device.displayName} has $event")
+        // Always set presenceChanged timestamp on manual or parent-triggered changes
+        emitEvent("presenceChanged", new Date().format("yyyy-MM-dd HH:mm:ss", location.timeZone))
     }
 }
-
-/* ===============================
-   Switch Handling
-   =============================== */
-private toggleDeviceAccess(boolean allow) {
-    def mac = settings.clientMAC
-    if (!mac) return
-
-    def cmd = allow ? "unblock-sta" : "block-sta"
-    if (parent?.writeDeviceMacCmd(mac, cmd)) {
-        // Instead of assuming success, confirm by refreshing from parent
-        parent?.refreshFromChild(mac)
-    } else {
-        logDebug "toggleDeviceAccess failed for client: ${mac}"
-    }
-}
-
-def on()  { toggleDeviceAccess(true) }
-def off() { toggleDeviceAccess(false) }
