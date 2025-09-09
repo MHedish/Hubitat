@@ -23,7 +23,7 @@
 *  20250902 -- v1.4.9.1: Added presenceTimestamp support (formatted string on presence changes)
 *  20250903 -- v1.5.0: Added hotspotGuestList support (list of connected guest MACs for hotspot child)
 *  20250904 -- v1.5.4: Added bulk management (refresh/reconnect all), hotspotGuestListRaw support
-*  20250904 -- v1.5.5: Added autoCreateClients() framework with last-seen filter (default 30d → 7d)
+*  20250904 -- v1.5.5: Added autoCreateClients() framework with last-seen filter (default 30d ? 7d)
 *  20250904 -- v1.5.6: Refined autoCreateClients() to use discovered name for label and hostname for child name
 *  20250905 -- v1.5.7: Version info now auto-refreshes on refresh() and refreshAllChildren()
 *  20250905 -- v1.5.8: Logging overlap fix; presenceTimestamp renamed to presenceChanged
@@ -38,6 +38,11 @@
 *  20250908 -- v1.6.0.4: Removed duplicate hotspot refresh call in refresh() to avoid double execution; added warning if UniFi login() returns no cookie
 *  20250908 -- v1.6.0.5: Improved resiliency — reset WebSocket backoff after stable connection; retry HTTP auth on 401/403
 *  20250908 -- v1.6.1: Consolidated fixes through v1.6.0.5 into stable release
+*  20250908 -- v1.6.2.1: Added persistence for disconnect debounce timers (recovered on hub reboot to prevent ghost presence)
+*  20250908 -- v1.6.4.0: Applied fixes to markNotPresent debounce recovery and logging improvements
+*  20250908 -- v1.6.4.1: Improved switch handling — parent now refreshes client immediately after block/unblock
+*  20250908 -- v1.7.0.0: Removed block/unblock (Switch) support; driver now focused solely on presence detection
+*  20250909 -- v1.7.1.0: Improved SSID handling in parse() and refreshFromChild() (handles spaces, quotes, special chars; empty SSID → null)
 */
 
 import groovy.transform.Field
@@ -45,8 +50,8 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.6.1"
-@Field static final String DRIVER_MODIFIED = "2025.09.08"
+@Field static final String DRIVER_VERSION  = "1.7.1.0"
+@Field static final String DRIVER_MODIFIED = "2025.09.09"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
 @Field List disconnectingEvents = ["EVT_WU_Disconnected", "EVT_WG_Disconnected"]
@@ -289,19 +294,6 @@ def deleteHotspotChild() {
     }
 }
 
-def writeDeviceMacCmd(mac, cmd) {
-    try {
-        def body = [mac: mac]
-        runQuery("cmd/stamgr/${cmd}", false, JsonOutput.toJson(body))
-        logInfo "Sent ${cmd} for ${mac}"
-        return true
-    }
-    catch (e) {
-        logError "writeDeviceMacCmd(${mac}, ${cmd}) failed: ${e.message}"
-        return false
-    }
-}
-
 /* ===============================
    Bulk Management
    =============================== */
@@ -458,7 +450,7 @@ def refreshChildren() {
 
 def refreshFromChild(mac) {
     def client = queryClientByMac(mac)
-    logDebug "refreshFromChild(${mac}) ? ${client ?: 'offline/null'}"
+    logDebug "refreshFromChild(${mac}) → ${client ?: 'offline/null'}"
 
     def child = findChildDevice(mac)
     if (!child) {
@@ -477,13 +469,18 @@ def refreshFromChild(mac) {
         return
     }
 
-    // Client found -> mark as present
+    // Improved SSID normalization
+    def ssidVal = null
+    if (client?.essid) {
+        ssidVal = client.essid?.trim()?.replaceAll(/^\"+|\"+$/, '')
+    }
+
+    // Client found → mark as present
     def states = [
         presence: (client?.ap_mac ? "present" : "not present"),
         accessPoint: client?.ap_mac ?: "unknown",
         accessPointName: client?.ap_displayName ?: client?.last_uplink_name ?: "unknown",
-        ssid: (client?.essid ? client.essid.replaceAll(/^\"+|\"+$/, '') : "unknown"),
-        switch: (client?.blocked == true) ? "off" : "on"
+        ssid: ssidVal
         // presenceChanged timestamp only set on event-based changes
     ]
 
@@ -505,7 +502,7 @@ void parse(String message) {
             // Hotspot guest events
             def hotspotChild = getChildDevices()?.find { it.getDataValue("hotspot") == "true" }
             if (hotspotChild && evt.guest) {
-                logDebug "Hotspot event detected ? ${evt.key} for guest=${evt.guest}"
+                logDebug "Hotspot event detected → ${evt.key} for guest=${evt.guest}"
                 debounceHotspotRefresh()   // ensure _last_seen_by_uap validation runs
                 return
             }
@@ -518,23 +515,25 @@ void parse(String message) {
             if (!isConnect) {
                 def delay = (disconnectDebounce ?: 30).toInteger()
                 state.disconnectTimers = state.disconnectTimers ?: [:]
-                state.disconnectTimers[evt.user] = true
+                // store absolute deadline in ms
+                state.disconnectTimers[evt.user] = now() + (delay * 1000L)
                 runIn(delay, "markNotPresent", [data: [mac: evt.user, evt: evt]])
                 return
             }
 
+            // If there was a disconnect timer, clear it (connection restored before debounce expired)
             if (state.disconnectTimers?.containsKey(evt.user)) {
                 state.disconnectTimers.remove(evt.user)
             }
 
             if (child.currentValue("presence") == "present") return
 
-            // SSID extraction
+            // Improved SSID extraction (handles spaces, quotes, special chars)
             def ssidVal = null
             if (evt.msg) {
-                def matcher = (evt.msg =~ /SSID\s+([^\s]+)/)
+                def matcher = (evt.msg =~ /SSID\s+(.+)$/)
                 if (matcher.find()) {
-                    ssidVal = matcher.group(1)?.replaceAll(/^\"+|\"+$/, '')
+                    ssidVal = matcher.group(1)?.trim()?.replaceAll(/^\"+|\"+$/, '')
                 }
             }
 
@@ -563,19 +562,25 @@ def debounceHotspotRefresh() {
 }
 
 def markNotPresent(data) {
+    def deadline = state.disconnectTimers?.get(data.mac)
+    if (!deadline) return
+
+    // If the deadline hasn’t passed yet, ignore (still in debounce window)
+    if (now() < deadline) return
+
+    // Remove expired timer
+    state.disconnectTimers.remove(data.mac)
+
     def child = findChildDevice(data.mac)
     if (!child) return
-    if (!state.disconnectTimers?.containsKey(data.mac)) return
-
-    state.disconnectTimers.remove(data.mac)
     if (child.currentValue("presence") == "not present") return
 
     child.refreshFromParent([
         presence: "not present",
-        accessPoint: data.evt.ap ?: "unknown",
-        accessPointName: data.evt.ap_displayName ?: "unknown",
+        accessPoint: data.evt?.ap ?: "unknown",
+        accessPointName: data.evt?.ap_displayName ?: "unknown",
         ssid: null,
-        presenceChanged: formatTimestamp(data.evt.time)
+        presenceChanged: formatTimestamp(data.evt?.time ?: now())
     ])
 }
 
@@ -621,6 +626,9 @@ def initialize() {
     setVersion()
     emitEvent("commStatus", "unknown")
 
+    // Recover expired disconnect timers on startup
+    recoverDisconnectTimers()
+
     try {
         closeEventSocket()
         def os = isUniFiOS()
@@ -637,6 +645,17 @@ def initialize() {
         logError "initialize() failed: ${e.message}"
         emitEvent("commStatus", "error")
         reinitialize()
+    }
+}
+
+
+def recoverDisconnectTimers() {
+    def timers = state.disconnectTimers ?: [:]
+    timers.each { mac, deadline ->
+        if (now() >= deadline) {
+            logWarn "Recovering stale disconnect timer for ${mac}"
+            markNotPresent([mac: mac, evt: [time: now()]])
+        }
     }
 }
 
