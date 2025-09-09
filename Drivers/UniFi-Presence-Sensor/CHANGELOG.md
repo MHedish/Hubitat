@@ -2,6 +2,17 @@
 All notable changes to the UniFi Presence Drivers will be documented in this file.
 
 ---
+## v1.7.2.0 (2025-09-09)
+**Parent Driver**
+- Added `childDevices` and `guestDevices` string attributes.
+- `childDevices` shows “xx of yy Present” for normal children.
+- `guestDevices` shows “xx of yy Present” for hotspot guests.
+- Attributes now update automatically during `refresh()`, `refreshAllChildren()`, `reconnectAllChildren()`, `updated()`, real-time UniFi events (`parse()`), disconnect debounce expiry (`markNotPresent()`), hotspot refresh (`refreshHotspotChild()`), and individual child refresh (`refreshFromChild()`).
+
+**Child Driver**
+- No changes (remains at v1.7.1.1).
+
+---
 ## v1.7.1.1 (2025-09-09)
 **Parent Driver**
 - Unified Raw Event Logging disable with Debug Logging (auto-disable after 30m, safe unschedule handling).
