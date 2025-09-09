@@ -8,41 +8,42 @@
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  20250813 -- Initial version based on tomw
-*  20250818 -- Added driver info tile
-*  20250819 -- Optimized, unified queries, debounce + logging improvements
+*  20250813 -- v1.0.0: Initial version based on tomw
+*  20250818 -- v1.1.0: Added driver info tile
+*  20250819 -- v1.1.1: Optimized, unified queries, debounce + logging improvements
 *  20250822 -- v1.2.4–1.2.13: SSID handling, debounce refinements, LAN event filtering
 *  20250825 -- v1.2.14–1.2.16: Hotspot monitoring tweaks, child DNI changes
 *  20250828 -- v1.3.0–1.3.9: Hotspot monitoring framework + debounce handling
-*  20250829 -- v1.3.13–1.3.15: Hotspot child detection, disconnectDebounce default=30s, httpTimeout=15s
+*  20250829 -- v1.3.13–1.3.15: Hotspot child detection, disconnectDebounce=30s, httpTimeout=15s
 *  20250830 -- v1.4.5: Stable release; hotspot presence verification via _last_seen_by_uap
 *  20250901 -- v1.4.8: Proactive cookie refresh (110 min), quiet null handling in refreshFromChild(), refined logging
-*  20250902 -- v1.4.8.3: Exposed sysinfo fields as attributes (deviceType, hostName, UniFiOS, Network)
-*  20250902 -- v1.4.8.4: Cleaned preferences (removed invalid section blocks, replaced with comments)
-*  20250902 -- v1.4.9: Rollback anchor release. Includes sysinfo attributes and cleaned preferences.
+*  20250902 -- v1.4.8.3: Exposed sysinfo fields (deviceType, hostName, UniFiOS, Network)
+*  20250902 -- v1.4.8.4: Cleaned preferences (removed invalid section blocks)
+*  20250902 -- v1.4.9: Rollback anchor release with sysinfo attributes and cleaned preferences
 *  20250902 -- v1.4.9.1: Added presenceTimestamp support (formatted string on presence changes)
-*  20250903 -- v1.5.0: Added hotspotGuestList support (list of connected guest MACs for hotspot child)
+*  20250903 -- v1.5.0: Added hotspotGuestList support (connected guest MACs for hotspot child)
 *  20250904 -- v1.5.4: Added bulk management (refresh/reconnect all), hotspotGuestListRaw support
-*  20250904 -- v1.5.5: Added autoCreateClients() framework with last-seen filter (default 30d ? 7d)
-*  20250904 -- v1.5.6: Refined autoCreateClients() to use discovered name for label and hostname for child name
-*  20250905 -- v1.5.7: Version info now auto-refreshes on refresh() and refreshAllChildren()
+*  20250904 -- v1.5.5: Added autoCreateClients() framework with last-seen filter (default 7d)
+*  20250904 -- v1.5.6: Refined autoCreateClients() to use discovered name and hostname
+*  20250905 -- v1.5.7: Version info auto-refreshes on refresh() and refreshAllChildren()
 *  20250905 -- v1.5.8: Logging overlap fix; presenceTimestamp renamed to presenceChanged
 *  20250905 -- v1.5.9: Normalized version handling (removed redundant state, aligned with child)
-*  20250907 -- v1.5.10: Applied configurable httpTimeout to all HTTP calls (httpExec, httpExecWithAuthCheck, isUniFiOS)
-*  20250908 -- v1.5.10.1: Testing build – fixed refreshFromChild not marking offline clients as not present (400 handling in queryClientByMac)
-*  20250908 -- v1.5.10.2: Restored missing @Field event declarations (connectingEvents, disconnectingEvents, allConnectionEvents)
+*  20250907 -- v1.5.10: Applied configurable httpTimeout to all HTTP calls
+*  20250908 -- v1.5.10.1: Fixed refreshFromChild() not marking offline clients (400 handling)
+*  20250908 -- v1.5.10.2: Restored missing @Field event declarations
 *  20250908 -- v1.6.0: Version bump for new development cycle
 *  20250908 -- v1.6.0.1: Fixed incorrect unschedule() call for raw event logging auto-disable
-*  20250908 -- v1.6.0.2: Improved autoCreateClients() — prevent blank labels/names when UniFi reports empty strings
-*  20250908 -- v1.6.0.3: Hardened login() — ensure refreshCookie is always rescheduled via finally block
-*  20250908 -- v1.6.0.4: Removed duplicate hotspot refresh call in refresh() to avoid double execution; added warning if UniFi login() returns no cookie
-*  20250908 -- v1.6.0.5: Improved resiliency — reset WebSocket backoff after stable connection; retry HTTP auth on 401/403
+*  20250908 -- v1.6.0.2: Improved autoCreateClients() — prevent blank labels/names
+*  20250908 -- v1.6.0.3: Hardened login() — always reschedule refreshCookie via finally block
+*  20250908 -- v1.6.0.4: Removed duplicate hotspot refresh in refresh(); added cookie warning
+*  20250908 -- v1.6.0.5: Improved resiliency — reset WebSocket backoff, retry auth on 401/403
 *  20250908 -- v1.6.1: Consolidated fixes through v1.6.0.5 into stable release
-*  20250908 -- v1.6.2.1: Added persistence for disconnect debounce timers (recovered on hub reboot to prevent ghost presence)
-*  20250908 -- v1.6.4.0: Applied fixes to markNotPresent debounce recovery and logging improvements
-*  20250908 -- v1.6.4.1: Improved switch handling — parent now refreshes client immediately after block/unblock
-*  20250908 -- v1.7.0.0: Removed block/unblock (Switch) support; driver now focused solely on presence detection
-*  20250909 -- v1.7.1.0: Improved SSID handling in parse() and refreshFromChild() (handles spaces, quotes, special chars; empty SSID → null)
+*  20250908 -- v1.6.2.1: Added persistence for disconnect debounce timers
+*  20250908 -- v1.6.4.0: Applied fixes to markNotPresent debounce recovery and logging
+*  20250908 -- v1.6.4.1: Improved switch handling — parent refreshes client after block/unblock
+*  20250908 -- v1.7.0.0: Removed block/unblock (Switch) support; presence detection only
+*  20250909 -- v1.7.1.0: Improved SSID handling in parse() and refreshFromChild() (spaces, quotes, nulls)
+*  20250909 -- v1.7.1.1: Unified Raw Event Logging disable with Debug Logging (auto-disable 30m, safe unschedule)
 */
 
 import groovy.transform.Field
@@ -50,7 +51,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.7.1.0"
+@Field static final String DRIVER_VERSION  = "1.7.1.1"
 @Field static final String DRIVER_MODIFIED = "2025.09.09"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
@@ -183,16 +184,16 @@ def updated() {
     // Refresh system info from controller
     querySysInfo()
 
-    if (logEnable) {
-        logInfo "Debug logging enabled for 30 minutes"
-        unschedule(autoDisableDebugLogging)
-        runIn(1800, autoDisableDebugLogging)
-    }
-    if (logRawEvents) {
-        logInfo "Raw UniFi event logging enabled for 30 minutes"
-        unschedule(autoDisableRawEventLogging)
-        runIn(1800, autoDisableRawEventLogging)
-    }
+	if (logEnable) {
+	    logInfo "Debug logging enabled for 30 minutes"
+	    try { unschedule(autoDisableDebugLogging) } catch (ignored) {}
+	    runIn(1800, autoDisableDebugLogging)
+	}
+	if (logRawEvents) {
+	    logInfo "Raw UniFi event logging enabled for 30 minutes"
+	    try { unschedule(autoDisableRawEventLogging) } catch (ignored) {}
+	    runIn(1800, autoDisableRawEventLogging)
+	}
 }
 
 def configure() {
@@ -224,14 +225,14 @@ def disableDebugLoggingNow() {
 
 def autoDisableRawEventLogging() {
     device.updateSetting("logRawEvents", [value:"false", type:"bool"])
-    logInfo "Raw event logging disabled (auto)"
+    logInfo "Raw UniFi event logging disabled (auto)"
 }
 
 def disableRawEventLoggingNow() {
     try { unschedule(autoDisableRawEventLogging) }
     catch (ignored) { logDebug "unschedule(autoDisableRawEventLogging) ignored" }
     device.updateSetting("logRawEvents", [value:"false", type:"bool"])
-    logInfo "Raw event logging disabled (manual command)"
+    logInfo "Raw UniFi event logging disabled (manual command)"
 }
 
 /* ===============================
