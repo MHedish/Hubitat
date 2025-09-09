@@ -37,7 +37,7 @@ Supports wireless clients and hotspot guest monitoring with automatic child devi
 ## 📦 Installation (via HPM)
 
 The drivers are availble via the Hubitat Package Manager
-https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/packageManifest.json
+https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/packageManifest.json
 
 ## 📥 Installation
 
