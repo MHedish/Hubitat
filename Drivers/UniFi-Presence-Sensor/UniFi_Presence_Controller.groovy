@@ -8,42 +8,43 @@
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  20250909 -- v1.7.2.0: Added childDevices and guestDevices string attributes; updated during refresh(), refreshAllChildren(), reconnectAllChildren(), and updated()
-*  20250909 -- v1.7.1.1: Unified Raw Event Logging disable with Debug Logging (auto-disable 30m, safe unschedule handling)
-*  20250909 -- v1.7.1.0: Improved SSID handling in parse() and refreshFromChild() (handles spaces, quotes, special chars; empty SSID → null)
-*  20250908 -- v1.7.0.0: Removed block/unblock (Switch) support; driver now focused solely on presence detection
-*  20250908 -- v1.6.4.1: Improved switch handling — parent now refreshes client immediately after block/unblock
-*  20250908 -- v1.6.4.0: Applied fixes to markNotPresent debounce recovery and logging improvements
-*  20250908 -- v1.6.1: Consolidated fixes through v1.6.0.5 into stable release
-*  20250908 -- v1.6.0.5: Improved resiliency — reset WebSocket backoff after stable connection; retry HTTP auth on 401/403
-*  20250908 -- v1.6.0.4: Removed duplicate hotspot refresh call in refresh(); added warning if UniFi login() returns no cookie
-*  20250908 -- v1.6.0.3: Hardened login() — ensure refreshCookie is always rescheduled via finally block
-*  20250908 -- v1.6.0.2: Improved autoCreateClients() — prevent blank labels/names when UniFi reports empty strings
-*  20250908 -- v1.6.0.1: Fixed incorrect unschedule() call for raw event logging auto-disable
-*  20250908 -- v1.6.0: Version bump for new development cycle
-*  20250908 -- v1.5.10.2: Restored missing @Field event declarations (connectingEvents, disconnectingEvents, allConnectionEvents)
-*  20250908 -- v1.5.10.1: Fixed refreshFromChild not marking offline clients as not present (400 handling in queryClientByMac)
-*  20250907 -- v1.5.10: Applied configurable httpTimeout to all HTTP calls (httpExec, httpExecWithAuthCheck, isUniFiOS)
-*  20250905 -- v1.5.9: Normalized version handling (removed redundant state, aligned with child)
-*  20250905 -- v1.5.8: Logging overlap fix; presenceTimestamp renamed to presenceChanged
-*  20250905 -- v1.5.7: Version info now auto-refreshes on refresh() and refreshAllChildren()
-*  20250904 -- v1.5.6: Refined autoCreateClients() to use discovered name for label and hostname for child name
-*  20250904 -- v1.5.5: Added autoCreateClients() framework with last-seen filter (default 7d)
-*  20250904 -- v1.5.4: Added bulk management (refresh/reconnect all), hotspotGuestListRaw support
-*  20250903 -- v1.5.0: Added hotspotGuestList support (list of connected guest MACs for hotspot child)
-*  20250902 -- v1.4.9.1: Added presenceTimestamp support (formatted string on presence changes)
-*  20250902 -- v1.4.9: Rollback anchor release. Includes sysinfo attributes and cleaned preferences
-*  20250902 -- v1.4.8.4: Cleaned preferences (removed invalid section blocks, replaced with comments)
-*  20250902 -- v1.4.8.3: Exposed sysinfo fields as attributes (deviceType, hostName, UniFiOS, Network)
-*  20250901 -- v1.4.8: Proactive cookie refresh (110 min), quiet null handling in refreshFromChild(), refined logging
-*  20250830 -- v1.4.5: Stable release; hotspot presence verification via _last_seen_by_uap
-*  20250829 -- v1.3.13–1.3.15: Hotspot child detection, disconnectDebounce=30s, httpTimeout=15s
-*  20250828 -- v1.3.0–1.3.9: Hotspot monitoring framework + debounce handling
-*  20250825 -- v1.2.14–1.2.16: Hotspot monitoring tweaks, child DNI changes
-*  20250822 -- v1.2.4–1.2.13: SSID handling, debounce refinements, LAN event filtering
-*  20250819 -- v1.2.0: Optimized, unified queries, debounce + logging improvements
-*  20250818 -- v1.1.0: Added driver info tile
 *  20250813 -- v1.0.0: Initial version based on tomw
+*  20250818 -- v1.1.0: Added driver info tile
+*  20250819 -- v1.2.0: Optimized, unified queries, debounce + logging improvements
+*  20250822 -- v1.2.4–1.2.13: SSID handling, debounce refinements, LAN event filtering
+*  20250825 -- v1.2.14–1.2.16: Hotspot monitoring tweaks, child DNI changes
+*  20250828 -- v1.3.0–1.3.9: Hotspot monitoring framework + debounce handling
+*  20250829 -- v1.3.13–1.3.15: Hotspot child detection, disconnectDebounce=30s, httpTimeout=15s
+*  20250830 -- v1.4.5: Stable release; hotspot presence verification via _last_seen_by_uap
+*  20250901 -- v1.4.8: Proactive cookie refresh (110 min), quiet null handling in refreshFromChild(), refined logging
+*  20250902 -- v1.4.8.3: Exposed sysinfo fields as attributes (deviceType, hostName, UniFiOS, Network)
+*  20250902 -- v1.4.8.4: Cleaned preferences (removed invalid section blocks, replaced with comments)
+*  20250902 -- v1.4.9: Rollback anchor release. Includes sysinfo attributes and cleaned preferences
+*  20250902 -- v1.4.9.1: Added presenceTimestamp support (formatted string on presence changes)
+*  20250903 -- v1.5.0: Added hotspotGuestList support (list of connected guest MACs for hotspot child)
+*  20250904 -- v1.5.4: Added bulk management (refresh/reconnect all), hotspotGuestListRaw support
+*  20250904 -- v1.5.5: Added autoCreateClients() framework with last-seen filter (default 7d)
+*  20250904 -- v1.5.6: Refined autoCreateClients() to use discovered name for label and hostname for child name
+*  20250905 -- v1.5.7: Version info now auto-refreshes on refresh() and refreshAllChildren()
+*  20250905 -- v1.5.8: Logging overlap fix; presenceTimestamp renamed to presenceChanged
+*  20250905 -- v1.5.9: Normalized version handling (removed redundant state, aligned with child)
+*  20250907 -- v1.5.10: Applied configurable httpTimeout to all HTTP calls (httpExec, httpExecWithAuthCheck, isUniFiOS)
+*  20250908 -- v1.5.10.1: Fixed refreshFromChild not marking offline clients as not present (400 handling in queryClientByMac)
+*  20250908 -- v1.5.10.2: Restored missing @Field event declarations (connectingEvents, disconnectingEvents, allConnectionEvents)
+*  20250908 -- v1.6.0: Version bump for new development cycle
+*  20250908 -- v1.6.0.1: Fixed incorrect unschedule() call for raw event logging auto-disable
+*  20250908 -- v1.6.0.2: Improved autoCreateClients() — prevent blank labels/names when UniFi reports empty strings
+*  20250908 -- v1.6.0.3: Hardened login() — ensure refreshCookie is always rescheduled via finally block
+*  20250908 -- v1.6.0.4: Removed duplicate hotspot refresh call in refresh(); added warning if UniFi login() returns no cookie
+*  20250908 -- v1.6.0.5: Improved resiliency — reset WebSocket backoff after stable connection; retry HTTP auth on 401/403
+*  20250908 -- v1.6.1: Consolidated fixes through v1.6.0.5 into stable release
+*  20250908 -- v1.6.4.0: Applied fixes to markNotPresent debounce recovery and logging improvements
+*  20250908 -- v1.6.4.1: Improved switch handling — parent now refreshes client immediately after block/unblock
+*  20250908 -- v1.7.0.0: Removed block/unblock (Switch) support; driver now focused solely on presence detection
+*  20250909 -- v1.7.1.0: Improved SSID handling in parse() and refreshFromChild() (handles spaces, quotes, special chars; empty SSID → null)
+*  20250909 -- v1.7.1.1: Unified Raw Event Logging disable with Debug Logging (auto-disable 30m, safe unschedule handling)
+*  20250909 -- v1.7.2.0: Added childDevices and guestDevices attributes; updated on refresh(), refreshAllChildren(), reconnectAllChildren(), updated(), parse(), markNotPresent(), refreshHotspotChild(), refreshFromChild()
+*  20250909 -- v1.7.3.0: Added cleanSSID() helper; SSID sanitized in parse() and refreshFromChild() (removes quotes and channel info)
 */
 
 import groovy.transform.Field
@@ -51,7 +52,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.7.2.0"
+@Field static final String DRIVER_VERSION  = "1.7.3.0"
 @Field static final String DRIVER_MODIFIED = "2025.09.09"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
@@ -499,7 +500,7 @@ def refreshFromChild(mac) {
             accessPointName: "unknown",
             ssid: null
         ])
-        // Update summaries when offline
+        // ✅ Update summaries when offline
         updateChildAndGuestSummaries()
         return
     }
@@ -509,7 +510,7 @@ def refreshFromChild(mac) {
         presence: (client?.ap_mac ? "present" : "not present"),
         accessPoint: client?.ap_mac ?: "unknown",
         accessPointName: client?.ap_displayName ?: client?.last_uplink_name ?: "unknown",
-        ssid: (client?.essid ? client.essid.replaceAll(/^\"+|\"+$/, '') : null) // null if no SSID
+        ssid: cleanSSID(client?.essid)   // use helper to sanitize SSID
     ]
 
     child.refreshFromParent(states)
@@ -555,13 +556,12 @@ void parse(String message) {
 
             if (child.currentValue("presence") == "present") return
 
-            // SSID extraction
+            // SSID extraction with sanitization
             def ssidVal = null
             if (evt.msg) {
-                def matcher = (evt.msg =~ /SSID\s+(.+)$/)
+                def matcher = (evt.msg =~ /SSID\s+(.+)/)
                 if (matcher.find()) {
-                    ssidVal = matcher.group(1)?.trim()?.replaceAll(/^\"+|\"+$/, '')
-                    if (!ssidVal) ssidVal = null
+                    ssidVal = cleanSSID(matcher.group(1))   // Use helper
                 }
             }
 
@@ -574,8 +574,7 @@ void parse(String message) {
             ])
         }
 
-        // ✅ Always update summary counts after processing events
-        updateChildAndGuestSummaries()
+        updateChildAndGuestSummaries()	// Always update summary counts after processing events
     }
     catch (e) {
         logError "parse() failed: ${e.message}"
@@ -872,6 +871,16 @@ def runQuery(suffix, throwToCaller = false, body=null) {
         }
         throw e
     }
+}
+
+private cleanSSID(val) {
+    if (!val) return null
+    def ssid = val.trim()
+    // Remove trailing " on channel ..." fragments
+    ssid = ssid.replaceAll(/\"?\s+on\s+\"?channel.*$/, "")
+    // Strip surrounding quotes
+    ssid = ssid.replaceAll(/^\"+|\"+$/, "")
+    return ssid ?: null
 }
 
 /* ===============================
