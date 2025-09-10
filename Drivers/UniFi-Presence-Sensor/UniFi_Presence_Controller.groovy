@@ -41,10 +41,11 @@
 *  20250908 -- v1.6.4.0: Applied fixes to markNotPresent debounce recovery and logging improvements
 *  20250908 -- v1.6.4.1: Improved switch handling — parent now refreshes client immediately after block/unblock
 *  20250908 -- v1.7.0.0: Removed block/unblock (Switch) support; driver now focused solely on presence detection
-*  20250909 -- v1.7.1.0: Improved SSID handling in parse() and refreshFromChild() (handles spaces, quotes, special chars; empty SSID → null)
+*  20250909 -- v1.7.1.0: Improved SSID handling in parse() and refreshFromChild() (handles spaces, quotes, special chars; empty SSID ? null)
 *  20250909 -- v1.7.1.1: Unified Raw Event Logging disable with Debug Logging (auto-disable 30m, safe unschedule handling)
 *  20250909 -- v1.7.2.0: Added childDevices and guestDevices attributes; updated on refresh(), refreshAllChildren(), reconnectAllChildren(), updated(), parse(), markNotPresent(), refreshHotspotChild(), refreshFromChild()
 *  20250909 -- v1.7.3.0: Added cleanSSID() helper; SSID sanitized in parse() and refreshFromChild() (removes quotes and channel info)
+*  20250910 -- v1.7.3.1: Optimized event parsing — early filter tightened to EVT_W (wireless only), eliminating LAN event JSON parsing
 */
 
 import groovy.transform.Field
@@ -52,8 +53,8 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.7.3.0"
-@Field static final String DRIVER_MODIFIED = "2025.09.09"
+@Field static final String DRIVER_VERSION  = "1.7.3.1"
+@Field static final String DRIVER_MODIFIED = "2025.09.10"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
 @Field List disconnectingEvents = ["EVT_WU_Disconnected", "EVT_WG_Disconnected"]
@@ -457,9 +458,9 @@ def refreshHotspotChild() {
 
         if (logEnable) {
             logDebug "Hotspot: total non-expired guests (${totalGuests})"
-            logDebug "Hotspot: connected guests (${connectedCount}) → ${guestListFriendlyStr}"
-            logDebug "Hotspot raw list → ${guestListRawStr}"
-            logDebug "Hotspot summary → presence=${presence}, connected=${connectedCount}, total=${totalGuests}"
+            logDebug "Hotspot: connected guests (${connectedCount}) ? ${guestListFriendlyStr}"
+            logDebug "Hotspot raw list ? ${guestListRawStr}"
+            logDebug "Hotspot summary ? presence=${presence}, connected=${connectedCount}, total=${totalGuests}"
         }
 
         updateChildAndGuestSummaries()
@@ -484,7 +485,7 @@ def refreshChildren() {
 
 def refreshFromChild(mac) {
     def client = queryClientByMac(mac)
-    logDebug "refreshFromChild(${mac}) → ${client ?: 'offline/null'}"
+    logDebug "refreshFromChild(${mac}) ? ${client ?: 'offline/null'}"
 
     def child = findChildDevice(mac)
     if (!child) {
@@ -500,12 +501,12 @@ def refreshFromChild(mac) {
             accessPointName: "unknown",
             ssid: null
         ])
-        // ✅ Update summaries when offline
+        // ? Update summaries when offline
         updateChildAndGuestSummaries()
         return
     }
 
-    // Client found → mark as present
+    // Client found ? mark as present
     def states = [
         presence: (client?.ap_mac ? "present" : "not present"),
         accessPoint: client?.ap_mac ?: "unknown",
@@ -518,26 +519,36 @@ def refreshFromChild(mac) {
 }
 
 void parse(String message) {
+    // Early reject anything that isn’t a wireless event (EVT_W…)
+    if (!message.contains("EVT_W")) {
+        if (logEnable && logRawEvents) logDebug "Ignoring non-wireless event"
+        return
+    }
+
     try {
         def msgJson = new JsonSlurper().parseText(message)
+
+        // Still forward full stream if explicitly enabled
         if (msgJson?.meta?.message == "events" && logEvents) {
             emitEvent("eventStream", message)
         }
 
-        msgJson?.data?.each { evt ->
-            if (!(evt?.key in allConnectionEvents)) return
+        // Only process wireless connect/disconnect events
+        def events = msgJson?.data?.findAll { evt -> evt?.key in allConnectionEvents }
+        if (!events) return
 
+        events.each { evt ->
             if (logRawEvents) logDebug "parse() raw event: ${evt}"
 
-            // Hotspot guest events
+            // ---- Hotspot guest events ----
             def hotspotChild = getChildDevices()?.find { it.getDataValue("hotspot") == "true" }
             if (hotspotChild && evt.guest) {
-                logDebug "Hotspot event detected → ${evt.key} for guest=${evt.guest}"
+                logDebug "Hotspot event detected ? ${evt.key} for guest=${evt.guest}"
                 debounceHotspotRefresh()
                 return
             }
 
-            // Normal client
+            // ---- Normal client ----
             def child = findChildDevice(evt.user)
             if (!child) return
 
@@ -550,10 +561,12 @@ void parse(String message) {
                 return
             }
 
+            // Cancel pending disconnect if client reconnected
             if (state.disconnectTimers?.containsKey(evt.user)) {
                 state.disconnectTimers.remove(evt.user)
             }
 
+            // Skip if already present
             if (child.currentValue("presence") == "present") return
 
             // SSID extraction with sanitization
@@ -561,7 +574,7 @@ void parse(String message) {
             if (evt.msg) {
                 def matcher = (evt.msg =~ /SSID\s+(.+)/)
                 if (matcher.find()) {
-                    ssidVal = cleanSSID(matcher.group(1))   // Use helper
+                    ssidVal = cleanSSID(matcher.group(1))   // helper to sanitize
                 }
             }
 
@@ -574,7 +587,7 @@ void parse(String message) {
             ])
         }
 
-        updateChildAndGuestSummaries()	// Always update summary counts after processing events
+        updateChildAndGuestSummaries()		// Always refresh summaries after processing a batch of events
     }
     catch (e) {
         logError "parse() failed: ${e.message}"
