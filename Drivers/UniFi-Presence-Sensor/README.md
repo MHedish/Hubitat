@@ -1,131 +1,115 @@
 # UniFi Presence Drivers
 
+![status](https://img.shields.io/badge/release-stable-green)
+![version](https://img.shields.io/badge/version-v1.7.4.0-blue)
+
 Hubitat driver pair for detecting presence using a UniFi Network Controller or UniFi OS Console.  
 Supports wireless clients and hotspot guest monitoring with automatic child device creation.
+
+> **Note:** This is the current **stable release** (`v1.7.4.0`, 2025-09-10).  
+> See the [Changelog](../../changelog.md) for full release notes.  
+> All users are recommended to upgrade to this version.
+
+---
+
+## ⚡ Quick Start
+
+1. Install the drivers via **Hubitat Package Manager (HPM)** – search for **`unifi`** or **`presence`**.  
+2. Create a virtual device using the **UniFi Presence Controller** driver.  
+3. Enter your UniFi **IP, site name, username, and password** in the preferences.  
+4. Save Preferences.  
+5. Use **Auto Create Clients** to add your wireless clients.  
+6. Presence events will begin reporting immediately.  
 
 ---
 
 ## ✨ Features
 
 ### Parent Driver: UniFi Presence Controller
-- Connects to UniFi Controller / UniFi OS.
-- Tracks wireless clients for presence detection.
-- Supports hotspot guest monitoring (optional child device).
-- Bulk management:
-  - `refreshAllChildren()`
-  - `reconnectAllChildren()`
-- Automatic child device creation via `autoCreateClients(days)`.
-- Exposes UniFi sysinfo:
-  - `deviceType`, `hostName`, `UniFiOS`, `Network`.
-- Resilient cookie refresh (every 110 minutes).
+- Connects to UniFi Controller / UniFi OS to track presence.  
+- Supports **optional Hotspot Child** for guest monitoring.  
+- Automatically creates child devices for wireless clients.  
+- Provides summaries:  
+  - **Child Devices** → “X of Y Present”  
+  - **Guest Devices** → “X of Y Present”  
+- Bulk management buttons:  
+  - **Refresh All Children**  
+  - **Reconnect All Children**  
+- Exposes UniFi sysinfo:  
+  - `deviceType`, `hostName`, `UniFiOS`, `Network`  
+- Resilient design: cookie refresh, event filtering (wireless only), disconnect recovery.  
+- Logging options (debug & raw events, auto-disable after 30 minutes).  
 
 ### Child Driver: UniFi Presence Device
-- Presence sensor with **Arrived** / **Departed** buttons.
-- Tracks access point, SSID, and hotspot guest details.
-- Switch capability for blocking/unblocking client devices.
-- Attributes:
-  - `presence`
-  - `presenceChanged` (timestamp of last change)
-  - `accessPoint`, `accessPointName`
-  - `ssid`
-  - `hotspotGuests`, `totalHotspotClients`
-  - `hotspotGuestList`, `hotspotGuestListRaw`
-  - `switch`
+- Works as a **Presence Sensor** in Hubitat.  
+- Buttons:  
+  - **Arrived**  
+  - **Departed**  
+- Tracks:  
+  - `accessPoint`, `accessPointName`  
+  - `ssid`  
+  - `presenceChanged` (last change timestamp)  
+  - `hotspotGuests`, `totalHotspotClients`  
+  - `hotspotGuestList`, `hotspotGuestListRaw`  
+- Syncs name/label with parent device automatically.  
+- Normalizes MAC formatting (dashes → colons, lowercase).  
 
 ---
 
 ## 📦 Installation (via HPM)
 
-The drivers are availble via the Hubitat Package Manager
+The UniFi Presence Drivers are available through the **Hubitat Package Manager (HPM)**.
+
+1. Open the HPM app on your Hubitat hub.  
+2. Choose **Install → Search by Keyword**.  
+3. Search for **`unifi`** or **`presence`**.  
+4. Select **UniFi Presence Drivers** and install.  
+
+Alternatively, you can install directly using the package manifest URL:  
 https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/packageManifest.json
 
-## 📥 Installation
-
-### 1. Add Drivers
-In Hubitat:  
-- Go to **Drivers Code → New Driver → Import**.  
-- Import each driver using its `importUrl`:  
-
-**Parent Driver:**
-https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy
-
-**Child Driver:**
-https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy
-
-Click **Save** for each driver.  
-
 ---
 
-### 2. Create Parent Device
-- Go to **Devices → Add Virtual Device**.  
-- Name it (e.g. `UniFi Presence Controller`).  
-- Assign the **UniFi Presence Controller** driver.  
+## 📥 Manual Installation
 
----
+**Parent Driver:**  
+https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy  
 
-### 3. Configure Parent Device
-In the parent device settings:  
-- Enter **UniFi Controller IP**.  
-- Enter **Site Name** (default = `default`).  
-- Enter **Username / Password**.  
-- Adjust preferences (refresh interval, debounce time, logging).  
-- Enable **Hotspot Clients** if desired.  
-
-Click **Save Preferences**.  
-
----
-
-### 4. Create Child Devices
-- From the parent device page, you can automatically create the child devices via **Auto Create Clients**
-This will read list of wireless devices that have been connected in the past XX days.  The default is 30 days.
-NOTE -- This can create a large number of devices.  You can manually delete the child devices to prune the list.
-
-Alternatively, you can manually enter a name and MAC address for the wireless devices you want to monitor via the **Create Client Device** option.
-
-- The parent will create child devices using the **UniFi Presence Device** driver.  
-- A special **Hotspot child** is created automatically if hotspot monitoring is enabled.  
+**Child Driver:**  
+https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy  
 
 ---
 
 ## ⚙️ Configuration
 
 ### Required (Parent Driver)
-- **Controller IP** – UniFi Controller or UniFi OS hostname/IP.
-- **Username** / **Password** – UniFi account credentials.
-- **Site Name** – Typically `default`, or the name of your UniFi site.
+- **Controller IP** – UniFi Controller or UniFi OS hostname/IP.  
+- **Username / Password** – UniFi account credentials.  
+- **Site Name** – Typically `default`, or your UniFi site name.  
 
 ### Optional
-- **Custom Port** – Use uncommon ports if required.
-- **Disconnect Debounce** – Delay before marking devices “not present” (default 30s).
-- **Hotspot Monitoring** – Enable hotspot child device for guest tracking.
-- **Logging** – Enable debug or raw event logging (auto-disables after 30 min).
+- **Disconnect Debounce** – Delay before marking devices not present (default: 20s).  
+- **Auto Create Clients** – Button to scan UniFi and add wireless clients (default: 1 day).  
+- **Hotspot Monitoring** – Creates special child device for guest tracking.  
+- **Logging** – Enable debug or raw event logging (auto-disables after 30 minutes).  
 
 ---
 
-## 📊 Attributes & Commands
+## 📊 Attributes & Controls
 
 ### Parent Driver
-- **Attributes**: `commStatus`, `eventStream`, `driverInfo`, sysinfo fields.
-- **Commands**:  
-- `createClientDevice(name, mac)`  
-- `refreshAllChildren()` / `reconnectAllChildren()`  
-- `autoCreateClients(days)`  
+- **Attributes:** `commStatus`, `eventStream`, `driverInfo`, `childDevices`, `guestDevices`, sysinfo fields.  
+- **Commands (buttons):** Create Client Device, Auto Create Clients, Refresh All Children, Reconnect All Children.  
 
 ### Child Driver
-- **Attributes**: presence, access point info, SSID, hotspot guest details.  
-- **Commands**:  
-- `arrived()` / `departed()`  
-- `on()` / `off()` (block/unblock client access)  
+- **Attributes:** `presence`, `presenceChanged`, `accessPoint`, `accessPointName`, `ssid`, hotspot guest fields.  
+- **Commands (buttons):** Arrived, Departed.  
 
 ---
 
 ## 📝 Version History
 See [Changelog](../../changelog.md) for full release notes.  
-Latest release: **v1.5.9 (2025-09-05)**  
-- Normalized version handling.  
-- Logging overlap fix.  
-- Presence timestamp renamed to `presenceChanged`.  
-- Cookie refresh scheduling hardened.  
+Latest release: **v1.7.4.0 (2025-09-10)** – stable release.  
 
 ---
 
