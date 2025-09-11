@@ -3,26 +3,39 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 
 ---
 
-## v1.7.3.0 (2025-09-09)
+## v1.7.4.0 (2025-09-10) — **Stable Release**
 **Parent Driver**
-- Added `cleanSSID()` helper for consistent SSID sanitization.
-- SSID values now cleaned in `parse()` and `refreshFromChild()`.
-- Removes stray quotes and `"on channel …"` fragments from UniFi event logs.
+- Stable release - consolidated SSID sanitization, event filtering (EVT_W), child/guest summaries, and ASCII-safe cleanup.
 
 **Child Driver**
-- No changes (remains at v1.7.1.1).
+- Stable release - aligned with parent, ASCII-safe cleanup, logging fixes (dashes/colons, arrows).
+
+---
+
+## v1.7.3.1 (2025-09-10)
+**Parent Driver**
+- Optimized event parsing - early filter tightened to EVT_W (wireless only), eliminating LAN event JSON parsing.
+
+**Child Driver**
+- No changes.
+
+---
+
+## v1.7.3.0 (2025-09-09)
+**Parent Driver**
+- Added cleanSSID() helper; SSID sanitized in parse() and refreshFromChild() (removes quotes and channel info).
+
+**Child Driver**
+- No changes.
 
 ---
 
 ## v1.7.2.0 (2025-09-09)
 **Parent Driver**
-- Added `childDevices` and `guestDevices` string attributes.
-- `childDevices` shows “xx of yy Present” for normal children.
-- `guestDevices` shows “xx of yy Present” for hotspot guests.
-- Attributes now update automatically during `refresh()`, `refreshAllChildren()`, `reconnectAllChildren()`, `updated()`, real-time UniFi events (`parse()`), disconnect debounce expiry (`markNotPresent()`), hotspot refresh (`refreshHotspotChild()`), and individual child refresh (`refreshFromChild()`).
+- Added childDevices and guestDevices attributes; updated on refresh(), refreshAllChildren(), reconnectAllChildren(), updated(), parse(), markNotPresent(), refreshHotspotChild(), refreshFromChild().
 
 **Child Driver**
-- No changes (remains at v1.7.1.1).
+- No changes.
 
 ---
 
@@ -31,7 +44,7 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Unified Raw Event Logging disable with Debug Logging (auto-disable 30m, safe unschedule handling).
 
 **Child Driver**
-- Version bump to align with parent driver (no functional changes).
+- No changes.
 
 ---
 
@@ -40,7 +53,7 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Improved SSID handling in parse() and refreshFromChild() (handles spaces, quotes, special chars; empty SSID → null).
 
 **Child Driver**
-- Added sync of device name/label to data values in `refresh()`.
+- No changes.
 
 ---
 
