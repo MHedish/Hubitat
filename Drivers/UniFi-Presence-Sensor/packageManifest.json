@@ -1,10 +1,10 @@
 {
   "packageName": "UniFi Presence Drivers",
   "author": "Marc Hedish",
-  "version": "1.7.3",
+  "version": "1.7.4",
   "minimumHEVersion": "2.2.8",
-  "dateReleased": "2025-09-09",
-  "releaseNotes": "v1.7.1: Normalized version handling, logging overlap fix, presenceChanged attribute, cookie refresh improvements.",
+  "dateReleased": "2025-09-10",
+  "releaseNotes": "1.7.4.0: Stable release - aligned with parent, ASCII-safe cleanup, logging fixes (dashes/colons, arrows).",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/README.md",
   "communityLink": "https://community.hubitat.com/",
   "licenseFile": "https://www.apache.org/licenses/LICENSE-2.0",
@@ -18,7 +18,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy",
       "required": true,
-      "version": "1.7.3.1"
+      "version": "1.7.4.0"
     },
     {
       "id": "8e7c50a6-d3aa-11ef-b6e1-234567890002",
@@ -26,7 +26,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy",
       "required": true,
-      "version": "1.7.1.0"
+      "version": "1.7.4.0"
     }
   ]
 }
