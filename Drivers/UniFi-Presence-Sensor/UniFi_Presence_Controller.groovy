@@ -11,10 +11,10 @@
 *  20250813 -- v1.0.0: Initial version based on tomw
 *  20250818 -- v1.1.0: Added driver info tile
 *  20250819 -- v1.2.0: Optimized, unified queries, debounce + logging improvements
-*  20250822 -- v1.2.4–1.2.13: SSID handling, debounce refinements, LAN event filtering
-*  20250825 -- v1.2.14–1.2.16: Hotspot monitoring tweaks, child DNI changes
-*  20250828 -- v1.3.0–1.3.9: Hotspot monitoring framework + debounce handling
-*  20250829 -- v1.3.13–1.3.15: Hotspot child detection, disconnectDebounce=30s, httpTimeout=15s
+*  20250822 -- v1.2.4-1.2.13: SSID handling, debounce refinements, LAN event filtering
+*  20250825 -- v1.2.14-1.2.16: Hotspot monitoring tweaks, child DNI changes
+*  20250828 -- v1.3.0-1.3.9: Hotspot monitoring framework + debounce handling
+*  20250829 -- v1.3.13-1.3.15: Hotspot child detection, disconnectDebounce=30s, httpTimeout=15s
 *  20250830 -- v1.4.5: Stable release; hotspot presence verification via _last_seen_by_uap
 *  20250901 -- v1.4.8: Proactive cookie refresh (110 min), quiet null handling in refreshFromChild(), refined logging
 *  20250902 -- v1.4.8.3: Exposed sysinfo fields as attributes (deviceType, hostName, UniFiOS, Network)
@@ -33,19 +33,20 @@
 *  20250908 -- v1.5.10.2: Restored missing @Field event declarations (connectingEvents, disconnectingEvents, allConnectionEvents)
 *  20250908 -- v1.6.0: Version bump for new development cycle
 *  20250908 -- v1.6.0.1: Fixed incorrect unschedule() call for raw event logging auto-disable
-*  20250908 -- v1.6.0.2: Improved autoCreateClients() — prevent blank labels/names when UniFi reports empty strings
-*  20250908 -- v1.6.0.3: Hardened login() — ensure refreshCookie is always rescheduled via finally block
+*  20250908 -- v1.6.0.2: Improved autoCreateClients() - prevent blank labels/names when UniFi reports empty strings
+*  20250908 -- v1.6.0.3: Hardened login() - ensure refreshCookie is always rescheduled via finally block
 *  20250908 -- v1.6.0.4: Removed duplicate hotspot refresh call in refresh(); added warning if UniFi login() returns no cookie
-*  20250908 -- v1.6.0.5: Improved resiliency — reset WebSocket backoff after stable connection; retry HTTP auth on 401/403
+*  20250908 -- v1.6.0.5: Improved resiliency - reset WebSocket backoff after stable connection; retry HTTP auth on 401/403
 *  20250908 -- v1.6.1: Consolidated fixes through v1.6.0.5 into stable release
 *  20250908 -- v1.6.4.0: Applied fixes to markNotPresent debounce recovery and logging improvements
-*  20250908 -- v1.6.4.1: Improved switch handling — parent now refreshes client immediately after block/unblock
+*  20250908 -- v1.6.4.1: Improved switch handling - parent now refreshes client immediately after block/unblock
 *  20250908 -- v1.7.0.0: Removed block/unblock (Switch) support; driver now focused solely on presence detection
 *  20250909 -- v1.7.1.0: Improved SSID handling in parse() and refreshFromChild() (handles spaces, quotes, special chars; empty SSID ? null)
 *  20250909 -- v1.7.1.1: Unified Raw Event Logging disable with Debug Logging (auto-disable 30m, safe unschedule handling)
 *  20250909 -- v1.7.2.0: Added childDevices and guestDevices attributes; updated on refresh(), refreshAllChildren(), reconnectAllChildren(), updated(), parse(), markNotPresent(), refreshHotspotChild(), refreshFromChild()
 *  20250909 -- v1.7.3.0: Added cleanSSID() helper; SSID sanitized in parse() and refreshFromChild() (removes quotes and channel info)
-*  20250910 -- v1.7.3.1: Optimized event parsing — early filter tightened to EVT_W (wireless only), eliminating LAN event JSON parsing
+*  20250910 -- v1.7.3.1: Optimized event parsing - early filter tightened to EVT_W (wireless only), eliminating LAN event JSON parsing
+*  20250910 -- v1.7.4.0: Stable release - consolidated SSID sanitization, event filtering (EVT_W), child/guest summaries, and ASCII-safe cleanup
 */
 
 import groovy.transform.Field
@@ -53,7 +54,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.7.3.1"
+@Field static final String DRIVER_VERSION  = "1.7.4.0"
 @Field static final String DRIVER_MODIFIED = "2025.09.10"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
@@ -105,7 +106,7 @@ metadata {
         command "autoCreateClients", [[
             name: "Last Seen (days)",
             type: "NUMBER",
-            description: "Create wireless clients seen in the last X days (default 7)"
+            description: "Create wireless clients seen in the last XX days (default 1)"
         ]]
     }
 }
@@ -133,7 +134,7 @@ preferences {
     input "customPortNum", "number", title: "Custom Port Number", required: false
 
     // Timeouts & Debounce
-    input "disconnectDebounce", "number", title: "Disconnect Debounce (seconds, default=30)", defaultValue: 30
+    input "disconnectDebounce", "number", title: "Disconnect Debounce (seconds, default=20)", defaultValue: 20
     input "httpTimeout", "number", title: "HTTP Timeout (seconds, default=15)", defaultValue: 15
 
     // Hotspot Monitoring
@@ -370,8 +371,8 @@ def updateChildAndGuestSummaries() {
    =============================== */
 def autoCreateClients(days = null) {
     try {
-        // Default to 7 days if no input
-        def lookbackDays = (days && days.toInteger() > 0) ? days.toInteger() : 7
+        // Default to 1 day if no input
+        def lookbackDays = (days && days.toInteger() > 0) ? days.toInteger() : 1
         logInfo "Auto-creating clients last seen within ${lookbackDays} days (wireless only)"
 
         def since = (now() / 1000) - (lookbackDays * 86400)
@@ -458,9 +459,9 @@ def refreshHotspotChild() {
 
         if (logEnable) {
             logDebug "Hotspot: total non-expired guests (${totalGuests})"
-            logDebug "Hotspot: connected guests (${connectedCount}) ? ${guestListFriendlyStr}"
-            logDebug "Hotspot raw list ? ${guestListRawStr}"
-            logDebug "Hotspot summary ? presence=${presence}, connected=${connectedCount}, total=${totalGuests}"
+            logDebug "Hotspot: connected guests (${connectedCount}) -> ${guestListFriendlyStr}"
+            logDebug "Hotspot raw list -> ${guestListRawStr}"
+            logDebug "Hotspot summary -> presence=${presence}, connected=${connectedCount}, total=${totalGuests}"
         }
 
         updateChildAndGuestSummaries()
@@ -485,7 +486,7 @@ def refreshChildren() {
 
 def refreshFromChild(mac) {
     def client = queryClientByMac(mac)
-    logDebug "refreshFromChild(${mac}) ? ${client ?: 'offline/null'}"
+    logDebug "refreshFromChild(${mac}) -> ${client ?: 'offline/null'}"
 
     def child = findChildDevice(mac)
     if (!child) {
