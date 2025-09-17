@@ -107,6 +107,41 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 
 ---
 
+### ❓ FAQ / Troubleshooting
+
+**Q: The parent device says `commStatus: error` or never connects.**  
+A: Double-check your UniFi Controller IP, site name, username, and password. If using UniFi OS (UDM/UDR/Cloud Key Gen2+), the default port is `443`. For standalone controllers, use `8443`.
+
+---
+
+**Q: My child devices never show as present.**  
+A: Ensure the parent driver is connected (`commStatus: good`). If present but still failing, try:  
+- Refresh the parent device.  
+- Verify the child’s MAC matches UniFi’s format (colons, lowercase).  
+- Use *Auto Create Clients* to avoid typos.  
+
+---
+
+**Q: Presence seems “flaky” with lots of false departures.**  
+A: Increase the *Disconnect Debounce* time in the parent driver preferences (default = 20s). 30–60s works well in busy Wi-Fi environments.
+
+---
+
+**Q: Can I track UniFi guest hotspot clients?**  
+A: Yes. Enable *Hotspot Monitoring* in the parent driver preferences. A special “Guest” child device will be created that shows presence and guest counts.
+
+---
+
+**Q: Does this work with LAN/wired devices?**  
+A: No. This driver is focused on **wireless presence only** for efficiency. LAN events are filtered out.
+
+---
+
+**Q: Debug logs are filling up my hub logs.**  
+A: Both debug and raw event logging auto-disable after 30 minutes. You can also manually turn them off using the parent device commands.
+
+---
+
 ## 📝 Version History
 See [Changelog](../../changelog.md) for full release notes.  
 Latest release: **v1.7.4.0 (2025-09-10)** – stable release.  
