@@ -41,13 +41,14 @@
 *  20250908 -- v1.7.0.0: Removed Switch capability and on/off commands
 *  20250908 -- v1.7.1.0: Added sync of device name/label to data values in refreshed()
 *  20250910 -- v1.7.4.0: Stable release - aligned with parent, ASCII-safe cleanup, logging fixes (dashes/colons, arrows)
+*  20250917 -- v1.7.5.0: Version bump for alignment with parent (no functional changes)
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.7.4.0"
-@Field static final String DRIVER_MODIFIED = "2025.09.10"
+@Field static final String DRIVER_VERSION  = "1.7.5.0"
+@Field static final String DRIVER_MODIFIED = "2025.09.17"
 
 /* ===============================
    Version Info
