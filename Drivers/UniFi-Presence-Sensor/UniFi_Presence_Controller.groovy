@@ -33,20 +33,22 @@
 *  20250908 -- v1.5.10.2: Restored missing @Field event declarations (connectingEvents, disconnectingEvents, allConnectionEvents)
 *  20250908 -- v1.6.0: Version bump for new development cycle
 *  20250908 -- v1.6.0.1: Fixed incorrect unschedule() call for raw event logging auto-disable
-*  20250908 -- v1.6.0.2: Improved autoCreateClients() - prevent blank labels/names when UniFi reports empty strings
-*  20250908 -- v1.6.0.3: Hardened login() - ensure refreshCookie is always rescheduled via finally block
+*  20250908 -- v1.6.0.2: Improved autoCreateClients() — prevent blank labels/names when UniFi reports empty strings
+*  20250908 -- v1.6.0.3: Hardened login() — ensure refreshCookie is always rescheduled via finally block
 *  20250908 -- v1.6.0.4: Removed duplicate hotspot refresh call in refresh(); added warning if UniFi login() returns no cookie
-*  20250908 -- v1.6.0.5: Improved resiliency - reset WebSocket backoff after stable connection; retry HTTP auth on 401/403
+*  20250908 -- v1.6.0.5: Improved resiliency — reset WebSocket backoff after stable connection; retry HTTP auth on 401/403
 *  20250908 -- v1.6.1: Consolidated fixes through v1.6.0.5 into stable release
 *  20250908 -- v1.6.4.0: Applied fixes to markNotPresent debounce recovery and logging improvements
-*  20250908 -- v1.6.4.1: Improved switch handling - parent now refreshes client immediately after block/unblock
+*  20250908 -- v1.6.4.1: Improved switch handling — parent now refreshes client immediately after block/unblock
 *  20250908 -- v1.7.0.0: Removed block/unblock (Switch) support; driver now focused solely on presence detection
 *  20250909 -- v1.7.1.0: Improved SSID handling in parse() and refreshFromChild() (handles spaces, quotes, special chars; empty SSID ? null)
 *  20250909 -- v1.7.1.1: Unified Raw Event Logging disable with Debug Logging (auto-disable 30m, safe unschedule handling)
 *  20250909 -- v1.7.2.0: Added childDevices and guestDevices attributes; updated on refresh(), refreshAllChildren(), reconnectAllChildren(), updated(), parse(), markNotPresent(), refreshHotspotChild(), refreshFromChild()
 *  20250909 -- v1.7.3.0: Added cleanSSID() helper; SSID sanitized in parse() and refreshFromChild() (removes quotes and channel info)
-*  20250910 -- v1.7.3.1: Optimized event parsing - early filter tightened to EVT_W (wireless only), eliminating LAN event JSON parsing
-*  20250910 -- v1.7.4.0: Stable release - consolidated SSID sanitization, event filtering (EVT_W), child/guest summaries, and ASCII-safe cleanup
+*  20250910 -- v1.7.3.1: Optimized event parsing — early filter tightened to EVT_W (wireless only), eliminating LAN event JSON parsing
+*  20250910 -- v1.7.4.0: Stable release — feature complete and hardened
+*  20250917 -- v1.7.5.0: Added encodeSiteName() helper — site names with spaces/special chars are now URL-encoded for safe API calls
+*  20250917 -- v1.7.5.1: Added webSocketStatus() and webSocketMessage() handlers — fixes missing method errors, routes UniFi events to parse()
 */
 
 import groovy.transform.Field
@@ -54,8 +56,8 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.7.4.0"
-@Field static final String DRIVER_MODIFIED = "2025.09.10"
+@Field static final String DRIVER_VERSION  = "1.7.5.1"
+@Field static final String DRIVER_MODIFIED = "2025.09.17"
 
 @Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
 @Field List disconnectingEvents = ["EVT_WU_Disconnected", "EVT_WG_Disconnected"]
@@ -507,7 +509,7 @@ def refreshFromChild(mac) {
         return
     }
 
-    // Client found ? mark as present
+    // Client found -> mark as present
     def states = [
         presence: (client?.ap_mac ? "present" : "not present"),
         accessPoint: client?.ap_mac ?: "unknown",
@@ -639,33 +641,57 @@ private formatTimestamp(rawTime) {
 }
 
 /* ===============================
-   WebSocket Status Handler
+   WebSocket Handling
    =============================== */
-def webSocketStatus(String message) {
-    logDebug "webSocketStatus: ${message}"
-
-    if (message.startsWith("status: open")) {
-        emitEvent("commStatus", "good")
-        state.reconnectDelay = 1   // reset backoff after stable connection
-        setWasExpectedClose(false)
-
-    } else if (message.startsWith("status: closing")) {
-        emitEvent("commStatus", "no events")
-        if (getWasExpectedClose()) {
+def webSocketStatus(String status) {
+    if (status.startsWith("status: open")) {
+        logInfo "WebSocket connection established"
+        state.reconnectDelay = 1  // reset backoff
+    }
+    else if (status.startsWith("status: closing")) {
+        logWarn "WebSocket is closing"
+    }
+    else if (status.startsWith("status: closed")) {
+        logWarn "WebSocket closed"
+        if (!getWasExpectedClose()) {
+            logWarn "WebSocket closed unexpectedly, scheduling reinitialize()"
+            reinitialize()
+        } else {
             setWasExpectedClose(false)
-            return
         }
+    }
+    else if (status.startsWith("failure:")) {
+        logError "WebSocket failure: ${status}"
         reinitialize()
+    }
+    else {
+        logDebug "Unhandled WebSocket status: ${status}"
+    }
+}
 
-    } else if (message.startsWith("failure:")) {
-        emitEvent("commStatus", "error")
-        reinitialize()
+def webSocketMessage(String message) {
+    try {
+        parse(message)   // forward payload to existing parse()
+    }
+    catch (e) {
+        logError "webSocketMessage() failed: ${e.message}"
     }
 }
 
 /* ===============================
    Networking / Query / Helpers
    =============================== */
+import java.net.URLEncoder
+
+private encodeSiteName(name) {
+    try {
+        return URLEncoder.encode(name ?: "default", "UTF-8")
+    } catch (Exception e) {
+        logWarn "encodeSiteName() failed, falling back to raw siteName: ${e.message}"
+        return name ?: "default"
+    }
+}
+
 def initialize() {
     setVersion()
     emitEvent("commStatus", "unknown")
@@ -692,7 +718,6 @@ def initialize() {
     }
 }
 
-
 def recoverDisconnectTimers() {
     def timers = state.disconnectTimers ?: [:]
     timers.each { mac, deadline ->
@@ -712,7 +737,7 @@ def refresh() {
     unschedule("refresh")
     setVersion()
     refreshChildren()
-    updateChildAndGuestSummaries()   // <-- NEW
+    updateChildAndGuestSummaries()
     scheduleOnce(refreshInterval, "refresh")
 }
 
@@ -742,11 +767,10 @@ def queryClients(endpoint, single = false) {
 def queryClientByMac(mac) {
     try {
         def resp = runQuery("stat/sta/${mac}", true)
-        return resp?.data?.data?.getAt(0)  // return the first client record if found
+        return resp?.data?.data?.getAt(0)
     }
     catch (groovyx.net.http.HttpResponseException e) {
         if (e.response?.status == 400) {
-            // 400 = client is offline (normal UniFi behavior)
             logDebug "queryClientByMac(${mac}): client reported offline by controller (HTTP 400)"
             return null
         } else {
@@ -758,7 +782,6 @@ def queryClientByMac(mac) {
     }
     return null
 }
-
 
 def queryActiveClients()  { queryClients("stat/sta", false) }
 def queryKnownClients()   { queryClients("rest/user", false) }
@@ -777,10 +800,10 @@ def querySysInfo() {
 
         logDebug "sysinfo.udm_version = ${udmVersion}"
 
-        sendEvent(name: "deviceType", value: deviceType)
-        sendEvent(name: "hostName", value: hostName)
-        sendEvent(name: "UniFiOS", value: consoleDisplayVersion)
-        sendEvent(name: "Network", value: networkVersion)
+        emitEvent("deviceType", deviceType)
+        emitEvent("hostName", hostName)
+        emitEvent("UniFiOS", consoleDisplayVersion)
+        emitEvent("Network", networkVersion)
 
     } catch (e) {
         logError "querySysInfo() failed: ${e.message}"
@@ -794,9 +817,10 @@ def reinitialize() {
 }
 
 def openEventSocket() {
-    logDebug "Connecting websocket ? ${getWssURI(siteName)}"
+    def safeSite = encodeSiteName(siteName)
+    logDebug "Connecting websocket -> ${getWssURI(safeSite)}"
     interfaces.webSocket.connect(
-        getWssURI(siteName),
+        getWssURI(safeSite),
         headers: genHeadersWss(),
         ignoreSSLIssues: true,
         perMessageDeflate: false
@@ -984,15 +1008,17 @@ def getLoginSuffix()  { getUniFiOS() ? "api/auth/login"  : "api/login" }
 def getLogoutSuffix() { getUniFiOS() ? "api/auth/logout" : "api/logout" }
 
 def getKnownClientsSuffix() {
+    def safeSite = encodeSiteName(siteName)
     return getUniFiOS()
-        ? "proxy/network/api/s/${siteName}/"
-        : "api/s/${siteName}/"
+        ? "proxy/network/api/s/${safeSite}/"
+        : "api/s/${safeSite}/"
 }
 
 def getWssURI(site) {
+    def safeSite = encodeSiteName(site)
     return getUniFiOS()
-        ? "wss://${controllerIP}:${(customPort ? customPortNum : 443)}/proxy/network/wss/s/${site}/events"
-        : "wss://${controllerIP}:${(customPort ? customPortNum : 8443)}/wss/s/${site}/events"
+        ? "wss://${controllerIP}:${(customPort ? customPortNum : 443)}/proxy/network/wss/s/${safeSite}/events"
+        : "wss://${controllerIP}:${(customPort ? customPortNum : 8443)}/wss/s/${safeSite}/events"
 }
 
 /* ===============================
