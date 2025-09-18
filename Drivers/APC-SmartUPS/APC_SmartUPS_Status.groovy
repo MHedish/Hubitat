@@ -23,12 +23,13 @@
 *  0.1.10.0 -- Prep for extended testing; aligned all parse blocks with unified logging style
 *  0.1.11.0 -- Added logEvents preference; converted all sendEvent calls to emitEvent wrapper
 *  0.1.12.0 -- Quieted duplicate telnet close warnings; closeConnection() now debug-only; confirmed event/log alignment
+*  0.1.13.0 -- Replaced confusing 'disable' flag with positive 'controlEnabled' option; UPS monitoring always works, control commands gated
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.1.12.0"
+@Field static final String DRIVER_VERSION  = "0.1.13.0"
 @Field static final String DRIVER_MODIFIED = "2025.09.18"
 
 /* ===============================
@@ -72,7 +73,7 @@ metadata {
        attribute "connectStatus", "string"
        attribute "UPSStatus", "string"
        attribute "lastUpdate" , "string"
-       attribute "nextCheckMinutes", "number"   // changed to numeric
+       attribute "nextCheckMinutes", "number"
 
        // === Runtime & battery ===
        attribute "runtimeHours", "number"
@@ -201,11 +202,14 @@ preferences {
         defaultValue: false
     )
 
-    // === Behavior ===
-    input("disable", "bool",
-        title: "Disable driver?",
+    // === Control Behavior ===
+    input("controlEnabled", "bool",
+        title: "Enable UPS Control Commands?",
+        description: "Allow Reboot, Sleep, Runtime Calibrate, and Outlet Group control. When off, driver will operate in monitoring-only mode.",
         defaultValue: false
     )
+
+    // === Temperature ===
     input("tempUnits", "enum",
         title: "Temperature Units",
         options: ["F","C"],
@@ -273,7 +277,9 @@ def configure() {
     setVersion()
 }
 
-
+/* ===============================
+   initialize()
+   =============================== */
 def initialize() {
     def scheduleString
 
@@ -330,7 +336,7 @@ def initialize() {
         device.updateSetting("runTimeOnBattery", [value: runTimeOnBatteryInt, type: "number"])
         device.updateSetting("runOffset", [value: runOffsetInt, type: "number"])
 
-        if (!disable) {
+        if (controlEnabled) {
             if ((state.origAppName) && (state.origAppName != "") && (state.origAppName != device.getLabel())) {
                 device.setLabel(state.origAppName)
             }
@@ -351,11 +357,11 @@ def initialize() {
             emitEvent("lastCommand", "Scheduled")
             refresh()
         } else {
-            logDebug "App Disabled"
+            logDebug "UPS Control Disabled"
             unschedule()
             runIn(60, autoDisableDebugLogging)
             if ((state.origAppName) && (state.origAppName != "")) {
-                device.setLabel(state.origAppName + " (Disabled)")
+                device.setLabel(state.origAppName + " (Control Disabled)")
             }
             state.disabled = true
             state.checkIntervalMinutes = 0
@@ -366,7 +372,6 @@ def initialize() {
     }
 }
 
-
 /* ===============================
    Commands
    =============================== */
@@ -374,7 +379,7 @@ def initialize() {
 def UPS_Reboot() {
     emitEvent("lastCommandResult", "NA")
     logInfo "Reboot called."
-    if (!disable) {
+    if (controlEnabled) {
         logDebug "SmartUPS Status Version ($state.version)"
         emitEvent("lastCommand", "RebootConnect")
         emitEvent("connectStatus", "Trying")
@@ -382,14 +387,14 @@ def UPS_Reboot() {
         telnetClose()
         telnetConnect(UPSIP, UPSPort.toInteger(), null, null)
     } else {
-        logWarn "Reboot called but driver is disabled. Will not run."
+        logWarn "Reboot called but UPS control is disabled. Will not run."
     }
 }
 
 def UPS_Sleep() {
     emitEvent("lastCommandResult", "NA")
     logInfo "Sleep called."
-    if (!disable) {
+    if (controlEnabled) {
         logDebug "SmartUPS Status Version ($state.version)"
         emitEvent("lastCommand", "SleepConnect")
         emitEvent("connectStatus", "Trying")
@@ -397,14 +402,14 @@ def UPS_Sleep() {
         telnetClose()
         telnetConnect(UPSIP, UPSPort.toInteger(), null, null)
     } else {
-        logWarn "Sleep called but driver is disabled. Will not run."
+        logWarn "Sleep called but UPS control is disabled. Will not run."
     }
 }
 
 def UPS_RuntimeCalibrate() {
     emitEvent("lastCommandResult", "NA")
     logInfo "Runtime Calibrate called."
-    if (!disable) {
+    if (controlEnabled) {
         logDebug "SmartUPS Status Version ($state.version)"
         emitEvent("lastCommand", "CalibrateConnect")
         emitEvent("connectStatus", "Trying")
@@ -412,7 +417,7 @@ def UPS_RuntimeCalibrate() {
         telnetClose()
         telnetConnect(UPSIP, UPSPort.toInteger(), null, null)
     } else {
-        logWarn "Calibrate called but driver is disabled. Will not run."
+        logWarn "Calibrate called but UPS control is disabled. Will not run."
     }
 }
 
@@ -446,7 +451,7 @@ def UPS_SetOutletGroup(p1, p2, p3) {
     }
 
     if (goOn) {
-        if (!disable) {
+        if (controlEnabled) {
             logDebug "SmartUPS Status Version ($state.version)"
             emitEvent("lastCommand", "SetOutletGroupConnect")
             emitEvent("connectStatus", "Trying")
@@ -454,7 +459,7 @@ def UPS_SetOutletGroup(p1, p2, p3) {
             telnetClose()
             telnetConnect(UPSIP, UPSPort.toInteger(), null, null)
         } else {
-            logWarn "SetOutletGroup called but driver is disabled. Will not run."
+            logWarn "SetOutletGroup called but UPS control is disabled. Will not run."
         }
     }
 }
@@ -462,21 +467,18 @@ def UPS_SetOutletGroup(p1, p2, p3) {
 def refresh() {
     logInfo "${driverInfoString()} refreshing..."
 
-    if (!disable) {
-        state.batteryPercent = "Unknown"
-        state.runtimeMinutes = "Unknown"
-        state.upsStatus = "Unknown"
-        state.nextCheckMinutes = "Unknown"
+    // Refresh should ALWAYS run, since it's monitoring only
+    state.batteryPercent = "Unknown"
+    state.runtimeMinutes = "Unknown"
+    state.upsStatus = "Unknown"
+    state.nextCheckMinutes = "Unknown"
 
-        emitEvent("lastCommand", "initialConnect")
-        emitEvent("connectStatus", "Trying")
+    emitEvent("lastCommand", "initialConnect")
+    emitEvent("connectStatus", "Trying")
 
-        logDebug "Connecting to ${UPSIP}:${UPSPort}"
-        telnetClose()
-        telnetConnect(UPSIP, UPSPort.toInteger(), null, null)
-    } else {
-        logWarn "Refresh called but driver is disabled. Will not run."
-    }
+    logDebug "Connecting to ${UPSIP}:${UPSPort}"
+    telnetClose()
+    telnetConnect(UPSIP, UPSPort.toInteger(), null, null)
 }
 
 /* ===============================
@@ -747,7 +749,7 @@ def parse(String msg) {
             if (p0 == "Status" && p1 == "of" && p2 == "UPS:") {
                 def thestatus = p3
                 if (thestatus in ["OnLine","Online"]) thestatus = "OnLine"
-                else if (p3 == "On") thestatus = "$p3$p4"   // handles "On Battery," → "OnBattery"
+                else if (p3 == "On") thestatus = "$p3$p4"   // handles "On Battery," -> "OnBattery"
                 if (thestatus in ["OnLine,","Online,"]) thestatus = "OnLine"
                 if (thestatus == "OnBattery,") thestatus = "OnBattery"
 
@@ -814,10 +816,10 @@ def telnetStatus(status) {
     def normalized = status?.toLowerCase()
 
     if (normalized?.contains("input stream closed") || normalized?.contains("stream is closed")) {
-        logDebug "telnetStatus: ${status}"   // routine disconnects → debug only
+        logDebug "telnetStatus: ${status}"   // routine disconnects -> debug only
         emitEvent("telnet", status)
     } else {
-        logWarn "telnetStatus: ${status}"    // all other telnet issues → warning
+        logWarn "telnetStatus: ${status}"    // all other telnet issues -> warning
         emitEvent("telnet", status)
     }
 }
