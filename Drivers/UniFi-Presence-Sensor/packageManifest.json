@@ -1,32 +1,27 @@
 {
   "packageName": "UniFi Presence Drivers",
   "author": "Marc Hedish",
-  "version": "1.7.4",
-  "minimumHEVersion": "2.2.8",
-  "dateReleased": "2025-09-10",
-  "releaseNotes": "1.7.4.0: Stable release - aligned with parent, ASCII-safe cleanup, logging fixes (dashes/colons, arrows).",
-  "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/README.md",
-  "communityLink": "https://community.hubitat.com/",
-  "licenseFile": "https://www.apache.org/licenses/LICENSE-2.0",
-  "description": "Hubitat driver pair for UniFi presence detection with client and hotspot monitoring.",
-  "category": "Integrations",
-  "tags": ["Presence & Location", "Network", "UniFi", "Hubitat"],
+  "version": "1.7.5.1",
+  "minimumHEVersion": "2.3.0",
+  "dateReleased": "2025-09-17",
   "drivers": [
     {
-      "id": "8e7c4f02-d3aa-11ef-b6e1-234567890001",
+      "id": "unifi-presence-controller",
       "name": "UniFi Presence Controller",
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy",
       "required": true,
-      "version": "1.7.4.0"
+      "version": "1.7.5.1"
     },
     {
-      "id": "8e7c50a6-d3aa-11ef-b6e1-234567890002",
+      "id": "unifi-presence-device",
       "name": "UniFi Presence Device",
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy",
       "required": true,
-      "version": "1.7.4.0"
+      "version": "1.7.5.0"
     }
-  ]
+  ],
+  "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/readme.md",
+  "releaseNotes": "v1.7.5.1 (2025-09-17): Added webSocketStatus() and webSocketMessage() handlers to fix missing method errors and ensure UniFi events are routed to parse()."
 }
