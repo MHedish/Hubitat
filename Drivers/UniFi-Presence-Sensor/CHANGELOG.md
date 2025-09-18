@@ -3,6 +3,25 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 
 ---
 
+## v1.7.5.1 (2025-09-17)
+**Parent Driver**
+- Added `webSocketStatus()` and `webSocketMessage()` handlers to fix missing method errors and ensure UniFi events are routed to `parse()`.
+
+**Child Driver**
+- No changes (remains at v1.7.5.0).
+
+---
+
+## v1.7.5.0 (2025-09-17)
+**Parent Driver**
+- Added `encodeSiteName()` helper — site names with spaces/special chars are now URL-encoded for safe API calls.
+- Standardized `emitEvent()` usage across the driver.
+
+**Child Driver**
+- Version bump for alignment with parent (no functional changes).
+
+---
+
 ## v1.7.4.0 (2025-09-10)
 **Parent Driver**
 - Stable release – consolidated SSID sanitization, wireless-only event filtering (EVT_W), and child/guest summaries.
