@@ -30,16 +30,32 @@
 *  0.1.18.2  -- Removed redundant batteryPercent attribute/state; Hubitat-native battery reporting only
 *  0.1.18.3  -- Fixed refresh() null init and model parsing cleanup
 *  0.1.18.5  -- Removed version state tracking; driverInfo only
-*  0.1.18.6  -- Removed state.name and renamed RuntimeCalibrate → CalibrateRuntime
+*  0.1.18.6  -- Removed state.name and renamed RuntimeCalibrate ? CalibrateRuntime
 *  0.1.18.7  -- Normalized log strings; fixed scheduling logic; removed redundant state variables (outputVoltage, upsStatus, runtimeHours, runtimeMinutes)
-*  0.1.18.8  -- Renamed checkIntervalMinutes → checkInterval (attribute only); removed controlDisabled artifact (controlEnabled is sole source of truth); monitoring schedule always logged
+*  0.1.18.8  -- Renamed checkIntervalMinutes ? checkInterval (attribute only); removed controlDisabled artifact (controlEnabled is sole source of truth); monitoring schedule always logged
+*  0.1.18.9  -- Fixed handleElectricalMetrics parsing for Output Watts %, Output VA %, Current, and Energy
+*  0.1.18.10 -- Refined handleElectricalMetrics to properly tokenize and capture OutputWattsPercent and OutputVAPercent
+*  0.1.18.11 -- Restored temperature parsing (temperatureC, temperatureF, temperature) in handleBatteryData
+*  0.1.19.0  -- New baseline for incremental refactor (Phase B)
+*  0.1.19.1  -- Bugfix: Restored Model attribute parsing
+*  0.1.19.2  -- Removed unused attributes 'SKU' and 'batteryType' (NMCs do not report them)
+*  0.1.19.3  -- Renamed attribute 'manufDate' to 'manufactureDate' for clarity
+*  0.1.19.4  -- Removed unused attribute 'nextBatteryReplacementDate' (not reported by NMCs)
+*  0.1.19.0  -- New baseline for incremental refactor (Phase B)
+*  0.1.19.1  -- Bugfix: Restored Model attribute parsing
+*  0.1.19.2  -- Removed unused attributes 'SKU' and 'batteryType' (NMCs do not report them)
+*  0.1.19.3  -- Renamed attribute 'manufDate' to 'manufactureDate' for clarity
+*  0.1.19.4  -- Removed unused attribute 'nextBatteryReplacementDate' (not reported by NMCs)
+*  0.1.19.5  -- Fixed Model parsing (attribute now properly reported)
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.1.18.8"
-@Field static final String DRIVER_MODIFIED = "2025.09.18"
+@Field static final String DRIVER_VERSION  = "0.1.19.5"
+@Field static final String DRIVER_MODIFIED = "2025.09.19"
+
+import groovy.transform.Field
 
 /* ===============================
    Metadata
@@ -69,8 +85,6 @@ metadata {
        attribute "runtimeHours", "number"
        attribute "runtimeMinutes", "number"
        attribute "batteryVoltage", "number"
-       attribute "nextBatteryReplacementDate", "string"
-       attribute "batteryType", "string"
        attribute "temperatureC", "number"
        attribute "temperatureF", "number"
        attribute "outputVoltage", "number"
@@ -83,10 +97,9 @@ metadata {
        attribute "outputEnergy", "number"
        attribute "outputWatts", "number"
        attribute "serialNumber" , "string"
-       attribute "manufDate", "string"
+       attribute "manufactureDate", "string"
        attribute "model", "string"
        attribute "firmwareVersion", "string"
-       attribute "SKU", "string"
        attribute "lastSelfTestResult", "string"
        attribute "lastSelfTestDate", "string"
        attribute "telnet", "string"
@@ -273,13 +286,13 @@ private handleUPSStatus(String rawStatus, Integer runTimeInt, Integer runTimeOnB
     switch (thestatus) {
         case "OnBattery":
             if (runTimeInt != runTimeOnBatteryInt && device.currentValue("checkInterval") != runTimeOnBatteryInt) {
-                logDebug "UPS On Battery → Resetting check interval to $runTimeOnBatteryInt minutes"
+                logDebug "UPS On Battery ? Resetting check interval to $runTimeOnBatteryInt minutes"
                 scheduleCheck(runTimeOnBatteryInt, runOffsetInt)
             }
             break
         case "OnLine":
             if (runTimeInt != runTimeOnBatteryInt && device.currentValue("checkInterval") != runTimeInt) {
-                logDebug "UPS Back Online → Resetting check interval to $runTimeInt minutes"
+                logDebug "UPS Back Online ? Resetting check interval to $runTimeInt minutes"
                 scheduleCheck(runTimeInt, runOffsetInt)
             }
             break
@@ -289,47 +302,29 @@ private handleUPSStatus(String rawStatus, Integer runTimeInt, Integer runTimeOnB
 private handleBatteryData(def pair) {
     def (p0, p1, p2, p3, p4, p5) = (pair + [null,null,null,null,null,null])
     switch ("$p0 $p1") {
-        case "Battery Voltage:":
-            emitEvent("batteryVoltage", p2); logInfo "Battery Voltage = ${p2}V"; break
-        case "Battery SKU:":
-            emitEvent("batteryType", p2); logInfo "UPS Battery Type = $p2"
-            emitEvent("lastCommand", "quit"); sendData("quit", 500); break
-        case "Battery State":
-            if (p3 == "Charge:") {
-                int p4int = p4.toDouble().toInteger()
-                logInfo "UPS Battery Percentage = $p4%"
-                emitEvent("battery", p4int, "%")
+        case "Battery Voltage:": emitEvent("batteryVoltage", p2); logInfo "Battery Voltage = ${p2}V"; break
+        case "Battery State": if (p3 == "Charge:") { int p4int = p4.toDouble().toInteger(); logInfo "UPS Battery Percentage = $p4%"; emitEvent("battery", p4int, "%") }; break
+        case "Runtime Remaining:": Integer hours = (p3 == "hr") ? p2.toInteger() : 0; Integer mins = (p5 == "min") ? p4.toInteger() : 0; if (hours > 0) emitEvent("runtimeHours", hours); if (mins > 0) emitEvent("runtimeMinutes", mins); String runtimeFormatted = String.format("%02d:%02d", hours, mins); logInfo "UPS Runtime Remaining = ${runtimeFormatted}"; def now = new Date().format('MM/dd/yyyy h:mm a', location.timeZone); emitEvent("lastUpdate", now, "Last Update: $now"); break
+        default:
+            if ((p0 in ["Internal","Battery"]) && p1 == "Temperature:") {
+                emitEvent("temperatureC", p2); emitEvent("temperatureF", p4); logInfo "UPS Temperature = ${p2}°C / ${p4}°F"
+                if (tempUnits == "F") emitEvent("temperature", p4, "F"); else emitEvent("temperature", p2, "C")
             }
-            break
-        case "Runtime Remaining:":
-            Integer hours = (p3 == "hr")  ? p2.toInteger() : 0
-            Integer mins  = (p5 == "min") ? p4.toInteger() : 0
-            if (hours > 0) emitEvent("runtimeHours", hours)
-            if (mins > 0) emitEvent("runtimeMinutes", mins)
-            String runtimeFormatted = String.format("%02d:%02d", hours, mins)
-            logInfo "UPS Runtime Remaining = ${runtimeFormatted}"
-            def now = new Date().format('MM/dd/yyyy h:mm a', location.timeZone)
-            emitEvent("lastUpdate", now, "Last Update: $now")
             break
     }
 }
 
 private handleElectricalMetrics(def pair) {
-    def (p0, p1, p2, p3) = (pair + [null,null,null,null])
+    def (p0, p1, p2, p3, p4) = (pair + [null,null,null,null,null])
     switch (p0) {
         case "Output":
             switch (p1) {
                 case "Voltage:": emitEvent("outputVoltage", p2); logInfo "Output Voltage = ${p2}V"; break
                 case "Frequency:": emitEvent("outputFrequency", p2); logInfo "Output Frequency = ${p2}Hz"; break
-                case "Current:":
-                    emitEvent("outputCurrent", p2); logInfo "Output Current = ${p2}A"
-                    def volts = device.currentValue("outputVoltage")
-                    if (volts) {
-                        double watts = volts.toDouble() * p2.toDouble()
-                        emitEvent("outputWatts", watts.toInteger()); logInfo "Calculated Output Watts = ${watts.toInteger()}W"
-                    }
-                    break
+                case "Current:": emitEvent("outputCurrent", p2); logInfo "Output Current = ${p2}A"; def volts = device.currentValue("outputVoltage"); if (volts) { double watts = volts.toDouble() * p2.toDouble(); emitEvent("outputWatts", watts.toInteger()); logInfo "Calculated Output Watts = ${watts.toInteger()}W" }; break
                 case "Energy:": emitEvent("outputEnergy", p2); logInfo "Output Energy = ${p2}Wh"; break
+                case "Watts": if (p2 == "Percent:") { emitEvent("outputWattsPercent", p3); logInfo "Output Watts Percent = ${p3}%" }; break
+                case "VA": if (p2 == "Percent:") { emitEvent("outputVAPercent", p3); logInfo "Output VA Percent = ${p3}%" }; break
             }
             break
         case "Input":
@@ -338,22 +333,20 @@ private handleElectricalMetrics(def pair) {
                 case "Frequency:": emitEvent("inputFrequency", p2); logInfo "Input Frequency = ${p2}Hz"; break
             }
             break
-        case "Output Watts Percent:": emitEvent("outputWattsPercent", p3); logInfo "Output Watts Percent = ${p3}%"; break
-        case "Output VA Percent:": emitEvent("outputVAPercent", p3); logInfo "Output VA Percent = ${p3}%"; break
     }
 }
 
 private handleIdentificationAndSelfTest(def pair) {
     def (p0, p1, p2, p3, p4, p5) = (pair + [null,null,null,null,null,null])
-    switch ("$p0 $p1") {
-        case "Serial Number:": emitEvent("serialNumber", p2); logInfo "UPS Serial Number = $p2"; break
-        case "Manufacture Date:": emitEvent("manufDate", p2); logInfo "UPS Manufacture Date = $p2"; break
-        case "Model:": def model = "$p1 $p2"; emitEvent("model", model); logInfo "UPS Model = $model"; break
-        case "Firmware Revision:": def parts = [p2, p3, p4].findAll { it }; def firmware = parts.join(" ")
-            emitEvent("firmwareVersion", firmware); logInfo "Firmware Version = $firmware"; break
-        case "Self-Test Date:": emitEvent("lastSelfTestDate", p2); logInfo "UPS Last Self-Test Date = $p2"; break
-        case "Self-Test Result:": def parts2 = [p2, p3, p4, p5].findAll { it }; def theResult = parts2.join(" ")
-            emitEvent("lastSelfTestResult", theResult); logInfo "UPS Last Self Test Result = $theResult"; break
+    switch (p0) {
+        case "Serial": if (p1 == "Number:") { emitEvent("serialNumber", p2); logInfo "UPS Serial Number = $p2" }; break
+        case "Manufacture": if (p1 == "Date:") { emitEvent("manufactureDate", p2); logInfo "UPS Manufacture Date = $p2" }; break
+        case "Model:": def model = [p1, p2, p3, p4, p5].findAll { it }.join(" "); emitEvent("model", model); logInfo "UPS Model = $model"; break
+        case "Firmware": if (p1 == "Revision:") { def firmware = [p2, p3, p4].findAll { it }.join(" "); emitEvent("firmwareVersion", firmware); logInfo "Firmware Version = $firmware" }; break
+        case "Self-Test":
+            if (p1 == "Date:") { emitEvent("lastSelfTestDate", p2); logInfo "UPS Last Self-Test Date = $p2" }
+            if (p1 == "Result:") { def result = [p2, p3, p4, p5].findAll { it }.join(" "); emitEvent("lastSelfTestResult", result); logInfo "UPS Last Self Test Result = $result" }
+            break
     }
 }
 
