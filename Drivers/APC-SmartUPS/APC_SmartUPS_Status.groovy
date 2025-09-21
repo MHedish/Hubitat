@@ -32,7 +32,7 @@
 *  0.1.18.5  -- Removed version state tracking; driverInfo only
 *  0.1.18.6  -- Removed state.name and renamed RuntimeCalibrate ? CalibrateRuntime
 *  0.1.18.7  -- Normalized log strings; fixed scheduling logic; removed redundant state variables (outputVoltage, upsStatus, runtimeHours, runtimeMinutes)
-*  0.1.18.8  -- Renamed checkIntervalMinutes ? checkInterval (attribute only); removed controlDisabled artifact (controlEnabled is sole source of truth); monitoring schedule always logged
+*  0.1.18.8  -- Renamed checkIntervalMinutes -> checkInterval (attribute only); removed controlDisabled artifact (controlEnabled is sole source of truth); monitoring schedule always logged
 *  0.1.18.9  -- Fixed handleElectricalMetrics parsing for Output Watts %, Output VA %, Current, and Energy
 *  0.1.18.10 -- Refined handleElectricalMetrics to properly tokenize and capture OutputWattsPercent and OutputVAPercent
 *  0.1.18.11 -- Restored temperature parsing (temperatureC, temperatureF, temperature) in handleBatteryData
@@ -41,21 +41,20 @@
 *  0.1.19.2  -- Removed unused attributes 'SKU' and 'batteryType' (NMCs do not report them)
 *  0.1.19.3  -- Renamed attribute 'manufDate' to 'manufactureDate' for clarity
 *  0.1.19.4  -- Removed unused attribute 'nextBatteryReplacementDate' (not reported by NMCs)
-*  0.1.19.0  -- New baseline for incremental refactor (Phase B)
-*  0.1.19.1  -- Bugfix: Restored Model attribute parsing
-*  0.1.19.2  -- Removed unused attributes 'SKU' and 'batteryType' (NMCs do not report them)
-*  0.1.19.3  -- Renamed attribute 'manufDate' to 'manufactureDate' for clarity
-*  0.1.19.4  -- Removed unused attribute 'nextBatteryReplacementDate' (not reported by NMCs)
 *  0.1.19.5  -- Fixed Model parsing (attribute now properly reported)
+*  0.1.19.6  -- Added event emission for 'outputWatts' (calculated) and implemented 'outputEnergy' attribute
+*  0.1.19.7  -- Added 'deviceName' (from NMC banner) and 'nmcStatus' (P+/N+/A+ health codes) attributes
+*  0.1.19.8  -- Improved banner parsing with regex: 'deviceName' (clean extraction) and 'nmcStatus' (multi-value support)
+*  0.1.19.9  -- Added NMC Stat translation helper; new 'nmcStatusDesc' attribute with human-readable values
+*  0.1.19.10 -- Fixed UPSStatus parsing: now trims full "On Line" status instead of truncating to "On"; regex normalization for Online/OnBattery applied
+*  0.1.19.11 -- Finalized UPSStatus fix: only first two tokens after "UPS:" captured, eliminating extra text like "No Alarms Present"
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.1.19.5"
-@Field static final String DRIVER_MODIFIED = "2025.09.19"
-
-import groovy.transform.Field
+@Field static final String DRIVER_VERSION  = "0.1.19.11"
+@Field static final String DRIVER_MODIFIED = "2025.09.20"
 
 /* ===============================
    Metadata
@@ -104,6 +103,9 @@ metadata {
        attribute "lastSelfTestDate", "string"
        attribute "telnet", "string"
        attribute "checkInterval", "number"
+       attribute "deviceName", "string"
+       attribute "nmcStatus", "string"
+       attribute "nmcStatusDesc", "string"
 
        // Commands
        command "refresh"
@@ -164,6 +166,31 @@ private logInfo(msg)  { if (logEvents) log.info "[${DRIVER_NAME}] $msg" }
 private logWarn(msg)  { log.warn  "[${DRIVER_NAME}] $msg" }
 private logError(msg) { log.error "[${DRIVER_NAME}] $msg" }
 private emitEvent(String name, def value, String desc = null) { sendEvent(name: name, value: value, descriptionText: desc) }
+
+/* ===============================
+   NMC Status Translation
+   =============================== */
+private translateNmcStatus(String statVal) {
+    def translations = []
+    statVal.split(" ").each { code ->
+        switch(code) {
+            case "P+": translations << "OS OK"; break
+            case "P-": translations << "OS Error"; break
+            case "N+": translations << "Network OK"; break
+            case "N-": translations << "No Network"; break
+            case "N4+": translations << "IPv4 OK"; break
+            case "N6+": translations << "IPv6 OK"; break
+            case "N?": translations << "Network DHCP/BOOTP pending"; break
+            case "N!": translations << "IP Conflict"; break
+            case "A+": translations << "App OK"; break
+            case "A-": translations << "App Bad Checksum"; break
+            case "A?": translations << "App Initializing"; break
+            case "A!": translations << "App Incompatible"; break
+            default: translations << code
+        }
+    }
+    return translations.join(", ")
+}
 
 /* ===============================
    Debug Logging Disable
@@ -276,25 +303,24 @@ def sendData(String msg, Integer millsec) {
    Parse Helpers
    =============================== */
 private handleUPSStatus(String rawStatus, Integer runTimeInt, Integer runTimeOnBatteryInt, Integer runOffsetInt) {
-    def thestatus = rawStatus?.replaceAll(",", "")
-    if (thestatus in ["OnLine","Online"]) thestatus = "OnLine"
-    if (thestatus == "Discharged") thestatus = "Discharged"
-    if (thestatus in ["OnBattery","OnBattery,"]) thestatus = "OnBattery"
+    def thestatus = rawStatus?.replaceAll(",", "")?.trim()
+    if (!thestatus) return
+
+    if (thestatus ==~ /(?i)on[-\s]?line/) thestatus = "Online"
+    else if (thestatus ==~ /(?i)on\s*battery/) thestatus = "OnBattery"
+    else if (thestatus.equalsIgnoreCase("Discharged")) thestatus = "Discharged"
+
     if (device.currentValue("UPSStatus") != thestatus) logInfo "UPS Status = $thestatus"
     emitEvent("UPSStatus", thestatus)
 
     switch (thestatus) {
         case "OnBattery":
-            if (runTimeInt != runTimeOnBatteryInt && device.currentValue("checkInterval") != runTimeOnBatteryInt) {
-                logDebug "UPS On Battery ? Resetting check interval to $runTimeOnBatteryInt minutes"
+            if (runTimeInt != runTimeOnBatteryInt && device.currentValue("checkInterval") != runTimeOnBatteryInt)
                 scheduleCheck(runTimeOnBatteryInt, runOffsetInt)
-            }
             break
-        case "OnLine":
-            if (runTimeInt != runTimeOnBatteryInt && device.currentValue("checkInterval") != runTimeInt) {
-                logDebug "UPS Back Online ? Resetting check interval to $runTimeInt minutes"
+        case "Online":
+            if (runTimeInt != runTimeOnBatteryInt && device.currentValue("checkInterval") != runTimeInt)
                 scheduleCheck(runTimeInt, runOffsetInt)
-            }
             break
     }
 }
@@ -359,9 +385,6 @@ private handleUPSError(def pair) {
     }
 }
 
-/* ===============================
-   parse()
-   =============================== */
 def parse(String msg) {
     def lastCommand = device.currentValue("lastCommand")
     logDebug "In parse - (${msg})"
@@ -391,10 +414,30 @@ def parse(String msg) {
         emitEvent("nextCheckMinutes", device.currentValue("checkInterval"))
         closeConnection(); emitEvent("telnet", "Ok")
     } else {
-        if ((pair.size() == 4 && pair[0] == "Status" && pair[1] == "of" && pair[2] == "UPS:") ||
-            ((pair.size() in [7,8,11]) && pair[0] == "Status" && pair[1] == "of" && pair[2] == "UPS:")) {
-            handleUPSStatus(pair[3], runTime.toInteger(), runTimeOnBattery.toInteger(), runOffset.toInteger())
+        // --- Banner parsing ---
+        def nameMatcher = msg =~ /Name\s*:\s*([^\s]+)/
+        if (nameMatcher.find()) {
+            def nameVal = nameMatcher.group(1).trim()
+            emitEvent("deviceName", nameVal)
+            logInfo "UPS Device Name = $nameVal"
         }
+
+        def statMatcher = msg =~ /Stat\s*:\s*(.+)$/
+        if (statMatcher.find()) {
+            def statVal = statMatcher.group(1).trim()
+            emitEvent("nmcStatus", statVal)
+            def desc = translateNmcStatus(statVal)
+            emitEvent("nmcStatusDesc", desc)
+            logInfo "NMC Status = $statVal ($desc)"
+        }
+
+        // --- UPS Status parsing (fixed) ---
+        if ((pair.size() >= 4) && pair[0] == "Status" && pair[1] == "of" && pair[2] == "UPS:") {
+            def statusString = (pair[3..Math.min(4, pair.size()-1)]).join(" ")
+            handleUPSStatus(statusString, runTime.toInteger(), runTimeOnBattery.toInteger(), runOffset.toInteger())
+        }
+
+        // --- Other parse helpers ---
         handleBatteryData(pair)
         handleElectricalMetrics(pair)
         handleIdentificationAndSelfTest(pair)
