@@ -1,5 +1,5 @@
 /*
-*  UniFi Presence Controller
+*  APC SmartUPS Status Driver
 *
 *  Copyright 2025 MHedish
 *  Licensed under the Apache License, Version 2.0
@@ -8,108 +8,147 @@
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  20250813 -- v1.0.0: Initial version based on tomw
-*  20250818 -- v1.1.0: Added driver info tile
-*  20250819 -- v1.2.0: Optimized, unified queries, debounce + logging improvements
-*  20250822 -- v1.2.4-1.2.13: SSID handling, debounce refinements, LAN event filtering
-*  20250825 -- v1.2.14-1.2.16: Hotspot monitoring tweaks, child DNI changes
-*  20250828 -- v1.3.0-1.3.9: Hotspot monitoring framework + debounce handling
-*  20250829 -- v1.3.13-1.3.15: Hotspot child detection, disconnectDebounce=30s, httpTimeout=15s
-*  20250830 -- v1.4.5: Stable release; hotspot presence verification via _last_seen_by_uap
-*  20250901 -- v1.4.8: Proactive cookie refresh (110 min), quiet null handling in refreshFromChild(), refined logging
-*  20250902 -- v1.4.8.3: Exposed sysinfo fields as attributes (deviceType, hostName, UniFiOS, Network)
-*  20250902 -- v1.4.8.4: Cleaned preferences (removed invalid section blocks, replaced with comments)
-*  20250902 -- v1.4.9: Rollback anchor release. Includes sysinfo attributes and cleaned preferences
-*  20250902 -- v1.4.9.1: Added presenceTimestamp support (formatted string on presence changes)
-*  20250903 -- v1.5.0: Added hotspotGuestList support (list of connected guest MACs for hotspot child)
-*  20250904 -- v1.5.4: Added bulk management (refresh/reconnect all), hotspotGuestListRaw support
-*  20250904 -- v1.5.5: Added autoCreateClients() framework with last-seen filter (default 7d)
-*  20250904 -- v1.5.6: Refined autoCreateClients() to use discovered name for label and hostname for child name
-*  20250905 -- v1.5.7: Version info now auto-refreshes on refresh() and refreshAllChildren()
-*  20250905 -- v1.5.8: Logging overlap fix; presenceTimestamp renamed to presenceChanged
-*  20250905 -- v1.5.9: Normalized version handling (removed redundant state, aligned with child)
-*  20250907 -- v1.5.10: Applied configurable httpTimeout to all HTTP calls (httpExec, httpExecWithAuthCheck, isUniFiOS)
-*  20250908 -- v1.5.10.1: Fixed refreshFromChild not marking offline clients as not present (400 handling in queryClientByMac)
-*  20250908 -- v1.5.10.2: Restored missing @Field event declarations (connectingEvents, disconnectingEvents, allConnectionEvents)
-*  20250908 -- v1.6.0: Version bump for new development cycle
-*  20250908 -- v1.6.0.1: Fixed incorrect unschedule() call for raw event logging auto-disable
-*  20250908 -- v1.6.0.2: Improved autoCreateClients() — prevent blank labels/names when UniFi reports empty strings
-*  20250908 -- v1.6.0.3: Hardened login() — ensure refreshCookie is always rescheduled via finally block
-*  20250908 -- v1.6.0.4: Removed duplicate hotspot refresh call in refresh(); added warning if UniFi login() returns no cookie
-*  20250908 -- v1.6.0.5: Improved resiliency — reset WebSocket backoff after stable connection; retry HTTP auth on 401/403
-*  20250908 -- v1.6.1: Consolidated fixes through v1.6.0.5 into stable release
-*  20250908 -- v1.6.4.0: Applied fixes to markNotPresent debounce recovery and logging improvements
-*  20250908 -- v1.6.4.1: Improved switch handling — parent now refreshes client immediately after block/unblock
-*  20250908 -- v1.7.0.0: Removed block/unblock (Switch) support; driver now focused solely on presence detection
-*  20250909 -- v1.7.1.0: Improved SSID handling in parse() and refreshFromChild() (handles spaces, quotes, special chars; empty SSID ? null)
-*  20250909 -- v1.7.1.1: Unified Raw Event Logging disable with Debug Logging (auto-disable 30m, safe unschedule handling)
-*  20250909 -- v1.7.2.0: Added childDevices and guestDevices attributes; updated on refresh(), refreshAllChildren(), reconnectAllChildren(), updated(), parse(), markNotPresent(), refreshHotspotChild(), refreshFromChild()
-*  20250909 -- v1.7.3.0: Added cleanSSID() helper; SSID sanitized in parse() and refreshFromChild() (removes quotes and channel info)
-*  20250910 -- v1.7.3.1: Optimized event parsing — early filter tightened to EVT_W (wireless only), eliminating LAN event JSON parsing
-*  20250910 -- v1.7.4.0: Stable release — feature complete and hardened
-*  20250917 -- v1.7.5.0: Added encodeSiteName() helper — site names with spaces/special chars are now URL-encoded for safe API calls
-*  20250917 -- v1.7.5.1: Added webSocketStatus() and webSocketMessage() handlers — fixes missing method errors, routes UniFi events to parse()
+*  0.1.0.0   -- Initial refactor from fork
+*  0.1.1.0   -- Refactor logging utilities
+*  0.1.2.0   -- Additional refactor of logging utilities; language cleanup
+*  0.1.3.0   -- Removed logLevel; cleaned extraneous log entries
+*  0.1.4.0   -- Phase A: Refactor to MHedish style (logging, lifecycle, preferences)
+*  0.1.5.0   -- Phase A: Refactor to MHedish style (logging, lifecycle, preferences) complete
+*  0.1.6.0   -- Moved logging utilities section after Preferences; unified setVersion/initialize
+*  0.1.7.0   -- Updated quit handling; improved scheduling state
+*  0.1.8.0   -- State variable cleanup (nulls vs strings); full parse() refactor with restored error handling
+*  0.1.8.1   -- Added disableDebugLoggingNow command; cleaned batteryPercent init (null vs ???)
+*  0.1.8.2   -- Bugfix: Restored missing autoDisableDebugLogging() method
+*  0.1.9.0   -- Improved logging format: temps combined, runtime hh:mm, consistent value+unit logs
+*  0.1.10.0  -- Prep for extended testing; aligned all parse blocks with unified logging style
+*  0.1.11.0  -- Added logEvents preference; converted all sendEvent calls to emitEvent wrapper
+*  0.1.12.0  -- Quieted duplicate telnet close warnings; closeConnection() now debug-only; confirmed event/log alignment
+*  0.1.13.0  -- Replaced confusing 'disable' flag with positive 'controlEnabled' option; UPS monitoring always works, control commands gated
+*  0.1.17.1  -- Fix helper signatures (def vs List), restrict UPS status dispatch to actual status lines
+*  0.1.18.0  -- Refactor helpers: replaced if/else chains with switch statements for readability
+*  0.1.18.1  -- Fixed null concatenation in firmwareVersion and lastSelfTestResult (string sanitization)
+*  0.1.18.2  -- Removed redundant batteryPercent attribute/state; Hubitat-native battery reporting only
+*  0.1.18.3  -- Fixed refresh() null init and model parsing cleanup
+*  0.1.18.5  -- Removed version state tracking; driverInfo only
+*  0.1.18.6  -- Removed state.name and renamed RuntimeCalibrate -> CalibrateRuntime
+*  0.1.18.7  -- Normalized log strings; fixed scheduling logic; removed redundant state variables (outputVoltage, upsStatus, runtimeHours, runtimeMinutes)
+*  0.1.18.8  -- Renamed checkIntervalMinutes -> checkInterval (attribute only); removed controlDisabled artifact (controlEnabled is sole source of truth); monitoring schedule always logged
+*  0.1.18.9  -- Fixed handleElectricalMetrics parsing for Output Watts %, Output VA %, Current, and Energy
+*  0.1.18.10 -- Refined handleElectricalMetrics to properly tokenize and capture OutputWattsPercent and OutputVAPercent
+*  0.1.18.11 -- Restored temperature parsing (temperatureC, temperatureF, temperature) in handleBatteryData
+*  0.1.19.0  -- New baseline for incremental refactor (Phase B)
+*  0.1.19.1  -- Bugfix: Restored Model attribute parsing
+*  0.1.19.2  -- Removed unused attributes 'SKU' and 'batteryType' (NMCs do not report them)
+*  0.1.19.3  -- Renamed attribute 'manufDate' to 'manufactureDate' for clarity
+*  0.1.19.4  -- Removed unused attribute 'nextBatteryReplacementDate' (not reported by NMCs)
+*  0.1.19.5  -- Fixed Model parsing (attribute now properly reported)
+*  0.1.19.6  -- Added event emission for 'outputWatts' (calculated) and implemented 'outputEnergy' attribute
+*  0.1.19.7  -- Added 'deviceName' (from NMC banner) and 'nmcStatus' (P+/N+/A+ health codes) attributes
+*  0.1.19.8  -- Improved banner parsing with regex: 'deviceName' (clean extraction) and 'nmcStatus' (multi-value support)
+*  0.1.19.9  -- Added NMC Stat translation helper; new 'nmcStatusDesc' attribute with human-readable values
+*  0.1.19.10 -- Fixed UPSStatus parsing: now trims full "On Line" status instead of truncating to "On"; regex normalization for Online/OnBattery applied
+*  0.1.23.0  -- Improved Runtime Remaining parsing with regex (handles hr/min variations)
+*  0.1.23.1  -- Added parse dispatcher to prevent duplicate events/logging (helpers now routed by line type)
+*  0.1.23.2  -- Fixed duplicate Battery % reporting by tightening Battery State Of Charge match
+*  0.1.23.3  -- Removed redundant detstatus -soc command (Battery % now reported only once per cycle)
+*  0.1.24.0  -- Refactored Battery/Electrical handlers to use UPS-supplied units in logs/events instead of hardcoded designators
+*  0.1.24.1  -- Temperature handler now uses UPS-provided units with explicit ° symbol for clarity
+*  0.1.25.0  -- Added preference to auto-update Hubitat device label with UPS name
+*  0.1.25.1  -- Corrected Name regex (restored working version for UPS deviceName parsing and label updates)
+*  0.1.25.2  -- Reordered and clarified preferences (better grouping and cleaner titles)
+*  0.1.25.3  -- Fixed runtime parsing (case-insensitive match for hr/min tokens in detstatus output)
+*  0.1.25.4  -- Removed redundant detstatus -rt (runtime now parsed from detstatus -all only); fixed runtime parsing with token-based handler
+*  0.1.25.5  -- Restored runtime reporting (moved parsing outside switch, regex on full line for robust capture of hr/min, populates runtimeHours, runtimeMinutes, runtimeRemaining correctly)
+*  0.1.26.0  -- Stable baseline release (runtime reporting restored, SOC/runtime explicitly dispatched, detstatus cleanup, UPS-supplied units in logs, preference reorder, device label auto-update option, duplicate log cleanup)
 */
 
 import groovy.transform.Field
-import groovy.json.JsonSlurper
-import groovy.json.JsonOutput
 
-@Field static final String DRIVER_NAME     = "UniFi Presence Controller"
-@Field static final String DRIVER_VERSION  = "1.7.5.1"
-@Field static final String DRIVER_MODIFIED = "2025.09.17"
-
-@Field List connectingEvents    = ["EVT_WU_Connected", "EVT_WG_Connected"]
-@Field List disconnectingEvents = ["EVT_WU_Disconnected", "EVT_WG_Disconnected"]
-@Field List allConnectionEvents = connectingEvents + disconnectingEvents
-
-/* ===============================
-   Version Info
-   =============================== */
-def driverInfoString() {
-    "${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"
-}
-
-def setVersion() {
-    emitEvent("driverInfo", driverInfoString())
-}
+@Field static final String DRIVER_NAME     = "APC SmartUPS Status"
+@Field static final String DRIVER_VERSION  = "0.1.26.0"
+@Field static final String DRIVER_MODIFIED = "2025.09.22"
 
 /* ===============================
    Metadata
    =============================== */
 metadata {
-    definition(name: DRIVER_NAME, namespace: "MHedish", author: "Marc Hedish",
-        importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy") {
-        capability "Initialize"
-        capability "Refresh"
+    definition(
+        name: DRIVER_NAME,
+        namespace: "MHedish",
+        author: "Marc Hedish",
+        importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/APC-SmartUPS/APC_SmartUPS_Status.groovy"
+    ){
+       capability "Battery"
+       capability "Temperature Measurement"
+       capability "Refresh"
+       capability "Actuator"
+       capability "Telnet"
+       capability "Configuration"
 
-        attribute "commStatus", "string"
-        attribute "eventStream", "string"
-        attribute "silentModeStatus", "string"
-        attribute "driverInfo", "string"
+       // Core attributes
+       attribute "driverInfo", "string"
+       attribute "lastCommand", "string"
+       attribute "lastCommandResult", "string"
+       attribute "connectStatus", "string"
+       attribute "UPSStatus", "string"
+       attribute "lastUpdate" , "string"
+       attribute "nextCheckMinutes", "number"
+       attribute "runtimeHours", "number"
+       attribute "runtimeMinutes", "number"
+       attribute "batteryVoltage", "number"
+       attribute "temperatureC", "number"
+       attribute "temperatureF", "number"
+       attribute "outputVoltage", "number"
+       attribute "inputVoltage", "number"
+       attribute "outputFrequency", "number"
+       attribute "inputFrequency", "number"
+       attribute "outputWattsPercent", "number"
+       attribute "outputVAPercent", "number"
+       attribute "outputCurrent", "number"
+       attribute "outputEnergy", "number"
+       attribute "outputWatts", "number"
+       attribute "serialNumber" , "string"
+       attribute "manufactureDate", "string"
+       attribute "model", "string"
+       attribute "firmwareVersion", "string"
+       attribute "lastSelfTestResult", "string"
+       attribute "lastSelfTestDate", "string"
+       attribute "telnet", "string"
+       attribute "checkInterval", "number"
+       attribute "deviceName", "string"
+       attribute "nmcStatus", "string"
+       attribute "nmcStatusDesc", "string"
 
-        // Sysinfo attributes
-        attribute "deviceType", "string"
-        attribute "hostName", "string"
-        attribute "UniFiOS", "string"
-        attribute "Network", "string"
-        attribute "childDevices", "string"
-		attribute "guestDevices", "string"
-
-        command "createClientDevice", ["name", "mac"]
-        command "disableDebugLoggingNow"
-        command "disableRawEventLoggingNow"
-
-        // Bulk management
-        command "refreshAllChildren"
-        command "reconnectAllChildren"
-
-        // Auto-create clients
-        command "autoCreateClients", [[
-            name: "Last Seen (days)",
-            type: "NUMBER",
-            description: "Create wireless clients seen in the last XX days (default 1)"
-        ]]
+       // Commands
+       command "refresh"
+       command "disableDebugLoggingNow"
+       command "Reboot"
+       command "Sleep"
+       command "CalibrateRuntime"
+       command "SetOutletGroup", [
+            [
+                name: "outletGroup",
+                description: "Outlet Group 1 or 2",
+                type: "ENUM",
+                constraints: ["1","2"],
+                required: true,
+                default: "1"
+            ],
+            [
+                name: "command",
+                description: "Command to execute",
+                type: "ENUM",
+                constraints: ["Off","On","DelayOff","DelayOn","Reboot","DelayReboot","Shutdown","DelayShutdown","Cancel"],
+                required: true
+            ],
+            [
+                name: "seconds",
+                description: "Delay in seconds",
+                type: "ENUM",
+                constraints: ["1","2","3","4","5","10","20","30","60","120","180","240","300","600"],
+                required: true
+            ]
+       ]
     }
 }
 
@@ -117,958 +156,285 @@ metadata {
    Preferences
    =============================== */
 preferences {
-    // Controller connection
-    input "controllerIP", "text", title: "UniFi Controller IP Address", required: true
-    input "siteName", "text", title: "Site Name", defaultValue: "default", required: true
-    input "logEvents", "bool", title: "Log all events", defaultValue: false
-
-    // Authentication
-    input "username", "text", title: "Username", required: true
-    input "password", "password", title: "Password", required: true
-
-    // Refresh & Logging
-    input "refreshInterval", "number", title: "Refresh/Reconnect Interval (seconds, recommended=300)", defaultValue: 300
-    input "logEnable", "bool", title: "Enable Debug Logging", defaultValue: false
-    input "logRawEvents", "bool", title: "Enable raw UniFi event debug logging", defaultValue: false
-
-    // Custom Port (optional)
-    input "customPort", "bool", title: "Use Custom Port? (uncommon)", defaultValue: false
-    input "customPortNum", "number", title: "Custom Port Number", required: false
-
-    // Timeouts & Debounce
-    input "disconnectDebounce", "number", title: "Disconnect Debounce (seconds, default=20)", defaultValue: 20
-    input "httpTimeout", "number", title: "HTTP Timeout (seconds, default=15)", defaultValue: 15
-
-    // Hotspot Monitoring
-    input "monitorHotspot", "bool", title: "Monitor Hotspot Clients", defaultValue: false
+    input("UPSIP", "text", title: "Smart UPS (APC only) IP Address", required: true)
+    input("UPSPort", "integer", title: "Telnet Port", description: "Default 23", defaultValue: 23, required: true)
+    input("Username", "text", title: "Username for Login", required: true, defaultValue: "")
+    input("Password", "password", title: "Password for Login", required: true, defaultValue: "")
+    input("useUpsNameForLabel", "bool", title: "Use UPS name for Device Label?", defaultValue: false)
+    input("tempUnits", "enum", title: "Temperature Units", options: ["F","C"], defaultValue: "F", required: true)
+    input("controlEnabled", "bool", title: "Enable UPS Control Commands?", description: "Allow Reboot, Sleep, Calibrate Runtime, and Outlet Group control.", defaultValue: false)
+    input("runTime", "number", title: "How often to check UPS status (minutes, 1–59)", defaultValue: 15, range: "1..59", required: true)
+    input("runOffset", "number", title: "Offset (minutes past the hour, 0–59)", defaultValue: 0, range: "0..59", required: true)
+    input("runTimeOnBattery", "number", title: "Check interval when on battery (minutes, 1–59)", defaultValue: 2, range: "1..59", required: true)
+    input("logEnable", "bool", title: "Enable Debug Logging", defaultValue: false)
+    input("logEvents", "bool", title: "Log all events", defaultValue: false)
 }
 
 /* ===============================
-   Logging Utilities
+   Utilities
    =============================== */
-private logDebug(msg) {
-    if (logEnable) log.debug "[${DRIVER_NAME}] $msg"
+private driverInfoString() { return "${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})" }
+private logDebug(msg) { if (logEnable) log.debug "[${DRIVER_NAME}] $msg" }
+private logInfo(msg)  { if (logEvents) log.info "[${DRIVER_NAME}] $msg" }
+private logWarn(msg)  { log.warn  "[${DRIVER_NAME}] $msg" }
+private logError(msg) { log.error "[${DRIVER_NAME}] $msg" }
+private emitEvent(String name, def value, String desc = null) { sendEvent(name: name, value: value, descriptionText: desc) }
+
+/* ===============================
+   NMC Status Translation
+   =============================== */
+private translateNmcStatus(String statVal) {
+    def translations = []
+    statVal.split(" ").each { code ->
+        switch(code) {
+            case "P+": translations << "OS OK"; break
+            case "P-": translations << "OS Error"; break
+            case "N+": translations << "Network OK"; break
+            case "N-": translations << "No Network"; break
+            case "N4+": translations << "IPv4 OK"; break
+            case "N6+": translations << "IPv6 OK"; break
+            case "N?": translations << "Network DHCP/BOOTP pending"; break
+            case "N!": translations << "IP Conflict"; break
+            case "A+": translations << "App OK"; break
+            case "A-": translations << "App Bad Checksum"; break
+            case "A?": translations << "App Initializing"; break
+            case "A!": translations << "App Incompatible"; break
+            default: translations << code
+        }
+    }
+    return translations.join(", ")
 }
 
-private logInfo(msg)  {
-    log.info  "[${DRIVER_NAME}] $msg"
-}
-
-private logWarn(msg)  {
-    log.warn  "[${DRIVER_NAME}] $msg"
-}
-
-private logError(msg) {
-    log.error "[${DRIVER_NAME}] $msg"
-}
-
-private emitEvent(String name, def value, String desc = null) {
-    sendEvent(name: name, value: value, descriptionText: desc)
-}
+/* ===============================
+   Debug Logging Disable
+   =============================== */
+def autoDisableDebugLogging() { device.updateSetting("logEnable", [value:"false", type:"bool"]); logInfo "Debug logging disabled (auto)" }
+def disableDebugLoggingNow() { device.updateSetting("logEnable", [value:"false", type:"bool"]); logInfo "Debug logging disabled (manual)" }
 
 /* ===============================
    Lifecycle
    =============================== */
-def installed() {
-    logInfo "Installed"
-    logInfo "Driver v${DRIVER_VERSION} (${DRIVER_MODIFIED}) loaded successfully"
-    setVersion()
-}
-
-def updated() {
-    logInfo "Preferences updated"
-    logInfo "Driver v${DRIVER_VERSION} (${DRIVER_MODIFIED}) loaded successfully"
-    configure()
-    setVersion()
-
-    // Handle hotspot child creation/removal based on preference
-    if (monitorHotspot) {
-        createHotspotChild()
-    } else {
-        deleteHotspotChild()
-    }
-
-    // Refresh system info from controller
-    querySysInfo()
-
-    if (logEnable) {
-        logInfo "Debug logging enabled for 30 minutes"
-        unschedule(autoDisableDebugLogging)
-        runIn(1800, autoDisableDebugLogging)
-    }
-    if (logRawEvents) {
-        logInfo "Raw UniFi event logging enabled for 30 minutes"
-        unschedule(autoDisableRawEventLogging)
-        runIn(1800, autoDisableRawEventLogging)
-    }
-
-    updateChildAndGuestSummaries()
-}
-
-def configure() {
-    state.clear()
-    initialize()
-    setVersion()
-
-    if (monitorHotspot) {
-        createHotspotChild()
-    } else {
-        deleteHotspotChild()
-    }
-}
-
-/* ===============================
-   Logging Disable
-   =============================== */
-def autoDisableDebugLogging() {
-    device.updateSetting("logEnable", [value:"false", type:"bool"])
-    logInfo "Debug logging disabled (auto)"
-}
-
-def disableDebugLoggingNow() {
-    try { unschedule(autoDisableDebugLogging) }
-    catch (ignored) { logDebug "unschedule(autoDisableDebugLogging) ignored" }
-    device.updateSetting("logEnable", [value:"false", type:"bool"])
-    logInfo "Debug logging disabled (manual command)"
-}
-
-def autoDisableRawEventLogging() {
-    device.updateSetting("logRawEvents", [value:"false", type:"bool"])
-    logInfo "Raw UniFi event logging disabled (auto)"
-}
-
-def disableRawEventLoggingNow() {
-    try { unschedule(autoDisableRawEventLogging) }
-    catch (ignored) { logDebug "unschedule(autoDisableRawEventLogging) ignored" }
-    device.updateSetting("logRawEvents", [value:"false", type:"bool"])
-    logInfo "Raw UniFi event logging disabled (manual command)"
-}
-
-/* ===============================
-   Child Handling
-   =============================== */
-def childDni(String mac) {
-    if (!mac) return null
-    def cleaned = mac.replaceAll(":", "")
-    if (cleaned.size() < 6) return "UniFi-ERR"
-    return "UniFi-${cleaned[-6..-1]}"
-}
-
-def findChildDevice(mac) {
-    def id = childDni(mac)
-    return id ? getChildDevice(id) : null
-}
-
-def createClientDevice(name, mac) {
-    try {
-        def shortMac = childDni(mac)
-        if (!shortMac) return
-        def child = addChildDevice(
-            "UniFi Presence Device",
-            shortMac,
-            [label: name, isComponent: false, name: name]
-        )
-        child?.setupFromParent([mac: mac])
-    }
-    catch (e) {
-        logError "createClientDevice() failed: ${e.message}"
-    }
-}
-
-def createHotspotChild() {
-    try {
-        if (getChildDevices()?.find { it.getDataValue("hotspot") == "true" }) return
-        def newChild = addChildDevice(
-            "UniFi Presence Device",
-            "UniFi-hotspot",
-            [label: "Guest", isComponent: false, name: "UniFi Hotspot"]
-        )
-        newChild.updateDataValue("hotspot", "true")
-        logInfo "Created Hotspot child device"
-    }
-    catch (e) {
-        logError "createHotspotChild() failed: ${e.message}"
-    }
-}
-
-def deleteHotspotChild() {
-    try {
-        def child = getChildDevices()?.find { it.getDataValue("hotspot") == "true" }
-        if (child) {
-            deleteChildDevice(child.deviceNetworkId)
-            logInfo "Deleted Hotspot child device"
-        }
-    }
-    catch (e) {
-        logError "deleteHotspotChild() failed: ${e.message}"
-    }
-}
-
-/* ===============================
-   Bulk Management
-   =============================== */
-def refreshAllChildren() {
-    logInfo "Refreshing all children (bulk action)"
-    setVersion()
-    getChildDevices()?.each { child ->
-        if (child.getDataValue("hotspot") == "true") {
-            refreshHotspotChild()
-        } else {
-            def mac = child?.getSetting("clientMAC")
-            if (mac) refreshFromChild(mac)
-        }
-        try {
-            child.setVersion()
-        } catch (ignored) {
-            logDebug "Child ${child.displayName} does not support setVersion()"
-        }
-    }
-    updateChildAndGuestSummaries()   // <-- NEW
-}
-
-def reconnectAllChildren() {
-    logInfo "Reconnecting all children (bulk action)"
-    state.disconnectTimers = [:]  // clear disconnect timers for all
-    getChildDevices()?.each { child ->
-        if (child.getDataValue("hotspot") == "true") {
-            refreshHotspotChild()
-        } else {
-            def mac = child?.getSetting("clientMAC")
-            if (mac) refreshFromChild(mac)
-        }
-    }
-    updateChildAndGuestSummaries()   // <-- NEW
-}
-
-/* ===============================
-   Child + Guest Summary
-   =============================== */
-def updateChildAndGuestSummaries() {
-    try {
-        // ---- Normal child devices ----
-        def children = getChildDevices()?.findAll { it.getDataValue("hotspot") != "true" }
-        def total = children?.size() ?: 0
-        def present = children?.count { it.currentValue("presence") == "present" } ?: 0
-        def summary = "${present} of ${total} Present"
-        emitEvent("childDevices", summary)
-
-        // ---- Guest hotspot devices ----
-        def hotspotChild = getChildDevices()?.find { it.getDataValue("hotspot") == "true" }
-        if (hotspotChild) {
-            def guests = hotspotChild.currentValue("hotspotGuests") ?: 0
-            def totalGuests = hotspotChild.currentValue("totalHotspotClients") ?: 0
-            def guestSummary = "${guests} of ${totalGuests} Present"
-            emitEvent("guestDevices", guestSummary)
-        } else {
-            emitEvent("guestDevices", "0 of 0 Present")
-        }
-    }
-    catch (e) {
-        logError "updateChildAndGuestSummaries() failed: ${e.message}"
-    }
-}
-
-/* ===============================
-   Auto-Creation
-   =============================== */
-def autoCreateClients(days = null) {
-    try {
-        // Default to 1 day if no input
-        def lookbackDays = (days && days.toInteger() > 0) ? days.toInteger() : 1
-        logInfo "Auto-creating clients last seen within ${lookbackDays} days (wireless only)"
-
-        def since = (now() / 1000) - (lookbackDays * 86400)
-
-        def knownClients = queryKnownClients()
-        if (!knownClients) {
-            logWarn "autoCreateClients(): no clients returned by controller"
-            return
-        }
-
-        def wirelessCandidates = knownClients.findAll { c ->
-            c?.mac && !c.is_wired && (c.last_seen ?: 0) >= since
-        }
-
-        logInfo "Found ${wirelessCandidates.size()} eligible wireless clients"
-
-        wirelessCandidates.each { c ->
-            def mac = c.mac.replaceAll("-", ":").toLowerCase()
-            def existing = findChildDevice(mac)
-            if (existing) {
-                logDebug "Skipping ${mac}, child already exists"
-                return
-            }
-
-            // Friendly vs technical distinction (avoid blank names/labels)
-            def label   = c.name?.trim() ? c.name : (c.hostname?.trim() ?: mac)
-            def devName = c.hostname?.trim() ? c.hostname : (c.name?.trim() ?: mac)
-
-            logInfo "Creating new child -> Label='${label}', Name='${devName}', MAC=${mac}"
-            def child = addChildDevice(
-                "UniFi Presence Device",
-                childDni(mac),
-                [label: label, name: devName, isComponent: false]
-            )
-            child?.setupFromParent([mac: mac])
-        }
-    }
-    catch (e) {
-        logError "autoCreateClients() failed: ${e.message}"
-    }
-}
-
-/* ===============================
-   Hotspot Presence Validation
-   =============================== */
-def isGuestConnected(mac) {
-    try {
-        def resp = queryClients("stat/user/${mac}", true)
-        if (!resp) return false
-        return resp?._last_seen_by_uap != null
-    }
-    catch (e) {
-        logError "isGuestConnected(${mac}) failed: ${e.message}"
-        return false
-    }
-}
-
-def refreshHotspotChild() {
-    try {
-        def guests = queryClients("stat/guest", false)
-        def activeGuests = guests.findAll { !it.expired }
-        def totalGuests = activeGuests?.size() ?: 0
-
-        def connectedGuests = activeGuests.findAll { g -> g?.mac && isGuestConnected(g.mac) }
-        def connectedCount = connectedGuests.size()
-        def presence = connectedCount > 0 ? "present" : "not present"
-
-        def guestListRaw = connectedGuests.collect { it.mac }
-        def guestListRawStr = guestListRaw ? guestListRaw.join(", ") : "empty"
-
-        def guestListFriendly = connectedGuests.collect { g -> g?.hostname ?: g?.name ?: g?.mac }
-        def guestListFriendlyStr = guestListFriendly ? guestListFriendly.join(", ") : "empty"
-
-        def child = getChildDevices()?.find { it.getDataValue("hotspot") == "true" }
-        if (!child) return
-
-        child.refreshFromParent([
-            presence: presence,
-            hotspotGuests: connectedCount,
-            totalHotspotClients: totalGuests,
-            hotspotGuestList: guestListFriendlyStr,
-            hotspotGuestListRaw: guestListRawStr
-        ])
-
-        if (logEnable) {
-            logDebug "Hotspot: total non-expired guests (${totalGuests})"
-            logDebug "Hotspot: connected guests (${connectedCount}) -> ${guestListFriendlyStr}"
-            logDebug "Hotspot raw list -> ${guestListRawStr}"
-            logDebug "Hotspot summary -> presence=${presence}, connected=${connectedCount}, total=${totalGuests}"
-        }
-
-        updateChildAndGuestSummaries()
-    }
-    catch (e) {
-        logError "refreshHotspotChild() failed: ${e.message}"
-    }
-}
-
-/* ===============================
-   Refresh & Event Handling
-   =============================== */
-def refreshChildren() {
-    getChildDevices()?.each { child ->
-        if (child.getDataValue("hotspot") == "true") {
-            refreshHotspotChild()
-        } else {
-            child.refresh()
-        }
-    }
-}
-
-def refreshFromChild(mac) {
-    def client = queryClientByMac(mac)
-    logDebug "refreshFromChild(${mac}) -> ${client ?: 'offline/null'}"
-
-    def child = findChildDevice(mac)
-    if (!child) {
-        logWarn "refreshFromChild(): no child found for ${mac}"
-        return
-    }
-
-    if (!client) {
-        logDebug "refreshFromChild(${mac}): marking device as not present (offline)"
-        child.refreshFromParent([
-            presence: "not present",
-            accessPoint: "unknown",
-            accessPointName: "unknown",
-            ssid: null
-        ])
-        // ? Update summaries when offline
-        updateChildAndGuestSummaries()
-        return
-    }
-
-    // Client found -> mark as present
-    def states = [
-        presence: (client?.ap_mac ? "present" : "not present"),
-        accessPoint: client?.ap_mac ?: "unknown",
-        accessPointName: client?.ap_displayName ?: client?.last_uplink_name ?: "unknown",
-        ssid: cleanSSID(client?.essid)   // use helper to sanitize SSID
-    ]
-
-    child.refreshFromParent(states)
-    updateChildAndGuestSummaries()
-}
-
-void parse(String message) {
-    // Early reject anything that isn’t a wireless event (EVT_W…)
-    if (!message.contains("EVT_W")) {
-        if (logEnable && logRawEvents) logDebug "Ignoring non-wireless event"
-        return
-    }
-
-    try {
-        def msgJson = new JsonSlurper().parseText(message)
-
-        // Still forward full stream if explicitly enabled
-        if (msgJson?.meta?.message == "events" && logEvents) {
-            emitEvent("eventStream", message)
-        }
-
-        // Only process wireless connect/disconnect events
-        def events = msgJson?.data?.findAll { evt -> evt?.key in allConnectionEvents }
-        if (!events) return
-
-        events.each { evt ->
-            if (logRawEvents) logDebug "parse() raw event: ${evt}"
-
-            // ---- Hotspot guest events ----
-            def hotspotChild = getChildDevices()?.find { it.getDataValue("hotspot") == "true" }
-            if (hotspotChild && evt.guest) {
-                logDebug "Hotspot event detected ? ${evt.key} for guest=${evt.guest}"
-                debounceHotspotRefresh()
-                return
-            }
-
-            // ---- Normal client ----
-            def child = findChildDevice(evt.user)
-            if (!child) return
-
-            def isConnect = evt.key in connectingEvents
-            if (!isConnect) {
-                def delay = (disconnectDebounce ?: 30).toInteger()
-                state.disconnectTimers = state.disconnectTimers ?: [:]
-                state.disconnectTimers[evt.user] = now() + (delay * 1000L)
-                runIn(delay, "markNotPresent", [data: [mac: evt.user, evt: evt]])
-                return
-            }
-
-            // Cancel pending disconnect if client reconnected
-            if (state.disconnectTimers?.containsKey(evt.user)) {
-                state.disconnectTimers.remove(evt.user)
-            }
-
-            // Skip if already present
-            if (child.currentValue("presence") == "present") return
-
-            // SSID extraction with sanitization
-            def ssidVal = null
-            if (evt.msg) {
-                def matcher = (evt.msg =~ /SSID\s+(.+)/)
-                if (matcher.find()) {
-                    ssidVal = cleanSSID(matcher.group(1))   // helper to sanitize
-                }
-            }
-
-            child.refreshFromParent([
-                presence: "present",
-                accessPoint: evt.ap ?: "unknown",
-                accessPointName: evt.ap_displayName ?: "unknown",
-                ssid: ssidVal,
-                presenceChanged: formatTimestamp(evt.time)
-            ])
-        }
-
-        updateChildAndGuestSummaries()		// Always refresh summaries after processing a batch of events
-    }
-    catch (e) {
-        logError "parse() failed: ${e.message}"
-    }
-}
-
-def debounceHotspotRefresh() {
-    try {
-        unschedule("refreshHotspotChild")
-        runIn(2, "refreshHotspotChild")
-        logDebug "Hotspot refresh scheduled (debounced 2s)"
-    } catch (e) {
-        logError "debounceHotspotRefresh() failed: ${e.message}"
-    }
-}
-
-def markNotPresent(data) {
-    def deadline = state.disconnectTimers?.get(data.mac)
-    if (!deadline) return
-    if (now() < deadline) return
-
-    state.disconnectTimers.remove(data.mac)
-
-    def child = findChildDevice(data.mac)
-    if (!child) return
-    if (child.currentValue("presence") == "not present") return
-
-    child.refreshFromParent([
-        presence: "not present",
-        accessPoint: data.evt?.ap ?: "unknown",
-        accessPointName: data.evt?.ap_displayName ?: "unknown",
-        ssid: null,
-        presenceChanged: formatTimestamp(data.evt?.time ?: now())
-    ])
-
-    updateChildAndGuestSummaries()
-}
-
-
-private formatTimestamp(rawTime) {
-    if (!rawTime) return "unknown"
-    try {
-        def date = new Date(rawTime as Long)
-        return date.format("yyyy-MM-dd HH:mm:ss", location.timeZone)
-    } catch (e) {
-        return "unknown"
-    }
-}
-
-/* ===============================
-   WebSocket Handling
-   =============================== */
-def webSocketStatus(String status) {
-    if (status.startsWith("status: open")) {
-        logInfo "WebSocket connection established"
-        state.reconnectDelay = 1  // reset backoff
-    }
-    else if (status.startsWith("status: closing")) {
-        logWarn "WebSocket is closing"
-    }
-    else if (status.startsWith("status: closed")) {
-        logWarn "WebSocket closed"
-        if (!getWasExpectedClose()) {
-            logWarn "WebSocket closed unexpectedly, scheduling reinitialize()"
-            reinitialize()
-        } else {
-            setWasExpectedClose(false)
-        }
-    }
-    else if (status.startsWith("failure:")) {
-        logError "WebSocket failure: ${status}"
-        reinitialize()
-    }
-    else {
-        logDebug "Unhandled WebSocket status: ${status}"
-    }
-}
-
-def webSocketMessage(String message) {
-    try {
-        parse(message)   // forward payload to existing parse()
-    }
-    catch (e) {
-        logError "webSocketMessage() failed: ${e.message}"
-    }
-}
-
-/* ===============================
-   Networking / Query / Helpers
-   =============================== */
-import java.net.URLEncoder
-
-private encodeSiteName(name) {
-    try {
-        return URLEncoder.encode(name ?: "default", "UTF-8")
-    } catch (Exception e) {
-        logWarn "encodeSiteName() failed, falling back to raw siteName: ${e.message}"
-        return name ?: "default"
-    }
-}
+def installed() { logInfo "Installed"; logInfo "${driverInfoString()} loaded successfully"; emitEvent("driverInfo", driverInfoString()); initialize() }
+def updated()   { logInfo "Preferences updated"; logInfo "${driverInfoString()} reloaded successfully"; configure() }
+def configure() { logInfo "${driverInfoString()} configured successfully"; emitEvent("driverInfo", driverInfoString()); initialize() }
 
 def initialize() {
-    setVersion()
-    emitEvent("commStatus", "unknown")
+    logInfo "${driverInfoString()} initializing..."
 
-    // Recover expired disconnect timers on startup
-    recoverDisconnectTimers()
+    emitEvent("lastCommand", "")
+    emitEvent("UPSStatus", "Unknown")
+    emitEvent("temperatureF", null)
+    emitEvent("temperatureC", null)
+    emitEvent("telnet", "Ok")
+    emitEvent("connectStatus", "Initialized")
+    emitEvent("lastCommandResult", "NA")
 
-    try {
-        closeEventSocket()
-        def os = isUniFiOS()
-        if (os == null) throw new Exception("Check IP, port, or controller connection")
-        setUniFiOS(os)
+    if (!tempUnits) tempUnits = "F"
+    if (logEnable) logDebug "IP = $UPSIP, Port = $UPSPort, Username = $Username, Password = $Password"
+    else logInfo "IP = $UPSIP, Port = $UPSPort"
 
-        refreshCookie()
-        scheduleOnce(2, "refresh")
-        scheduleOnce(6, "openEventSocket")
+    if ((UPSIP) && (UPSPort) && (Username) && (Password)) {
+        def now = new Date().format('MM/dd/yyyy h:mm a', location.timeZone)
+        emitEvent("lastUpdate", now, "Last Update: $now")
 
-        emitEvent("commStatus", "good")
-    }
-    catch (e) {
-        logError "initialize() failed: ${e.message}"
-        emitEvent("commStatus", "error")
-        reinitialize()
-    }
-}
+        unschedule(); runIn(1800, autoDisableDebugLogging)
 
-def recoverDisconnectTimers() {
-    def timers = state.disconnectTimers ?: [:]
-    timers.each { mac, deadline ->
-        if (now() >= deadline) {
-            logWarn "Recovering stale disconnect timer for ${mac}"
-            markNotPresent([mac: mac, evt: [time: now()]])
+        def runTimeInt = runTime.toInteger()
+        def runTimeOnBatteryInt = runTimeOnBattery.toInteger()
+        def runOffsetInt = runOffset.toInteger()
+
+        device.updateSetting("runTime", [value: runTimeInt, type: "number"])
+        device.updateSetting("runTimeOnBattery", [value: runTimeOnBatteryInt, type: "number"])
+        device.updateSetting("runOffset", [value: runOffsetInt, type: "number"])
+
+        if (controlEnabled) {
+            if ((state.origAppName) && (state.origAppName != "") && (state.origAppName != device.getLabel())) device.setLabel(state.origAppName)
+            if (tempUnits) logDebug "Temperature Unit Currently: $tempUnits"
+            state.origAppName = device.getLabel()
+        } else {
+            if ((state.origAppName) && (state.origAppName != "")) device.setLabel(state.origAppName + " (Control Disabled)")
         }
-    }
+
+        scheduleCheck(runTimeInt, runOffsetInt)
+        emitEvent("lastCommand", "Scheduled")
+        refresh()
+    } else logDebug "Parameters not filled in yet."
 }
 
-def uninstalled() {
+private scheduleCheck(Integer interval, Integer offset) {
     unschedule()
-    invalidateCookie()
+    def scheduleString = "0 ${offset}/${interval} * ? * * *"
+    emitEvent("checkInterval", interval)
+    logInfo "Monitoring scheduled every ${interval} minutes at ${offset} past the hour."
+    schedule(scheduleString, refresh)
+}
+
+/* ===============================
+   Command Helpers
+   =============================== */
+private executeUPSCommand(String cmdType) {
+    emitEvent("lastCommandResult", "NA"); logInfo "$cmdType called."
+    if (controlEnabled) {
+        logDebug "SmartUPS Status Version ($DRIVER_VERSION)"
+        emitEvent("lastCommand", "${cmdType}Connect"); emitEvent("connectStatus", "Trying")
+        logDebug "Connecting to ${UPSIP}:${UPSPort}"; telnetClose(); telnetConnect(UPSIP, UPSPort.toInteger(), null, null)
+    } else { logWarn "$cmdType called but UPS control is disabled. Will not run." }
+}
+
+/* ===============================
+   Commands
+   =============================== */
+def Reboot()           { executeUPSCommand("Reboot") }
+def Sleep()            { executeUPSCommand("Sleep") }
+def CalibrateRuntime() { executeUPSCommand("Calibrate") }
+
+def SetOutletGroup(p1, p2, p3) {
+    state.outlet = ""; state.command = ""; state.seconds = ""; def goOn = true
+    emitEvent("lastCommandResult", "NA"); logInfo "Set Outlet Group called. [$p1 $p2 $p3]"
+    if (!p1) { logError "Outlet group is required."; goOn = false } else { state.outlet = p1 }
+    if (!p2) { logError "Command is required."; goOn = false } else { state.command = p2 }
+    state.seconds = p3 ?: "0"; if (goOn) executeUPSCommand("SetOutletGroup")
 }
 
 def refresh() {
-    unschedule("refresh")
-    setVersion()
-    refreshChildren()
-    updateChildAndGuestSummaries()
-    scheduleOnce(refreshInterval, "refresh")
+    logInfo "${driverInfoString()} refreshing..."
+    emitEvent("lastCommand", "initialConnect"); emitEvent("connectStatus", "Trying")
+    logDebug "Connecting to ${UPSIP}:${UPSPort}"; telnetClose(); telnetConnect(UPSIP, UPSPort.toInteger(), null, null)
 }
 
-def scheduleOnce(sec, handler) {
-    runIn(sec.toInteger(), handler)
+/* ===============================
+   Telnet & Data Handling
+   =============================== */
+def sendData(String msg, Integer millsec) {
+    logDebug "$msg"
+    def hubCmd = sendHubCommand(new hubitat.device.HubAction("${msg}", hubitat.device.Protocol.TELNET))
+    pauseExecution(millsec)
+    return hubCmd
 }
 
-def queryClients(endpoint, single = false) {
-    try {
-        def resp = runQuery(endpoint, true)
-        def clients = resp?.data?.data ?: []
-        return single ? (clients ? clients[0] : null) : clients
-    }
-    catch (groovyx.net.http.HttpResponseException e) {
-        if (e.response?.status == 400 && single) {
-            return null
-        } else {
-            logDebug "queryClients(${endpoint}) error: ${e}"
-        }
-    }
-    catch (Exception e) {
-        logDebug "queryClients(${endpoint}) error: ${e}"
-    }
-    return single ? null : []
-}
+/* ===============================
+   Parse Helpers
+   =============================== */
+private handleUPSStatus(String rawStatus, Integer runTimeInt, Integer runTimeOnBatteryInt, Integer runOffsetInt) {
+    def thestatus = rawStatus?.replaceAll(",", "")?.trim()
+    if (!thestatus) return
 
-def queryClientByMac(mac) {
-    try {
-        def resp = runQuery("stat/sta/${mac}", true)
-        return resp?.data?.data?.getAt(0)
-    }
-    catch (groovyx.net.http.HttpResponseException e) {
-        if (e.response?.status == 400) {
-            logDebug "queryClientByMac(${mac}): client reported offline by controller (HTTP 400)"
-            return null
-        } else {
-            logDebug "queryClientByMac(${mac}) error: ${e}"
-        }
-    }
-    catch (Exception e) {
-        logDebug "queryClientByMac(${mac}) general error: ${e}"
-    }
-    return null
-}
+    if (thestatus ==~ /(?i)on[-\s]?line/) thestatus = "Online"
+    else if (thestatus ==~ /(?i)on\s*battery/) thestatus = "OnBattery"
+    else if (thestatus.equalsIgnoreCase("Discharged")) thestatus = "Discharged"
 
-def queryActiveClients()  { queryClients("stat/sta", false) }
-def queryKnownClients()   { queryClients("rest/user", false) }
+    if (device.currentValue("UPSStatus") != thestatus) logInfo "UPS Status = $thestatus"
+    emitEvent("UPSStatus", thestatus)
 
-def querySysInfo() {
-    try {
-        def resp = runQuery("stat/sysinfo", true)
-        def sysinfo = resp?.data?.data?.getAt(0)
-        if (!sysinfo) return
-
-        def udmVersion = sysinfo.udm_version
-        def consoleDisplayVersion = sysinfo.console_display_version
-        def networkVersion = sysinfo.version
-        def deviceType = sysinfo.ubnt_device_type
-        def hostName = sysinfo.hostname
-
-        logDebug "sysinfo.udm_version = ${udmVersion}"
-
-        emitEvent("deviceType", deviceType)
-        emitEvent("hostName", hostName)
-        emitEvent("UniFiOS", consoleDisplayVersion)
-        emitEvent("Network", networkVersion)
-
-    } catch (e) {
-        logError "querySysInfo() failed: ${e.message}"
+    switch (thestatus) {
+        case "OnBattery":
+            if (runTimeInt != runTimeOnBatteryInt && device.currentValue("checkInterval") != runTimeOnBatteryInt)
+                scheduleCheck(runTimeOnBatteryInt, runOffsetInt)
+            break
+        case "Online":
+            if (runTimeInt != runTimeOnBatteryInt && device.currentValue("checkInterval") != runTimeInt)
+                scheduleCheck(runTimeInt, runOffsetInt)
+            break
     }
 }
 
-def reinitialize() {
-    def delay = Math.min((state.reconnectDelay ?: 1) * 2, 600)
-    state.reconnectDelay = delay
-    runIn(delay, "initialize")
-}
-
-def openEventSocket() {
-    def safeSite = encodeSiteName(siteName)
-    logDebug "Connecting websocket -> ${getWssURI(safeSite)}"
-    interfaces.webSocket.connect(
-        getWssURI(safeSite),
-        headers: genHeadersWss(),
-        ignoreSSLIssues: true,
-        perMessageDeflate: false
-    )
-}
-
-def closeEventSocket() {
-    try {
-        setWasExpectedClose(true)
-        pauseExecution(500)
-        interfaces.webSocket.close()
-    } catch (e) { }
-}
-
-def refreshCookie() {
-    try {
-        unschedule("refreshCookie")   // prevent overlapping refresh schedules
-        login()
-        emitEvent("commStatus", "good")
-    }
-    catch (e) {
-        logError "refreshCookie() failed: ${e.message}"
-        emitEvent("commStatus", "error")
-        reinitialize()
+private handleBatteryData(def pair) {
+    def (p0, p1, p2, p3, p4, p5) = (pair + [null,null,null,null,null,null])
+    switch ("$p0 $p1") {
+        case "Battery Voltage:": emitEvent("batteryVoltage", p2, "Battery Voltage = ${p2} ${p3}"); break
+        case "Battery State": if (p2 == "Of" && p3 == "Charge:") { int pct = p4.toDouble().toInteger(); emitEvent("battery", pct, "UPS Battery Percentage = $pct ${p5}") }; break
+        case "Runtime Remaining:": def runtimeStr = pair.join(" "); def rtMatcher = runtimeStr =~ /Runtime Remaining:\s*(?:(\d+)\s*(?:hr|hrs))?\s*(?:(\d+)\s*(?:min|mins))?/; Integer hours = 0, mins = 0; if (rtMatcher.find()) { hours = rtMatcher[0][1]?.toInteger() ?: 0; mins = rtMatcher[0][2]?.toInteger() ?: 0 }; if (hours > 0) emitEvent("runtimeHours", hours); if (mins > 0) emitEvent("runtimeMinutes", mins); String runtimeFormatted = String.format("%02d:%02d", hours, mins); emitEvent("lastUpdate", new Date().format('MM/dd/yyyy h:mm a', location.timeZone), "UPS Runtime Remaining = ${runtimeFormatted}"); break
+        default: if ((p0 in ["Internal","Battery"]) && p1 == "Temperature:") { emitEvent("temperatureC", p2, "UPS Temperature = ${p2}°${p3} / ${p4}°${p5}"); emitEvent("temperatureF", p4); if (tempUnits == "F") emitEvent("temperature", p4, "UPS Temperature = ${p4}°${p5}"); else emitEvent("temperature", p2, "UPS Temperature = ${p2}°${p3}") }; break
     }
 }
 
-def invalidateCookie() {
-    logout()
-    emitEvent("commStatus", "unknown")
-}
-
-def login() {
-    try {
-        def resp = httpExec("POST", genParamsAuth("login"))
-        def cookie, csrf
-        resp?.headers?.each {
-            if (isCookieHeaderName(it.name)) {
-                cookie = it.value?.split(';')?.getAt(0)
+private handleElectricalMetrics(def pair) {
+    def (p0, p1, p2, p3, p4) = (pair + [null,null,null,null,null])
+    switch (p0) {
+        case "Output":
+            switch (p1) {
+                case "Voltage:": emitEvent("outputVoltage", p2, "Output Voltage = ${p2} ${p3}"); break
+                case "Frequency:": emitEvent("outputFrequency", p2, "Output Frequency = ${p2} ${p3}"); break
+                case "Current:": emitEvent("outputCurrent", p2, "Output Current = ${p2} ${p3}"); def volts = device.currentValue("outputVoltage"); if (volts) { double watts = volts.toDouble() * p2.toDouble(); emitEvent("outputWatts", watts.toInteger(), "Calculated Output Watts = ${watts.toInteger()}W") }; break
+                case "Energy:": emitEvent("outputEnergy", p2, "Output Energy = ${p2} ${p3}"); break
+                case "Watts": if (p2 == "Percent:") { emitEvent("outputWattsPercent", p3, "Output Watts Percent = ${p3} ${p4}") }; break
+                case "VA": if (p2 == "Percent:") { emitEvent("outputVAPercent", p3, "Output VA Percent = ${p3} ${p4}") }; break
             }
-            else if (isCsrfTokenName(it.name)) {
-                csrf = it.value
+            break
+        case "Input":
+            switch (p1) {
+                case "Voltage:": emitEvent("inputVoltage", p2, "Input Voltage = ${p2} ${p3}"); break
+                case "Frequency:": emitEvent("inputFrequency", p2, "Input Frequency = ${p2} ${p3}"); break
             }
-            else if (it.value?.startsWith("csrf_token=")) {
-                csrf = it.value.split('=')?.getAt(1)?.split(';')?.getAt(0)
-            }
-        }
-		setCookie(cookie)
-		setCsrf(csrf)
-
-		if (!cookie) {
-		    logWarn "[${DRIVER_NAME}] login() did not receive a session cookie — UniFi may require multiple login attempts"
-		}
-
-        // Pull sysinfo from controller
-        querySysInfo()
-
-        logDebug "[${DRIVER_NAME}] login() succeeded"
-    }
-    catch (e) {
-        logError "login() failed: ${e.message}"
-        throw e
-    }
-    finally {
-        // Proactively refresh cookie before UniFi invalidates (~2h). Schedule at 110 minutes (6600s).
-        unschedule("refreshCookie")
-        runIn(6600, refreshCookie)
-        logDebug "[${DRIVER_NAME}] Scheduled cookie refresh in 6600s"
+            break
     }
 }
 
-def logout() {
-    try {
-        httpExec("POST", genParamsAuth("logout"))
-    } catch (e) { }
-}
-
-def runQuery(suffix, throwToCaller = false, body=null) {
-    try {
-        return httpExecWithAuthCheck("GET", genParamsMain(suffix, body), throwToCaller)
-    } catch (e) {
-        if (!throwToCaller) {
-            logDebug e
-            emitEvent("commStatus", "error")
-            return
-        }
-        throw e
+private handleIdentificationAndSelfTest(def pair) {
+    def (p0, p1, p2, p3, p4, p5) = (pair + [null,null,null,null,null,null])
+    switch (p0) {
+        case "Serial": if (p1 == "Number:") { emitEvent("serialNumber", p2); logInfo "UPS Serial Number = $p2" }; break
+        case "Manufacture": if (p1 == "Date:") { emitEvent("manufactureDate", p2); logInfo "UPS Manufacture Date = $p2" }; break
+        case "Model:": def model = [p1, p2, p3, p4, p5].findAll { it }.join(" "); emitEvent("model", model); logInfo "UPS Model = $model"; break
+        case "Firmware": if (p1 == "Revision:") { def firmware = [p2, p3, p4].findAll { it }.join(" "); emitEvent("firmwareVersion", firmware); logInfo "Firmware Version = $firmware" }; break
+        case "Self-Test":
+            if (p1 == "Date:") { emitEvent("lastSelfTestDate", p2); logInfo "UPS Last Self-Test Date = $p2" }
+            if (p1 == "Result:") { def result = [p2, p3, p4, p5].findAll { it }.join(" "); emitEvent("lastSelfTestResult", result); logInfo "UPS Last Self Test Result = $result" }
+            break
     }
 }
 
-private cleanSSID(val) {
-    if (!val) return null
-    def ssid = val.trim()
-    // Remove trailing " on channel ..." fragments
-    ssid = ssid.replaceAll(/\"?\s+on\s+\"?channel.*$/, "")
-    // Strip surrounding quotes
-    ssid = ssid.replaceAll(/^\"+|\"+$/, "")
-    return ssid ?: null
-}
-
-/* ===============================
-   HTTP / WebSocket Helpers
-   =============================== */
-def genParamsAuth(op) {
-    [
-        uri: getBaseURI() + (op == "login" ? getLoginSuffix() : getLogoutSuffix()),
-        headers: ['Content-Type': "application/json"],
-        body: JsonOutput.toJson([username: username, password: password, strict: true]),
-        ignoreSSLIssues: true,
-        timeout: (httpTimeout ?: 15)
-    ]
-}
-
-def genParamsMain(suffix, body=null) {
-    def params = [
-        uri: getBaseURI() + getKnownClientsSuffix() + suffix,
-        headers: [
-            (cookieNameToSend()): getCookie(),
-            (csrfTokenNameToSend()): getCsrf()
-        ],
-        ignoreSSLIssues: true,
-        timeout: (httpTimeout ?: 15)
-    ]
-    if (body) params.body = body
-    return params
-}
-
-def genHeadersWss() {
-    [(cookieNameToSend()): getCookie(), 'User-Agent': "UniFi Events"]
-}
-
-def httpExec(op, params) {
-    def result
-    // Ensure timeout is always applied
-    if (!params.timeout) {
-        params.timeout = (httpTimeout ?: 15)
+private handleUPSError(def pair) {
+    switch (pair[0]) {
+        case "E002:": case "E100:": case "E101:": case "E102:": case "E103:": case "E107:": case "E108:":
+            logError "UPS Error: Command returned [$pair]"
+            emitEvent("lastCommandResult", "Failure")
+            closeConnection(); emitEvent("telnet", "Ok"); break
     }
-
-    logDebug "httpExec(${op}, ${params})"
-    def cb = { resp -> result = resp }
-    if (op == "POST") {
-        httpPost(params, cb)
-    }
-    else if (op == "GET") {
-        httpGet(params, cb)
-    }
-    result
 }
 
-def httpExecWithAuthCheck(op, params, throwToCaller=false) {
-    try {
-        // Ensure timeout is always applied
-        if (!params.timeout) {
-            params.timeout = (httpTimeout ?: 15)
-        }
+def parse(String msg) {
+    def lastCommand=device.currentValue("lastCommand")
+    logDebug "In parse - (${msg})"
+    logDebug "lastCommand = $lastCommand"
+    def pair=msg.split(" ")
+    logDebug "Server response $msg lastCommand=($lastCommand) length=(${pair.length})"
 
-        return httpExec(op, params)
-    }
-	catch (groovyx.net.http.HttpResponseException e) {
-	    if (e.response?.status in [401, 403]) {
-	        logWarn "Auth failed (${e.response?.status}), refreshing cookie"
-	        refreshCookie()
-	        params.headers[cookieNameToSend()] = getCookie()
-	        params.headers[csrfTokenNameToSend()] = getCsrf()
-	        return httpExec(op, params)
-	    }
-	    if (throwToCaller) throw e
-	}
-    catch (Exception e) {
-        logError "httpExecWithAuthCheck() general error: ${e.message}"
-        if (throwToCaller) throw e
+    if (lastCommand=="RebootConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","Reboot");seqSend(["$Username","$Password","UPS -c reboot"],500)}
+    else if (lastCommand=="SleepConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","Sleep");seqSend(["$Username","$Password","UPS -c sleep"],500)}
+    else if (lastCommand=="CalibrateConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","CalibrateRuntime");seqSend(["$Username","$Password","UPS -r start"],500)}
+    else if (lastCommand=="SetOutletGroupConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","SetOutletGroup");seqSend(["$Username","$Password","UPS -o ${state.outlet} ${state.command} ${state.seconds}"],500)}
+    else if (lastCommand=="initialConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","getStatus");seqSend(["$Username","$Password","detstatus -ss","detstatus -all","detstatus -tmp","upsabout"],500)}
+    else if (lastCommand=="quit"){emitEvent("lastCommand","Rescheduled");if(!device.currentValue("nextCheckMinutes"))logInfo "Will run again in ${device.currentValue("checkInterval")} Minutes.";emitEvent("nextCheckMinutes",device.currentValue("checkInterval"));closeConnection();emitEvent("telnet","Ok")}
+    else {
+        def nameMatcher=msg =~ /^Name\s*:\s*([^\s]+)/; if(nameMatcher.find()){def nameVal=nameMatcher.group(1).trim();emitEvent("deviceName",nameVal);logInfo "UPS Device Name = $nameVal";if(useUpsNameForLabel){device.setLabel(nameVal);logInfo "Device label updated to UPS name: $nameVal"}}
+        def statMatcher=msg =~ /Stat\s*:\s*(.+)$/; if(statMatcher.find()){def statVal=statMatcher.group(1).trim();emitEvent("nmcStatus",statVal);def desc=translateNmcStatus(statVal);emitEvent("nmcStatusDesc",desc);logInfo "NMC Status = $statVal ($desc)"}
+        if ((pair.size()>=4)&&pair[0]=="Status"&&pair[1]=="of"&&pair[2]=="UPS:"){def statusString=(pair[3..Math.min(4,pair.size()-1)]).join(" ");handleUPSStatus(statusString,runTime.toInteger(),runTimeOnBattery.toInteger(),runOffset.toInteger())}
+        handleBatteryData(pair); handleElectricalMetrics(pair); handleIdentificationAndSelfTest(pair); handleUPSError(pair)
+        if (pair[0]=="Runtime"&&pair[1].startsWith("Remaining")) handleBatteryData(pair)
+        if (pair[0]=="Battery"&&pair[1]=="State"&&pair[2]=="Of"&&pair[3]=="Charge:") handleBatteryData(pair)
     }
 }
 
 /* ===============================
-   Base URI & Endpoint Helpers
+   Telnet Status & Close
    =============================== */
-def getBaseURI() {
-    return getUniFiOS()
-        ? "https://${controllerIP}:${(customPort ? customPortNum : 443)}/"
-        : "https://${controllerIP}:${(customPort ? customPortNum : 8443)}/"
-}
-
-def getLoginSuffix()  { getUniFiOS() ? "api/auth/login"  : "api/login" }
-def getLogoutSuffix() { getUniFiOS() ? "api/auth/logout" : "api/logout" }
-
-def getKnownClientsSuffix() {
-    def safeSite = encodeSiteName(siteName)
-    return getUniFiOS()
-        ? "proxy/network/api/s/${safeSite}/"
-        : "api/s/${safeSite}/"
-}
-
-def getWssURI(site) {
-    def safeSite = encodeSiteName(site)
-    return getUniFiOS()
-        ? "wss://${controllerIP}:${(customPort ? customPortNum : 443)}/proxy/network/wss/s/${safeSite}/events"
-        : "wss://${controllerIP}:${(customPort ? customPortNum : 8443)}/wss/s/${safeSite}/events"
-}
-
-/* ===============================
-   Platform Detection
-   =============================== */
-def isUniFiOS() {
-    def os
-    try {
-        httpPost([
-            uri: "https://${controllerIP}:${(customPort ? customPortNum : 8443)}",
-            ignoreSSLIssues: true,
-            timeout: (httpTimeout ?: 15)
-        ]) { resp ->
-            if (resp.status == 302) os = false
-        }
-    } catch (e) { }
-
-    try {
-        httpPost([
-            uri: "https://${controllerIP}:${(customPort ? customPortNum : 443)}/proxy/network/api/s/default/self",
-            ignoreSSLIssues: true,
-            timeout: (httpTimeout ?: 15)
-        ]) { resp ->
-            if (resp.status == 200) os = true
-        }
+def telnetStatus(status) {
+    def normalized = status?.toLowerCase()
+    if (normalized?.contains("input stream closed") || normalized?.contains("stream is closed")) {
+        logDebug "telnetStatus: ${status}"; emitEvent("telnet", status)
+    } else {
+        logWarn "telnetStatus: ${status}"; emitEvent("telnet", status)
     }
-    catch (groovyx.net.http.HttpResponseException e) {
-        if (e.response?.status == 401) os = true
-    }
-
-    return os
 }
 
-/* ===============================
-   State Accessors
-   =============================== */
-def setCookie(c) { state.cookie = c }
-def getCookie()  { state.cookie }
+def closeConnection() {
+    try { telnetClose(); logDebug "Telnet connection closed" }
+    catch (e) { logDebug "closeConnection(): Telnet already closed or error: ${e.message}" }
+}
 
-def setCsrf(c)   { state.csrf = c }
-def getCsrf()    { state.csrf }
-
-def setUniFiOS(v){ state.UniFiOS = v }
-def getUniFiOS() { state.UniFiOS }
-
-def setWasExpectedClose(v){ state.wasExpectedClose = v }
-def getWasExpectedClose() { state.wasExpectedClose }
-
-def isCsrfTokenName(n) { n?.equalsIgnoreCase("X-CSRF-Token") }
-def csrfTokenNameToSend() { "X-CSRF-Token" }
-
-def isCookieHeaderName(n) { n?.equalsIgnoreCase("Set-Cookie") }
-def cookieNameToSend() { "Cookie" }
+boolean seqSend(List msgs, Integer millisec) {
+    logDebug "seqSend(): sending ${msgs.size()} messages with ${millisec} ms delay"
+    msgs.each { msg -> sendData("${msg}", millisec) }
+    return true
+}
