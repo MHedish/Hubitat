@@ -30,7 +30,7 @@
 *  0.1.18.2  -- Removed redundant batteryPercent attribute/state; Hubitat-native battery reporting only
 *  0.1.18.3  -- Fixed refresh() null init and model parsing cleanup
 *  0.1.18.5  -- Removed version state tracking; driverInfo only
-*  0.1.18.6  -- Removed state.name and renamed RuntimeCalibrate ? CalibrateRuntime
+*  0.1.18.6  -- Removed state.name and renamed RuntimeCalibrate -> CalibrateRuntime
 *  0.1.18.7  -- Normalized log strings; fixed scheduling logic; removed redundant state variables (outputVoltage, upsStatus, runtimeHours, runtimeMinutes)
 *  0.1.18.8  -- Renamed checkIntervalMinutes -> checkInterval (attribute only); removed controlDisabled artifact (controlEnabled is sole source of truth); monitoring schedule always logged
 *  0.1.18.9  -- Fixed handleElectricalMetrics parsing for Output Watts %, Output VA %, Current, and Energy
@@ -47,14 +47,26 @@
 *  0.1.19.8  -- Improved banner parsing with regex: 'deviceName' (clean extraction) and 'nmcStatus' (multi-value support)
 *  0.1.19.9  -- Added NMC Stat translation helper; new 'nmcStatusDesc' attribute with human-readable values
 *  0.1.19.10 -- Fixed UPSStatus parsing: now trims full "On Line" status instead of truncating to "On"; regex normalization for Online/OnBattery applied
-*  0.1.19.11 -- Finalized UPSStatus fix: only first two tokens after "UPS:" captured, eliminating extra text like "No Alarms Present"
+*  0.1.23.0  -- Improved Runtime Remaining parsing with regex (handles hr/min variations)
+*  0.1.23.1  -- Added parse dispatcher to prevent duplicate events/logging (helpers now routed by line type)
+*  0.1.23.2  -- Fixed duplicate Battery % reporting by tightening Battery State Of Charge match
+*  0.1.23.3  -- Removed redundant detstatus -soc command (Battery % now reported only once per cycle)
+*  0.1.24.0  -- Refactored Battery/Electrical handlers to use UPS-supplied units in logs/events instead of hardcoded designators
+*  0.1.24.1  -- Temperature handler now uses UPS-provided units with explicit ° symbol for clarity
+*  0.1.25.0  -- Added preference to auto-update Hubitat device label with UPS name
+*  0.1.25.1  -- Corrected Name regex (restored working version for UPS deviceName parsing and label updates)
+*  0.1.25.2  -- Reordered and clarified preferences (better grouping and cleaner titles)
+*  0.1.25.3  -- Fixed runtime parsing (case-insensitive match for hr/min tokens in detstatus output)
+*  0.1.25.4  -- Removed redundant detstatus -rt (runtime now parsed from detstatus -all only); fixed runtime parsing with token-based handler
+*  0.1.25.5  -- Restored runtime reporting (moved parsing outside switch, regex on full line for robust capture of hr/min, populates runtimeHours, runtimeMinutes, runtimeRemaining correctly)
+*  0.1.26.0  -- Stable baseline release (runtime reporting restored, SOC/runtime explicitly dispatched, detstatus cleanup, UPS-supplied units in logs, preference reorder, device label auto-update option, duplicate log cleanup)
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.1.19.11"
-@Field static final String DRIVER_MODIFIED = "2025.09.20"
+@Field static final String DRIVER_VERSION  = "0.1.26.0"
+@Field static final String DRIVER_MODIFIED = "2025.09.22"
 
 /* ===============================
    Metadata
@@ -145,16 +157,17 @@ metadata {
    =============================== */
 preferences {
     input("UPSIP", "text", title: "Smart UPS (APC only) IP Address", required: true)
-    input("UPSPort", "integer", title: "Telnet Port #", description: "Default 23", defaultValue: 23, required: true)
+    input("UPSPort", "integer", title: "Telnet Port", description: "Default 23", defaultValue: 23, required: true)
     input("Username", "text", title: "Username for Login", required: true, defaultValue: "")
     input("Password", "password", title: "Password for Login", required: true, defaultValue: "")
+    input("useUpsNameForLabel", "bool", title: "Use UPS name for Device Label?", defaultValue: false)
+    input("tempUnits", "enum", title: "Temperature Units", options: ["F","C"], defaultValue: "F", required: true)
+    input("controlEnabled", "bool", title: "Enable UPS Control Commands?", description: "Allow Reboot, Sleep, Calibrate Runtime, and Outlet Group control.", defaultValue: false)
     input("runTime", "number", title: "How often to check UPS status (minutes, 1–59)", defaultValue: 15, range: "1..59", required: true)
     input("runOffset", "number", title: "Offset (minutes past the hour, 0–59)", defaultValue: 0, range: "0..59", required: true)
     input("runTimeOnBattery", "number", title: "Check interval when on battery (minutes, 1–59)", defaultValue: 2, range: "1..59", required: true)
     input("logEnable", "bool", title: "Enable Debug Logging", defaultValue: false)
     input("logEvents", "bool", title: "Log all events", defaultValue: false)
-    input("controlEnabled", "bool", title: "Enable UPS Control Commands?", description: "Allow Reboot, Sleep, Calibrate Runtime, and Outlet Group control.", defaultValue: false)
-    input("tempUnits", "enum", title: "Temperature Units", options: ["F","C"], defaultValue: "F", required: true)
 }
 
 /* ===============================
@@ -328,15 +341,10 @@ private handleUPSStatus(String rawStatus, Integer runTimeInt, Integer runTimeOnB
 private handleBatteryData(def pair) {
     def (p0, p1, p2, p3, p4, p5) = (pair + [null,null,null,null,null,null])
     switch ("$p0 $p1") {
-        case "Battery Voltage:": emitEvent("batteryVoltage", p2); logInfo "Battery Voltage = ${p2}V"; break
-        case "Battery State": if (p3 == "Charge:") { int p4int = p4.toDouble().toInteger(); logInfo "UPS Battery Percentage = $p4%"; emitEvent("battery", p4int, "%") }; break
-        case "Runtime Remaining:": Integer hours = (p3 == "hr") ? p2.toInteger() : 0; Integer mins = (p5 == "min") ? p4.toInteger() : 0; if (hours > 0) emitEvent("runtimeHours", hours); if (mins > 0) emitEvent("runtimeMinutes", mins); String runtimeFormatted = String.format("%02d:%02d", hours, mins); logInfo "UPS Runtime Remaining = ${runtimeFormatted}"; def now = new Date().format('MM/dd/yyyy h:mm a', location.timeZone); emitEvent("lastUpdate", now, "Last Update: $now"); break
-        default:
-            if ((p0 in ["Internal","Battery"]) && p1 == "Temperature:") {
-                emitEvent("temperatureC", p2); emitEvent("temperatureF", p4); logInfo "UPS Temperature = ${p2}°C / ${p4}°F"
-                if (tempUnits == "F") emitEvent("temperature", p4, "F"); else emitEvent("temperature", p2, "C")
-            }
-            break
+        case "Battery Voltage:": emitEvent("batteryVoltage", p2, "Battery Voltage = ${p2} ${p3}"); break
+        case "Battery State": if (p2 == "Of" && p3 == "Charge:") { int pct = p4.toDouble().toInteger(); emitEvent("battery", pct, "UPS Battery Percentage = $pct ${p5}") }; break
+        case "Runtime Remaining:": def runtimeStr = pair.join(" "); def rtMatcher = runtimeStr =~ /Runtime Remaining:\s*(?:(\d+)\s*(?:hr|hrs))?\s*(?:(\d+)\s*(?:min|mins))?/; Integer hours = 0, mins = 0; if (rtMatcher.find()) { hours = rtMatcher[0][1]?.toInteger() ?: 0; mins = rtMatcher[0][2]?.toInteger() ?: 0 }; if (hours > 0) emitEvent("runtimeHours", hours); if (mins > 0) emitEvent("runtimeMinutes", mins); String runtimeFormatted = String.format("%02d:%02d", hours, mins); emitEvent("lastUpdate", new Date().format('MM/dd/yyyy h:mm a', location.timeZone), "UPS Runtime Remaining = ${runtimeFormatted}"); break
+        default: if ((p0 in ["Internal","Battery"]) && p1 == "Temperature:") { emitEvent("temperatureC", p2, "UPS Temperature = ${p2}°${p3} / ${p4}°${p5}"); emitEvent("temperatureF", p4); if (tempUnits == "F") emitEvent("temperature", p4, "UPS Temperature = ${p4}°${p5}"); else emitEvent("temperature", p2, "UPS Temperature = ${p2}°${p3}") }; break
     }
 }
 
@@ -345,18 +353,18 @@ private handleElectricalMetrics(def pair) {
     switch (p0) {
         case "Output":
             switch (p1) {
-                case "Voltage:": emitEvent("outputVoltage", p2); logInfo "Output Voltage = ${p2}V"; break
-                case "Frequency:": emitEvent("outputFrequency", p2); logInfo "Output Frequency = ${p2}Hz"; break
-                case "Current:": emitEvent("outputCurrent", p2); logInfo "Output Current = ${p2}A"; def volts = device.currentValue("outputVoltage"); if (volts) { double watts = volts.toDouble() * p2.toDouble(); emitEvent("outputWatts", watts.toInteger()); logInfo "Calculated Output Watts = ${watts.toInteger()}W" }; break
-                case "Energy:": emitEvent("outputEnergy", p2); logInfo "Output Energy = ${p2}Wh"; break
-                case "Watts": if (p2 == "Percent:") { emitEvent("outputWattsPercent", p3); logInfo "Output Watts Percent = ${p3}%" }; break
-                case "VA": if (p2 == "Percent:") { emitEvent("outputVAPercent", p3); logInfo "Output VA Percent = ${p3}%" }; break
+                case "Voltage:": emitEvent("outputVoltage", p2, "Output Voltage = ${p2} ${p3}"); break
+                case "Frequency:": emitEvent("outputFrequency", p2, "Output Frequency = ${p2} ${p3}"); break
+                case "Current:": emitEvent("outputCurrent", p2, "Output Current = ${p2} ${p3}"); def volts = device.currentValue("outputVoltage"); if (volts) { double watts = volts.toDouble() * p2.toDouble(); emitEvent("outputWatts", watts.toInteger(), "Calculated Output Watts = ${watts.toInteger()}W") }; break
+                case "Energy:": emitEvent("outputEnergy", p2, "Output Energy = ${p2} ${p3}"); break
+                case "Watts": if (p2 == "Percent:") { emitEvent("outputWattsPercent", p3, "Output Watts Percent = ${p3} ${p4}") }; break
+                case "VA": if (p2 == "Percent:") { emitEvent("outputVAPercent", p3, "Output VA Percent = ${p3} ${p4}") }; break
             }
             break
         case "Input":
             switch (p1) {
-                case "Voltage:": emitEvent("inputVoltage", p2); logInfo "Input Voltage = ${p2}V"; break
-                case "Frequency:": emitEvent("inputFrequency", p2); logInfo "Input Frequency = ${p2}Hz"; break
+                case "Voltage:": emitEvent("inputVoltage", p2, "Input Voltage = ${p2} ${p3}"); break
+                case "Frequency:": emitEvent("inputFrequency", p2, "Input Frequency = ${p2} ${p3}"); break
             }
             break
     }
@@ -386,62 +394,25 @@ private handleUPSError(def pair) {
 }
 
 def parse(String msg) {
-    def lastCommand = device.currentValue("lastCommand")
+    def lastCommand=device.currentValue("lastCommand")
     logDebug "In parse - (${msg})"
     logDebug "lastCommand = $lastCommand"
-
-    def pair = msg.split(" ")
+    def pair=msg.split(" ")
     logDebug "Server response $msg lastCommand=($lastCommand) length=(${pair.length})"
 
-    if (lastCommand == "RebootConnect") {
-        emitEvent("connectStatus", "Connected"); emitEvent("lastCommand", "Reboot")
-        seqSend(["$Username", "$Password", "UPS -c reboot"], 500)
-    } else if (lastCommand == "SleepConnect") {
-        emitEvent("connectStatus", "Connected"); emitEvent("lastCommand", "Sleep")
-        seqSend(["$Username", "$Password", "UPS -c sleep"], 500)
-    } else if (lastCommand == "CalibrateConnect") {
-        emitEvent("connectStatus", "Connected"); emitEvent("lastCommand", "CalibrateRuntime")
-        seqSend(["$Username", "$Password", "UPS -r start"], 500)
-    } else if (lastCommand == "SetOutletGroupConnect") {
-        emitEvent("connectStatus", "Connected"); emitEvent("lastCommand", "SetOutletGroup")
-        seqSend(["$Username", "$Password", "UPS -o ${state.outlet} ${state.command} ${state.seconds}"], 500)
-    } else if (lastCommand == "initialConnect") {
-        emitEvent("connectStatus", "Connected"); emitEvent("lastCommand", "getStatus")
-        seqSend(["$Username", "$Password","detstatus -rt","detstatus -ss","detstatus -soc","detstatus -all","detstatus -tmp","upsabout"], 500)
-    } else if (lastCommand == "quit") {
-        emitEvent("lastCommand", "Rescheduled")
-        if (!device.currentValue("nextCheckMinutes")) logInfo "Will run again in ${device.currentValue("checkInterval")} Minutes."
-        emitEvent("nextCheckMinutes", device.currentValue("checkInterval"))
-        closeConnection(); emitEvent("telnet", "Ok")
-    } else {
-        // --- Banner parsing ---
-        def nameMatcher = msg =~ /Name\s*:\s*([^\s]+)/
-        if (nameMatcher.find()) {
-            def nameVal = nameMatcher.group(1).trim()
-            emitEvent("deviceName", nameVal)
-            logInfo "UPS Device Name = $nameVal"
-        }
-
-        def statMatcher = msg =~ /Stat\s*:\s*(.+)$/
-        if (statMatcher.find()) {
-            def statVal = statMatcher.group(1).trim()
-            emitEvent("nmcStatus", statVal)
-            def desc = translateNmcStatus(statVal)
-            emitEvent("nmcStatusDesc", desc)
-            logInfo "NMC Status = $statVal ($desc)"
-        }
-
-        // --- UPS Status parsing (fixed) ---
-        if ((pair.size() >= 4) && pair[0] == "Status" && pair[1] == "of" && pair[2] == "UPS:") {
-            def statusString = (pair[3..Math.min(4, pair.size()-1)]).join(" ")
-            handleUPSStatus(statusString, runTime.toInteger(), runTimeOnBattery.toInteger(), runOffset.toInteger())
-        }
-
-        // --- Other parse helpers ---
-        handleBatteryData(pair)
-        handleElectricalMetrics(pair)
-        handleIdentificationAndSelfTest(pair)
-        handleUPSError(pair)
+    if (lastCommand=="RebootConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","Reboot");seqSend(["$Username","$Password","UPS -c reboot"],500)}
+    else if (lastCommand=="SleepConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","Sleep");seqSend(["$Username","$Password","UPS -c sleep"],500)}
+    else if (lastCommand=="CalibrateConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","CalibrateRuntime");seqSend(["$Username","$Password","UPS -r start"],500)}
+    else if (lastCommand=="SetOutletGroupConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","SetOutletGroup");seqSend(["$Username","$Password","UPS -o ${state.outlet} ${state.command} ${state.seconds}"],500)}
+    else if (lastCommand=="initialConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","getStatus");seqSend(["$Username","$Password","detstatus -ss","detstatus -all","detstatus -tmp","upsabout"],500)}
+    else if (lastCommand=="quit"){emitEvent("lastCommand","Rescheduled");if(!device.currentValue("nextCheckMinutes"))logInfo "Will run again in ${device.currentValue("checkInterval")} Minutes.";emitEvent("nextCheckMinutes",device.currentValue("checkInterval"));closeConnection();emitEvent("telnet","Ok")}
+    else {
+        def nameMatcher=msg =~ /^Name\s*:\s*([^\s]+)/; if(nameMatcher.find()){def nameVal=nameMatcher.group(1).trim();emitEvent("deviceName",nameVal);logInfo "UPS Device Name = $nameVal";if(useUpsNameForLabel){device.setLabel(nameVal);logInfo "Device label updated to UPS name: $nameVal"}}
+        def statMatcher=msg =~ /Stat\s*:\s*(.+)$/; if(statMatcher.find()){def statVal=statMatcher.group(1).trim();emitEvent("nmcStatus",statVal);def desc=translateNmcStatus(statVal);emitEvent("nmcStatusDesc",desc);logInfo "NMC Status = $statVal ($desc)"}
+        if ((pair.size()>=4)&&pair[0]=="Status"&&pair[1]=="of"&&pair[2]=="UPS:"){def statusString=(pair[3..Math.min(4,pair.size()-1)]).join(" ");handleUPSStatus(statusString,runTime.toInteger(),runTimeOnBattery.toInteger(),runOffset.toInteger())}
+        handleBatteryData(pair); handleElectricalMetrics(pair); handleIdentificationAndSelfTest(pair); handleUPSError(pair)
+        if (pair[0]=="Runtime"&&pair[1].startsWith("Remaining")) handleBatteryData(pair)
+        if (pair[0]=="Battery"&&pair[1]=="State"&&pair[2]=="Of"&&pair[3]=="Charge:") handleBatteryData(pair)
     }
 }
 
