@@ -1,5 +1,19 @@
 # APC SmartUPS Status Driver — Changelog
 
+## [0.1.27.1] — 2025-09-23
+### Changed
+- Cleaned parse() routing for UPS vs NMC attributes.  
+- Ensured UPS `serialNumber` and `manufactureDate` are not overwritten by NMC values.  
+
+## [0.1.27.0] — 2025-09-23
+### Added
+- Implemented NMC `about` parsing.  
+- Captured 14 new attributes for NMC hardware, application, OS, and boot monitor data:
+  - `nmcModel`, `nmcSerialNumber`, `nmcHardwareRevision`, `nmcManufactureDate`, `nmcMACAddress`, `nmcUptime`
+  - `nmcApplicationName`, `nmcApplicationVersion`, `nmcApplicationDate`
+  - `nmcOSName`, `nmcOSVersion`, `nmcOSDate`
+  - `nmcBootMonitor`, `nmcBootMonitorVersion`, `nmcBootMonitorDate`
+
 ## [0.1.26.8] — 2025-09-23
 ### Changed
 - Renamed `refresh()` flow to report `"Connecting"` → `"Connected"` → `"getStatus"` for clarity.  
