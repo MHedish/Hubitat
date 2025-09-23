@@ -1,5 +1,24 @@
 # APC SmartUPS Status Driver — Changelog
 
+## [0.1.30.0] — 2025-09-23
+### Stable Release
+- First **stable baseline** since refactor from fork.
+- Fully validated UPS + NMC attribute parsing:
+  - 14 new NMC attributes (hardware, firmware, OS, boot monitor).
+  - Fixed serial number overwrite bug (UPS vs NMC serial separation).
+  - Device name handling restored and hardened.
+  - NMC MAC address normalized (colon-delimited).
+- Logging refinements:
+  - Consistent per-attribute descriptions.
+  - Suppressed duplicate/unnecessary events.
+- Connection flow hardened (`refresh -> Connecting -> Connected -> getStatus -> about -> quit`).
+- Marked as **stable baseline** for production deployments.
+
+## [0.1.27.4] — 2025-09-23
+### Changed
+- Finalized NMC parsing; colon-delimited MAC format.
+- Device name and UPS serial number parsing verified stable.
+
 ## [0.1.27.1] — 2025-09-23
 ### Changed
 - Cleaned parse() routing for UPS vs NMC attributes.  
