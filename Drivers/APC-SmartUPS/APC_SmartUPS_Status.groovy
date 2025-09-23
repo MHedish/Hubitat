@@ -52,7 +52,7 @@
 *  0.1.23.2  -- Fixed duplicate Battery % reporting by tightening Battery State Of Charge match
 *  0.1.23.3  -- Removed redundant detstatus -soc command (Battery % now reported only once per cycle)
 *  0.1.24.0  -- Refactored Battery/Electrical handlers to use UPS-supplied units in logs/events instead of hardcoded designators
-*  0.1.24.1  -- Temperature handler now uses UPS-provided units with explicit ° symbol for clarity
+*  0.1.24.1  -- Temperature handler now uses UPS-provided units with explicit degrees symbol for clarity
 *  0.1.25.0  -- Added preference to auto-update Hubitat device label with UPS name
 *  0.1.25.1  -- Corrected Name regex (restored working version for UPS deviceName parsing and label updates)
 *  0.1.25.2  -- Reordered and clarified preferences (better grouping and cleaner titles)
@@ -63,18 +63,22 @@
 *  0.1.26.1  -- parse() compact cleanup; connectStatus unified handling; removed redundant state usage for connection tracking
 *  0.1.26.2  -- telnetStatus() now emits connectStatus=Disconnected on stream close; cleaner alignment with quit/parse handling
 *  0.1.26.3  -- initialize() compact cleanup; replaced repetitive emitEvent() calls with map iteration, minor logic streamlining
-*  0.1.26.4  -- Centralized event/log handling via emitChangedEvent; eliminated redundant/null events; optimized logInfo vs logDebug; streamlined lastUpdate; compact formatting cleanup
-*  0.1.26.5  -- emitChangedEvent now always logs at info level; telnet close logging downgraded to debug (Hubitat warning only)
-*  0.1.26.6  -- Removed duplicate helper calls in parse(); restored hh:mm runtime log; moved lastUpdate emission to end of good telnet session
-*  0.1.26.7  -- De-duplicated UPSStatus logging (now only emits info on change; repeats logged as debug)
-*  0.1.26.8  -- Renamed refresh flow to "Connecting" for clarity; fixed Runtime Remaining logic (updates on 0 values); restored descriptive event strings for Battery and Electrical metrics
-*  0.1.26.9  -- Added unit parameter to emitEvent/emitChangedEvent; migrated key attributes to use units with proper descriptions; aligned helpers with changed-vs-always event scheme
+*  0.1.26.4  -- Centralized event emission with emitChangedEvent(); avoid redundant events, improve logInfo/logDebug consistency
+*  0.1.26.5  -- Emit attribute values as info logs (even when unchanged) when logEvents enabled; prevent event spam via emitChangedEvent()
+*  0.1.26.6  -- Deduplicated UPSStatus reporting; quieted expected telnet close logs
+*  0.1.26.7  -- Connection flow update (refresh->Connecting->Connected->getStatus); refined runtimeRemaining parsing; restored event descriptions for electrical/battery metrics
+*  0.1.27.0  -- Added NMC 'about' parsing; 14 new attributes captured for NMC hardware, application, OS, and boot monitor data
+*  0.1.27.1  -- Cleaned parse() routing for UPS vs NMC attributes; ensured UPS serialNumber/manufactureDate are not overwritten by NMC values
+*  0.1.27.2  -- Attempted delayed sequencing of NMC 'about' parsing using runInMillis (superseded by 0.1.27.3)
+*  0.1.27.3  -- Fixed deviceName and serialNumber handling: restricted UPS vs NMC sources; added explicit nmcSerialNumber/nmcManufactureDate without overwriting UPS values
+*  0.1.27.4  -- Normalized nmcMACAddress to colon-delimited uppercase format (00:C0:XX:YY:ZZ:NN); marked stable release
+*  0.1.30.0  -- Marked stable; promoted from dev series after full NMC + UPS integration testing
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.1.26.9"
+@Field static final String DRIVER_VERSION  = "0.1.30.0"
 @Field static final String DRIVER_MODIFIED = "2025.09.23"
 
 /* ===============================
@@ -127,6 +131,21 @@ metadata {
        attribute "deviceName", "string"
        attribute "nmcStatus", "string"
        attribute "nmcStatusDesc", "string"
+       attribute "nmcModel", "string"
+       attribute "nmcSerialNumber", "string"
+       attribute "nmcHardwareRevision", "string"
+       attribute "nmcManufactureDate", "string"
+       attribute "nmcMACAddress", "string"
+       attribute "nmcUptime", "string"
+       attribute "nmcApplicationName", "string"
+       attribute "nmcApplicationVersion", "string"
+       attribute "nmcApplicationDate", "string"
+       attribute "nmcOSName", "string"
+       attribute "nmcOSVersion", "string"
+       attribute "nmcOSDate", "string"
+       attribute "nmcBootMonitor", "string"
+       attribute "nmcBootMonitorVersion", "string"
+       attribute "nmcBootMonitorDate", "string"
 
        // Commands
        command "refresh"
@@ -486,65 +505,140 @@ private handleUPSError(def pair) {
     }
 }
 
+private handleNMCData(String line) {
+    // Track which section we're in
+    if (line =~ /Hardware Factory/) { state.aboutSection = "Hardware"; return }
+    if (line =~ /Application Module/) { state.aboutSection = "Application"; return }
+    if (line =~ /APC OS\(AOS\)/) { state.aboutSection = "OS"; return }
+    if (line =~ /APC Boot Monitor/) { state.aboutSection = "BootMon"; return }
+
+    def parts = line.split(":",2)
+    if (parts.size() < 2) return
+    def key = parts[0].trim()
+    def val = parts[1].trim()
+    switch (state.aboutSection) {
+        case "Hardware":
+            if (key=="Model Number") emitChangedEvent("nmcModel", val, "NMC Model = ${val}")
+            if (key=="Serial Number") emitChangedEvent("nmcSerialNumber", val, "NMC Serial Number = ${val}")
+            if (key=="Hardware Revision") emitChangedEvent("nmcHardwareRevision", val, "NMC Hardware Revision = ${val}")
+            if (key=="Manufacture Date") emitChangedEvent("nmcManufactureDate", val, "NMC Manufacture Date = ${val}")
+            if (key=="MAC Address") {
+			    def mac = val.replaceAll(/\s+/, ":").toUpperCase()
+                emitChangedEvent("nmcMACAddress", mac, "NMC MAC Address = ${mac}")
+				}
+            if (key=="Management Uptime") emitChangedEvent("nmcUptime", val, "NMC Uptime = ${val}")
+            break
+        case "Application":
+            if (key=="Name") emitChangedEvent("nmcApplicationName", val, "NMC Application Name = ${val}")
+            if (key=="Version") emitChangedEvent("nmcApplicationVersion", val, "NMC Application Version = ${val}")
+            if (key=="Date") emitChangedEvent("nmcApplicationDate", val, "NMC Application Date = ${val}")
+            break
+        case "OS":
+            if (key=="Name") emitChangedEvent("nmcOSName", val, "NMC OS Name = ${val}")
+            if (key=="Version") emitChangedEvent("nmcOSVersion", val, "NMC OS Version = ${val}")
+            if (key=="Date") emitChangedEvent("nmcOSDate", val, "NMC OS Date = ${val}")
+            break
+        case "BootMon":
+            if (key=="Name") emitChangedEvent("nmcBootMonitor", val, "NMC Boot Monitor = ${val}")
+            if (key=="Version") emitChangedEvent("nmcBootMonitorVersion", val, "NMC Boot Monitor Version = ${val}")
+            if (key=="Date") emitChangedEvent("nmcBootMonitorDate", val, "NMC Boot Monitor Date = ${val}")
+            break
+    }
+}
+
 /* ===============================
    Parse
    =============================== */
 def parse(String msg) {
-    def lastCommand=device.currentValue("lastCommand")
+    def lastCommand = device.currentValue("lastCommand")
     logDebug "In parse - (${msg})"
-    def pair=msg.split(" ")
+    def pair = msg.split(" ")
 
-    if (lastCommand=="RebootConnect"){
-        emitEvent("connectStatus","Connected");emitEvent("lastCommand","Reboot")
-        seqSend(["$Username","$Password","UPS -c reboot"],500)
+    if (lastCommand == "RebootConnect") {
+        emitEvent("connectStatus", "Connected")
+        emitEvent("lastCommand", "Reboot")
+        seqSend(["$Username", "$Password", "UPS -c reboot"], 500)
     }
-    else if (lastCommand=="SleepConnect"){
-        emitEvent("connectStatus","Connected");emitEvent("lastCommand","Sleep")
-        seqSend(["$Username","$Password","UPS -c sleep"],500)
+    else if (lastCommand == "SleepConnect") {
+        emitEvent("connectStatus", "Connected")
+        emitEvent("lastCommand", "Sleep")
+        seqSend(["$Username", "$Password", "UPS -c sleep"], 500)
     }
-    else if (lastCommand=="CalibrateConnect"){
-        emitEvent("connectStatus","Connected");emitEvent("lastCommand","CalibrateRuntime")
-        seqSend(["$Username","$Password","UPS -r start"],500)
+    else if (lastCommand == "CalibrateConnect") {
+        emitEvent("connectStatus", "Connected")
+        emitEvent("lastCommand", "CalibrateRuntime")
+        seqSend(["$Username", "$Password", "UPS -r start"], 500)
     }
-    else if (lastCommand=="SetOutletGroupConnect"){
-        emitEvent("connectStatus","Connected");emitEvent("lastCommand","SetOutletGroup")
-        seqSend(["$Username","$Password","UPS -o ${state.outlet} ${state.command} ${state.seconds}"],500)
+    else if (lastCommand == "SetOutletGroupConnect") {
+        emitEvent("connectStatus", "Connected")
+        emitEvent("lastCommand", "SetOutletGroup")
+        seqSend(["$Username", "$Password", "UPS -o ${state.outlet} ${state.command} ${state.seconds}"], 500)
     }
-    else if (lastCommand=="Connecting"){
-        emitEvent("connectStatus","Connected");emitEvent("lastCommand","getStatus")
-        seqSend(["$Username","$Password","detstatus -ss","detstatus -all","detstatus -tmp","upsabout"],500)
-    }
-    else if (lastCommand=="quit"){
-	    emitEvent("lastCommand","Rescheduled")
-	    emitChangedEvent("nextCheckMinutes",device.currentValue("checkInterval"))
+    else if (lastCommand == "Connecting") {
+        emitEvent("connectStatus", "Connected")
+        emitEvent("lastCommand", "getStatus")
+        seqSend(["$Username", "$Password",
+                 "upsabout", "detstatus -ss", "detstatus -all", "detstatus -tmp"], 500)
 
-	    // Stamp the time when attributes were last updated
-	    def now = new Date().format('MM/dd/yyyy h:mm a', location.timeZone)
-	    emitChangedEvent("lastUpdate", now)
+        // Schedule NMC about data separately
+        runInMillis(2000, 'sendAboutCommand')
+    }
+    else if (lastCommand == "quit") {
+        emitEvent("lastCommand", "Rescheduled")
+        emitChangedEvent("nextCheckMinutes", device.currentValue("checkInterval"))
 
-	    closeConnection()
-	    emitEvent("telnet","Ok")
-	}
+        // Stamp the time when attributes were last updated
+        def now = new Date().format('MM/dd/yyyy h:mm a', location.timeZone)
+        emitChangedEvent("lastUpdate", now)
+
+        closeConnection()
+        emitEvent("telnet", "Ok")
+    }
     else {
-        def nameMatcher=msg =~ /^Name\s*:\s*([^\s]+)/
-        if(nameMatcher.find()){
-            def nameVal=nameMatcher.group(1).trim()
-            emitChangedEvent("deviceName",nameVal)
-            if(useUpsNameForLabel){device.setLabel(nameVal);logInfo "Device label updated to UPS name: $nameVal"}
+        // Only parse UPS Name when in getStatus flow
+        if (lastCommand == "getStatus") {
+            def nameMatcher = msg =~ /^Name\s*:\s*([^\s]+)/
+            if (nameMatcher.find()) {
+                def nameVal = nameMatcher.group(1).trim()
+                emitChangedEvent("deviceName", nameVal)
+                if (useUpsNameForLabel) {
+                    device.setLabel(nameVal)
+                    logInfo "Device label updated to UPS name: $nameVal"
+                }
+            }
         }
-        def statMatcher=msg =~ /Stat\s*:\s*(.+)$/
-        if(statMatcher.find()){
-            def statVal=statMatcher.group(1).trim()
-            emitChangedEvent("nmcStatus",statVal)
-            def desc=translateNmcStatus(statVal)
-            emitChangedEvent("nmcStatusDesc",desc)
+
+        def statMatcher = msg =~ /Stat\s*:\s*(.+)$/
+        if (statMatcher.find()) {
+            def statVal = statMatcher.group(1).trim()
+            emitChangedEvent("nmcStatus", statVal)
+            def desc = translateNmcStatus(statVal)
+            emitChangedEvent("nmcStatusDesc", desc)
         }
-        if ((pair.size()>=4)&&pair[0]=="Status"&&pair[1]=="of"&&pair[2]=="UPS:"){
-            def statusString=(pair[3..Math.min(4,pair.size()-1)]).join(" ")
-            handleUPSStatus(statusString,runTime.toInteger(),runTimeOnBattery.toInteger(),runOffset.toInteger())
+
+        if ((pair.size() >= 4) && pair[0] == "Status" && pair[1] == "of" && pair[2] == "UPS:") {
+            def statusString = (pair[3..Math.min(4, pair.size() - 1)]).join(" ")
+            handleUPSStatus(statusString, runTime.toInteger(), runTimeOnBattery.toInteger(), runOffset.toInteger())
         }
-        handleBatteryData(pair); handleElectricalMetrics(pair); handleIdentificationAndSelfTest(pair); handleUPSError(pair)
+
+        if (lastCommand == "getStatus") {
+            handleBatteryData(pair)
+            handleElectricalMetrics(pair)
+            handleIdentificationAndSelfTest(pair)
+            handleUPSError(pair)
+        }
+        else if (lastCommand == "about") {
+            handleNMCData(msg)
+        }
     }
+}
+
+/* ===============================
+   Helper for delayed NMC data
+   =============================== */
+private sendAboutCommand() {
+    emitEvent("lastCommand", "about")
+    seqSend(["about"], 500)
 }
 
 /* ===============================
