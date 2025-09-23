@@ -59,14 +59,23 @@
 *  0.1.25.3  -- Fixed runtime parsing (case-insensitive match for hr/min tokens in detstatus output)
 *  0.1.25.4  -- Removed redundant detstatus -rt (runtime now parsed from detstatus -all only); fixed runtime parsing with token-based handler
 *  0.1.25.5  -- Restored runtime reporting (moved parsing outside switch, regex on full line for robust capture of hr/min, populates runtimeHours, runtimeMinutes, runtimeRemaining correctly)
-*  0.1.26.0  -- Stable baseline release (runtime reporting restored, SOC/runtime explicitly dispatched, detstatus cleanup, UPS-supplied units in logs, preference reorder, device label auto-update option, duplicate log cleanup)
+*  0.1.26.0  -- Stable baseline: runtime capture restored; marked rollback point for cleanup/refinement
+*  0.1.26.1  -- parse() compact cleanup; connectStatus unified handling; removed redundant state usage for connection tracking
+*  0.1.26.2  -- telnetStatus() now emits connectStatus=Disconnected on stream close; cleaner alignment with quit/parse handling
+*  0.1.26.3  -- initialize() compact cleanup; replaced repetitive emitEvent() calls with map iteration, minor logic streamlining
+*  0.1.26.4  -- Centralized event/log handling via emitChangedEvent; eliminated redundant/null events; optimized logInfo vs logDebug; streamlined lastUpdate; compact formatting cleanup
+*  0.1.26.5  -- emitChangedEvent now always logs at info level; telnet close logging downgraded to debug (Hubitat warning only)
+*  0.1.26.6  -- Removed duplicate helper calls in parse(); restored hh:mm runtime log; moved lastUpdate emission to end of good telnet session
+*  0.1.26.7  -- De-duplicated UPSStatus logging (now only emits info on change; repeats logged as debug)
+*  0.1.26.8  -- Renamed refresh flow to "Connecting" for clarity; fixed Runtime Remaining logic (updates on 0 values); restored descriptive event strings for Battery and Electrical metrics
+*  0.1.26.9  -- Added unit parameter to emitEvent/emitChangedEvent; migrated key attributes to use units with proper descriptions; aligned helpers with changed-vs-always event scheme
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.1.26.0"
-@Field static final String DRIVER_MODIFIED = "2025.09.22"
+@Field static final String DRIVER_VERSION  = "0.1.26.9"
+@Field static final String DRIVER_MODIFIED = "2025.09.23"
 
 /* ===============================
    Metadata
@@ -174,11 +183,26 @@ preferences {
    Utilities
    =============================== */
 private driverInfoString() { return "${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})" }
+
 private logDebug(msg) { if (logEnable) log.debug "[${DRIVER_NAME}] $msg" }
-private logInfo(msg)  { if (logEvents) log.info "[${DRIVER_NAME}] $msg" }
-private logWarn(msg)  { log.warn  "[${DRIVER_NAME}] $msg" }
-private logError(msg) { log.error "[${DRIVER_NAME}] $msg" }
-private emitEvent(String name, def value, String desc = null) { sendEvent(name: name, value: value, descriptionText: desc) }
+private logInfo(msg)  { if (logEvents) log.info  "[${DRIVER_NAME}] $msg" }
+private logWarn(msg)  { log.warn   "[${DRIVER_NAME}] $msg" }
+private logError(msg) { log.error  "[${DRIVER_NAME}] $msg" }
+
+private emitEvent(String name, def value, String desc = null, String unit = null) {
+    sendEvent(name: name, value: value, unit: unit, descriptionText: desc)
+    if (desc) logInfo "${name} = ${value} (${desc})" else logInfo "${name} = ${value}"
+}
+
+private emitChangedEvent(String name, def value, String desc = null, String unit = null) {
+    def oldVal = device.currentValue(name)
+    if (oldVal?.toString() != value?.toString()) {
+        sendEvent(name: name, value: value, unit: unit, descriptionText: desc)
+        if (desc) logInfo "${name} = ${value} (${desc})" else logInfo "${name} = ${value}"
+    } else {
+        logDebug "No change for ${name} (still ${oldVal})"
+    }
+}
 
 /* ===============================
    NMC Status Translation
@@ -208,63 +232,59 @@ private translateNmcStatus(String statVal) {
 /* ===============================
    Debug Logging Disable
    =============================== */
-def autoDisableDebugLogging() { device.updateSetting("logEnable", [value:"false", type:"bool"]); logInfo "Debug logging disabled (auto)" }
-def disableDebugLoggingNow() { device.updateSetting("logEnable", [value:"false", type:"bool"]); logInfo "Debug logging disabled (manual)" }
+def autoDisableDebugLogging() {
+    device.updateSetting("logEnable", [value:"false", type:"bool"])
+    logInfo "Debug logging disabled (auto)"
+}
+def disableDebugLoggingNow() {
+    device.updateSetting("logEnable", [value:"false", type:"bool"])
+    logInfo "Debug logging disabled (manual)"
+}
 
 /* ===============================
    Lifecycle
    =============================== */
-def installed() { logInfo "Installed"; logInfo "${driverInfoString()} loaded successfully"; emitEvent("driverInfo", driverInfoString()); initialize() }
-def updated()   { logInfo "Preferences updated"; logInfo "${driverInfoString()} reloaded successfully"; configure() }
-def configure() { logInfo "${driverInfoString()} configured successfully"; emitEvent("driverInfo", driverInfoString()); initialize() }
+def installed() {
+    logInfo "Installed"
+    emitChangedEvent("driverInfo", driverInfoString())
+    initialize()
+}
+def updated() {
+    logInfo "Preferences updated"
+    emitChangedEvent("driverInfo", driverInfoString())
+    configure()
+}
+def configure() {
+    logInfo "${driverInfoString()} configured"
+    emitChangedEvent("driverInfo", driverInfoString())
+    initialize()
+}
 
 def initialize() {
     logInfo "${driverInfoString()} initializing..."
-
-    emitEvent("lastCommand", "")
-    emitEvent("UPSStatus", "Unknown")
-    emitEvent("temperatureF", null)
-    emitEvent("temperatureC", null)
-    emitEvent("telnet", "Ok")
-    emitEvent("connectStatus", "Initialized")
-    emitEvent("lastCommandResult", "NA")
-
-    if (!tempUnits) tempUnits = "F"
-    if (logEnable) logDebug "IP = $UPSIP, Port = $UPSPort, Username = $Username, Password = $Password"
-    else logInfo "IP = $UPSIP, Port = $UPSPort"
-
-    if ((UPSIP) && (UPSPort) && (Username) && (Password)) {
-        def now = new Date().format('MM/dd/yyyy h:mm a', location.timeZone)
-        emitEvent("lastUpdate", now, "Last Update: $now")
-
-        unschedule(); runIn(1800, autoDisableDebugLogging)
-
-        def runTimeInt = runTime.toInteger()
-        def runTimeOnBatteryInt = runTimeOnBattery.toInteger()
-        def runOffsetInt = runOffset.toInteger()
-
-        device.updateSetting("runTime", [value: runTimeInt, type: "number"])
-        device.updateSetting("runTimeOnBattery", [value: runTimeOnBatteryInt, type: "number"])
-        device.updateSetting("runOffset", [value: runOffsetInt, type: "number"])
-
-        if (controlEnabled) {
-            if ((state.origAppName) && (state.origAppName != "") && (state.origAppName != device.getLabel())) device.setLabel(state.origAppName)
-            if (tempUnits) logDebug "Temperature Unit Currently: $tempUnits"
-            state.origAppName = device.getLabel()
-        } else {
-            if ((state.origAppName) && (state.origAppName != "")) device.setLabel(state.origAppName + " (Control Disabled)")
-        }
-
-        scheduleCheck(runTimeInt, runOffsetInt)
-        emitEvent("lastCommand", "Scheduled")
-        refresh()
+    ["lastCommand":"","UPSStatus":"Unknown","telnet":"Ok","connectStatus":"Initialized","lastCommandResult":"NA"].each{k,v->emitEvent(k,v)}
+    if(!tempUnits) tempUnits="F"
+    if(logEnable) logDebug "IP=$UPSIP, Port=$UPSPort, Username=$Username, Password=$Password" else logInfo "IP=$UPSIP, Port=$UPSPort"
+    if(UPSIP&&UPSPort&&Username&&Password){
+        def now=new Date().format('MM/dd/yyyy h:mm a',location.timeZone)
+        emitChangedEvent("lastUpdate",now)
+        unschedule(); runIn(1800,autoDisableDebugLogging)
+        def rT=runTime.toInteger(), rTB=runTimeOnBattery.toInteger(), rO=runOffset.toInteger()
+        device.updateSetting("runTime",[value:rT,type:"number"])
+        device.updateSetting("runTimeOnBattery",[value:rTB,type:"number"])
+        device.updateSetting("runOffset",[value:rO,type:"number"])
+        if(controlEnabled){
+            if(state.origAppName&&state.origAppName!=""&&state.origAppName!=device.getLabel()) device.setLabel(state.origAppName)
+            state.origAppName=device.getLabel()
+        } else if(state.origAppName&&state.origAppName!="") device.setLabel(state.origAppName+" (Control Disabled)")
+        scheduleCheck(rT,rO); emitEvent("lastCommand","Scheduled"); refresh()
     } else logDebug "Parameters not filled in yet."
 }
 
 private scheduleCheck(Integer interval, Integer offset) {
     unschedule()
     def scheduleString = "0 ${offset}/${interval} * ? * * *"
-    emitEvent("checkInterval", interval)
+    emitChangedEvent("checkInterval", interval)
     logInfo "Monitoring scheduled every ${interval} minutes at ${offset} past the hour."
     schedule(scheduleString, refresh)
 }
@@ -273,12 +293,14 @@ private scheduleCheck(Integer interval, Integer offset) {
    Command Helpers
    =============================== */
 private executeUPSCommand(String cmdType) {
-    emitEvent("lastCommandResult", "NA"); logInfo "$cmdType called."
+    emitEvent("lastCommandResult", "NA")
+    logInfo "$cmdType called"
     if (controlEnabled) {
-        logDebug "SmartUPS Status Version ($DRIVER_VERSION)"
-        emitEvent("lastCommand", "${cmdType}Connect"); emitEvent("connectStatus", "Trying")
-        logDebug "Connecting to ${UPSIP}:${UPSPort}"; telnetClose(); telnetConnect(UPSIP, UPSPort.toInteger(), null, null)
-    } else { logWarn "$cmdType called but UPS control is disabled. Will not run." }
+        emitEvent("lastCommand", "${cmdType}Connect")
+        emitEvent("connectStatus", "Trying")
+        logDebug "Connecting to ${UPSIP}:${UPSPort}"
+        telnetClose(); telnetConnect(UPSIP, UPSPort.toInteger(), null, null)
+    } else logWarn "$cmdType called but UPS control is disabled"
 }
 
 /* ===============================
@@ -290,16 +312,20 @@ def CalibrateRuntime() { executeUPSCommand("Calibrate") }
 
 def SetOutletGroup(p1, p2, p3) {
     state.outlet = ""; state.command = ""; state.seconds = ""; def goOn = true
-    emitEvent("lastCommandResult", "NA"); logInfo "Set Outlet Group called. [$p1 $p2 $p3]"
+    emitEvent("lastCommandResult", "NA")
+    logInfo "Set Outlet Group called [$p1 $p2 $p3]"
     if (!p1) { logError "Outlet group is required."; goOn = false } else { state.outlet = p1 }
     if (!p2) { logError "Command is required."; goOn = false } else { state.command = p2 }
-    state.seconds = p3 ?: "0"; if (goOn) executeUPSCommand("SetOutletGroup")
+    state.seconds = p3 ?: "0"
+    if (goOn) executeUPSCommand("SetOutletGroup")
 }
 
 def refresh() {
     logInfo "${driverInfoString()} refreshing..."
-    emitEvent("lastCommand", "initialConnect"); emitEvent("connectStatus", "Trying")
-    logDebug "Connecting to ${UPSIP}:${UPSPort}"; telnetClose(); telnetConnect(UPSIP, UPSPort.toInteger(), null, null)
+    emitEvent("lastCommand", "Connecting")
+    emitEvent("connectStatus", "Trying")
+    logDebug "Connecting to ${UPSIP}:${UPSPort}"
+    telnetClose(); telnetConnect(UPSIP, UPSPort.toInteger(), null, null)
 }
 
 /* ===============================
@@ -323,8 +349,7 @@ private handleUPSStatus(String rawStatus, Integer runTimeInt, Integer runTimeOnB
     else if (thestatus ==~ /(?i)on\s*battery/) thestatus = "OnBattery"
     else if (thestatus.equalsIgnoreCase("Discharged")) thestatus = "Discharged"
 
-    if (device.currentValue("UPSStatus") != thestatus) logInfo "UPS Status = $thestatus"
-    emitEvent("UPSStatus", thestatus)
+    emitChangedEvent("UPSStatus", thestatus, "UPS Status = ${thestatus}")
 
     switch (thestatus) {
         case "OnBattery":
@@ -341,10 +366,38 @@ private handleUPSStatus(String rawStatus, Integer runTimeInt, Integer runTimeOnB
 private handleBatteryData(def pair) {
     def (p0, p1, p2, p3, p4, p5) = (pair + [null,null,null,null,null,null])
     switch ("$p0 $p1") {
-        case "Battery Voltage:": emitEvent("batteryVoltage", p2, "Battery Voltage = ${p2} ${p3}"); break
-        case "Battery State": if (p2 == "Of" && p3 == "Charge:") { int pct = p4.toDouble().toInteger(); emitEvent("battery", pct, "UPS Battery Percentage = $pct ${p5}") }; break
-        case "Runtime Remaining:": def runtimeStr = pair.join(" "); def rtMatcher = runtimeStr =~ /Runtime Remaining:\s*(?:(\d+)\s*(?:hr|hrs))?\s*(?:(\d+)\s*(?:min|mins))?/; Integer hours = 0, mins = 0; if (rtMatcher.find()) { hours = rtMatcher[0][1]?.toInteger() ?: 0; mins = rtMatcher[0][2]?.toInteger() ?: 0 }; if (hours > 0) emitEvent("runtimeHours", hours); if (mins > 0) emitEvent("runtimeMinutes", mins); String runtimeFormatted = String.format("%02d:%02d", hours, mins); emitEvent("lastUpdate", new Date().format('MM/dd/yyyy h:mm a', location.timeZone), "UPS Runtime Remaining = ${runtimeFormatted}"); break
-        default: if ((p0 in ["Internal","Battery"]) && p1 == "Temperature:") { emitEvent("temperatureC", p2, "UPS Temperature = ${p2}°${p3} / ${p4}°${p5}"); emitEvent("temperatureF", p4); if (tempUnits == "F") emitEvent("temperature", p4, "UPS Temperature = ${p4}°${p5}"); else emitEvent("temperature", p2, "UPS Temperature = ${p2}°${p3}") }; break
+        case "Battery Voltage:":
+            emitChangedEvent("batteryVoltage", p2, "Battery Voltage = ${p2} ${p3}", "V")
+            break
+        case "Battery State":
+            if (p2 == "Of" && p3 == "Charge:") {
+                int pct = p4.toDouble().toInteger()
+                emitChangedEvent("battery", pct, "UPS Battery Percentage = $pct ${p5}", "%")
+            }
+            break
+        case "Runtime Remaining:":
+            def runtimeStr = pair.join(" ")
+            def rtMatcher = runtimeStr =~ /Runtime Remaining:\s*(?:(\d+)\s*(?:hr|hrs))?\s*(?:(\d+)\s*(?:min|mins))?/
+            Integer hours = 0, mins = 0
+            if (rtMatcher.find()) {
+                hours = rtMatcher[0][1]?.toInteger() ?: 0
+                mins  = rtMatcher[0][2]?.toInteger() ?: 0
+            }
+            String runtimeFormatted = String.format("%02d:%02d", hours, mins)
+            emitChangedEvent("runtimeHours", hours, "UPS Runtime Remaining = ${runtimeFormatted}", "h")
+            emitChangedEvent("runtimeMinutes", mins, "UPS Runtime Remaining = ${runtimeFormatted}", "min")
+            logInfo "UPS Runtime Remaining = ${runtimeFormatted}"
+            break
+        default:
+            if ((p0 in ["Internal","Battery"]) && p1 == "Temperature:") {
+                emitChangedEvent("temperatureC", p2, "UPS Temperature = ${p2}°${p3} / ${p4}°${p5}", "°C")
+                emitChangedEvent("temperatureF", p4, "UPS Temperature = ${p4}°${p5}", "°F")
+                if (tempUnits == "F")
+                    emitChangedEvent("temperature", p4, "UPS Temperature = ${p4}°${p5}", "°F")
+                else
+                    emitChangedEvent("temperature", p2, "UPS Temperature = ${p2}°${p3}", "°C")
+            }
+            break
     }
 }
 
@@ -353,33 +406,73 @@ private handleElectricalMetrics(def pair) {
     switch (p0) {
         case "Output":
             switch (p1) {
-                case "Voltage:": emitEvent("outputVoltage", p2, "Output Voltage = ${p2} ${p3}"); break
-                case "Frequency:": emitEvent("outputFrequency", p2, "Output Frequency = ${p2} ${p3}"); break
-                case "Current:": emitEvent("outputCurrent", p2, "Output Current = ${p2} ${p3}"); def volts = device.currentValue("outputVoltage"); if (volts) { double watts = volts.toDouble() * p2.toDouble(); emitEvent("outputWatts", watts.toInteger(), "Calculated Output Watts = ${watts.toInteger()}W") }; break
-                case "Energy:": emitEvent("outputEnergy", p2, "Output Energy = ${p2} ${p3}"); break
-                case "Watts": if (p2 == "Percent:") { emitEvent("outputWattsPercent", p3, "Output Watts Percent = ${p3} ${p4}") }; break
-                case "VA": if (p2 == "Percent:") { emitEvent("outputVAPercent", p3, "Output VA Percent = ${p3} ${p4}") }; break
+                case "Voltage:":
+                    emitChangedEvent("outputVoltage", p2, "Output Voltage = ${p2} ${p3}", "V")
+                    break
+                case "Frequency:":
+                    emitChangedEvent("outputFrequency", p2, "Output Frequency = ${p2} ${p3}", "Hz")
+                    break
+                case "Current:":
+                    emitChangedEvent("outputCurrent", p2, "Output Current = ${p2} ${p3}", "A")
+                    def volts = device.currentValue("outputVoltage")
+                    if (volts) {
+                        double watts = volts.toDouble() * p2.toDouble()
+                        emitChangedEvent("outputWatts", watts.toInteger(), "Calculated Output Watts = ${watts.toInteger()}W", "W")
+                    }
+                    break
+                case "Energy:":
+                    emitChangedEvent("outputEnergy", p2, "Output Energy = ${p2} ${p3}", "Wh")
+                    break
+                case "Watts":
+                    if (p2 == "Percent:") {
+                        emitChangedEvent("outputWattsPercent", p3, "Output Watts = ${p3} ${p4}", "%")
+                    }
+                    break
+                case "VA":
+                    if (p2 == "Percent:") {
+                        emitChangedEvent("outputVAPercent", p3, "Output VA = ${p3} ${p4}", "%")
+                    }
+                    break
             }
             break
         case "Input":
             switch (p1) {
-                case "Voltage:": emitEvent("inputVoltage", p2, "Input Voltage = ${p2} ${p3}"); break
-                case "Frequency:": emitEvent("inputFrequency", p2, "Input Frequency = ${p2} ${p3}"); break
+                case "Voltage:":
+                    emitChangedEvent("inputVoltage", p2, "Input Voltage = ${p2} ${p3}", "V")
+                    break
+                case "Frequency:":
+                    emitChangedEvent("inputFrequency", p2, "Input Frequency = ${p2} ${p3}", "Hz")
+                    break
             }
             break
     }
 }
 
 private handleIdentificationAndSelfTest(def pair) {
-    def (p0, p1, p2, p3, p4, p5) = (pair + [null,null,null,null,null,null])
-    switch (p0) {
-        case "Serial": if (p1 == "Number:") { emitEvent("serialNumber", p2); logInfo "UPS Serial Number = $p2" }; break
-        case "Manufacture": if (p1 == "Date:") { emitEvent("manufactureDate", p2); logInfo "UPS Manufacture Date = $p2" }; break
-        case "Model:": def model = [p1, p2, p3, p4, p5].findAll { it }.join(" "); emitEvent("model", model); logInfo "UPS Model = $model"; break
-        case "Firmware": if (p1 == "Revision:") { def firmware = [p2, p3, p4].findAll { it }.join(" "); emitEvent("firmwareVersion", firmware); logInfo "Firmware Version = $firmware" }; break
+    def (p0,p1,p2,p3,p4,p5)=(pair+[null,null,null,null,null,null])
+    switch(p0){
+        case "Serial":
+            if(p1=="Number:"){ emitEvent("serialNumber",p2,"UPS Serial Number = $p2") }
+            break
+        case "Manufacture":
+            if(p1=="Date:"){ emitEvent("manufactureDate",p2,"UPS Manufacture Date = $p2") }
+            break
+        case "Model:":
+            def model=[p1,p2,p3,p4,p5].findAll{it}.join(" ").trim().replaceAll(/\s+/," ")
+            emitEvent("model",model,"UPS Model = $model")
+            break
+        case "Firmware":
+            if(p1=="Revision:"){
+                def firmware=[p2,p3,p4].findAll{it}.join(" ")
+                emitEvent("firmwareVersion",firmware,"Firmware Version = $firmware")
+            }
+            break
         case "Self-Test":
-            if (p1 == "Date:") { emitEvent("lastSelfTestDate", p2); logInfo "UPS Last Self-Test Date = $p2" }
-            if (p1 == "Result:") { def result = [p2, p3, p4, p5].findAll { it }.join(" "); emitEvent("lastSelfTestResult", result); logInfo "UPS Last Self Test Result = $result" }
+            if(p1=="Date:"){ emitEvent("lastSelfTestDate",p2,"UPS Last Self-Test Date = $p2") }
+            if(p1=="Result:"){
+                def result=[p2,p3,p4,p5].findAll{it}.join(" ")
+                emitEvent("lastSelfTestResult",result,"UPS Last Self Test Result = $result")
+            }
             break
     }
 }
@@ -393,44 +486,88 @@ private handleUPSError(def pair) {
     }
 }
 
+/* ===============================
+   Parse
+   =============================== */
 def parse(String msg) {
     def lastCommand=device.currentValue("lastCommand")
     logDebug "In parse - (${msg})"
-    logDebug "lastCommand = $lastCommand"
     def pair=msg.split(" ")
-    logDebug "Server response $msg lastCommand=($lastCommand) length=(${pair.length})"
 
-    if (lastCommand=="RebootConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","Reboot");seqSend(["$Username","$Password","UPS -c reboot"],500)}
-    else if (lastCommand=="SleepConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","Sleep");seqSend(["$Username","$Password","UPS -c sleep"],500)}
-    else if (lastCommand=="CalibrateConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","CalibrateRuntime");seqSend(["$Username","$Password","UPS -r start"],500)}
-    else if (lastCommand=="SetOutletGroupConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","SetOutletGroup");seqSend(["$Username","$Password","UPS -o ${state.outlet} ${state.command} ${state.seconds}"],500)}
-    else if (lastCommand=="initialConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","getStatus");seqSend(["$Username","$Password","detstatus -ss","detstatus -all","detstatus -tmp","upsabout"],500)}
-    else if (lastCommand=="quit"){emitEvent("lastCommand","Rescheduled");if(!device.currentValue("nextCheckMinutes"))logInfo "Will run again in ${device.currentValue("checkInterval")} Minutes.";emitEvent("nextCheckMinutes",device.currentValue("checkInterval"));closeConnection();emitEvent("telnet","Ok")}
+    if (lastCommand=="RebootConnect"){
+        emitEvent("connectStatus","Connected");emitEvent("lastCommand","Reboot")
+        seqSend(["$Username","$Password","UPS -c reboot"],500)
+    }
+    else if (lastCommand=="SleepConnect"){
+        emitEvent("connectStatus","Connected");emitEvent("lastCommand","Sleep")
+        seqSend(["$Username","$Password","UPS -c sleep"],500)
+    }
+    else if (lastCommand=="CalibrateConnect"){
+        emitEvent("connectStatus","Connected");emitEvent("lastCommand","CalibrateRuntime")
+        seqSend(["$Username","$Password","UPS -r start"],500)
+    }
+    else if (lastCommand=="SetOutletGroupConnect"){
+        emitEvent("connectStatus","Connected");emitEvent("lastCommand","SetOutletGroup")
+        seqSend(["$Username","$Password","UPS -o ${state.outlet} ${state.command} ${state.seconds}"],500)
+    }
+    else if (lastCommand=="Connecting"){
+        emitEvent("connectStatus","Connected");emitEvent("lastCommand","getStatus")
+        seqSend(["$Username","$Password","detstatus -ss","detstatus -all","detstatus -tmp","upsabout"],500)
+    }
+    else if (lastCommand=="quit"){
+	    emitEvent("lastCommand","Rescheduled")
+	    emitChangedEvent("nextCheckMinutes",device.currentValue("checkInterval"))
+
+	    // Stamp the time when attributes were last updated
+	    def now = new Date().format('MM/dd/yyyy h:mm a', location.timeZone)
+	    emitChangedEvent("lastUpdate", now)
+
+	    closeConnection()
+	    emitEvent("telnet","Ok")
+	}
     else {
-        def nameMatcher=msg =~ /^Name\s*:\s*([^\s]+)/; if(nameMatcher.find()){def nameVal=nameMatcher.group(1).trim();emitEvent("deviceName",nameVal);logInfo "UPS Device Name = $nameVal";if(useUpsNameForLabel){device.setLabel(nameVal);logInfo "Device label updated to UPS name: $nameVal"}}
-        def statMatcher=msg =~ /Stat\s*:\s*(.+)$/; if(statMatcher.find()){def statVal=statMatcher.group(1).trim();emitEvent("nmcStatus",statVal);def desc=translateNmcStatus(statVal);emitEvent("nmcStatusDesc",desc);logInfo "NMC Status = $statVal ($desc)"}
-        if ((pair.size()>=4)&&pair[0]=="Status"&&pair[1]=="of"&&pair[2]=="UPS:"){def statusString=(pair[3..Math.min(4,pair.size()-1)]).join(" ");handleUPSStatus(statusString,runTime.toInteger(),runTimeOnBattery.toInteger(),runOffset.toInteger())}
+        def nameMatcher=msg =~ /^Name\s*:\s*([^\s]+)/
+        if(nameMatcher.find()){
+            def nameVal=nameMatcher.group(1).trim()
+            emitChangedEvent("deviceName",nameVal)
+            if(useUpsNameForLabel){device.setLabel(nameVal);logInfo "Device label updated to UPS name: $nameVal"}
+        }
+        def statMatcher=msg =~ /Stat\s*:\s*(.+)$/
+        if(statMatcher.find()){
+            def statVal=statMatcher.group(1).trim()
+            emitChangedEvent("nmcStatus",statVal)
+            def desc=translateNmcStatus(statVal)
+            emitChangedEvent("nmcStatusDesc",desc)
+        }
+        if ((pair.size()>=4)&&pair[0]=="Status"&&pair[1]=="of"&&pair[2]=="UPS:"){
+            def statusString=(pair[3..Math.min(4,pair.size()-1)]).join(" ")
+            handleUPSStatus(statusString,runTime.toInteger(),runTimeOnBattery.toInteger(),runOffset.toInteger())
+        }
         handleBatteryData(pair); handleElectricalMetrics(pair); handleIdentificationAndSelfTest(pair); handleUPSError(pair)
-        if (pair[0]=="Runtime"&&pair[1].startsWith("Remaining")) handleBatteryData(pair)
-        if (pair[0]=="Battery"&&pair[1]=="State"&&pair[2]=="Of"&&pair[3]=="Charge:") handleBatteryData(pair)
     }
 }
 
 /* ===============================
    Telnet Status & Close
    =============================== */
-def telnetStatus(status) {
-    def normalized = status?.toLowerCase()
-    if (normalized?.contains("input stream closed") || normalized?.contains("stream is closed")) {
-        logDebug "telnetStatus: ${status}"; emitEvent("telnet", status)
-    } else {
-        logWarn "telnetStatus: ${status}"; emitEvent("telnet", status)
+def telnetStatus(String status) {
+    if (status.contains("receive error: Stream is closed")) {
+        if (device.currentValue("lastCommand")!="quit") {
+            logDebug "Telnet stream closed"
+            emitEvent("connectStatus", "Disconnected")
+        }
+    }
+    else if (status.contains("send error")) {
+        logWarn "Telnet send error: $status"
+    }
+    else {
+        logDebug "telnetStatus: $status"
     }
 }
 
 def closeConnection() {
     try { telnetClose(); logDebug "Telnet connection closed" }
-    catch (e) { logDebug "closeConnection(): Telnet already closed or error: ${e.message}" }
+    catch (e) { logDebug "closeConnection(): ${e.message}" }
 }
 
 boolean seqSend(List msgs, Integer millisec) {
