@@ -1,5 +1,11 @@
 # APC SmartUPS Status Driver — Changelog
 
+## [0.1.30.1] — 2025-09-23
+### Changed
+- Removed use of `state.aboutSection` in NMC parsing.  
+- Section tracking is now handled inline during parse, eliminating unnecessary state persistence.  
+- Cleaner, more compact design while preserving full NMC attribute capture.
+
 ## [0.1.30.0] — 2025-09-23
 ### Stable Release
 - First **stable baseline** since refactor from fork.
