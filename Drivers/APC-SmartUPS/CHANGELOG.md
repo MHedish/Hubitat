@@ -1,4 +1,57 @@
 # APC SmartUPS Status Driver — Changelog
+## [0.1.30.14] - 2025-09-24
+### Changed
+- Added support for APC NMC date format (`MMM dd yyyy HH:mm:ss`).
+- All UPS and NMC date/time attributes now normalized to `MM/dd/yyyy h:mm a` (or date-only when time not present).
+- Marked stable.
+
+## [0.1.30.13] - 2025-09-24
+### Fixed
+- Corrected `handleNMCData()` bug: OS and BootMon sections now emit the correct attribute names and descriptions.
+
+## [0.1.30.12] - 2025-09-24
+### Fixed
+- Improved `normalizeDateTime()` handling for 2-digit years with pivot at 1980.
+- Correctly expands `01/13/05` -> `01/13/2005` and `08/31/96` -> `08/31/1996`.
+
+## [0.1.30.11] - 2025-09-24
+### Changed
+- Refined NMC "about" parsing to emit datetime events only once after full date+time build.
+- Reduced redundant event emissions.
+
+## [0.1.30.10] - 2025-09-24
+### Fixed
+- Updated `normalizeDateTime()` to suppress default `12:00 AM` when no time is present.
+
+## [0.1.30.9] - 2025-09-24
+### Changed
+- Silent refinements to `normalizeDateTime()` for `MM/dd/yy` handling with pivot logic.
+
+## [0.1.30.8] - 2025-09-24
+### Changed
+- Cleaned NMC parsing to reduce redundant events.
+- Ensured consistent date handling across UPS and NMC attributes.
+
+## [0.1.30.7] - 2025-09-24
+### Fixed
+- Temperature unit handling in `handleBatteryData()` now uses the `unit` variable consistently.
+
+## [0.1.30.6] - 2025-09-24
+### Changed
+- Standardized unit handling across electrical metrics.
+
+## [0.1.30.5] - 2025-09-24
+### Changed
+- Adjusted `telnetStatus()` logging to debug level for disconnect messages.
+
+## [0.1.30.4] - 2025-09-24
+### Changed
+- Lifecycle cleanup: removed redundant state usage.
+- Improved compactness of `configure()` and `initialize()` methods.
+
+## [0.1.30.3] - 2025-09-24
+### Changed
+- Refined `telnetStatus()` handling: disconnects now debug-only; reduced "quit" noise.
 
 ## [0.1.30.2] — 2025-09-23
 ### Fixed
