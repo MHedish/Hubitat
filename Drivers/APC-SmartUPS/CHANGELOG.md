@@ -1,5 +1,11 @@
 # APC SmartUPS Status Driver — Changelog
 
+## [0.1.30.2] — 2025-09-23
+### Fixed
+- Prevented `deviceName` from being overwritten by NMC `Name` values (`sumx`, `aos`, `bootmon`) when parsing `about` output.  
+- `deviceName` updates are now restricted to UPS data (`getStatus`) only.  
+- Keeps device label stable while still capturing all 14 NMC attributes.
+
 ## [0.1.30.1] — 2025-09-23
 ### Changed
 - Removed use of `state.aboutSection` in NMC parsing.  
