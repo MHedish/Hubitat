@@ -102,7 +102,6 @@ Recent highlights:
 
 ## 🧪 Development Notes
 
-- The driver is optimized for **compact Groovy code**.  
 - Event emission is centralized through helper methods:
   - `emitEvent()` for state
   - `emitChangedEvent()` for changed values
