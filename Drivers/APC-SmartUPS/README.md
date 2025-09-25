@@ -68,7 +68,7 @@ This driver is under active development. Authentication and `about` sequencing a
   Provide the UPS username and password.
 
 - **Polling Interval**  
-  Choose how often the driver refreshes status (default: 5 minutes).
+  Choose how often the driver refreshes status (default: 15 minutes).
 
 - **Enable UPS Control Commands**  
   Toggle whether commands (On/Off, Self Test, etc.) are exposed.  
