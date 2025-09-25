@@ -11,25 +11,37 @@
 *  0.1.30.0  -- Marked stable; confirmed NMC parsing, UPS separation, runtime, temperature; full compact cleanup
 *  0.1.30.1  -- Removed use of state.aboutSection; NMC parsing now tracked inline without persistent state
 *  0.1.30.2  -- Fixed deviceName overwrite issue; UPS deviceName now only updated from getStatus, not from NMC about output; prevents flapping between aos/sumx/bootmon and real UPS name
-*  0.1.30.3  -- Refined telnetStatus handling: disconnects now debug-only; reduced quit noise
-*  0.1.30.4  -- Lifecycle cleanup: removed redundant state usage; improved compactness for configure/initialize
-*  0.1.30.5  -- Adjusted telnetStatus logging to debug for disconnect messages
-*  0.1.30.6  -- Standardized unit handling across electrical metrics
-*  0.1.30.7  -- Fixed temperature unit handling in handleBatteryData to use unit variable consistently
-*  0.1.30.8  -- NMC parsing cleanup: reduced redundant events, ensured consistent date handling
-*  0.1.30.9  -- Silent refinements to normalizeDateTime helper for MM/dd/yy pivot logic
-*  0.1.30.10 -- Fixed normalizeDateTime to suppress 12:00 AM default when time not present
-*  0.1.30.11 -- Refined NMC about parsing to emit datetime events only once after full build
-*  0.1.30.12 -- Corrected normalizeDateTime handling for 2-digit years with pivot=80
-*  0.1.30.13 -- Fixed handleNMCData() bug: OS/BootMon sections now emit correct attribute names and descriptions
-*  0.1.30.14 -- Added support for APC NMC date format (MMM dd yyyy HH:mm:ss); all dates now normalized; marked stable
+*  0.1.30.3  -- Simplified telnetStatus; unexpected disconnects log debug only
+*  0.1.30.4  -- Unified Lifecycle event handling; compact initialize/configure/updated
+*  0.1.30.5  -- Adjusted telnet disconnect logging from warn to debug
+*  0.1.30.6  -- Normalized unit handling for voltage attributes
+*  0.1.30.7  -- Fixed unit handling in battery/temperature descriptions
+*  0.1.30.8  -- NMC parsing improvements; eliminated redundant "NA" events
+*  0.1.30.9  -- Improved normalizeDateTime() for yy vs yyyy handling
+*  0.1.30.10 -- Suppressed 12:00 AM time on date-only attributes
+*  0.1.30.11 -- Consolidated NMC date/time parsing; eliminated duplicate events
+*  0.1.30.12 -- Fixed normalizeDateTime() pivot year logic (>=1980 assumption)
+*  0.1.30.13 -- Corrected NMC attribute event routing; stabilized BootMon/OS/Application parsing
+*  0.1.30.14 -- Stable release; normalized all date/time attributes
+*  0.1.31.0  -- Added StartAlarm, StartSelfTest, UPSOn, UPSOff commands
+*  0.1.31.1  -- Consolidated control command execution under sendUPSCommand()
+*  0.1.31.2  -- Removed legacy command handling code
+*  0.1.31.3  -- Added runtimeCalibration attribute and toggleRuntimeCalibration command
+*  0.1.31.4  -- Added success/failure event reporting for UPSOn/UPSOff
+*  0.1.31.5  -- Silent roll-up of control command changes
+*  0.1.31.6  -- Improved controlEnabled preference description and label handling
+*  0.1.31.7  -- Centralized sendAboutCommand scheduling
+*  0.1.31.8  -- Fixed sendAboutCommand scheduling (runInMillis helper)
+*  0.1.31.9  -- Replaced timed delay with deterministic 'ups ?' marker for about command scheduling; improved UPS outlet group detection
+*  0.1.31.10 -- Added deterministic fallback for unsupported 'ups ?' (E101) to trigger sendAboutCommand()
+*  0.1.31.11 -- Fixed authentication sequencing; username/password now sent before status batch, resolving premature command handling
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.1.30.14"
-@Field static final String DRIVER_MODIFIED = "2025.09.24"
+@Field static final String DRIVER_VERSION  = "0.1.31.14"
+@Field static final String DRIVER_MODIFIED = "2025.09.25"
 
 /* ===============================
    Metadata
@@ -49,83 +61,69 @@ metadata {
        capability "Configuration"
 
        // Core attributes
-       attribute "driverInfo", "string"
-       attribute "lastCommand", "string"
-       attribute "lastCommandResult", "string"
-       attribute "connectStatus", "string"
-       attribute "UPSStatus", "string"
-       attribute "lastUpdate" , "string"
-       attribute "nextCheckMinutes", "number"
-       attribute "runtimeHours", "number"
-       attribute "runtimeMinutes", "number"
-       attribute "batteryVoltage", "number"
-       attribute "temperatureC", "number"
-       attribute "temperatureF", "number"
-       attribute "outputVoltage", "number"
-       attribute "inputVoltage", "number"
-       attribute "outputFrequency", "number"
-       attribute "inputFrequency", "number"
-       attribute "outputWattsPercent", "number"
-       attribute "outputVAPercent", "number"
-       attribute "outputCurrent", "number"
-       attribute "outputEnergy", "number"
-       attribute "outputWatts", "number"
-       attribute "serialNumber" , "string"
-       attribute "manufactureDate", "string"
-       attribute "model", "string"
-       attribute "firmwareVersion", "string"
-       attribute "lastSelfTestResult", "string"
-       attribute "lastSelfTestDate", "string"
-       attribute "telnet", "string"
-       attribute "checkInterval", "number"
-       attribute "deviceName", "string"
-       attribute "nmcStatus", "string"
-       attribute "nmcStatusDesc", "string"
-       attribute "nmcModel", "string"
-       attribute "nmcSerialNumber", "string"
-       attribute "nmcHardwareRevision", "string"
-       attribute "nmcManufactureDate", "string"
-       attribute "nmcMACAddress", "string"
-       attribute "nmcUptime", "string"
-       attribute "nmcApplicationName", "string"
-       attribute "nmcApplicationVersion", "string"
-       attribute "nmcApplicationDate", "string"
-       attribute "nmcOSName", "string"
-       attribute "nmcOSVersion", "string"
-       attribute "nmcOSDate", "string"
-       attribute "nmcBootMonitor", "string"
-       attribute "nmcBootMonitorVersion", "string"
-       attribute "nmcBootMonitorDate", "string"
+       attribute "driverInfo","string"
+       attribute "lastCommand","string"
+       attribute "lastCommandResult","string"
+       attribute "connectStatus","string"
+       attribute "UPSStatus","string"
+       attribute "lastUpdate","string"
+       attribute "nextCheckMinutes","number"
+       attribute "runtimeHours","number"
+       attribute "runtimeMinutes","number"
+       attribute "batteryVoltage","number"
+       attribute "temperatureC","number"
+       attribute "temperatureF","number"
+       attribute "outputVoltage","number"
+       attribute "inputVoltage","number"
+       attribute "outputFrequency","number"
+       attribute "inputFrequency","number"
+       attribute "outputWattsPercent","number"
+       attribute "outputVAPercent","number"
+       attribute "outputCurrent","number"
+       attribute "outputEnergy","number"
+       attribute "outputWatts","number"
+       attribute "serialNumber","string"
+       attribute "manufactureDate","string"
+       attribute "model","string"
+       attribute "firmwareVersion","string"
+       attribute "lastSelfTestResult","string"
+       attribute "lastSelfTestDate","string"
+       attribute "telnet","string"
+       attribute "checkInterval","number"
+       attribute "deviceName","string"
+       attribute "nmcStatus","string"
+       attribute "nmcStatusDesc","string"
+       attribute "nmcModel","string"
+       attribute "nmcSerialNumber","string"
+       attribute "nmcHardwareRevision","string"
+       attribute "nmcManufactureDate","string"
+       attribute "nmcMACAddress","string"
+       attribute "nmcUptime","string"
+       attribute "nmcApplicationName","string"
+       attribute "nmcApplicationVersion","string"
+       attribute "nmcApplicationDate","string"
+       attribute "nmcOSName","string"
+       attribute "nmcOSVersion","string"
+       attribute "nmcOSDate","string"
+       attribute "nmcBootMonitor","string"
+       attribute "nmcBootMonitorVersion","string"
+       attribute "nmcBootMonitorDate","string"
+       attribute "runtimeCalibration","string"
 
        // Commands
        command "refresh"
        command "disableDebugLoggingNow"
+       command "StartAlarm"
+       command "StartSelfTest"
+       command "UPSOn"
+       command "UPSOff"
        command "Reboot"
        command "Sleep"
-       command "CalibrateRuntime"
-       command "SetOutletGroup", [
-            [
-                name: "outletGroup",
-                description: "Outlet Group 1 or 2",
-                type: "ENUM",
-                constraints: ["1","2"],
-                required: true,
-                default: "1"
-            ],
-            [
-                name: "command",
-                description: "Command to execute",
-                type: "ENUM",
-                constraints: ["Off","On","DelayOff","DelayOn","Reboot","DelayReboot","Shutdown","DelayShutdown","Cancel"],
-                required: true
-            ],
-            [
-                name: "seconds",
-                description: "Delay in seconds",
-                type: "ENUM",
-                constraints: ["1","2","3","4","5","10","20","30","60","120","180","240","300","600"],
-                required: true
-            ]
+       command "toggleRuntimeCalibration"
+       command "SetOutletGroup",[
+            [name:"outletGroup",description:"Outlet Group 1 or 2",type:"ENUM",constraints:["1","2"],required:true,default:"1"],
+            [name:"command",description:"Command to execute",type:"ENUM",constraints:["Off","On","DelayOff","DelayOn","Reboot","DelayReboot","Shutdown","DelayShutdown","Cancel"],required:true],
+            [name:"seconds",description:"Delay in seconds",type:"ENUM",constraints:["1","2","3","4","5","10","20","30","60","120","180","240","300","600"],required:true]
        ]
     }
 }
@@ -140,7 +138,7 @@ preferences {
     input("Password", "password", title: "Password for Login", required: true, defaultValue: "")
     input("useUpsNameForLabel", "bool", title: "Use UPS name for Device Label?", defaultValue: false)
     input("tempUnits", "enum", title: "Temperature Units", options: ["F","C"], defaultValue: "F", required: true)
-    input("controlEnabled", "bool", title: "Enable UPS Control Commands?", description: "Allow Reboot, Sleep, Calibrate Runtime, and Outlet Group control.", defaultValue: false)
+    input("controlEnabled","bool",title:"Enable UPS Control Commands?",description:"Allow Alarm, Outlet Group Control, Reboot, Runtime Calibration, Self Test, Sleep, and UPS On/Off.",defaultValue:false)
     input("runTime", "number", title: "How often to check UPS status (minutes, 1–59)", defaultValue: 15, range: "1..59", required: true)
     input("runOffset", "number", title: "Offset (minutes past the hour, 0–59)", defaultValue: 0, range: "0..59", required: true)
     input("runTimeOnBattery", "number", title: "Check interval when on battery (minutes, 1–59)", defaultValue: 2, range: "1..59", required: true)
@@ -236,23 +234,22 @@ def updated(){logInfo "Preferences updated";configure()}
 def configure(){logInfo "${driverInfoString()} configured";initialize()}
 
 def initialize(){
-    emitChangedEvent("driverInfo",driverInfoString())
     logInfo "${driverInfoString()} initializing..."
     ["lastCommand":"","UPSStatus":"Unknown","telnet":"Ok","connectStatus":"Initialized","lastCommandResult":"NA"].each{k,v->emitEvent(k,v)}
-    if(!tempUnits) tempUnits="F"
-    if(logEnable) logDebug "IP=$UPSIP, Port=$UPSPort, Username=$Username, Password=$Password" else logInfo "IP=$UPSIP, Port=$UPSPort"
+    if(!tempUnits)tempUnits="F"
+    if(logEnable)logDebug "IP=$UPSIP, Port=$UPSPort, Username=$Username, Password=$Password" else logInfo "IP=$UPSIP, Port=$UPSPort"
     if(UPSIP&&UPSPort&&Username&&Password){
-        def now=normalizeDateTime(new Date().format("MM/dd/yyyy HH:mm:ss",location.timeZone))
-        emitChangedEvent("lastUpdate",now)
+        def now=new Date().format('MM/dd/yyyy h:mm a',location.timeZone);emitChangedEvent("lastUpdate",now)
         unschedule();runIn(1800,autoDisableDebugLogging)
         def rT=runTime.toInteger(),rTB=runTimeOnBattery.toInteger(),rO=runOffset.toInteger()
-        device.updateSetting("runTime",[value:rT,type:"number"])
-        device.updateSetting("runTimeOnBattery",[value:rTB,type:"number"])
-        device.updateSetting("runOffset",[value:rO,type:"number"])
+        device.updateSetting("runTime",[value:rT,type:"number"]);device.updateSetting("runTimeOnBattery",[value:rTB,type:"number"]);device.updateSetting("runOffset",[value:rO,type:"number"])
         if(controlEnabled){
-            if(state.origAppName&&state.origAppName!=""&&state.origAppName!=device.getLabel()) device.setLabel(state.origAppName)
-            state.origAppName=device.getLabel()
-        } else if(state.origAppName&&state.origAppName!="") device.setLabel(state.origAppName+" (Control Disabled)")
+            if(state.controlDeviceName&&state.controlDeviceName!=""&&state.controlDeviceName!=device.getLabel())device.setLabel(state.controlDeviceName)
+            state.controlDeviceName=device.getLabel()
+            if(!device.getLabel().contains("Control Enabled"))device.setLabel("${device.getLabel()} (Control Enabled)")
+        } else if(state.controlDeviceName&&state.controlDeviceName!=""){
+            device.setLabel(state.controlDeviceName);state.remove("controlDeviceName")
+        }
         scheduleCheck(rT,rO);emitEvent("lastCommand","Scheduled");refresh()
     } else logDebug "Parameters not filled in yet."
 }
@@ -268,40 +265,56 @@ private scheduleCheck(Integer interval, Integer offset) {
 /* ===============================
    Command Helpers
    =============================== */
-private executeUPSCommand(String cmdType) {
-    emitEvent("lastCommandResult", "NA")
-    logInfo "$cmdType called"
-    if (controlEnabled) {
-        emitEvent("lastCommand", "${cmdType}Connect")
-        emitEvent("connectStatus", "Trying")
+private sendUPSCommand(String cmdName,List cmds){
+    if(!controlEnabled){logWarn "$cmdName called but UPS control is disabled";return}
+    emitEvent("lastCommandResult","NA");emitEvent("lastCommand",cmdName);emitEvent("connectStatus","Trying")
+    logInfo "$cmdName called"
+    telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)
+    state.pendingCmds=["$Username","$Password"]+cmds
+    runInMillis(500,"delayedSeqSend")
+}
+
+private delayedSeqSend(){
+    if(state.pendingCmds){seqSend(state.pendingCmds,500);state.remove("pendingCmds")}
+}
+
+private executeUPSCommand(String cmdType){
+    emitEvent("lastCommandResult","NA");logInfo "$cmdType called"
+    if(controlEnabled){
+        emitEvent("lastCommand","${cmdType}Connect");emitEvent("connectStatus","Trying")
         logDebug "Connecting to ${UPSIP}:${UPSPort}"
-        telnetClose(); telnetConnect(UPSIP, UPSPort.toInteger(), null, null)
+        telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)
     } else logWarn "$cmdType called but UPS control is disabled"
 }
 
 /* ===============================
    Commands
    =============================== */
-def Reboot()           { executeUPSCommand("Reboot") }
-def Sleep()            { executeUPSCommand("Sleep") }
-def CalibrateRuntime() { executeUPSCommand("Calibrate") }
-
-def SetOutletGroup(p1, p2, p3) {
-    state.outlet = ""; state.command = ""; state.seconds = ""; def goOn = true
-    emitEvent("lastCommandResult", "NA")
-    logInfo "Set Outlet Group called [$p1 $p2 $p3]"
-    if (!p1) { logError "Outlet group is required."; goOn = false } else { state.outlet = p1 }
-    if (!p2) { logError "Command is required."; goOn = false } else { state.command = p2 }
-    state.seconds = p3 ?: "0"
-    if (goOn) executeUPSCommand("SetOutletGroup")
+def StartAlarm()       { sendUPSCommand("StartAlarm",["ups -a start"]) }
+def StartSelfTest()    { sendUPSCommand("StartSelfTest",["ups -s start"]) }
+def UPSOn()            { sendUPSCommand("UPSOn",["ups -c on"]) }
+def UPSOff()           { sendUPSCommand("UPSOff",["ups -c off"]) }
+def Reboot()           { sendUPSCommand("Reboot",["UPS -c reboot"]) }
+def Sleep()            { sendUPSCommand("Sleep",["UPS -c sleep"]) }
+def toggleRuntimeCalibration(){
+    def active=(device.currentValue("runtimeCalibration")=="active")
+    if(active){sendUPSCommand("CancelCalibration",["UPS -r stop"])}
+    else{sendUPSCommand("CalibrateRuntime",["UPS -r start"])}
 }
 
-def refresh() {
+def SetOutletGroup(p1,p2,p3){
+    emitEvent("lastCommandResult","NA");logInfo "Set Outlet Group called [$p1 $p2 $p3]"
+    if(!state.upsSupportsOutlet){logWarn "SetOutletGroup unsupported on this UPS model";emitEvent("lastCommandResult","Unsupported");return}
+    if(!p1){logError "Outlet group is required.";return}
+    if(!p2){logError "Command is required.";return}
+    state.outlet=p1;state.command=p2;state.seconds=p3?: "0";sendUPSCommand("SetOutletGroup",["UPS -o ${state.outlet} ${state.command} ${state.seconds}"])
+}
+
+def refresh(){
     logInfo "${driverInfoString()} refreshing..."
-    emitEvent("lastCommand", "Connecting")
-    emitEvent("connectStatus", "Trying")
+    emitEvent("lastCommand","Connecting");emitEvent("connectStatus","Trying")
     logDebug "Connecting to ${UPSIP}:${UPSPort}"
-    telnetClose(); telnetConnect(UPSIP, UPSPort.toInteger(), null, null)
+    telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)
 }
 
 /* ===============================
@@ -397,9 +410,17 @@ private handleIdentificationAndSelfTest(def pair){
     }
 }
 
-private handleUPSError(def pair) {
+private handleUPSError(def pair){
     switch(pair[0]){
-        case "E002:":case "E100:":case "E101:":case "E102:":case "E103:":case "E107:":case "E108:": logError "UPS Error: Command returned [$pair]"; emitEvent("lastCommandResult","Failure"); closeConnection(); emitEvent("telnet","Ok"); break
+        case "E002:":case "E100:":case "E101:":case "E102:":case "E103:":case "E107:":case "E108:":
+            logError "UPS Error: Command returned [$pair]"
+            emitEvent("lastCommandResult","Failure")
+            if(device.currentValue("lastCommand") in ["CalibrateRuntime","CancelCalibration"])
+                emitChangedEvent("runtimeCalibration","failed","UPS Runtime Calibration failed")
+            if(device.currentValue("lastCommand") in ["UPSOn","UPSOff"])
+                logError "UPS Output command failed"
+            if(pair[0]=="E101:"){logWarn "UPS does not support 'ups ?' command, falling back to sendAboutCommand()";sendAboutCommand()}
+            closeConnection();emitEvent("telnet","Ok");break
     }
 }
 
@@ -445,33 +466,31 @@ private handleNMCData(String line){
 /* ===============================
    Parse
    =============================== */
-def parse(String msg) {
-    def lastCommand=device.currentValue("lastCommand")
-    logDebug "In parse - (${msg})"
-    def pair=msg.split(" ")
-
-    if(lastCommand=="RebootConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","Reboot");seqSend(["$Username","$Password","UPS -c reboot"],500)}
-    else if(lastCommand=="SleepConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","Sleep");seqSend(["$Username","$Password","UPS -c sleep"],500)}
-    else if(lastCommand=="CalibrateConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","CalibrateRuntime");seqSend(["$Username","$Password","UPS -r start"],500)}
-    else if(lastCommand=="SetOutletGroupConnect"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","SetOutletGroup");seqSend(["$Username","$Password","UPS -o ${state.outlet} ${state.command} ${state.seconds}"],500)}
-    else if(lastCommand=="Connecting"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","getStatus");seqSend(["$Username","$Password","upsabout","detstatus -ss","detstatus -all","detstatus -tmp"],500);runInMillis(2000,"sendAboutCommand")}
-    else if(lastCommand=="quit"){emitEvent("lastCommand","Rescheduled");emitChangedEvent("nextCheckMinutes",device.currentValue("checkInterval"));def now=new Date().format('MM/dd/yyyy h:mm a',location.timeZone);emitChangedEvent("lastUpdate",now);closeConnection();emitEvent("telnet","Ok")}
-    else{
-        def nameMatcher=msg =~ /^Name\s*:\s*([^\s]+)/; if(nameMatcher.find()&&lastCommand=="getStatus"){def nameVal=nameMatcher.group(1).trim();emitChangedEvent("deviceName",nameVal);if(useUpsNameForLabel){device.setLabel(nameVal);logInfo "Device label updated to UPS name: $nameVal"}}
-        def statMatcher=msg =~ /Stat\s*:\s*(.+)$/; if(statMatcher.find()){def statVal=statMatcher.group(1).trim();emitChangedEvent("nmcStatus",statVal);def desc=translateNmcStatus(statVal);emitChangedEvent("nmcStatusDesc",desc)}
-        if((pair.size()>=4)&&pair[0]=="Status"&&pair[1]=="of"&&pair[2]=="UPS:"){def statusString=(pair[3..Math.min(4,pair.size()-1)]).join(" ");handleUPSStatus(statusString,runTime.toInteger(),runTimeOnBattery.toInteger(),runOffset.toInteger())}
+def parse(String msg){
+    def lastCommand=device.currentValue("lastCommand");logDebug "In parse - (${msg})";def pair=msg.split(" ")
+    if(lastCommand=="Connecting"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","getStatus")
+        seqSend(["$Username","$Password","upsabout","detstatus -ss","detstatus -all","detstatus -tmp","ups ?"],500)}
+    else if(lastCommand=="quit"){emitEvent("lastCommand","Rescheduled");emitChangedEvent("nextCheckMinutes",device.currentValue("checkInterval"))
+        def now=new Date().format('MM/dd/yyyy h:mm a',location.timeZone);emitChangedEvent("lastUpdate",now);closeConnection();emitEvent("telnet","Ok")}
+    else{def nameMatcher=msg =~ /^Name\s*:\s*([^\s]+)/;if(nameMatcher.find()&&lastCommand=="getStatus"){def nameVal=nameMatcher.group(1).trim()
+            emitChangedEvent("deviceName",nameVal);if(useUpsNameForLabel){device.setLabel(nameVal);logInfo "Device label updated to UPS name: $nameVal"}}
+        def statMatcher=msg =~ /Stat\s*:\s*(.+)$/;if(statMatcher.find()){def statVal=statMatcher.group(1).trim();emitChangedEvent("nmcStatus",statVal)
+            def desc=translateNmcStatus(statVal);emitChangedEvent("nmcStatusDesc",desc)}
+        if(msg.startsWith("Usage: ups")&&lastCommand=="getStatus"){state.upsSupportsOutlet=msg.contains("-o");logInfo "UPS outlet group support: ${state.upsSupportsOutlet?'Yes':'No'}";sendAboutCommand()}
+        if((pair.size()>=4)&&pair[0]=="Status"&&pair[1]=="of"&&pair[2]=="UPS:"){def statusString=(pair[3..Math.min(4,pair.size()-1)]).join(" ")
+            handleUPSStatus(statusString,runTime.toInteger(),runTimeOnBattery.toInteger(),runOffset.toInteger())}
         if(lastCommand=="getStatus"){handleBatteryData(pair);handleElectricalMetrics(pair);handleIdentificationAndSelfTest(pair);handleUPSError(pair)}
         else if(lastCommand=="about"){handleNMCData(msg)}
+        if(lastCommand=="CalibrateRuntime"&&msg.toLowerCase().contains("started")){emitChangedEvent("runtimeCalibration","active","UPS Runtime Calibration started")}
+        if(lastCommand=="CancelCalibration"&&msg.toLowerCase().contains("stopped")){emitChangedEvent("runtimeCalibration","inactive","UPS Runtime Calibration stopped")}
+        if(lastCommand in ["UPSOn","UPSOff"]&&msg.contains("E000")){emitEvent("lastCommandResult","Success");logInfo "UPS Output ${lastCommand=='UPSOn'?'ON':'OFF'} command acknowledged"}
     }
 }
 
 /* ===============================
    Helper for delayed NMC data
    =============================== */
-private sendAboutCommand() {
-    emitEvent("lastCommand","about")
-    seqSend(["about"],500)
-}
+private sendAboutCommand(){emitEvent("lastCommand","about");seqSend(["about"],500)}
 
 /* ===============================
    Telnet Status & Close
