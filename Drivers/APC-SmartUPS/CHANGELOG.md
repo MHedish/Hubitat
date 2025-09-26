@@ -1,12 +1,5 @@
 # APC SmartUPS Status Driver — Changelog
 
-## [0.1.31.17] - 2025-09-26
-### Changed
-- Suppressed noisy `lastCommand` and `connectStatus` events in `initialize()`, `refresh()`, `parse()`, and UPS command helpers.  
-- Connection state transitions are now logged (`info`/`debug`) instead of being emitted as attributes.  
-- Keeps `lastCommand` only for meaningful UPS actions and `lastCommandResult` updates.  
-- Prevents unnecessary attribute churn while preserving visibility through logs.
-
 ## [0.1.31.15] - 2025-09-25
 ### Changed
 - Introduced `emitLastUpdate()` helper to centralize updates to the `lastUpdate` attribute.
