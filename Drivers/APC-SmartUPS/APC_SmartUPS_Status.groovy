@@ -35,12 +35,12 @@
 *  0.1.31.9  -- Replaced timed delay with deterministic 'ups ?' marker for about command scheduling; improved UPS outlet group detection
 *  0.1.31.10 -- Added deterministic fallback for unsupported 'ups ?' (E101) to trigger sendAboutCommand()
 *  0.1.31.11 -- Fixed authentication sequencing; username/password now sent before status batch, resolving premature command handling
+*  0.1.31.15 -- Replaced inline lastUpdate handling with emitLastUpdate() helper; ensures consistent timestamp updates on parse, quit, and unexpected telnet disconnects
 */
-
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.1.31.14"
+@Field static final String DRIVER_VERSION  = "0.1.31.15"
 @Field static final String DRIVER_MODIFIED = "2025.09.25"
 
 /* ===============================
@@ -150,6 +150,7 @@ preferences {
    Utilities
    =============================== */
 private driverInfoString() { return "${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})" }
+private emitLastUpdate() {def now=new Date().format('MM/dd/yyyy h:mm a',location.timeZone);emitChangedEvent("lastUpdate",now)}
 
 private logDebug(msg) { if (logEnable) log.debug "[${DRIVER_NAME}] $msg" }
 private logInfo(msg)  { if (logEvents) log.info  "[${DRIVER_NAME}] $msg" }
@@ -239,7 +240,7 @@ def initialize(){
     if(!tempUnits)tempUnits="F"
     if(logEnable)logDebug "IP=$UPSIP, Port=$UPSPort, Username=$Username, Password=$Password" else logInfo "IP=$UPSIP, Port=$UPSPort"
     if(UPSIP&&UPSPort&&Username&&Password){
-        def now=new Date().format('MM/dd/yyyy h:mm a',location.timeZone);emitChangedEvent("lastUpdate",now)
+        emitLastUpdate()
         unschedule();runIn(1800,autoDisableDebugLogging)
         def rT=runTime.toInteger(),rTB=runTimeOnBattery.toInteger(),rO=runOffset.toInteger()
         device.updateSetting("runTime",[value:rT,type:"number"]);device.updateSetting("runTimeOnBattery",[value:rTB,type:"number"]);device.updateSetting("runOffset",[value:rO,type:"number"])
@@ -471,7 +472,7 @@ def parse(String msg){
     if(lastCommand=="Connecting"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","getStatus")
         seqSend(["$Username","$Password","upsabout","detstatus -ss","detstatus -all","detstatus -tmp","ups ?"],500)}
     else if(lastCommand=="quit"){emitEvent("lastCommand","Rescheduled");emitChangedEvent("nextCheckMinutes",device.currentValue("checkInterval"))
-        def now=new Date().format('MM/dd/yyyy h:mm a',location.timeZone);emitChangedEvent("lastUpdate",now);closeConnection();emitEvent("telnet","Ok")}
+        emitLastUpdate();closeConnection();emitEvent("telnet","Ok")}
     else{def nameMatcher=msg =~ /^Name\s*:\s*([^\s]+)/;if(nameMatcher.find()&&lastCommand=="getStatus"){def nameVal=nameMatcher.group(1).trim()
             emitChangedEvent("deviceName",nameVal);if(useUpsNameForLabel){device.setLabel(nameVal);logInfo "Device label updated to UPS name: $nameVal"}}
         def statMatcher=msg =~ /Stat\s*:\s*(.+)$/;if(statMatcher.find()){def statVal=statMatcher.group(1).trim();emitChangedEvent("nmcStatus",statVal)
@@ -479,12 +480,11 @@ def parse(String msg){
         if(msg.startsWith("Usage: ups")&&lastCommand=="getStatus"){state.upsSupportsOutlet=msg.contains("-o");logInfo "UPS outlet group support: ${state.upsSupportsOutlet?'Yes':'No'}";sendAboutCommand()}
         if((pair.size()>=4)&&pair[0]=="Status"&&pair[1]=="of"&&pair[2]=="UPS:"){def statusString=(pair[3..Math.min(4,pair.size()-1)]).join(" ")
             handleUPSStatus(statusString,runTime.toInteger(),runTimeOnBattery.toInteger(),runOffset.toInteger())}
-        if(lastCommand=="getStatus"){handleBatteryData(pair);handleElectricalMetrics(pair);handleIdentificationAndSelfTest(pair);handleUPSError(pair)}
-        else if(lastCommand=="about"){handleNMCData(msg)}
+        if(lastCommand=="getStatus"){handleBatteryData(pair);handleElectricalMetrics(pair);handleIdentificationAndSelfTest(pair);handleUPSError(pair);emitLastUpdate()}
+        else if(lastCommand=="about"){handleNMCData(msg);emitLastUpdate()}
         if(lastCommand=="CalibrateRuntime"&&msg.toLowerCase().contains("started")){emitChangedEvent("runtimeCalibration","active","UPS Runtime Calibration started")}
         if(lastCommand=="CancelCalibration"&&msg.toLowerCase().contains("stopped")){emitChangedEvent("runtimeCalibration","inactive","UPS Runtime Calibration stopped")}
-        if(lastCommand in ["UPSOn","UPSOff"]&&msg.contains("E000")){emitEvent("lastCommandResult","Success");logInfo "UPS Output ${lastCommand=='UPSOn'?'ON':'OFF'} command acknowledged"}
-    }
+        if(lastCommand in ["UPSOn","UPSOff"]&&msg.contains("E000")){emitEvent("lastCommandResult","Success");logInfo "UPS Output ${lastCommand=='UPSOn'?'ON':'OFF'} command acknowledged"}}
 }
 
 /* ===============================
@@ -497,9 +497,10 @@ private sendAboutCommand(){emitEvent("lastCommand","about");seqSend(["about"],50
    =============================== */
 def telnetStatus(String status){
     if(status.contains("receive error: Stream is closed")){
-        if(device.currentValue("lastCommand")!="quit"){logDebug "Telnet disconnected unexpectedly";emitEvent("connectStatus","Disconnected")}
-    } else if(status.contains("send error")) logWarn "Telnet send error: $status"
-    else logDebug "telnetStatus: $status"
+        if(device.currentValue("lastCommand")!="quit"){logDebug "Telnet disconnected unexpectedly";emitEvent("connectStatus","Disconnected");emitLastUpdate()}
+    }
+    else if(status.contains("send error")){logWarn "Telnet send error: $status"}
+    else{logDebug "telnetStatus: $status"}
 }
 
 def closeConnection() {
