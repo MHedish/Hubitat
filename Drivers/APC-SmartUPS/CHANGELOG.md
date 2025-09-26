@@ -1,4 +1,11 @@
 # APC SmartUPS Status Driver — Changelog
+
+## [0.1.31.15] - 2025-09-25
+### Changed
+- Introduced `emitLastUpdate()` helper to centralize updates to the `lastUpdate` attribute.
+- Updated `parse()` and `telnetStatus()` to call `emitLastUpdate()` only when attributes change.
+- Corrected `refresh()` to use `driverInfoString()` and proper `UPSIP`/`UPSPort` parameters (silent internal fix).
+
 ## [0.1.30.14] - 2025-09-24
 ### Changed
 - Added support for APC NMC date format (`MMM dd yyyy HH:mm:ss`).
