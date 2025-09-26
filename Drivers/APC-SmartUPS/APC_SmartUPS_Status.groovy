@@ -37,13 +37,13 @@
 *  0.1.31.11 -- Fixed authentication sequencing; username/password now sent before status batch, resolving premature command handling
 *  0.1.31.15 -- Replaced inline lastUpdate handling with emitLastUpdate() helper; ensures consistent timestamp updates on parse, quit, and unexpected telnet disconnects
 *  0.1.31.16 -- Fixed UPSStatus flapping (initialize no longer resets to Unknown if already set); updated preference labels/descriptions; renamed StartAlarm command to TestAlarm
-*  0.1.31.17 -- Suppressed noisy lastCommand/connectStatus events in initialize, refresh, parse, and UPS command helpers; connection transitions now logged instead of emitted
 */
+
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.1.31.17"
-@Field static final String DRIVER_MODIFIED = "2025.09.26"
+@Field static final String DRIVER_VERSION  = "0.1.31.16"
+@Field static final String DRIVER_MODIFIED = "2025.09.25"
 
 /* ===============================
    Metadata
@@ -238,7 +238,7 @@ def configure() { logInfo "${driverInfoString()} configured";initialize() }
 
 def initialize(){
     logInfo "${driverInfoString()} initializing..."
-    ["telnet":"Ok","connectStatus":"Initialized","lastCommandResult":"NA"].each{k,v->emitEvent(k,v)}
+    ["lastCommand":"","telnet":"Ok","connectStatus":"Initialized","lastCommandResult":"NA"].each{k,v->emitEvent(k,v)}
     if(device.currentValue("UPSStatus")==null){emitEvent("UPSStatus","Unknown")}
     if(!tempUnits)tempUnits="F"
     if(logEnable)logDebug "IP=$UPSIP, Port=$UPSPort, Username=$Username, Password=$Password" else logInfo "IP=$UPSIP, Port=$UPSPort"
@@ -254,7 +254,7 @@ def initialize(){
         } else if(state.controlDeviceName&&state.controlDeviceName!=""){
             device.setLabel(state.controlDeviceName);state.remove("controlDeviceName")
         }
-        scheduleCheck(rT,rO);refresh()
+        scheduleCheck(rT,rO);emitEvent("lastCommand","Scheduled");refresh()
     } else logDebug "Parameters not filled in yet."
 }
 
@@ -271,19 +271,20 @@ private scheduleCheck(Integer interval, Integer offset) {
    =============================== */
 private sendUPSCommand(String cmdName,List cmds){
     if(!controlEnabled){logWarn "$cmdName called but UPS control is disabled";return}
-    emitEvent("lastCommandResult","NA");emitEvent("lastCommand",cmdName)
-    logInfo "$cmdName called; opening telnet to send commands"
+    emitEvent("lastCommandResult","NA");emitEvent("lastCommand",cmdName);emitEvent("connectStatus","Trying")
+    logInfo "$cmdName called"
     telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)
     state.pendingCmds=["$Username","$Password"]+cmds
     runInMillis(500,"delayedSeqSend")
 }
 
-private delayedSeqSend(){if(state.pendingCmds){seqSend(state.pendingCmds,500);state.remove("pendingCmds")}}
+private delayedSeqSend() { if(state.pendingCmds){seqSend(state.pendingCmds,500);state.remove("pendingCmds")} }
 
 private executeUPSCommand(String cmdType){
-    emitEvent("lastCommandResult","NA");emitEvent("lastCommand",cmdType)
+    emitEvent("lastCommandResult","NA");logInfo "$cmdType called"
     if(controlEnabled){
-        logInfo "$cmdType called; opening telnet connection"
+        emitEvent("lastCommand","${cmdType}Connect");emitEvent("connectStatus","Trying")
+        logDebug "Connecting to ${UPSIP}:${UPSPort}"
         telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)
     } else logWarn "$cmdType called but UPS control is disabled"
 }
@@ -313,6 +314,7 @@ def SetOutletGroup(p1,p2,p3){
 
 def refresh(){
     logInfo "${driverInfoString()} refreshing..."
+    emitEvent("lastCommand","Connecting");emitEvent("connectStatus","Trying")
     logDebug "Connecting to ${UPSIP}:${UPSPort}"
     telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)
 }
@@ -468,9 +470,9 @@ private handleNMCData(String line){
    =============================== */
 def parse(String msg){
     def lastCommand=device.currentValue("lastCommand");logDebug "In parse - (${msg})";def pair=msg.split(" ")
-    if(lastCommand=="Connecting"){logDebug "Telnet connected, requesting UPS status";emitEvent("lastCommand","getStatus")
+    if(lastCommand=="Connecting"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","getStatus")
         seqSend(["$Username","$Password","upsabout","detstatus -ss","detstatus -all","detstatus -tmp","ups ?"],500)}
-    else if(lastCommand=="quit"){logDebug "Quit acknowledged by UPS";emitEvent("lastCommand","Rescheduled");emitChangedEvent("nextCheckMinutes",device.currentValue("checkInterval"))
+    else if(lastCommand=="quit"){emitEvent("lastCommand","Rescheduled");emitChangedEvent("nextCheckMinutes",device.currentValue("checkInterval"))
         emitLastUpdate();closeConnection();emitEvent("telnet","Ok")}
     else{def nameMatcher=msg =~ /^Name\s*:\s*([^\s]+)/;if(nameMatcher.find()&&lastCommand=="getStatus"){def nameVal=nameMatcher.group(1).trim()
             emitChangedEvent("deviceName",nameVal);if(useUpsNameForLabel){device.setLabel(nameVal);logInfo "Device label updated to UPS name: $nameVal"}}
