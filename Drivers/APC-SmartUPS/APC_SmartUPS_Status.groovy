@@ -36,12 +36,14 @@
 *  0.1.31.10 -- Added deterministic fallback for unsupported 'ups ?' (E101) to trigger sendAboutCommand()
 *  0.1.31.11 -- Fixed authentication sequencing; username/password now sent before status batch, resolving premature command handling
 *  0.1.31.15 -- Replaced inline lastUpdate handling with emitLastUpdate() helper; ensures consistent timestamp updates on parse, quit, and unexpected telnet disconnects
+*  0.1.31.16 -- Fixed UPSStatus flapping (initialize no longer resets to Unknown if already set); updated preference labels/descriptions; renamed StartAlarm command to TestAlarm
+*  0.1.31.17 -- Suppressed noisy lastCommand/connectStatus events in initialize, refresh, parse, and UPS command helpers; connection transitions now logged instead of emitted
 */
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.1.31.15"
-@Field static final String DRIVER_MODIFIED = "2025.09.25"
+@Field static final String DRIVER_VERSION  = "0.1.31.17"
+@Field static final String DRIVER_MODIFIED = "2025.09.26"
 
 /* ===============================
    Metadata
@@ -113,7 +115,7 @@ metadata {
        // Commands
        command "refresh"
        command "disableDebugLoggingNow"
-       command "StartAlarm"
+       command "TestAlarm"
        command "StartSelfTest"
        command "UPSOn"
        command "UPSOff"
@@ -136,14 +138,14 @@ preferences {
     input("UPSPort", "integer", title: "Telnet Port", description: "Default 23", defaultValue: 23, required: true)
     input("Username", "text", title: "Username for Login", required: true, defaultValue: "")
     input("Password", "password", title: "Password for Login", required: true, defaultValue: "")
-    input("useUpsNameForLabel", "bool", title: "Use UPS name for Device Label?", defaultValue: false)
-    input("tempUnits", "enum", title: "Temperature Units", options: ["F","C"], defaultValue: "F", required: true)
-    input("controlEnabled","bool",title:"Enable UPS Control Commands?",description:"Allow Alarm, Outlet Group Control, Reboot, Runtime Calibration, Self Test, Sleep, and UPS On/Off.",defaultValue:false)
-    input("runTime", "number", title: "How often to check UPS status (minutes, 1–59)", defaultValue: 15, range: "1..59", required: true)
-    input("runOffset", "number", title: "Offset (minutes past the hour, 0–59)", defaultValue: 0, range: "0..59", required: true)
+    input("useUpsNameForLabel", "bool", title: "Use UPS name for Device Label", defaultValue: false)
+    input("tempUnits", "enum", title: "Temperature Attribute Unit", options: ["F","C"], defaultValue: "F")
+    input("controlEnabled","bool",title:"Enable UPS Control Commands", description:"Allow Alarm, Outlet Group Control, Reboot, Runtime Calibration, Self Test, Sleep, and UPS On/Off.",defaultValue:false)
+    input("runTime", "number", title: "Check interval for UPS status (minutes, 1–59)", description: "Default 15",defaultValue: 15, range: "1..59", required: true)
+    input("runOffset", "number", title: "Check Interval Offset (minutes past the hour, 0–59)", defaultValue: 0, range: "0..59", required: true)
     input("runTimeOnBattery", "number", title: "Check interval when on battery (minutes, 1–59)", defaultValue: 2, range: "1..59", required: true)
     input("logEnable", "bool", title: "Enable Debug Logging", defaultValue: false)
-    input("logEvents", "bool", title: "Log all events", defaultValue: false)
+    input("logEvents", "bool", title: "Log All Events", defaultValue: false)
 }
 
 /* ===============================
@@ -197,19 +199,19 @@ private translateNmcStatus(String statVal) {
     def translations = []
     statVal.split(" ").each { code ->
         switch(code) {
-            case "P+": translations << "OS OK"; break
-            case "P-": translations << "OS Error"; break
-            case "N+": translations << "Network OK"; break
-            case "N-": translations << "No Network"; break
+            case "P+":  translations << "OS OK"; break
+            case "P-":  translations << "OS Error"; break
+            case "N+":  translations << "Network OK"; break
+            case "N-":  translations << "No Network"; break
             case "N4+": translations << "IPv4 OK"; break
             case "N6+": translations << "IPv6 OK"; break
-            case "N?": translations << "Network DHCP/BOOTP pending"; break
-            case "N!": translations << "IP Conflict"; break
-            case "A+": translations << "App OK"; break
-            case "A-": translations << "App Bad Checksum"; break
-            case "A?": translations << "App Initializing"; break
-            case "A!": translations << "App Incompatible"; break
-            default: translations << code
+            case "N?":  translations << "Network DHCP/BOOTP pending"; break
+            case "N!":  translations << "IP Conflict"; break
+            case "A+":  translations << "App OK"; break
+            case "A-":  translations << "App Bad Checksum"; break
+            case "A?":  translations << "App Initializing"; break
+            case "A!":  translations << "App Incompatible"; break
+            default:    translations << code
         }
     }
     return translations.join(", ")
@@ -230,13 +232,14 @@ def disableDebugLoggingNow() {
 /* ===============================
    Lifecycle
    =============================== */
-def installed(){logInfo "Installed";initialize()}
-def updated(){logInfo "Preferences updated";configure()}
-def configure(){logInfo "${driverInfoString()} configured";initialize()}
+def installed( ){ logInfo "Installed";initialize() }
+def updated() { logInfo "Preferences updated";configure() }
+def configure() { logInfo "${driverInfoString()} configured";initialize() }
 
 def initialize(){
     logInfo "${driverInfoString()} initializing..."
-    ["lastCommand":"","UPSStatus":"Unknown","telnet":"Ok","connectStatus":"Initialized","lastCommandResult":"NA"].each{k,v->emitEvent(k,v)}
+    ["telnet":"Ok","connectStatus":"Initialized","lastCommandResult":"NA"].each{k,v->emitEvent(k,v)}
+    if(device.currentValue("UPSStatus")==null){emitEvent("UPSStatus","Unknown")}
     if(!tempUnits)tempUnits="F"
     if(logEnable)logDebug "IP=$UPSIP, Port=$UPSPort, Username=$Username, Password=$Password" else logInfo "IP=$UPSIP, Port=$UPSPort"
     if(UPSIP&&UPSPort&&Username&&Password){
@@ -251,7 +254,7 @@ def initialize(){
         } else if(state.controlDeviceName&&state.controlDeviceName!=""){
             device.setLabel(state.controlDeviceName);state.remove("controlDeviceName")
         }
-        scheduleCheck(rT,rO);emitEvent("lastCommand","Scheduled");refresh()
+        scheduleCheck(rT,rO);refresh()
     } else logDebug "Parameters not filled in yet."
 }
 
@@ -268,22 +271,19 @@ private scheduleCheck(Integer interval, Integer offset) {
    =============================== */
 private sendUPSCommand(String cmdName,List cmds){
     if(!controlEnabled){logWarn "$cmdName called but UPS control is disabled";return}
-    emitEvent("lastCommandResult","NA");emitEvent("lastCommand",cmdName);emitEvent("connectStatus","Trying")
-    logInfo "$cmdName called"
+    emitEvent("lastCommandResult","NA");emitEvent("lastCommand",cmdName)
+    logInfo "$cmdName called; opening telnet to send commands"
     telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)
     state.pendingCmds=["$Username","$Password"]+cmds
     runInMillis(500,"delayedSeqSend")
 }
 
-private delayedSeqSend(){
-    if(state.pendingCmds){seqSend(state.pendingCmds,500);state.remove("pendingCmds")}
-}
+private delayedSeqSend(){if(state.pendingCmds){seqSend(state.pendingCmds,500);state.remove("pendingCmds")}}
 
 private executeUPSCommand(String cmdType){
-    emitEvent("lastCommandResult","NA");logInfo "$cmdType called"
+    emitEvent("lastCommandResult","NA");emitEvent("lastCommand",cmdType)
     if(controlEnabled){
-        emitEvent("lastCommand","${cmdType}Connect");emitEvent("connectStatus","Trying")
-        logDebug "Connecting to ${UPSIP}:${UPSPort}"
+        logInfo "$cmdType called; opening telnet connection"
         telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)
     } else logWarn "$cmdType called but UPS control is disabled"
 }
@@ -291,7 +291,7 @@ private executeUPSCommand(String cmdType){
 /* ===============================
    Commands
    =============================== */
-def StartAlarm()       { sendUPSCommand("StartAlarm",["ups -a start"]) }
+def TestAlarm()        { sendUPSCommand("TestAlarm",["ups -a start"]) }
 def StartSelfTest()    { sendUPSCommand("StartSelfTest",["ups -s start"]) }
 def UPSOn()            { sendUPSCommand("UPSOn",["ups -c on"]) }
 def UPSOff()           { sendUPSCommand("UPSOff",["ups -c off"]) }
@@ -313,7 +313,6 @@ def SetOutletGroup(p1,p2,p3){
 
 def refresh(){
     logInfo "${driverInfoString()} refreshing..."
-    emitEvent("lastCommand","Connecting");emitEvent("connectStatus","Trying")
     logDebug "Connecting to ${UPSIP}:${UPSPort}"
     telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)
 }
@@ -469,9 +468,9 @@ private handleNMCData(String line){
    =============================== */
 def parse(String msg){
     def lastCommand=device.currentValue("lastCommand");logDebug "In parse - (${msg})";def pair=msg.split(" ")
-    if(lastCommand=="Connecting"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","getStatus")
+    if(lastCommand=="Connecting"){logDebug "Telnet connected, requesting UPS status";emitEvent("lastCommand","getStatus")
         seqSend(["$Username","$Password","upsabout","detstatus -ss","detstatus -all","detstatus -tmp","ups ?"],500)}
-    else if(lastCommand=="quit"){emitEvent("lastCommand","Rescheduled");emitChangedEvent("nextCheckMinutes",device.currentValue("checkInterval"))
+    else if(lastCommand=="quit"){logDebug "Quit acknowledged by UPS";emitEvent("lastCommand","Rescheduled");emitChangedEvent("nextCheckMinutes",device.currentValue("checkInterval"))
         emitLastUpdate();closeConnection();emitEvent("telnet","Ok")}
     else{def nameMatcher=msg =~ /^Name\s*:\s*([^\s]+)/;if(nameMatcher.find()&&lastCommand=="getStatus"){def nameVal=nameMatcher.group(1).trim()
             emitChangedEvent("deviceName",nameVal);if(useUpsNameForLabel){device.setLabel(nameVal);logInfo "Device label updated to UPS name: $nameVal"}}
