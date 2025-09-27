@@ -37,13 +37,28 @@
 *  0.1.31.11 -- Fixed authentication sequencing; username/password now sent before status batch, resolving premature command handling
 *  0.1.31.15 -- Replaced inline lastUpdate handling with emitLastUpdate() helper; ensures consistent timestamp updates on parse, quit, and unexpected telnet disconnects
 *  0.1.31.16 -- Fixed UPSStatus flapping (initialize no longer resets to Unknown if already set); updated preference labels/descriptions; renamed StartAlarm command to TestAlarm
+*  0.1.31.17 -- Suppressed redundant lastCommand/connectStatus events (debug-only now); parse() cleans up state.pendingCmds; driverInfo attribute restored in initialize()
+*  0.1.31.18 -- Fixed regression where 0.1.31.17 suppressed lastCommand/connectStatus events too aggressively, breaking data collection; restored state-backed tracking with breadcrumb cleanup
+*  0.1.31.19 -- Fixed stuck connectStatus=Trying; quit cycle now resets to Initialized; handleUPSError() explicitly sets Disconnected
+*  0.1.31.20 -- Fixed lifecycle behavior; initialize() now always calls refresh() to establish UPS communication immediately
+*  0.1.31.21 -- Normalized all UPS control command casing to lowercase; deterministic success/failure event reporting for UPSOn/UPSOff
+*  0.1.31.22 -- Added auto-disable of controlEnabled after 30 minutes; added manual disableControlNow command
+*  0.1.31.23 -- Fixed device label restore when controlEnabled is disabled (auto or manual)
+*  0.1.31.24 -- Added state null checks to autoDisableControl and disableControlNow to prevent NPE exceptions
+*  0.1.31.25 -- Refactored control disable methods to use safeRestoreLabel() helper with try/catch; prevents NPE and centralizes label restore logic
+*  0.1.31.26 -- Fixed safeRestoreLabel() to force String when restoring device label; resolves NPE and ensures label restore works correctly
+*  0.1.31.27 -- Fixed scope/NPE issues in disableDebugLoggingNow and disableControlNow; refactored safeRestoreLabel() to be callable in all contexts
+*  0.1.31.28 -- Fixed scope issues with disableControlNow and disableDebugLoggingNow; inlined logging and label restore logic to ensure proper behavior from UI commands
+*  0.1.31.29 -- Fixed auto-disable scheduling; initialize() and scheduleCheck() no longer clear unrelated jobs; refresh scheduling only resets when interval/offset change
+*  0.1.31.30 -- Fixed auto-disable scheduling; debug/control auto-disable now only scheduled when enabled, eliminating unnecessary runIn jobs
+*  0.1.31.31 -- Fixed auto-disable cleanup; disable methods now unschedule their own jobs to prevent lingering scheduled tasks
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.1.31.16"
-@Field static final String DRIVER_MODIFIED = "2025.09.25"
+@Field static final String DRIVER_VERSION  = "0.1.31.31"
+@Field static final String DRIVER_MODIFIED = "2025.09.27"
 
 /* ===============================
    Metadata
@@ -115,6 +130,7 @@ metadata {
        // Commands
        command "refresh"
        command "disableDebugLoggingNow"
+       command "disableControlNow"
        command "TestAlarm"
        command "StartSelfTest"
        command "UPSOn"
@@ -174,6 +190,9 @@ private emitChangedEvent(String name, def value, String desc = null, String unit
     }
 }
 
+private updateCommandState(String value){device.updateDataValue("lastCommand",value);logDebug "lastCommand -> ${value}";emitEvent("lastCommand",value)}
+private updateConnectState(String value){device.updateDataValue("connectStatus",value);logDebug "connectStatus -> ${value}";emitEvent("connectStatus",value)}
+
 private normalizeDateTime(String raw){
     if(!raw||raw.trim()=="")return raw
     try{
@@ -218,16 +237,12 @@ private translateNmcStatus(String statVal) {
 }
 
 /* ===============================
-   Debug Logging Disable
+   Debug & Control Logging Disable
    =============================== */
-def autoDisableDebugLogging() {
-    device.updateSetting("logEnable", [value:"false", type:"bool"])
-    logInfo "Debug logging disabled (auto)"
-}
-def disableDebugLoggingNow() {
-    device.updateSetting("logEnable", [value:"false", type:"bool"])
-    logInfo "Debug logging disabled (manual)"
-}
+def autoDisableDebugLogging(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "Debug logging disabled (auto)"}catch(e){logDebug "autoDisableDebugLogging(): ${e.message}"}}
+def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "Debug logging disabled (manual)"}catch(e){logDebug "disableDebugLoggingNow(): ${e.message}"}}
+def autoDisableControl(){try{unschedule(autoDisableControl);device.updateSetting("controlEnabled",[value:"false",type:"bool"]);if(state?.controlDeviceName&&state.controlDeviceName!=""){device.setLabel("${state.controlDeviceName}");state.remove("controlDeviceName")};logInfo "UPS control commands disabled (auto)"}catch(e){logDebug "autoDisableControl(): ${e.message}"}}
+def disableControlNow(){try{unschedule(autoDisableControl);device.updateSetting("controlEnabled",[value:"false",type:"bool"]);if(state?.controlDeviceName&&state.controlDeviceName!=""){device.setLabel("${state.controlDeviceName}");state.remove("controlDeviceName")};logInfo "UPS control commands disabled (manual)"}catch(e){logDebug "disableControlNow(): ${e.message}"}}
 
 /* ===============================
    Lifecycle
@@ -238,32 +253,42 @@ def configure() { logInfo "${driverInfoString()} configured";initialize() }
 
 def initialize(){
     logInfo "${driverInfoString()} initializing..."
-    ["lastCommand":"","telnet":"Ok","connectStatus":"Initialized","lastCommandResult":"NA"].each{k,v->emitEvent(k,v)}
-    if(device.currentValue("UPSStatus")==null){emitEvent("UPSStatus","Unknown")}
+    emitEvent("driverInfo", driverInfoString())
+    ["telnet":"Ok","lastCommandResult":"NA"].each{k,v->emitEvent(k,v)}
+    if(device.currentValue("UPSStatus")==null)emitEvent("UPSStatus","Unknown")
     if(!tempUnits)tempUnits="F"
     if(logEnable)logDebug "IP=$UPSIP, Port=$UPSPort, Username=$Username, Password=$Password" else logInfo "IP=$UPSIP, Port=$UPSPort"
     if(UPSIP&&UPSPort&&Username&&Password){
-        emitLastUpdate()
-        unschedule();runIn(1800,autoDisableDebugLogging)
-        def rT=runTime.toInteger(),rTB=runTimeOnBattery.toInteger(),rO=runOffset.toInteger()
-        device.updateSetting("runTime",[value:rT,type:"number"]);device.updateSetting("runTimeOnBattery",[value:rTB,type:"number"]);device.updateSetting("runOffset",[value:rO,type:"number"])
-        if(controlEnabled){
-            if(state.controlDeviceName&&state.controlDeviceName!=""&&state.controlDeviceName!=device.getLabel())device.setLabel(state.controlDeviceName)
-            state.controlDeviceName=device.getLabel()
-            if(!device.getLabel().contains("Control Enabled"))device.setLabel("${device.getLabel()} (Control Enabled)")
-        } else if(state.controlDeviceName&&state.controlDeviceName!=""){
-            device.setLabel(state.controlDeviceName);state.remove("controlDeviceName")
-        }
-        scheduleCheck(rT,rO);emitEvent("lastCommand","Scheduled");refresh()
+		emitLastUpdate()
+		unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)
+		def rT=runTime.toInteger(),rTB=runTimeOnBattery.toInteger(),rO=runOffset.toInteger()
+		device.updateSetting("runTime",[value:rT,type:"number"])
+		device.updateSetting("runTimeOnBattery",[value:rTB,type:"number"])
+		device.updateSetting("runOffset",[value:rO,type:"number"])
+		if(controlEnabled){
+		    if(state.controlDeviceName&&state.controlDeviceName!=""&&state.controlDeviceName!=device.getLabel())device.setLabel(state.controlDeviceName)
+		    state.controlDeviceName=device.getLabel()
+		    if(!device.getLabel().contains("Control Enabled"))device.setLabel("${device.getLabel()} (Control Enabled)")
+		    unschedule(autoDisableControl);runIn(1800,autoDisableControl)
+		} else if(state.controlDeviceName&&state.controlDeviceName!=""){
+		    device.setLabel(state.controlDeviceName);state.remove("controlDeviceName")
+		}
+        scheduleCheck(rT,rO);updateCommandState("Scheduled");updateConnectState("Initialized")
+        refresh()
     } else logDebug "Parameters not filled in yet."
 }
 
-private scheduleCheck(Integer interval, Integer offset) {
-    unschedule()
-    def scheduleString = "0 ${offset}/${interval} * ? * * *"
-    emitChangedEvent("checkInterval", interval)
-    logInfo "Monitoring scheduled every ${interval} minutes at ${offset} past the hour."
-    schedule(scheduleString, refresh)
+private scheduleCheck(Integer interval,Integer offset){
+    def currentInt=device.currentValue("checkInterval") as Integer
+    def currentOff=state?.lastRunOffset as Integer
+    if(currentInt!=interval||currentOff!=offset){
+        unschedule(refresh)
+        def scheduleString="0 ${offset}/${interval} * ? * * *"
+        emitChangedEvent("checkInterval",interval)
+        state.lastRunOffset=offset
+        logInfo "Monitoring scheduled every ${interval} minutes at ${offset} past the hour."
+        schedule(scheduleString,refresh)
+    } else logDebug "scheduleCheck(): no change to interval/offset (still ${interval}/${offset})"
 }
 
 /* ===============================
@@ -271,22 +296,20 @@ private scheduleCheck(Integer interval, Integer offset) {
    =============================== */
 private sendUPSCommand(String cmdName,List cmds){
     if(!controlEnabled){logWarn "$cmdName called but UPS control is disabled";return}
-    emitEvent("lastCommandResult","NA");emitEvent("lastCommand",cmdName);emitEvent("connectStatus","Trying")
+    updateCommandState(cmdName);updateConnectState("Trying");emitEvent("lastCommandResult","NA")
     logInfo "$cmdName called"
     telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)
-    state.pendingCmds=["$Username","$Password"]+cmds
-    runInMillis(500,"delayedSeqSend")
+    state.pendingCmds=["$Username","$Password"]+cmds;runInMillis(500,"delayedSeqSend")
 }
 
-private delayedSeqSend() { if(state.pendingCmds){seqSend(state.pendingCmds,500);state.remove("pendingCmds")} }
+private delayedSeqSend(){if(state.pendingCmds){seqSend(state.pendingCmds,500);state.remove("pendingCmds")}}
 
 private executeUPSCommand(String cmdType){
     emitEvent("lastCommandResult","NA");logInfo "$cmdType called"
-    if(controlEnabled){
-        emitEvent("lastCommand","${cmdType}Connect");emitEvent("connectStatus","Trying")
+    if(controlEnabled){updateCommandState("${cmdType}Connect");updateConnectState("Trying")
         logDebug "Connecting to ${UPSIP}:${UPSPort}"
-        telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)
-    } else logWarn "$cmdType called but UPS control is disabled"
+        telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)}
+    else logWarn "$cmdType called but UPS control is disabled"
 }
 
 /* ===============================
@@ -296,12 +319,12 @@ def TestAlarm()        { sendUPSCommand("TestAlarm",["ups -a start"]) }
 def StartSelfTest()    { sendUPSCommand("StartSelfTest",["ups -s start"]) }
 def UPSOn()            { sendUPSCommand("UPSOn",["ups -c on"]) }
 def UPSOff()           { sendUPSCommand("UPSOff",["ups -c off"]) }
-def Reboot()           { sendUPSCommand("Reboot",["UPS -c reboot"]) }
-def Sleep()            { sendUPSCommand("Sleep",["UPS -c sleep"]) }
+def Reboot()           { sendUPSCommand("Reboot",["ups -c reboot"]) }
+def Sleep()            { sendUPSCommand("Sleep",["ups -c sleep"]) }
 def toggleRuntimeCalibration(){
     def active=(device.currentValue("runtimeCalibration")=="active")
-    if(active){sendUPSCommand("CancelCalibration",["UPS -r stop"])}
-    else{sendUPSCommand("CalibrateRuntime",["UPS -r start"])}
+    if(active){sendUPSCommand("CancelCalibration",["ups -r stop"])}
+    else{sendUPSCommand("CalibrateRuntime",["ups -r start"])}
 }
 
 def SetOutletGroup(p1,p2,p3){
@@ -309,12 +332,12 @@ def SetOutletGroup(p1,p2,p3){
     if(!state.upsSupportsOutlet){logWarn "SetOutletGroup unsupported on this UPS model";emitEvent("lastCommandResult","Unsupported");return}
     if(!p1){logError "Outlet group is required.";return}
     if(!p2){logError "Command is required.";return}
-    state.outlet=p1;state.command=p2;state.seconds=p3?: "0";sendUPSCommand("SetOutletGroup",["UPS -o ${state.outlet} ${state.command} ${state.seconds}"])
+    state.outlet=p1;state.command=p2;state.seconds=p3?: "0";sendUPSCommand("SetOutletGroup",["ups -o ${state.outlet} ${state.command} ${state.seconds}"])
 }
 
 def refresh(){
     logInfo "${driverInfoString()} refreshing..."
-    emitEvent("lastCommand","Connecting");emitEvent("connectStatus","Trying")
+    updateCommandState("Connecting");updateConnectState("Trying")
     logDebug "Connecting to ${UPSIP}:${UPSPort}"
     telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)
 }
@@ -412,19 +435,7 @@ private handleIdentificationAndSelfTest(def pair){
     }
 }
 
-private handleUPSError(def pair){
-    switch(pair[0]){
-        case "E002:":case "E100:":case "E101:":case "E102:":case "E103:":case "E107:":case "E108:":
-            logError "UPS Error: Command returned [$pair]"
-            emitEvent("lastCommandResult","Failure")
-            if(device.currentValue("lastCommand") in ["CalibrateRuntime","CancelCalibration"])
-                emitChangedEvent("runtimeCalibration","failed","UPS Runtime Calibration failed")
-            if(device.currentValue("lastCommand") in ["UPSOn","UPSOff"])
-                logError "UPS Output command failed"
-            if(pair[0]=="E101:"){logWarn "UPS does not support 'ups ?' command, falling back to sendAboutCommand()";sendAboutCommand()}
-            closeConnection();emitEvent("telnet","Ok");break
-    }
-}
+private handleUPSError(def pair){switch(pair[0]){case "E002:":case "E100:":case "E101:":case "E102:":case "E103:":case "E107:":case "E108:":logError "UPS Error: Command returned [$pair]";emitEvent("lastCommandResult","Failure");if(device.currentValue("lastCommand") in ["CalibrateRuntime","CancelCalibration"])emitChangedEvent("runtimeCalibration","failed","UPS Runtime Calibration failed");if(device.currentValue("lastCommand") in ["UPSOn","UPSOff"])logError "UPS Output command failed";if(pair[0]=="E101:"){logWarn "UPS does not support 'ups ?' command, falling back to sendAboutCommand()";sendAboutCommand()};updateConnectState("Disconnected");closeConnection();emitEvent("telnet","Ok");break}}
 
 private handleNMCData(String line){
     if(line =~ /Hardware Factory/){device.updateDataValue("aboutSection","Hardware");return}
@@ -470,9 +481,9 @@ private handleNMCData(String line){
    =============================== */
 def parse(String msg){
     def lastCommand=device.currentValue("lastCommand");logDebug "In parse - (${msg})";def pair=msg.split(" ")
-    if(lastCommand=="Connecting"){emitEvent("connectStatus","Connected");emitEvent("lastCommand","getStatus")
+    if(lastCommand=="Connecting"){logDebug "Telnet connected, requesting UPS status";updateConnectState("Connected");updateCommandState("getStatus")
         seqSend(["$Username","$Password","upsabout","detstatus -ss","detstatus -all","detstatus -tmp","ups ?"],500)}
-    else if(lastCommand=="quit"){emitEvent("lastCommand","Rescheduled");emitChangedEvent("nextCheckMinutes",device.currentValue("checkInterval"))
+    else if(lastCommand=="quit"){logDebug "Quit acknowledged by UPS";updateCommandState("Rescheduled");updateConnectState("Initialized");emitChangedEvent("nextCheckMinutes",device.currentValue("checkInterval"))
         emitLastUpdate();closeConnection();emitEvent("telnet","Ok")}
     else{def nameMatcher=msg =~ /^Name\s*:\s*([^\s]+)/;if(nameMatcher.find()&&lastCommand=="getStatus"){def nameVal=nameMatcher.group(1).trim()
             emitChangedEvent("deviceName",nameVal);if(useUpsNameForLabel){device.setLabel(nameVal);logInfo "Device label updated to UPS name: $nameVal"}}
@@ -485,7 +496,8 @@ def parse(String msg){
         else if(lastCommand=="about"){handleNMCData(msg);emitLastUpdate()}
         if(lastCommand=="CalibrateRuntime"&&msg.toLowerCase().contains("started")){emitChangedEvent("runtimeCalibration","active","UPS Runtime Calibration started")}
         if(lastCommand=="CancelCalibration"&&msg.toLowerCase().contains("stopped")){emitChangedEvent("runtimeCalibration","inactive","UPS Runtime Calibration stopped")}
-        if(lastCommand in ["UPSOn","UPSOff"]&&msg.contains("E000")){emitEvent("lastCommandResult","Success");logInfo "UPS Output ${lastCommand=='UPSOn'?'ON':'OFF'} command acknowledged"}}
+        if(lastCommand in ["UPSOn","UPSOff"]){if(msg.contains("E000")){emitEvent("lastCommandResult","Success");logInfo "UPS Output ${lastCommand=='UPSOn'?'ON':'OFF'} command acknowledged"}else if(msg==~ /^E\d{3}:.*/){emitEvent("lastCommandResult","Failure");logError "UPS Output ${lastCommand} command failed: $msg"}}
+    }
 }
 
 /* ===============================
@@ -498,10 +510,9 @@ private sendAboutCommand(){emitEvent("lastCommand","about");seqSend(["about"],50
    =============================== */
 def telnetStatus(String status){
     if(status.contains("receive error: Stream is closed")){
-        if(device.currentValue("lastCommand")!="quit"){logDebug "Telnet disconnected unexpectedly";emitEvent("connectStatus","Disconnected");emitLastUpdate()}
-    }
-    else if(status.contains("send error")){logWarn "Telnet send error: $status"}
-    else{logDebug "telnetStatus: $status"}
+        if(device.currentValue("lastCommand")!="quit"){logDebug "Telnet disconnected unexpectedly";updateConnectState("Disconnected");emitLastUpdate()}
+    } else if(status.contains("send error")){logWarn "Telnet send error: $status"}
+    else logDebug "telnetStatus: $status"
 }
 
 def closeConnection() {
