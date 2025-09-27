@@ -1,14 +1,15 @@
 # APC SmartUPS Status Driver
 
-[![Version](https://img.shields.io/badge/version-0.1.31.14-blue.svg)](./CHANGELOG.md)
-[![Status](https://img.shields.io/badge/release-BETA-orange.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.31.31-blue.svg)](./CHANGELOG.md)
+[![Status](https://img.shields.io/badge/release-STABLE-brightgreen.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
 
 A [Hubitat Elevation](https://hubitat.com/) custom driver for monitoring and controlling **APC SmartUPS** devices via the Network Management Card (NMC) Telnet interface.
 
-⚠️ **BETA NOTICE:**  
-This driver is under active development. Authentication and `about` sequencing are still undergoing long-term soak testing. Use in production at your own risk.
+✅ **STABLE NOTICE:**  
+Version `0.1.31.31` has been validated as stable under live testing.  
+Authentication sequencing, UPS control safety, and scheduling logic are confirmed reliable.
 
 ---
 
@@ -35,7 +36,7 @@ This driver is under active development. Authentication and `about` sequencing a
 
 - **Device Label Management**
   - Option to automatically sync UPS name to Hubitat device label
-  - Annotates device name with `(Control Disabled)` when control is off
+  - Annotates device name with `(Control Enabled)` when control is active
 
 ---
 
@@ -72,7 +73,7 @@ This driver is under active development. Authentication and `about` sequencing a
 
 - **Enable UPS Control Commands**  
   Toggle whether commands (On/Off, Self Test, etc.) are exposed.  
-  When disabled, the device label will indicate `(Control Disabled)`.
+  When disabled, the device label will revert to its saved name.
 
 - **Use UPS Name for Label**  
   Automatically updates the Hubitat device label with the UPS-reported name.
@@ -84,19 +85,22 @@ This driver is under active development. Authentication and `about` sequencing a
 For full history, see the [CHANGELOG.md](./CHANGELOG.md).  
 Recent highlights:
 
-- **0.1.31.14** (2025-09-25)  
-  - Reverted to sending username/password together for stable authentication  
-  - Deterministic `ups ?` gate for scheduling `about`  
-  - Needs long-term soak testing (BETA)
+- **0.1.31.31** (2025-09-27)  
+  - Stable release confirmed  
+  - Auto-disable methods now unschedule their own jobs  
+  - Refresh scheduling preserved while debug/control timers behave correctly  
 
-- **0.1.31.10 – 0.1.31.13**  
-  - Experimental authentication sequencing; superseded by 0.1.31.14
+- **0.1.31.21 – 0.1.31.30**  
+  - Normalized UPS control command casing  
+  - Deterministic success/failure reporting for UPS On/Off  
+  - Added auto-disable safety for UPS control commands  
+  - Fixed initialization/scheduling bugs where refresh jobs were lost  
 
-- **0.1.31.0 – 0.1.31.9**  
-  - Added new commands (Alarm, Self Test, UPS On/Off)  
-  - Unified command execution  
-  - Runtime calibration toggle  
+- **0.1.31.0 – 0.1.31.20**  
+  - Added new commands (Alarm, Self Test, UPS On/Off, Reboot, Sleep)  
+  - Unified command execution and runtime calibration toggle  
   - Deterministic scheduling for `about`  
+  - Improved authentication sequencing and lifecycle handling  
 
 ---
 
@@ -106,7 +110,7 @@ Recent highlights:
   - `emitEvent()` for state
   - `emitChangedEvent()` for changed values
 - Date/time attributes normalized using `normalizeDateTime()`.
-- Current focus: **authentication stability**.
+- Current focus: post-stable feature roadmap for 0.1.32.x.
 
 ---
 
