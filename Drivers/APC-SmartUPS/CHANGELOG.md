@@ -1,5 +1,67 @@
 # APC SmartUPS Status Driver — Changelog
 
+## 0.1.31.31 (2025-09-27)
+- Stable release
+- Fixed auto-disable cleanup: debug and control disable methods now unschedule their own jobs, preventing lingering scheduled tasks
+- Improved initialize() and scheduleCheck() logic to avoid clearing unrelated jobs, preserving refresh scheduling
+- Confirmed stable under live test: auto-disable timers, refresh intervals, and UPS control behavior all validated
+
+## [0.1.31.31] - 2025-09-27
+### Stable
+- Marked as stable release.
+- Auto-disable methods now unschedule their own jobs, preventing lingering scheduled tasks.
+- Validated stable under live testing: auto-disable timers, refresh intervals, and UPS control confirmed functional.
+
+## [0.1.31.30] - 2025-09-27
+### Fixed
+- Auto-disable jobs (`debug` and `control`) are only scheduled when those features are enabled.
+
+## [0.1.31.29] - 2025-09-27
+### Fixed
+- Prevented `initialize()` and `scheduleCheck()` from unscheduling unrelated jobs (refresh scheduling preserved).
+- `scheduleCheck()` now only reschedules if interval/offset values actually change.
+
+## [0.1.31.28] - 2025-09-27
+### Fixed
+- Corrected `disableDebugLoggingNow` and `disableControlNow` behavior.
+- Added `safeRestoreLabel()` helper to safely restore labels when disabling control.
+
+## [0.1.31.22] - 2025-09-27
+### Added
+- Auto-disable safety for UPS control commands (`controlEnabled` resets to false after 30 minutes).
+- Manual disable command `disableControlNow`.
+
+## [0.1.31.21] - 2025-09-26
+### Changed
+- Normalized casing for all UPS control commands (lowercase).
+- Added deterministic success/failure event reporting for `UPSOn` and `UPSOff`.
+
+## [0.1.31.20] - 2025-09-26
+### Changed
+- `initialize()` now always calls `refresh()` to establish UPS communication immediately.
+
+## [0.1.31.19] - 2025-09-26
+### Fixed
+- Corrected stuck `connectStatus=Trying` by resetting to `Initialized` after `quit`.
+- `handleUPSError()` now explicitly sets `connectStatus=Disconnected`.
+
+## [0.1.31.18] - 2025-09-26
+### Fixed
+- Corrected regression where suppression in 0.1.31.17 prevented data collection.
+- Restored state-backed tracking with breadcrumb cleanup.
+
+## [0.1.31.17] - 2025-09-25
+### Changed
+- Suppressed redundant `lastCommand` and `connectStatus` events (debug-only now).
+- Restored `driverInfo` attribute in `initialize()`.
+- Cleaned up `state.pendingCmds` in `parse()`.
+
+## [0.1.31.16] - 2025-09-25
+### Changed
+- Prevented `UPSStatus` from resetting to `Unknown` on initialize if already set.
+- Updated preference labels and descriptions for clarity.
+- Renamed `StartAlarm` command to `TestAlarm` for consistency.
+
 ## [0.1.31.15] - 2025-09-25
 ### Changed
 - Introduced `emitLastUpdate()` helper to centralize updates to the `lastUpdate` attribute.
