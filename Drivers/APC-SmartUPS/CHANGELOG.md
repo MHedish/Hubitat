@@ -6,12 +6,6 @@
 - Improved initialize() and scheduleCheck() logic to avoid clearing unrelated jobs, preserving refresh scheduling
 - Confirmed stable under live test: auto-disable timers, refresh intervals, and UPS control behavior all validated
 
-## [0.1.31.31] - 2025-09-27
-### Stable
-- Marked as stable release.
-- Auto-disable methods now unschedule their own jobs, preventing lingering scheduled tasks.
-- Validated stable under live testing: auto-disable timers, refresh intervals, and UPS control confirmed functional.
-
 ## [0.1.31.30] - 2025-09-27
 ### Fixed
 - Auto-disable jobs (`debug` and `control`) are only scheduled when those features are enabled.
