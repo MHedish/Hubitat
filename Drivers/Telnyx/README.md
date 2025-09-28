@@ -1,4 +1,9 @@
 # Telnyx SMS Driver
+[![Version](https://img.shields.io/badge/version-1.0-blue.svg)](./CHANGELOG.md)
+[![Status](https://img.shields.io/badge/release-STABLE-brightgreen.svg)](./CHANGELOG.md)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
+
 Telnyx SMS allows you to send SMS messages from Rule Machine, webCoRE, and the HE device pages.
 # Installation
 1.  Add both the SMS container and SMS Device drivers 2 to your HE hub either manually or via the Hubitat Package Manager.
