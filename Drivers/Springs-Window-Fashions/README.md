@@ -1,5 +1,10 @@
 # Hubitat Driver for Springs Window Fashions Roller and Sheer Roller Shades
 
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](./CHANGELOG.md)
+[![Status](https://img.shields.io/badge/release-STABLE-brightgreen.svg)](./CHANGELOG.md)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
+
 The sheer driver is specifically for the Sheer model of Springs Window Fashions automatic shades.  These shades are different from their roller or double-roller shades in that they are visually closed at non-zero logical level.  They are "closed" at a level of 3 to 6 depending upon the installation and length of the shades.  This driver addresses the difference and restores the logic of a shade being "closed" at a non-zero logical level.
 
 Levels may be set to exact positions (Set Position [0:99]) or as a percentage of "open" (Set Level [1:100]) based on the closed position of the shade as zero.  When "Use relative levels" is set to false, these are the same.
