@@ -1,5 +1,97 @@
 # APC SmartUPS Status Driver — Changelog
 
+## [0.2.0.16] — 2025-10-01
+### Fixed
+- Changed `initialize()` to delay `refresh()` by 500 ms after closing telnet.
+- Prevents race where immediate reconnect could stall at `getStatus` during `updated()` or `configure()` runs.
+
+## [0.2.0.15] — 2025-10-01
+### Fixed
+- Improved telnet lifecycle handling.
+- `initialize()` now explicitly closes telnet before calling `refresh()`, preventing racey disconnect/connect churn during driver reloads or preference updates.
+
+## [0.2.0.14] — 2025-10-01
+### Added
+- `lastTransferCause` attribute parsing under `detstatus -all`.
+- Captures and emits descriptive cause of last UPS transfer.
+
+## [0.2.0.13] — 2025-10-01
+### Fixed
+- Added cleanup of `telnetBuffer` state after buffered session parsing completes.
+- Ensures no empty buffer objects linger between runs.
+
+## [0.2.0.12] — 2025-10-01
+### Fixed
+- Corrected UPSStatus parsing: commas are now stripped from `"Status of UPS"` line before normalization.
+- Restores clean values (e.g., `"Online"` instead of `"On Line,"`).
+
+## [0.2.0.11] — 2025-10-01
+### Changed
+- Restored `UPSStatus` parsing from `detstatus -all` (detects `"Status of UPS:"` prefix).
+- Integrated into `handleDetStatus()` with buffered model.
+
+## [0.2.0.10] — 2025-10-01
+### Changed
+- Restored UPSStatus parsing under `detstatus -all`.
+- Moved detection logic into `handleUPSStatus()` for cleaner flow.
+- Removed redundant empty-status guard.
+
+## [0.2.0.9] — 2025-10-01
+### Changed
+- Restored device label updates from banner parsing when `useUpsNameForLabel` is enabled.
+- Ensures device label tracks UPS name consistently.
+
+## [0.2.0.8] — 2025-10-01
+### Fixed
+- Filtered UPS banner parsing to exclude command echoes and `E000` acknowledgements.
+- Only valid banner lines are passed to `handleUPSAbout()`, preventing `MissingMethodException`.
+
+## [0.2.0.7] — 2025-10-01
+### Fixed
+- Fixed `extractSection()` helper (replaced invalid `findIndexAfter()` with explicit sublist scan).
+- Banner block segmentation now works without `MissingMethodException`.
+
+## [0.2.0.6] — 2025-10-01
+### Added
+- `extractSection()` helper for reliable block segmentation.
+- Resolves `MissingMethodException` during buffer processing.
+
+## [0.2.0.5] — 2025-10-01
+### Changed
+- Added UPS banner parsing back into `processBufferedSession`.
+- `deviceName`, `upsUptime`, `upsDateTime`, `nmcStatus/Desc` now emitted again from banner block.
+
+## [0.2.0.4] — 2025-10-01
+### Changed
+- Improved `whoami` sequence handling to tolerate reversed order of `E000`/device lines.
+- Buffer is processed once all markers are seen.
+
+## [0.2.0.3] — 2025-10-01
+### Added
+- Introduced `whoami` end-of-session marker (`E000 + username + prompt`) to deterministically detect completion under race conditions.
+
+## [0.2.0.2] — 2025-10-01
+### Fixed
+- Fixed buffer segmentation logic (`upsabout`/`about`/`detstatus`) using command echoes.
+- Restored full UPS banner + NMC parsing.
+- Added `.toString()` safety in session handler.
+
+## [0.2.0.1] — 2025-10-01
+### Changed
+- Restored UPS banner parsing under `upsabout` section:
+  - `deviceName`, `upsUptime`, `upsDateTime`, `nmcStatus/Desc`.
+- Added debug traces for UPS/NMC Serial, Manufacture Date, Uptime, and UPS DateTime parsing to validate attribute separation.
+
+## [0.2.0.0] — 2025-10-01
+### Stable Release
+- **Material change bump from 0.1.32.9 → 0.2.0.0.**
+- **Stable release baseline** for buffered-session model.
+- Major change: reworked parsing to buffered-session model.
+- All telnet output is now collected in memory and processed after session end.
+- Resolved UPS/NMC attribute collisions and eliminated timing race conditions.
+- Unified command sequencing to include `about` with other queries.
+- Removed legacy `sendAboutCommand()` helper.
+
 ## 0.1.31.31 (2025-09-27)
 - Stable release
 - Fixed auto-disable cleanup: debug and control disable methods now unschedule their own jobs, preventing lingering scheduled tasks
@@ -467,4 +559,4 @@
 
 ## [0.1.0.0] — 2025-09-16
 ### Added
-- Initial refactor from fork.  
+- Initial refactor from fork.
