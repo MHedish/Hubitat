@@ -55,12 +55,13 @@
 *  0.2.0.15  -- Fixed telnet lifecycle handling; initialize() now explicitly closes telnet before calling refresh(), preventing racey disconnect/connect churn during driver reloads or preference updates
 *  0.2.0.16  -- Changed initialize() to delay refresh() by 500 ms after closing telnet; prevents race where immediate reconnect could stall at getStatus during updated()/configure() runs
 *  0.2.0.17  -- Fixed false-positive UPS clock skew warnings; reference time is now captured at authentication (seqSend trigger) instead of at end-of-session parse, eliminating artificial 1–3 minute drift; skew gates (>1m warn, >5m error) preserved
+*  0.2.0.18  -- Fixed UPS clock skew check; parse now includes seconds (MM/dd/yyyy h:mm:ss a), preventing false positives where times were rounded to the nearest minute
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.2.0.17"
+@Field static final String DRIVER_VERSION  = "0.2.0.18"
 @Field static final String DRIVER_MODIFIED = "2025.10.01"
 
 /* ===============================
@@ -416,7 +417,7 @@ private handleLastTransfer(def pair){
 
 private checkUPSClock(String upsTime) {
     try {
-        def upsDate = Date.parse("MM/dd/yyyy h:mm a", upsTime)
+        def upsDate = Date.parse("MM/dd/yyyy h:mm:ss a", upsTime)
         def ref = state.upsBannerRefTime ? new Date(state.upsBannerRefTime) : new Date()
         def diffSec = Math.abs(ref.time - upsDate.time) / 1000
 
