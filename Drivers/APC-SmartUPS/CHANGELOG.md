@@ -1,5 +1,13 @@
 # APC SmartUPS Status Driver — Changelog
 
+## [0.2.0.17] - 2025-10-01
+### Fixed
+- Corrected false-positive UPS clock skew warnings.  
+- Reference time for UPS banner `Date/Time` is now captured immediately at authentication (`seqSend` trigger) instead of after session parse.  
+- Preserves skew detection thresholds:  
+  - >1 minute → warning  
+  - >5 minutes → error  
+
 ## [0.2.0.16] — 2025-10-01
 ### Fixed
 - Changed `initialize()` to delay `refresh()` by 500 ms after closing telnet.
