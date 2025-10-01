@@ -45,6 +45,30 @@ Use it as a quick checklist during stress testing.
 
 ---
 
+## 🏁 Known Good Log Walkthrough (Golden Lap)
+
+This section shows a **reference refresh cycle** from a healthy driver run.  
+Use it to visually compare your logs and confirm proper sequencing.
+
+### 📋 Golden Lap Trace
+
+| **Phase**       | **Log Sample** (expected order, values may differ)                              | **Notes** |
+|-----------------|---------------------------------------------------------------------------------|-----------|
+| Init            | `Preferences updated` → `configured` → `initializing...` → `driverInfo = ...`   | Preferences saved, driver boots cleanly |
+| Telnet Connect  | `lastCommand = Connecting` → `connectStatus = Trying` → `connectStatus = Connected` | Telnet handshake established |
+| UPS Banner      | `Device label updated to UPS name: ...` <br>`model = Smart-UPS ...` <br>`serialNumber = ...` | Banner parsed before commands |
+| detstatus -all  | `UPSStatus = On Line` <br>`UPS Runtime Remaining = 02:15` <br>`temperatureC = ...` <br>`lastSelfTestResult = Passed` | UPS metrics captured |
+| about (NMC)     | `nmcModel = AP9631` <br>`nmcSerialNumber = ...` <br>`nmcUptime = 30 Days ...`   | NMC attributes captured |
+| End-of-cycle    | `lastCommand = quit` → `connectStatus = Disconnected` → `lastUpdate = ...`      | Clean close, cycle ends |
+
+### ✅ Quick Checks
+- Sequence: `Connecting → getStatus → about → quit → Rescheduled`.
+- `UPSStatus` appears **once per lap**, only on change.
+- `lastUpdate` updated at banner, after UPS metrics, after NMC data, and final quit.
+- No warnings/errors in a golden lap.
+
+---
+
 ## 📋 Usage
 During stress tests, scan logs against this table:
 - Missing `lastUpdate` after UPS/NMC data = **bug**.  
