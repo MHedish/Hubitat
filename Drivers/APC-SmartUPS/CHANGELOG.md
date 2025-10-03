@@ -1,5 +1,81 @@
 # APC SmartUPS Status Driver — Changelog
 
+## [0.2.0.29] - 2025-10-03
+### Changed
+- Removed unused `connectStatus` attribute declaration.  
+- Connection state is now tracked internally with `state.connectStatus` only.  
+
+## [0.2.0.28] - 2025-10-03
+### Fixed
+- Corrected `scheduleCheck()` logic:
+  - Reschedules monitoring if either interval **or** offset preference changes.  
+  - Preserves existing schedules when values are unchanged.  
+
+## [0.2.0.27] - 2025-10-02
+### Fixed
+- Restored second-level precision in UPS banner `Date/Time` parsing.  
+- `upsBannerEpoch` and `normalizeDateTime()` now retain seconds instead of rounding to minutes.  
+- Eliminates false-positive UPS clock skew warnings.  
+
+## [0.2.0.26] - 2025-10-02
+### Fixed
+- Corrected bug where `upsBannerEpoch` state variable was not removed after use.  
+- Restored `normalizeDateTime()` support for:
+  - Date-only values (`MM/dd/yyyy`).  
+  - Proper 2-digit year pivot handling.  
+- Fixes parsing for `nmcManufactureDate`, `manufactureDate`, and `lastSelfTestDate`.  
+
+## [0.2.0.25] - 2025-10-02
+### Added
+- `handleUPSSection()` handler with UPS `?` block parsing to detect outlet group support (`-o` flag).  
+- Logs whether outlet group control is supported by the UPS.  
+### Fixed
+- Cleaned up leftover `upsBannerEpoch` state after banner parse.  
+
+## [0.2.0.24] - 2025-10-02
+### Fixed
+- Reset `authStarted` at session initiation (`refresh()`) instead of session end.  
+- Prevents stale authentication flag from blocking login after preference changes or interrupted sessions.  
+
+## [0.2.0.23] - 2025-10-02
+### Fixed
+- UPS banner `Date/Time` parsing corrected:
+  - Added support for `"MM/dd/yyyy h:mm a"` format.  
+  - Normalized to include seconds.  
+- `upsBannerEpoch` stored as epoch with 1-second precision.  
+- `processBufferedSession()` now passes epoch directly to `checkUPSClock()`.  
+
+## [0.2.0.22] - 2025-10-02
+### Changed
+- Restored blind credential send on first telnet data.  
+- Decoupled from `lastCommand=Connecting` to improve login reliability.  
+- Added `authStarted` guard to ensure credentials/queries fire only once per session.  
+
+## [0.2.0.21] - 2025-10-02
+### Fixed
+- Added guards to `telnetStatus()` and `closeConnection()`.  
+- Buffered session only processed if `lastCommand=getStatus`.  
+- Prevents junk parsing from negotiation bytes or login prompts.  
+
+## [0.2.0.20] - 2025-10-02
+### Fixed
+- Improved telnet session closure handling:
+  - Buffered data parsed on stream close or manual close, even without `quit`/`whoami`.  
+  - Added debug logs for buffer size and trailing data.  
+- Prevents silent data loss.  
+
+## [0.2.0.19] - 2025-10-02
+### Added
+- New `upsTZOffset` preference (minutes, -720 to +840 in 15-minute steps).  
+- Corrects UPS clock skew checks across time zones.  
+- Default = `0` for same-TZ monitoring.  
+
+## [0.2.0.18] - 2025-10-01
+### Fixed
+- UPS clock skew detection corrected:
+  - Date parsing now includes seconds (`MM/dd/yyyy h:mm:ss a`).  
+  - Prevents false positives caused by rounding to minutes.  
+
 ## [0.2.0.17] - 2025-10-01
 ### Fixed
 - Corrected false-positive UPS clock skew warnings.  
