@@ -1,20 +1,19 @@
 # APC SmartUPS Status Driver
 
-[![Version](https://img.shields.io/badge/version-0.2.0.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.0.29-blue.svg)](./CHANGELOG.md)
 [![Status](https://img.shields.io/badge/release-STABLE-brightgreen.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
 
 ![UPSStatus](https://img.shields.io/badge/UPSStatus-Online-brightgreen.svg)
 ![LastTransferCause](https://img.shields.io/badge/Last%20Transfer-Captured-blue.svg)
-![UPSDateTime](https://img.shields.io/badge/UPS%20DateTime-Synced-lightblue.svg)
 ![NMC](https://img.shields.io/badge/NMC-Attributes%20Captured-orange.svg)
 
 A [Hubitat Elevation](https://hubitat.com/) custom driver for monitoring and controlling **APC SmartUPS** devices via the Network Management Card (NMC) Telnet interface.
 
 ✅ **STABLE NOTICE:**  
-Version `0.2.0.0` introduces a **buffered-session parsing model**, eliminating timing race conditions and ensuring deterministic UPS/NMC data capture.  
-Racey telnet disconnect/connect handling has been hardened, and key attributes (`UPSStatus`, `lastTransferCause`, device label sync) are now restored reliably.
+Version `0.2.0.29` marks the current **stable baseline**, with deterministic buffered-session parsing, hardened telnet lifecycle management, and corrected UPS/NMC date handling.  
+Clock skew detection now uses epoch-level precision, and unused attributes (e.g., `connectStatus`) have been cleaned up.
 
 ---
 
@@ -91,6 +90,12 @@ Racey telnet disconnect/connect handling has been hardened, and key attributes (
 
 For the full history, see [CHANGELOG.md](./CHANGELOG.md).  
 Recent highlights:
+
+- **0.2.0.29 (2025-10-03)** — **Stable Baseline**  
+  - Deterministic buffered-session parsing validated under extended test  
+  - UPS clock skew detection corrected with full second precision  
+  - `normalizeDateTime()` restored for date-only and pivot handling  
+  - Removed unused `connectStatus` attribute  
 
 - **0.2.0.0 (2025-10-01)** — **Stable Release**  
   - Major rework: buffered-session parsing replaces inline parsing  
