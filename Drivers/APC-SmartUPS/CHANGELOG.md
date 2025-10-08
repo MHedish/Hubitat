@@ -1,5 +1,114 @@
 # APC SmartUPS Status Driver — Changelog
 
+## [0.2.0.52] - 2025-10-08
+### Changed
+- Updated `initTelnetBuffer()` to log the **last 3 buffered lines** instead of a single truncated fragment when clearing leftover data.  
+- Uses `tail` variable internally to maintain consistency with existing log formats.  
+- Improves trace visibility for diagnosing unexpected Telnet session residue during cleanup.  
+
+## [0.2.0.51] - 2025-10-08
+### Changed
+- Improved UPS name handling: device label now updates **only when changed**, preventing redundant log entries and unnecessary `setLabel()` calls.  
+
+## [0.2.0.50] - 2025-10-07
+### Changed
+- Reverted non-functional change from `0.2.0.44` that did not affect driver behavior.  
+
+## [0.2.0.49] - 2025-10-07
+### Changed
+- Streamlined `initialize()` and scheduler logic.  
+- Removed redundant preference conversions and unreachable “parameters not filled” condition.  
+- Preserved cadence-safe `scheduleCheck()` for interval/offset updates without unnecessary unscheduling.  
+
+## [0.2.0.48] - 2025-10-07
+### Added
+- Added **session runtime tracking**: `emitLastUpdate()` now reports total *Data Capture Runtime (seconds, to three decimals)* for improved session performance visibility.  
+
+## [0.2.0.47] - 2025-10-07
+### Added
+- Introduced **proactive NMC status health check**.  
+- Driver now issues a warning if `nmcStatus` contains `-` or `!`, logging “NMC is reporting an error state: …” for immediate operator visibility.  
+
+## [0.2.0.46] - 2025-10-07
+### Changed
+- Refactored UPS control handling:  
+  - Removed legacy `disableUPSControlNow()`.  
+  - Consolidated label and state logic within `updateUPSControlState()`.  
+  - Streamlined enable/disable command flow for Rule Machine and WebCore compatibility.  
+
+## [0.2.0.45] - 2025-10-07
+### Changed
+- Renamed UPS control methods and commands for naming consistency.  
+- Replaced `controlEnabled` preference with dynamic state variable.  
+- Added `enableUPSControl()` and `disableUPSControl()` commands, plus `autoDisableUPSControl` helper for timed disable and label auto-restore.  
+
+## [0.2.0.44] - 2025-10-07
+### Changed
+- Added post-banner **event commit stabilization delay (200ms)** in `processBufferedSession()` to prevent intermittent omissions of `upsUptime`, `nmcUptime`, and `upsDateTime` on rapid parse cycles.  
+
+## [0.2.0.43] - 2025-10-07
+### Changed
+- Code cleanup for structural clarity:  
+  - Removed redundant banner parsing logic from `handleUPSAboutSection()`.  
+  - Banner data now handled exclusively in `processBufferedSession()`.  
+  - No functional change — purely readability and maintainability improvement.  
+
+## [0.2.0.42] - 2025-10-07
+### Added
+- Added parsing for **UPS Contact** and **UPS Location** attributes from the UPS banner block.  
+- Parsing logic moved into `processBufferedSession()` for accurate extraction and reliable event emission.  
+
+## [0.2.0.39] - 2025-10-06
+### Fixed
+- Corrected Telnet message concatenation issue where multi-line packets (e.g., “Location” / “User” fields) were received as one string.  
+- `parse()` now normalizes and splits composite messages line-by-line.  
+- Restored full 23-line UPS banner capture including “Location”, “User”, and “Up Time”.  
+
+## [0.2.0.38] - 2025-10-06
+### Changed
+- Normalized `UPSStatus` variable casing for consistency.  
+
+## [0.2.0.37] - 2025-10-06
+### Changed
+- Removed temporary debug/troubleshooting statements.  
+- Logging for `checkOffset` and `checkInterval` is now informational only.  
+
+## [0.2.0.36] - 2025-10-06
+### Added
+- Introduced `safeTelnetConnect()` helper with automatic retry and structured logging for connection failures.  
+- Standardized retry delay, attempt tracking, and log formatting for consistent connection handling.  
+
+## [0.2.0.35] - 2025-10-06
+### Added
+- Implemented retry logic for `telnetConnect()` to gracefully recover from transient “No Route to Host” or timeout errors.  
+- Improves connection resilience without disrupting scheduled polling.  
+
+## [0.2.0.34] - 2025-10-05
+### Changed
+- Enhanced temperature event formatting in `handleBatteryData()` to display both **°F and °C** in the description while preserving the user’s preferred unit for dashboards.  
+
+## [0.2.0.33] - 2025-10-05
+### Fixed
+- Fixed premature Telnet buffer clearing in `parse()`.  
+- Buffer now persists through full session until post-`whoami` processing, restoring complete UPS/NMC data capture.  
+
+## [0.2.0.32] - 2025-10-05
+### Added
+- Added diagnostic **tail preview** to `initTelnetBuffer()`.  
+- Logs buffer size and last 100 characters when clearing leftover data to aid in diagnosing unexpected session residue.  
+
+## [0.2.0.31] - 2025-10-05
+### Fixed
+- Corrected `extractSection()` logic for buffered session parsing.  
+- Replaced improper `.find{}` with `.findIndexOf{}` to correctly detect `apc>` section boundaries.  
+- Added case-insensitive matching for start/end markers.  
+- Restores full UPS banner and NMC attribute updates that were intermittently skipped.  
+
+## [0.2.0.30] - 2025-10-05
+### Changed
+- Moved `lastUpdate` event emission from session end to `detstatus -all` parsing.  
+- Timestamp now reflects *actual UPS data refresh* instead of Telnet lifecycle.  
+
 ## [0.2.0.29] - 2025-10-03
 ### Changed
 - Removed unused `connectStatus` attribute declaration.  
