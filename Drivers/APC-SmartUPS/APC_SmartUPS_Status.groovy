@@ -59,12 +59,13 @@
 *  0.2.0.50  -- Removed change from 0.2.0.44 as that did not affect change.
 *  0.2.0.51  -- Improved UPS name handling; device label now updates only when changed, preventing redundant log entries and unnecessary setLabel calls.
 *  0.2.0.52  -- Updated initTelnetBuffer() to log last 3 buffered lines as tail preview instead of single truncated fragment; improves trace visibility during unexpected session residue cleanup.
+*  0.2.0.53  -- Fixed regression caused by removed seqSend(); refactored delayedTelnetSend() to use telnetSend(List,Integer) for queued command dispatch; preserved original sequencing behavior with compact implementation
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.2.0.52"
+@Field static final String DRIVER_VERSION  = "0.2.0.53"
 @Field static final String DRIVER_MODIFIED = "2025.10.08"
 
 /* ===============================
@@ -404,7 +405,7 @@ private sendUPSCommand(String cmdName, List cmds) {
     runInMillis(500, "delayedTelnetSend")
 }
 
-private delayedTelnetSend(){if(state.pendingCmds){seqSend(state.pendingCmds,500);state.remove("pendingCmds")}}
+private delayedTelnetSend(){if(state.pendingCmds){logDebug "delayedTelnetSend(): sending ${state.pendingCmds.size()} queued commands";telnetSend(state.pendingCmds,500);state.remove("pendingCmds")}}
 
 private void safeTelnetConnect(String ip, int port, int retries = 3, int delayMs = 10000) {
     int attempt = 1
