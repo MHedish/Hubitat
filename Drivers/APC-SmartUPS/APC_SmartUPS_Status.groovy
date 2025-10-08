@@ -25,7 +25,7 @@
 *  0.2.0.14  -- Added lastTransferCause attribute parsing under detstatus -all; captures and emits descriptive cause of last UPS transfer
 *  0.2.0.15  -- Fixed telnet lifecycle handling; initialize() now explicitly closes telnet before calling refresh(), preventing racey disconnect/connect churn during driver reloads or preference updates
 *  0.2.0.16  -- Changed initialize() to delay refresh() by 500 ms after closing telnet; prevents race where immediate reconnect could stall at getStatus during updated()/configure() runs
-*  0.2.0.17  -- Fixed false-positive UPS clock skew warnings; reference time is now captured at authentication (seqSend trigger) instead of at end-of-session parse, eliminating artificial 1–3 minute drift; skew gates (>1m warn, >5m error) preserved
+*  0.2.0.17  -- Fixed false-positive UPS clock skew warnings; reference time is now captured at authentication instead of at end-of-session parse, eliminating artificial 1–3 minute drift; skew gates (>1m warn, >5m error) preserved
 *  0.2.0.18  -- Fixed UPS clock skew check; parse now includes seconds (MM/dd/yyyy h:mm:ss a), preventing false positives where times were rounded to the nearest minute
 *  0.2.0.19  -- Added upsTZOffset preference (minutes, -720 to +840 in 15-min steps) for correcting UPS clock skew checks across time zones; default=0 for same-TZ monitoring
 *  0.2.0.20  -- Improved telnet session closure handling; buffered data is now parsed on stream close or manual close even without quit/whoami; added debug logs for buffer size and last 100 chars of tail; prevents loss*
@@ -38,13 +38,34 @@
 *  0.2.0.27  -- Fixed UPS clock skew false positives: restored second-level precision in upsBannerEpoch and normalizeDateTime(); UPS date/time now retains full seconds resolution instead of rounding to whole minutes.
 *  0.2.0.28  -- Cleanup: removed legacy state.lastRunOffset tracking from cron scheduling; driver now relies on Hubitat’s idempotent schedule() handling, ensuring jobs persist without resetting Prev Run Time.
 *  0.2.0.29  -- Removed legacy connectStatus attribute; this value is now tracked internally in state.connectStatus only, preventing stale/unused attribute entries in the device
+*  0.2.0.30  -- Moved lastUpdate event emission from session end to detstatus -all parsing; ensures timestamp reflects actual UPS data refresh instead of telnet lifecycle; reduces redundant event noise and aligns update timing with primary data capture
+*  0.2.0.31  -- Fixed extractSection() logic for buffered session parsing; replaced improper .find{} with .findIndexOf{} to correctly detect apc> section boundaries; added case-insensitive matching for start/end markers; restores full UPS banner and NMC attribute updates (deviceName, upsUptime, nmcUptime, nmcStatus) that were intermittently skipped since 0.2.0.30
+*  0.2.0.32  -- Added diagnostic tail preview to initTelnetBuffer(); now logs buffer size and last 100 chars when clearing leftover data, improving visibility into unexpected session residue.
+*  0.2.0.33  -- Fixed premature telnet buffer clearing in parse(); buffer now preserved through full session until post-whoami processing, restoring complete UPS/NMC data capture across refresh cycles.
+*  0.2.0.34  -- Cosmetic: enhanced temperature event formatting in handleBatteryData() to display both °F and °C in the same description while preserving preferred unit for dashboards.
+*  0.2.0.35  -- Added retry logic for telnetConnect() to gracefully recover from transient NoRouteToHost or unreachable host errors, improving connection resilience without disrupting scheduled polling.
+*  0.2.0.36  -- Added safeTelnetConnect() helper with automatic retry and structured logging for connection failures; standardized retry delay, attempt tracking, and log formatting for consistency across driver operations.
+*  0.2.0.37  -- Removed additional log.debug troubleshooting statements; removed checkOffset/Interval event - log only
+*  0.2.0.38  -- Normalized UPSStatus variable to correct camelcase
+*  0.2.0.39  -- Fixed Telnet message concatenation issue where multi-line packets (e.g., "Location" / "User" fields) within the UPS banner were being received as one string; parse() now normalizes and splits composite messages line-by-line for complete banner capture; verified restoration of full 23-line UPS banner including "Location", "User", and "Up Time" fields.
+*  0.2.0.42  -- Added upsContact and upsLocation attribute parsing from UPS banner block; relocated parsing logic into processBufferedSession() for accurate extraction; verified successful event emission and debug tracing for both fields
+*  0.2.0.43  -- Code cleanup and structural clarity update; removed redundant banner parsing logic from handleUPSAboutSection() (deviceName, upsUptime, upsDateTime, nmcStatus) since banner data is handled exclusively in processBufferedSession(); improved readability and maintainability without functional changes
+*  0.2.0.44  -- Introduced post-banner event commit stabilization delay (200ms) in processBufferedSession() to prevent intermittent event omission for upsUptime, nmcUptime, and upsDateTime on rapid parse cycles.
+*  0.2.0.45  -- Renamed UPS control methods and commands for naming consistency; replaced controlEnabled preference with dynamic state and new enableUPSControl/disableUPSControlNow commands; added autoDisableUPSControl helper for timed disable and label auto-restore
+*  0.2.0.46  -- Refactored UPS control handling; removed legacy disableUPSControlNow(), consolidated label and state logic within updateUPSControlState(), and streamlined enable/disable command flow for RM/WC compatibility.
+*  0.2.0.47  -- Added proactive NMC status health check; driver now issues logWarn if nmcStatus contains '-' or '!', logging "NMC is reporting an error state: ..." with translated description for immediate visibility of warning/failure conditions
+*  0.2.0.48  -- Added session runtime tracking; emitLastUpdate() now reports total Data Capture Runtime in seconds (to three decimals) for full session performance visibility.
+*  0.2.0.49  -- Streamlined initialize() and scheduler logic; removed redundant preference conversions and unreachable “parameters not filled” condition; preserved cadence-safe scheduleCheck() for interval/offset updates without unnecessary unscheduling.
+*  0.2.0.50  -- Removed change from 0.2.0.44 as that did not affect change.
+*  0.2.0.51  -- Improved UPS name handling; device label now updates only when changed, preventing redundant log entries and unnecessary setLabel calls.
+*  0.2.0.52  -- Updated initTelnetBuffer() to log last 3 buffered lines as tail preview instead of single truncated fragment; improves trace visibility during unexpected session residue cleanup.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.2.0.29"
-@Field static final String DRIVER_MODIFIED = "2025.10.03"
+@Field static final String DRIVER_VERSION  = "0.2.0.52"
+@Field static final String DRIVER_MODIFIED = "2025.10.08"
 
 /* ===============================
    Metadata
@@ -56,14 +77,13 @@ metadata {
         author: "Marc Hedish",
         importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/APC-SmartUPS/APC_SmartUPS_Status.groovy"
     ){
-       capability "Battery"
-       capability "Temperature Measurement"
-       capability "Refresh"
        capability "Actuator"
-       capability "Telnet"
+       capability "Battery"
        capability "Configuration"
+       capability "Refresh"
+       capability "Telnet"
+       capability "Temperature Measurement"
 
-       attribute "UPSStatus","string"
        attribute "batteryVoltage","number"
        attribute "checkInterval","number"
        attribute "deviceName","string"
@@ -111,12 +131,16 @@ metadata {
        attribute "telnet","string"
        attribute "temperatureC","number"
        attribute "temperatureF","number"
+       attribute "upsContact","string"
        attribute "upsDateTime","string"
+       attribute "upsLocation","string"
+       attribute "upsStatus","string"
        attribute "upsUptime","string"
 
        command "refresh"
        command "disableDebugLoggingNow"
-       command "disableControlNow"
+       command "enableUPSControl"
+       command "disableUPSControl"
        command "TestAlarm"
        command "StartSelfTest"
        command "UPSOn"
@@ -142,7 +166,6 @@ preferences {
     input("Password", "password", title: "Password for Login", required: true, defaultValue: "")
     input("useUpsNameForLabel", "bool", title: "Use UPS name for Device Label", defaultValue: false)
     input("tempUnits", "enum", title: "Temperature Attribute Unit", options: ["F","C"], defaultValue: "F")
-    input("controlEnabled","bool",title:"Enable UPS Control Commands", description:"Allow Alarm, Outlet Group Control, Reboot, Runtime Calibration, Self Test, Sleep, and UPS On/Off.",defaultValue:false)
     input("runTime", "number", title: "Check interval for UPS status (minutes, 1–59)", description: "Default 15",defaultValue: 15, range: "1..59", required: true)
     input("runOffset", "number", title: "Check Interval Offset (minutes past the hour, 0–59)", defaultValue: 0, range: "0..59", required: true)
     input("runTimeOnBattery", "number", title: "Check interval when on battery (minutes, 1–59)", defaultValue: 2, range: "1..59", required: true)
@@ -155,13 +178,11 @@ preferences {
    Utilities
    =============================== */
 private driverInfoString() {return "${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"}
-private emitLastUpdate() {def now=new Date().format('MM/dd/yyyy h:mm a',location.timeZone);emitChangedEvent("lastUpdate",now)}
-
 private logDebug(msg) {if (logEnable) log.debug "[${DRIVER_NAME}] $msg"}
 private logInfo(msg)  {if (logEvents) log.info  "[${DRIVER_NAME}] $msg"}
-private logWarn(msg)  {log.warn   "[${DRIVER_NAME}] $msg"}
-private logError(msg) {log.error  "[${DRIVER_NAME}] $msg"}
-
+private logWarn(msg)  {log.warn "[${DRIVER_NAME}] $msg"}
+private logError(msg) {log.error"[${DRIVER_NAME}] $msg"}
+private emitLastUpdate(){def ts=new Date().format('MM/dd/yyyy h:mm a',location.timeZone);def runTime="";if(state.sessionStart){def elapsed=(now()-state.sessionStart)/1000.0;runTime=String.format("%.3f",elapsed);state.remove("sessionStart")};def desc=runTime?"Data Capture Runtime = ${runTime}s":null;emitChangedEvent("lastUpdate",ts,desc)}
 private emitEvent(String name, def value, String desc = null, String unit = null) {
     sendEvent(name: name, value: value, unit: unit, descriptionText: desc)
     if (desc) logInfo "${name} = ${value} (${desc})" else logInfo "${name} = ${value}"
@@ -197,11 +218,24 @@ private normalizeDateTime(String raw){
     return raw
 }
 
-private initTelnetBuffer(){if(!state.telnetBuffer)state.telnetBuffer=[]}
+// Always start each telnet session with a clean buffer
+private initTelnetBuffer() {
+    if (state.telnetBuffer?.size() > 0) {
+        def tail = ""
+        try {
+            def lastLines = state.telnetBuffer[-3..-1]*.line.findAll { it } // last 3 lines
+            tail = lastLines.join(" | ")
+        } catch (e) {
+            tail = "unavailable (${e.message})"
+        }
+        logDebug "initTelnetBuffer(): clearing leftover buffer (${state.telnetBuffer.size()} lines, preview='${tail}')"
+    }
+    state.telnetBuffer = []
+}
 
-/* ===============================
-   NMC Status Translation
-   =============================== */
+/* ==================================
+   NMC Status & UPS ErrorTranslations
+   ================================== */
 private translateNmcStatus(String statVal) {
     def translations = []
     statVal.split(" ").each { code ->
@@ -224,9 +258,6 @@ private translateNmcStatus(String statVal) {
     return translations.join(", ")
 }
 
-/* ===============================
-   UPS Error Translation
-   =============================== */
 private translateUPSError(String code){
     switch(code){
         case "E000:": return "Success"
@@ -247,8 +278,73 @@ private translateUPSError(String code){
    =============================== */
 def autoDisableDebugLogging(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "Debug logging disabled (auto)"}catch(e){logDebug "autoDisableDebugLogging(): ${e.message}"}}
 def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "Debug logging disabled (manual)"}catch(e){logDebug "disableDebugLoggingNow(): ${e.message}"}}
-def autoDisableControl(){try{unschedule(autoDisableControl);device.updateSetting("controlEnabled",[value:"false",type:"bool"]);if(state?.controlDeviceName&&state.controlDeviceName!=""){device.setLabel("${state.controlDeviceName}");state.remove("controlDeviceName")};logInfo "UPS control commands disabled (auto)"}catch(e){logDebug "autoDisableControl(): ${e.message}"}}
-def disableControlNow(){try{unschedule(autoDisableControl);device.updateSetting("controlEnabled",[value:"false",type:"bool"]);if(state?.controlDeviceName&&state.controlDeviceName!=""){device.setLabel("${state.controlDeviceName}");state.remove("controlDeviceName")};logInfo "UPS control commands disabled (manual)"}catch(e){logDebug "disableControlNow(): ${e.message}"}}
+
+def enableUPSControl() {
+    try {
+        logInfo "UPS Control manually enabled via command"
+        state.upsControlEnabled = true
+
+        // Store original label (if not already stored)
+        if (!state.controlDeviceName) state.controlDeviceName = device.getLabel()
+
+        // Append "(Control Enabled)" if not present
+        if (!device.getLabel().contains("Control Enabled")) {
+            device.setLabel("${device.getLabel()} (Control Enabled)")
+        }
+
+        updateUPSControlState(true)
+        unschedule(autoDisableUPSControl)
+        runIn(1800, "autoDisableUPSControl")  // 30-minute auto disable
+    } catch (e) {
+        logDebug "enableUPSControl(): ${e.message}"
+    }
+}
+
+def disableUPSControl() {
+    try {
+        logInfo "UPS Control manually disabled via command"
+        state.upsControlEnabled = false
+        unschedule(autoDisableUPSControl)
+
+        // Restore original label if stored
+        if (state?.controlDeviceName && state.controlDeviceName != "") {
+            device.setLabel(state.controlDeviceName)
+            state.remove("controlDeviceName")
+        }
+
+        updateUPSControlState(false)
+    } catch (e) {
+        logDebug "disableUPSControl(): ${e.message}"
+    }
+}
+
+def autoDisableUPSControl() {
+    try {
+        logInfo "UPS Control auto-disabled after timeout"
+        state.upsControlEnabled = false
+
+        // Restore original label if stored
+        if (state?.controlDeviceName && state.controlDeviceName != "") {
+            device.setLabel(state.controlDeviceName)
+            state.remove("controlDeviceName")
+        }
+        updateUPSControlState(false)
+    } catch (e) {
+        logDebug "autoDisableUPSControl(): ${e.message}"
+    }
+}
+
+private updateUPSControlState(Boolean enable) {
+    if (enable) {
+        if (!state.controlDeviceName) state.controlDeviceName = device.getLabel()
+        if (!device.getLabel().contains("Control Enabled"))
+            device.setLabel("${device.getLabel()} (Control Enabled)")
+    } else if (state.controlDeviceName) {
+        device.setLabel(state.controlDeviceName)
+        state.remove("controlDeviceName")
+    }
+    emitChangedEvent("upsControlEnabled", enable, "UPS Control ${enable ? 'Enabled' : 'Disabled'}")
+}
 
 /* ===============================
    Lifecycle
@@ -256,35 +352,28 @@ def disableControlNow(){try{unschedule(autoDisableControl);device.updateSetting(
 def installed(){logInfo "Installed";initialize()}
 def updated() {logInfo "Preferences updated";configure()}
 def configure() {logInfo "${driverInfoString()} configured";initialize()}
-
 def initialize(){
     logInfo "${driverInfoString()} initializing..."
     emitEvent("driverInfo", driverInfoString())
     ["telnet":"Ok","lastCommandResult":"NA"].each{k,v->emitEvent(k,v)}
-    if(device.currentValue("UPSStatus")==null)emitEvent("UPSStatus","Unknown")
+    if(device.currentValue("upsStatus")==null)emitEvent("upsStatus","Unknown")
     if(!tempUnits)tempUnits="F"
+    state.upsControlEnabled = state.upsControlEnabled ?: false
     if(logEnable)logDebug "IP=$UPSIP, Port=$UPSPort, Username=$Username, Password=$Password" else logInfo "IP=$UPSIP, Port=$UPSPort"
-    if(UPSIP&&UPSPort&&Username&&Password){
-        emitLastUpdate()
-        unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)
-        def rT=runTime.toInteger(),rTB=runTimeOnBattery.toInteger(),rO=runOffset.toInteger()
-        device.updateSetting("runTime",[value:rT,type:"number"])
-        device.updateSetting("runTimeOnBattery",[value:rTB,type:"number"])
-        device.updateSetting("runOffset",[value:rO,type:"number"])
-        if(controlEnabled){
-            if(state.controlDeviceName&&state.controlDeviceName!=""&&state.controlDeviceName!=device.getLabel())device.setLabel(state.controlDeviceName)
-            state.controlDeviceName=device.getLabel()
-            if(!device.getLabel().contains("Control Enabled"))device.setLabel("${device.getLabel()} (Control Enabled)")
-            unschedule(autoDisableControl);runIn(1800,autoDisableControl)
-        } else if(state.controlDeviceName&&state.controlDeviceName!=""){
-            device.setLabel(state.controlDeviceName);state.remove("controlDeviceName")
+    if(UPSIP && UPSPort && Username && Password){
+        unschedule(autoDisableDebugLogging)
+        if(logEnable)runIn(1800,autoDisableDebugLogging)
+        updateUPSControlState(state.upsControlEnabled)
+        if(state.upsControlEnabled){
+            unschedule(autoDisableUPSControl)
+            runIn(1800,autoDisableUPSControl)
         }
-        scheduleCheck(rT,rO)
+        scheduleCheck(runTime as Integer, runOffset as Integer)
         updateCommandState("Scheduled")
         updateConnectState("Initialized")
         closeConnection()
         runInMillis(500,"refresh")
-    } else logDebug "Parameters not filled in yet."
+    }
 }
 
 private scheduleCheck(Integer interval,Integer offset){
@@ -293,32 +382,54 @@ private scheduleCheck(Integer interval,Integer offset){
     if(currentInt!=interval||currentOff!=offset){
         unschedule(refresh)
         def scheduleString="0 ${offset}/${interval} * ? * * *"
-        emitChangedEvent("checkInterval",interval)
-        emitChangedEvent("checkOffset",offset)
-        logInfo "Monitoring scheduled every ${interval} minutes at ${offset} past the hour."
         schedule(scheduleString,refresh)
+        logInfo "Monitoring scheduled every ${interval} minutes at ${offset} past the hour."
     } else logDebug "scheduleCheck(): no change to interval/offset (still ${interval}/${offset})"
 }
 
 /* ===============================
    Command Helpers
    =============================== */
-private sendUPSCommand(String cmdName,List cmds){
-    if(!controlEnabled){logWarn "$cmdName called but UPS control is disabled";return}
-    updateCommandState(cmdName);updateConnectState("Trying");emitEvent("lastCommandResult","NA")
+private sendUPSCommand(String cmdName, List cmds) {
+    if (!state.upsControlEnabled) {
+        logWarn "$cmdName called but UPS control is disabled"
+        return
+    }
+    updateCommandState(cmdName)
+    updateConnectState("Trying")
+    emitEvent("lastCommandResult", "NA")
     logInfo "$cmdName called"
-    telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)
-    state.pendingCmds=["$Username","$Password"]+cmds;runInMillis(500,"delayedSeqSend")
+    safeTelnetConnect(UPSIP, UPSPort.toInteger())
+    state.pendingCmds = ["$Username", "$Password"] + cmds
+    runInMillis(500, "delayedTelnetSend")
 }
 
-private delayedSeqSend(){if(state.pendingCmds){seqSend(state.pendingCmds,500);state.remove("pendingCmds")}}
+private delayedTelnetSend(){if(state.pendingCmds){seqSend(state.pendingCmds,500);state.remove("pendingCmds")}}
 
-private executeUPSCommand(String cmdType){
-    emitEvent("lastCommandResult","NA");logInfo "$cmdType called"
-    if(controlEnabled){updateCommandState("${cmdType}Connect");updateConnectState("Trying")
-        logDebug "Connecting to ${UPSIP}:${UPSPort}"
-        telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)}
-    else logWarn "$cmdType called but UPS control is disabled"
+private void safeTelnetConnect(String ip, int port, int retries = 3, int delayMs = 10000) {
+    int attempt = 1
+    while (attempt <= retries) {
+        try {
+            logDebug "safeTelnetConnect(): attempt ${attempt} of ${retries} connecting to ${ip}:${port}"
+            telnetClose()
+            telnetConnect(ip, port, null, null)
+            logDebug "safeTelnetConnect(): connection established on attempt ${attempt}"
+            return
+        } catch (java.net.NoRouteToHostException e) {
+            logWarn "safeTelnetConnect(): No route to host (attempt ${attempt}/${retries}), retrying in ${delayMs/1000}s..."
+            pauseExecution(delayMs)
+            attempt++
+        } catch (java.net.ConnectException e) {
+            logWarn "safeTelnetConnect(): Connection refused or timed out (attempt ${attempt}/${retries}), retrying in ${delayMs/1000}s..."
+            pauseExecution(delayMs)
+            attempt++
+        } catch (Exception e) {
+            logError "safeTelnetConnect(): Unexpected error on attempt ${attempt}: ${e.message}"
+            pauseExecution(delayMs)
+            attempt++
+        }
+    }
+    logError "safeTelnetConnect(): All ${retries} attempts to connect to ${ip}:${port} failed."
 }
 
 /* ===============================
@@ -346,19 +457,10 @@ def SetOutletGroup(p1,p2,p3){
 
 def refresh(){
     logInfo "${driverInfoString()} refreshing..."
+    state.sessionStart = now()
     updateCommandState("Connecting");updateConnectState("Trying");state.remove("authStarted")
     logDebug "Connecting to ${UPSIP}:${UPSPort}"
-    telnetClose();telnetConnect(UPSIP,UPSPort.toInteger(),null,null)
-}
-
-/* ===============================
-   Telnet & Data Handling
-   =============================== */
-def sendData(String msg, Integer millsec) {
-    logDebug "$msg"
-    def hubCmd = sendHubCommand(new hubitat.device.HubAction("${msg}", hubitat.device.Protocol.TELNET))
-    pauseExecution(millsec)
-    return hubCmd
+    safeTelnetConnect(UPSIP, UPSPort.toInteger())
 }
 
 /* ===============================
@@ -371,7 +473,7 @@ private handleUPSStatus(def pair){
     if (statusString ==~ /(?i)on[-\s]?line/) statusString="Online"
     else if (statusString ==~ /(?i)on\s*battery/) statusString="OnBattery"
     else if (statusString.equalsIgnoreCase("Discharged")) statusString="Discharged"
-    emitChangedEvent("UPSStatus", statusString, "UPS Status = ${statusString}")
+    emitChangedEvent("upsStatus", statusString, "UPS Status = ${statusString}")
     def runTimeInt=runTime.toInteger(), runTimeOnBatteryInt=runTimeOnBattery.toInteger(), runOffsetInt=runOffset.toInteger()
     switch(statusString){
         case "OnBattery":
@@ -402,6 +504,7 @@ private checkUPSClock(Long upsEpoch){
 }
 
 private handleBatteryData(def pair){
+	pair = pair.collect {it?.replaceAll(",", "")}
     def(p0,p1,p2,p3,p4,p5)=(pair+[null,null,null,null,null,null])
     switch("$p0 $p1"){
         case "Battery Voltage:":emitChangedEvent("batteryVoltage",p2,"Battery Voltage = ${p2} ${p3}",p3);break
@@ -417,10 +520,10 @@ private handleBatteryData(def pair){
             logInfo "UPS Runtime Remaining = ${runtimeFormatted}"
             break
         default: if ((p0 in ["Internal","Battery"])&&p1=="Temperature:"){
-            emitChangedEvent("temperatureC",p2,"UPS Temperature = ${p2}°${p3} / ${p4}°${p5}","°C")
+            emitChangedEvent("temperatureC",p2,"UPS Temperature = ${p2}°${p3}","°C")
             emitChangedEvent("temperatureF",p4,"UPS Temperature = ${p4}°${p5}","°F")
-            if(tempUnits=="F") emitChangedEvent("temperature",p4,"UPS Temperature = ${p4}°${p5}","°F")
-            else emitChangedEvent("temperature",p2,"UPS Temperature = ${p2}°${p3}","°C")
+            if(tempUnits=="F") emitChangedEvent("temperature",p4,"UPS Temperature = ${p4}°${p5} / ${p2}°${p3}","°F")
+            else emitChangedEvent("temperature",p2,"UPS Temperature = ${p2}°${p3} / ${p4}°${p5}","°C")
         };break
     }
 }
@@ -522,7 +625,7 @@ private handleNMCData(List<String> lines){
                 if(key=="Hardware Revision")emitChangedEvent("nmcHardwareRevision",val,"NMC Hardware Revision = ${val}")
                 if(key=="Manufacture Date"){def dt=normalizeDateTime(val);logDebug "NMC Manufacture Date parsed: ${dt}";emitChangedEvent("nmcManufactureDate",dt,"NMC Manufacture Date = ${dt}") }
                 if(key=="MAC Address"){def mac=val.replaceAll(/\s+/,":").toUpperCase();emitChangedEvent("nmcMACAddress",mac,"NMC MAC Address = ${mac}") }
-                if(key=="Management Uptime"){logDebug "NMC Uptime parsed: ${val}";emitChangedEvent("nmcUptime",val,"NMC Uptime = ${val}") }
+                if(key=="Management Uptime"){logDebug "NMC Uptime parsed: ${val}";emitChangedEvent("nmcUptime",val,"NMC Uptime = ${val}")}
                 break
             case "Application":
                 if(key=="Name")emitChangedEvent("nmcApplicationName",val,"NMC Application Name = ${val}")
@@ -550,49 +653,6 @@ private handleUPSAboutSection(List<String> lines){
     lines.each{ line->
         def pair=line.split(/\s+/)
         handleIdentificationAndSelfTest(pair)
-
-        // Banner: Device Name
-        def nameMatcher=line =~ /^Name\s*:\s*([^\s]+)/
-        if(nameMatcher.find()){
-            def nameVal=nameMatcher.group(1).trim()
-            emitChangedEvent("deviceName",nameVal)
-            if(useUpsNameForLabel){
-                device.setLabel(nameVal)
-                logInfo "Device label updated to UPS name: $nameVal"
-            }
-        }
-
-        // Banner: UPS Uptime
-        def uptimeMatcher=line =~ /^Up\s*Time\s*:\s*(.+?)\s+Stat/
-        if(uptimeMatcher.find()){
-            def uptimeVal=uptimeMatcher.group(1).trim()
-            logDebug "UPS Uptime parsed from banner: ${uptimeVal}"
-            emitChangedEvent("upsUptime",uptimeVal,"UPS Uptime = ${uptimeVal}")
-        }
-
-        // Banner: Date/Time pair
-        def bannerDateMatcher=line =~ /^Name\s*:.*Date\s*:\s*(\d{2}\/\d{2}\/\d{4})/
-        if(bannerDateMatcher.find()){state.upsBannerDate=bannerDateMatcher.group(1).trim();logDebug "Captured UPS banner date = ${state.upsBannerDate}"}
-        else if(line =~ /^\s*Date\s*:/){logDebug "Ignoring non-banner Date line: ${line}"}
-
-        def bannerTimeMatcher=line =~ /^Contact\s*:.*Time\s*:\s*(\d{2}:\d{2}:\d{2})/
-        if(bannerTimeMatcher.find() && state.upsBannerDate){
-            def upsRaw="${state.upsBannerDate} ${bannerTimeMatcher.group(1).trim()}"
-            def upsDt=normalizeDateTime(upsRaw)
-            emitChangedEvent("upsDateTime",upsDt,"UPS Date/Time = ${upsDt}")
-            state.upsBannerEpoch = Date.parse("MM/dd/yyyy h:mm:ss a",upsDt).time
-            checkUPSClock(state.upsBannerEpoch)
-            state.remove("upsBannerDate");state.remove("upsBannerEpoch")
-        }
-
-        // Banner: Stat (NMC Status)
-        def statMatcher=line =~ /Stat\s*:\s*(.+)$/
-        if(statMatcher.find()){
-            def statVal=statMatcher.group(1).trim()
-            emitChangedEvent("nmcStatus",statVal)
-            def desc=translateNmcStatus(statVal)
-            emitChangedEvent("nmcStatusDesc",desc)
-        }
     }
 }
 
@@ -606,9 +666,9 @@ private handleDetStatus(List<String> lines){
         handleIdentificationAndSelfTest(pair)
         handleUPSError(pair)
     }
+    emitLastUpdate()
 }
 
-// helper: extract lines between a start marker and the next apc> prompt
 private List<String> extractSection(List<Map> lines,String startMarker,String endMarker){
     def idxStart=lines.findIndexOf{it.line.startsWith(startMarker)}
     if(idxStart==-1) return []
@@ -629,15 +689,17 @@ private processBufferedSession(){
     if(bannerBlock){
         logDebug "Parsing UPS banner block (${bannerBlock.size()} lines)"
         bannerBlock.each{l->
-            def mName=l.line=~/^Name\s*:\s*([^\s]+)/;if(mName.find()){def nameVal=mName.group(1).trim();emitChangedEvent("deviceName",nameVal);if(useUpsNameForLabel){device.setLabel(nameVal);logInfo "Device label updated to UPS name: $nameVal"}}
+            def mName=l.line=~/^Name\s*:\s*([^\s]+)/;if(mName.find()){def nameVal=mName.group(1).trim();def curLbl=device.getLabel();if(useUpsNameForLabel&&curLbl!=nameVal){device.setLabel(nameVal);logInfo "Device label updated to from $curLbl to UPS name: $nameVal"};emitChangedEvent("deviceName",nameVal)}
             def mUp=l.line=~/Up\s*Time\s*:\s*(.+?)\s+Stat/;if(mUp.find())emitChangedEvent("upsUptime",mUp.group(1).trim(),"UPS Uptime = ${mUp.group(1).trim()}")
             def mDate=l.line=~/^Name\s*:.*Date\s*:\s*(\d{2}\/\d{2}\/\d{4})/;if(mDate.find())state.upsBannerDate=mDate.group(1).trim()
             def mTime=l.line=~/^Contact\s*:.*Time\s*:\s*(\d{2}:\d{2}:\d{2})/;if(mTime.find()&&state.upsBannerDate){def upsRaw="${state.upsBannerDate} ${mTime.group(1).trim()}";def upsDt=normalizeDateTime(upsRaw);emitChangedEvent("upsDateTime",upsDt,"UPS Date/Time = ${upsDt}");state.upsBannerEpoch=Date.parse("MM/dd/yyyy HH:mm:ss",upsRaw).time;checkUPSClock(state.upsBannerEpoch);state.remove("upsBannerDate");state.remove("upsBannerEpoch")}
-            def mStat=l.line=~/Stat\s*:\s*(.+)$/;if(mStat.find()){def statVal=mStat.group(1).trim();emitChangedEvent("nmcStatus",statVal);emitChangedEvent("nmcStatusDesc",translateNmcStatus(statVal))}
+            def mStat=l.line=~/Stat\s*:\s*(.+)$/;if(mStat.find()){def statVal=mStat.group(1).trim();def desc=translateNmcStatus(statVal);device.updateDataValue("nmcStatusDesc",desc);emitChangedEvent("nmcStatus",statVal,"${desc}");if(statVal.contains('-')||statVal.contains('!'))logWarn "NMC is reporting an error state: ${desc}"}
+			def mContact=l.line=~/Contact\s*:\s*(.*?)\s+Time\s*:/;if(mContact.find()){def contactVal=mContact.group(1).trim();emitChangedEvent("upsContact",contactVal,"UPS Contact = ${contactVal}")}
+			def mLocation=l.line=~/Location\s*:\s*(.*?)\s+User\s*:/;if(mLocation.find()){def locationVal=mLocation.group(1).trim();emitChangedEvent("upsLocation",locationVal,"UPS Location = ${locationVal}")}
         }
     }
 
-    // Segment command sections by echo
+    // Segment command sections
     def secUps      = extractSection(lines,"apc>ups ?","apc>")
     def secAbout    = extractSection(lines,"apc>about","apc>")
     def secUpsAbout = extractSection(lines,"apc>upsabout","apc>")
@@ -646,50 +708,67 @@ private processBufferedSession(){
     if(secUpsAbout) handleUPSAboutSection(secUpsAbout)
     if(secAbout)    handleNMCData(secAbout)
     if(secDetStatus)handleDetStatus(secDetStatus)
-    emitLastUpdate()
     state.remove("telnetBuffer")
 }
 
 /* ===============================
    Parse
    =============================== */
-def parse(String msg){
-    logDebug "Buffering line: ${msg}"
-    initTelnetBuffer()
-    state.telnetBuffer << [cmd:device.currentValue("lastCommand")?:"unknown",line:msg]
+def parse(String msg) {
+    msg = msg.replaceAll('\r\n', '\n').replaceAll('\r', '\n')  // Normalize and split composite Telnet messages
+    def lines = msg.split('\n').findAll { it.trim() }
 
-    if(!state.authStarted){
-        logDebug "First telnet data seen, sending auth sequence"
-        updateConnectState("Connected")
-        updateCommandState("getStatus")
-        state.upsBannerRefTime = now()
-        seqSend([Username,Password,"ups ?","upsabout","about","detstatus -all","whoami"],500)
-        state.authStarted=true
-    }
-    else if(device.currentValue("lastCommand")=="quit"&&msg.toLowerCase().contains("goodbye")){
-        logDebug "Quit acknowledged by UPS"
-        updateCommandState("Rescheduled")
-        updateConnectState("Initialized")
-        emitChangedEvent("nextCheckMinutes",device.currentValue("checkInterval"))
-        emitLastUpdate();closeConnection();emitEvent("telnet","Ok")
-        processBufferedSession()
-    }
-    else{
-        if(msg.startsWith("apc>whoami")) state.whoamiEchoSeen=true
-        if(msg.startsWith("E000: Success")) state.whoamiAckSeen=true
-        if(msg.trim().equalsIgnoreCase(Username.trim())) state.whoamiUserSeen=true
-        if(state.whoamiEchoSeen && state.whoamiAckSeen && state.whoamiUserSeen){
-            logDebug "whoami sequence complete, processing buffer..."
-            state.remove("whoamiEchoSeen");state.remove("whoamiAckSeen");state.remove("whoamiUserSeen");state.remove("authStarted")
-            processBufferedSession()
+    lines.each { line ->
+        logDebug "Buffering line: ${line}"
+        if (!state.authStarted) initTelnetBuffer()  // only clear at the start of a new session
+        state.telnetBuffer << [cmd:device.currentValue("lastCommand") ?: "unknown", line: line]
+        // --- Initial authentication sequence ---
+        if (!state.authStarted) {
+            logDebug "First telnet data seen, sending auth sequence"
+            updateConnectState("Connected")
+            updateCommandState("getStatus")
+            state.upsBannerRefTime = now()
+            telnetSend([Username, Password, "ups ?", "upsabout", "about", "detstatus -all", "whoami"], 500)
+            state.authStarted = true
+        }
+        // --- Quit acknowledgment handling ---
+        else if (device.currentValue("lastCommand") == "quit" && line.toLowerCase().contains("goodbye")) {
+            logDebug "Quit acknowledged by UPS"
+            updateCommandState("Rescheduled")
+            updateConnectState("Initialized")
+            emitChangedEvent("nextCheckMinutes", device.currentValue("checkInterval"))
             closeConnection()
+            emitEvent("telnet", "Ok")
+            processBufferedSession()
+        }
+        // --- Normal line processing after authentication ---
+        else {
+            if (line.startsWith("apc>whoami")) state.whoamiEchoSeen = true
+            if (line.startsWith("E000: Success")) state.whoamiAckSeen = true
+            if (line.trim().equalsIgnoreCase(Username.trim())) state.whoamiUserSeen = true
+            if (state.whoamiEchoSeen && state.whoamiAckSeen && state.whoamiUserSeen) {
+                logDebug "whoami sequence complete, processing buffer..."
+                state.remove("whoamiEchoSeen")
+                state.remove("whoamiAckSeen")
+                state.remove("whoamiUserSeen")
+                state.remove("authStarted")
+                processBufferedSession()
+                closeConnection()
+            }
         }
     }
 }
 
 /* ===============================
-   Telnet Status & Close
+   Telnet Data, Status & Close
    =============================== */
+def sendData(String msg, Integer millsec) {
+    logDebug "$msg"
+    def hubCmd = sendHubCommand(new hubitat.device.HubAction("${msg}", hubitat.device.Protocol.TELNET))
+    pauseExecution(millsec)
+    return hubCmd
+}
+
 def telnetStatus(String status){
     if(status.contains("receive error: Stream is closed")){
         def buf=state.telnetBuffer?:[]
@@ -702,7 +781,6 @@ def telnetStatus(String status){
             processBufferedSession()
         }
         updateConnectState("Disconnected")
-        emitLastUpdate()
     } else if(status.contains("send error")){
         logWarn "Telnet send error: $status"
     } else {
@@ -724,8 +802,8 @@ def closeConnection() {
     }catch(e){logDebug "closeConnection(): ${e.message}"}
 }
 
-boolean seqSend(List msgs,Integer millisec) {
-    logDebug "seqSend(): sending ${msgs.size()} messages with ${millisec} ms delay"
+boolean telnetSend(List msgs,Integer millisec) {
+    logDebug "telnetSend(): sending ${msgs.size()} messages with ${millisec} ms delay"
     msgs.each{msg->sendData("${msg}",millisec)}
     return true
 }
