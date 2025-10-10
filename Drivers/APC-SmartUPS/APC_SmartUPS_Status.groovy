@@ -63,13 +63,15 @@
 *  0.2.0.54  -- Renamed lastCommand marker from "getStatus" -> "reconnoiter" to better reflect buffered UPS data acquisition phase; semantic clarity improvement with stylistic flavor
 *  0.2.0.55  -- Improved buffered session diagnostics; debug log now reports line counts per section (UPSAbout, About(NMC), DetStatus) instead of command echo counts for accurate visibility into parsed data volume
 *  0.2.0.56  -- Code cleanup for final test before RC.
+*  0.2.0.57  -- Added alarmCountCrit, alarmCountWarn, alarmCountInfo attributes; driver now issues alarmcount -p queries during reconnoiter and parses counts for critical, warning, and informational alarms.
+*  0.2.0.62  -- Converted NMC banner to deterministic parse section using “Schneider” marker; eliminates timing dependencies, ensures full uptime/date/contact/location capture.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.2.0.56"
-@Field static final String DRIVER_MODIFIED = "2025.10.09"
+@Field static final String DRIVER_VERSION  = "0.2.0.62"
+@Field static final String DRIVER_MODIFIED = "2025.10.10"
 
 /* ===============================
    Metadata
@@ -88,6 +90,9 @@ metadata {
        capability "Telnet"
        capability "Temperature Measurement"
 
+       attribute "alarmCountCrit","number"
+       attribute "alarmCountInfo","number"
+       attribute "alarmCountWarn","number"
        attribute "batteryVoltage","number"
        attribute "checkInterval","number"
        attribute "deviceName","string"
@@ -509,6 +514,63 @@ private handleUPSError(def pair){
     }
 }
 
+private handleAlarmCount(List<String> lines){
+    lines.each{l->
+        def mCrit=l=~/CriticalAlarmCount:\s*(\d+)/; if(mCrit.find())emitChangedEvent("alarmCountCrit",mCrit.group(1).toInteger(),"Critical Alarm Count = ${mCrit.group(1)}")
+        def mWarn=l=~/WarningAlarmCount:\s*(\d+)/;  if(mWarn.find())emitChangedEvent("alarmCountWarn",mWarn.group(1).toInteger(),"Warning Alarm Count = ${mWarn.group(1)}")
+        def mInfo=l=~/InformationalAlarmCount:\s*(\d+)/; if(mInfo.find())emitChangedEvent("alarmCountInfo",mInfo.group(1).toInteger(),"Informational Alarm Count = ${mInfo.group(1)}")
+    }
+}
+
+private handleBannerData(String l){
+    def mName=(l=~/^Name\s*:\s*([^\s]+).*/);
+    if(mName.find()){
+        def nameVal=mName.group(1).trim()
+        def curLbl=device.getLabel()
+        if(useUpsNameForLabel&&curLbl!=nameVal){
+            device.setLabel(nameVal)
+            logInfo "Device label updated from $curLbl to UPS name: $nameVal"
+        }
+        emitChangedEvent("deviceName",nameVal)
+    }
+    def mUp=(l=~/Up\s*Time\s*:\s*(.+?)\s+Stat/)
+    if(mUp.find()){
+        def v=mUp.group(1).trim()
+        emitChangedEvent("upsUptime",v,"UPS Uptime = ${v}")
+        emitChangedEvent("nmcUptime",v,"NMC Uptime = ${v}")
+    }
+    def mDate=(l=~/Date\s*:\s*(\d{2}\/\d{2}\/\d{4})/)
+    if(mDate.find()) state.upsBannerDate=mDate.group(1).trim()
+    def mTime=(l=~/Time\s*:\s*(\d{2}:\d{2}:\d{2})/)
+    if(mTime.find()&&state.upsBannerDate){
+        def upsRaw="${state.upsBannerDate} ${mTime.group(1).trim()}"
+        def upsDt=normalizeDateTime(upsRaw)
+        emitChangedEvent("upsDateTime",upsDt,"UPS Date/Time = ${upsDt}")
+        state.upsBannerEpoch=Date.parse("MM/dd/yyyy HH:mm:ss",upsRaw).time
+        checkUPSClock(state.upsBannerEpoch)
+        state.remove("upsBannerDate"); state.remove("upsBannerEpoch")
+    }
+    def mStat=(l=~/Stat\s*:\s*(.+)$/)
+    if(mStat.find()){
+        def statVal=mStat.group(1).trim()
+        def desc=translateNmcStatus(statVal)
+        device.updateDataValue("nmcStatusDesc",desc)
+        emitChangedEvent("nmcStatus",statVal,"${desc}")
+        if(statVal.contains('-')||statVal.contains('!'))
+            logWarn "NMC is reporting an error state: ${desc}"
+    }
+    def mContact=(l=~/Contact\s*:\s*(.*?)\s+Time\s*:/)
+    if(mContact.find()){
+        def contactVal=mContact.group(1).trim()
+        emitChangedEvent("upsContact",contactVal,"UPS Contact = ${contactVal}")
+    }
+    def mLocation=(l=~/Location\s*:\s*(.*?)\s+User\s*:/)
+    if(mLocation.find()){
+        def locationVal=mLocation.group(1).trim()
+        emitChangedEvent("upsLocation",locationVal,"UPS Location = ${locationVal}")
+    }
+}
+
 private handleUPSSection(List<String> lines){
     lines.each{l->if(l.startsWith("Usage: ups")){state.upsSupportsOutlet=l.contains("-o");logInfo "UPS outlet group support: ${state.upsSupportsOutlet?'True':'False'}"}}
 }
@@ -548,6 +610,7 @@ private handleNMCData(List<String> lines){
     }
 }
 
+private handleBannerSection(List<String> lines){lines.each{l->handleBannerData(l)}}
 private handleUPSAboutSection(List<String> lines){lines.each{l->handleIdentificationAndSelfTest(l.split(/\s+/))}}
 private handleDetStatus(List<String> lines){lines.each{l->def p=l.split(/\s+/);handleUPSStatus(p);handleLastTransfer(p);handleBatteryData(p);handleElectricalMetrics(p);handleIdentificationAndSelfTest(p);handleUPSError(p)};emitLastUpdate()}
 private List<String> extractSection(List<Map> lines,String start,String end){def i0=lines.findIndexOf{it.line.startsWith(start)};if(i0==-1)return[];def i1=(i0+1..<lines.size()).find{lines[it].line.startsWith(end)}?:lines.size();lines.subList(i0+1,i1)*.line}
@@ -556,31 +619,21 @@ private List<String> extractSection(List<Map> lines,String start,String end){def
    Buffered Session Processing
    =============================== */
 private processBufferedSession(){
-    def buf=state.telnetBuffer?:[];if(!buf)return
-    def lines=buf.findAll{it.line};state.telnetBuffer=[]
-    logDebug "Processing buffered session: UPSAbout=${extractSection(lines,'apc>upsabout','apc>').size()}, About(NMC)=${extractSection(lines,'apc>about','apc>').size()}, DetStatus=${extractSection(lines,'apc>detstatus -all','apc>').size()}, Total=${lines.size()}, CmdCounts=${lines.countBy{it.cmd}}"
-
-    def bannerBlock=lines.takeWhile{!it.line.startsWith("apc>")}
-    if(bannerBlock){
-        logDebug "Parsing UPS banner block (${bannerBlock.size()} lines)"
-        bannerBlock.each{l->
-            def mName=l.line=~/^Name\s*:\s*([^\s]+)/;if(mName.find()){def nameVal=mName.group(1).trim();def curLbl=device.getLabel();if(useUpsNameForLabel&&curLbl!=nameVal){device.setLabel(nameVal);logInfo "Device label updated from $curLbl to UPS name: $nameVal"};emitChangedEvent("deviceName",nameVal)}
-            def mUp=l.line=~/Up\s*Time\s*:\s*(.+?)\s+Stat/;if(mUp.find())emitChangedEvent("upsUptime",mUp.group(1).trim(),"UPS Uptime = ${mUp.group(1).trim()}")
-            def mDate=l.line=~/^Name\s*:.*Date\s*:\s*(\d{2}\/\d{2}\/\d{4})/;if(mDate.find())state.upsBannerDate=mDate.group(1).trim()
-            def mTime=l.line=~/^Contact\s*:.*Time\s*:\s*(\d{2}:\d{2}:\d{2})/;if(mTime.find()&&state.upsBannerDate){def upsRaw="${state.upsBannerDate} ${mTime.group(1).trim()}";def upsDt=normalizeDateTime(upsRaw);emitChangedEvent("upsDateTime",upsDt,"UPS Date/Time = ${upsDt}");state.upsBannerEpoch=Date.parse("MM/dd/yyyy HH:mm:ss",upsRaw).time;checkUPSClock(state.upsBannerEpoch);state.remove("upsBannerDate");state.remove("upsBannerEpoch")}
-            def mStat=l.line=~/Stat\s*:\s*(.+)$/;if(mStat.find()){def statVal=mStat.group(1).trim();def desc=translateNmcStatus(statVal);device.updateDataValue("nmcStatusDesc",desc);emitChangedEvent("nmcStatus",statVal,"${desc}");if(statVal.contains('-')||statVal.contains('!'))logWarn "NMC is reporting an error state: ${desc}"}
-            def mContact=l.line=~/Contact\s*:\s*(.*?)\s+Time\s*:/;if(mContact.find()){def contactVal=mContact.group(1).trim();emitChangedEvent("upsContact",contactVal,"UPS Contact = ${contactVal}")}
-            def mLocation=l.line=~/Location\s*:\s*(.*?)\s+User\s*:/;if(mLocation.find()){def locationVal=mLocation.group(1).trim();emitChangedEvent("upsLocation",locationVal,"UPS Location = ${locationVal}")}
-        }
-    }
-
+    def buf=state.telnetBuffer?:[]; if(!buf)return
+    def lines=buf.findAll{it.line}; state.telnetBuffer=[]
+    def secBanner=extractSection(lines,"Schneider","apc>")
     def secUps=extractSection(lines,"apc>ups ?","apc>")
     def secAbout=extractSection(lines,"apc>about","apc>")
     def secUpsAbout=extractSection(lines,"apc>upsabout","apc>")
+    def secAlarmCrit=extractSection(lines,"apc>alarmcount -p critical","apc>")
+    def secAlarmWarn=extractSection(lines,"apc>alarmcount -p warning","apc>")
+    def secAlarmInfo=extractSection(lines,"apc>alarmcount -p informational","apc>")
     def secDetStatus=extractSection(lines,"apc>detstatus -all","apc>")
+    if(secBanner)handleBannerSection(secBanner)
     if(secUps)handleUPSSection(secUps)
     if(secUpsAbout)handleUPSAboutSection(secUpsAbout)
     if(secAbout)handleNMCData(secAbout)
+    if(secAlarmCrit||secAlarmWarn||secAlarmInfo)handleAlarmCount(secAlarmCrit+secAlarmWarn+secAlarmInfo)
     if(secDetStatus)handleDetStatus(secDetStatus)
     state.remove("telnetBuffer")
 }
@@ -600,7 +653,7 @@ def parse(String msg){
             updateConnectState("Connected")
             updateCommandState("Reconnoiter")
             state.upsBannerRefTime=now()
-            telnetSend([Username,Password,"ups ?","upsabout","about","detstatus -all","whoami"],500)
+            telnetSend([Username,Password,"ups ?","upsabout","about","alarmcount -p critical","alarmcount -p warning","alarmcount -p informational","detstatus -all","whoami"],500)
             state.authStarted=true
         }else if(device.currentValue("lastCommand")=="quit"&&line.toLowerCase().contains("goodbye")){
             logDebug "Quit acknowledged by UPS"
