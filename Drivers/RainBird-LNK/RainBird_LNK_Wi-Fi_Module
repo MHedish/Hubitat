@@ -21,7 +21,12 @@ import groovy.transform.Field
 @Field static final String DRIVER_MODIFIED = "2025.10.13"
 
 metadata {
-    definition (name: DRIVER_NAME, namespace: "mhedish", author: "MHedish") {
+    definition(
+        name: DRIVER_NAME,
+        namespace: "MHedish",
+        author: "Marc Hedish",
+        importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/RainBird_LNK_Wi-Fi_Module"
+    ){
         capability "Initialize"
         capability "Refresh"
         capability "Actuator"
