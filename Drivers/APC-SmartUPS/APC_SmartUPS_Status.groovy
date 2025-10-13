@@ -65,13 +65,18 @@
 *  0.2.0.56  -- Code cleanup for final test before RC.
 *  0.2.0.57  -- Added alarmCountCrit, alarmCountWarn, alarmCountInfo attributes; driver now issues alarmcount -p queries during reconnoiter and parses counts for critical, warning, and informational alarms.
 *  0.2.0.62  -- Converted NMC banner to deterministic parse section using “Schneider” marker; eliminates timing dependencies, ensures full uptime/date/contact/location capture.
+*  0.2.0.63  -- Added deferred telnetClose() to ensure full event flush before disconnect; resolves intermittent missing uptime/date updates.
+*  0.2.0.64  -- Fixed closeConnection() logic to include deferred telnetClose() with finalizeTelnetClose(); ensures proper state cleanup and socket termination without triggering Hubitat interface errors; verified stable event flush and disconnect timing across multi-instance polling.
+*  0.2.0.65  -- Fixed race between processBufferedSession() and telnetClose(); now defers connection teardown by 250 ms post-parse to ensure complete event flush (restores missing lastUpdate, nmcUptime, upsUptime, upsDateTime emissions across all session paths).
+*  0.2.0.67  -- Fixed race condition between deferred telnetClose() and refresh(); initialize() now forces immediate closeConnection(false) to prevent overlapping socket sessions and eliminate “telnet input stream closed” warnings during scheduled polling.
+*  0.2.0.68  -- Added state-based label guard to prevent Control Enabled name overwrite; conditional lastUpdate emission; deferred command execution with Pending/Success/Failure event tracking; contextual UPS error responses; standardized event log formatting for consistency.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.2.0.62"
-@Field static final String DRIVER_MODIFIED = "2025.10.10"
+@Field static final String DRIVER_VERSION  = "0.2.0.68"
+@Field static final String DRIVER_MODIFIED = "2025.10.13"
 
 /* ===============================
    Metadata
@@ -192,7 +197,7 @@ private logInfo(msg)  {if (logEvents) log.info  "[${DRIVER_NAME}] $msg"}
 private logWarn(msg)  {log.warn "[${DRIVER_NAME}] $msg"}
 private logError(msg) {log.error"[${DRIVER_NAME}] $msg"}
 private emitLastUpdate(){def ts=new Date().format('MM/dd/yyyy h:mm a',location.timeZone);def runTime="";if(state.sessionStart){def elapsed=(now()-state.sessionStart)/1000.0;runTime=String.format("%.3f",elapsed);state.remove("sessionStart")};def desc=runTime?"Data Capture Runtime = ${runTime}s":null;emitChangedEvent("lastUpdate",ts,desc)}
-private emitEvent(String name, def value, String desc=null, String unit=null){sendEvent(name:name,value:value,unit:unit,descriptionText:desc);logInfo desc ? "${name}=${value} (${desc})" : "${name}=${value}"}
+private emitEvent(String name,def value,String desc=null,String unit=null){sendEvent(name:name,value:value,unit:unit,descriptionText:desc);if(logEvents)log.info"[${DRIVER_NAME}] ${desc? "${name}=${value} (${desc})":"${name}=${value}"}"}
 private emitChangedEvent(String name, def value, String desc=null, String unit=null) {
     def oldVal=device.currentValue(name)
     if(oldVal?.toString()!=value?.toString()){
@@ -329,7 +334,7 @@ def configure() {logInfo "${driverInfoString()} configured";initialize()}
 def initialize(){
     logInfo "${driverInfoString()} initializing..."
     emitEvent("driverInfo",driverInfoString())
-    ["telnet":"Ok","lastCommandResult":"NA"].each{k,v->emitEvent(k,v)}
+    ["telnet":"Ok","lastCommandResult":"N/A"].each{k,v->emitEvent(k,v)}
     if(device.currentValue("upsStatus")==null)emitEvent("upsStatus","Unknown")
     if(!tempUnits)tempUnits="F"
     state.upsControlEnabled=state.upsControlEnabled?:false
@@ -342,7 +347,7 @@ def initialize(){
         scheduleCheck(runTime as Integer,runOffset as Integer)
         updateCommandState("Scheduled")
         updateConnectState("Initialized")
-        closeConnection()
+        closeConnection(false)
         runInMillis(500,"refresh")
     }
 }
@@ -362,14 +367,22 @@ private scheduleCheck(Integer interval,Integer offset){
    Command Helpers
    =============================== */
 private sendUPSCommand(String cmdName,List cmds){
-    if(!state.upsControlEnabled){logWarn "$cmdName called but UPS control is disabled";return}
+    if(state.connectStatus=="Connected"){
+        if(state.pendingDeferredCmd){logInfo"Command '${cmdName}' not queued — previous deferred command still pending.";return}
+        logInfo"Command '${cmdName}' deferred 15 seconds (active Telnet session detected)."
+        state.pendingDeferredCmd=true
+        runIn(15,cmdName,[overwrite:false])
+        return
+    }
+    if(!state.upsControlEnabled){logWarn"$cmdName called but UPS control is disabled";return}
     updateCommandState(cmdName)
     updateConnectState("Trying")
-    emitEvent("lastCommandResult","NA")
-    logInfo "$cmdName called"
+    emitChangedEvent("lastCommandResult","Pending","Command '${cmdName}' queued for UPS execution")
+    logInfo"$cmdName called"
     safeTelnetConnect(UPSIP,UPSPort.toInteger())
     state.pendingCmds=["$Username","$Password"]+cmds
     runInMillis(500,"delayedTelnetSend")
+    state.remove("pendingDeferredCmd")
 }
 
 private delayedTelnetSend(){
@@ -412,7 +425,7 @@ def toggleRuntimeCalibration(){
 }
 
 def SetOutletGroup(p1,p2,p3){
-    emitEvent("lastCommandResult","NA");logInfo "Set Outlet Group called [$p1 $p2 $p3]"
+    emitEvent("lastCommandResult","N/A");logInfo "Set Outlet Group called [$p1 $p2 $p3]"
     if(!state.upsSupportsOutlet){logWarn "SetOutletGroup unsupported on this UPS model";emitEvent("lastCommandResult","Unsupported");return}
     if(!p1){logError "Outlet group is required.";return}
     if(!p2){logError "Command is required.";return}
@@ -503,15 +516,24 @@ private handleIdentificationAndSelfTest(def pair){
 }
 
 private handleUPSError(def pair){
-    def code=pair[0],desc=translateUPSError(code)
-    switch(code){
-        case"E002:":case"E100:":case"E101:":case"E102:":case"E103:":case"E107:":case"E108:":
-            logError "UPS Error ${code} - ${desc}";emitEvent("lastCommandResult","Failure")
-            if(device.currentValue("lastCommand")in["CalibrateRuntime","CancelCalibration"])emitChangedEvent("runtimeCalibration","failed","UPS Runtime Calibration failed")
-            if(device.currentValue("lastCommand")in["UPSOn","UPSOff"])logError "UPS Output command failed"
-            if(code=="E101:")logWarn "UPS does not support 'ups ?' command; skipping outlet group detection"
-            updateConnectState("Disconnected");closeConnection();emitEvent("telnet","Ok");break
+    def code=pair[0],desc=translateUPSError(code),cmd=state.lastCommand?:"Unknown"
+    if(code in["E000:","E001:"]){emitChangedEvent("lastCommandResult","Success","Command '${cmd}' acknowledged by UPS (${desc})");logInfo"UPS Command '${cmd}' succeeded (${desc})";return}
+    def contextualDesc=desc
+    switch(cmd){
+        case"CalibrateRuntime":if(code in["E102:","E100:"])contextualDesc="Refused to start calibration — likely low battery or load conditions.";break
+        case"UPSOff":if(code=="E102:")contextualDesc="UPS refused shutdown — check outlet group configuration or NMC permissions.";break
+        case"UPSOn":if(code=="E102:")contextualDesc="UPS power-on command refused — output already on or control locked.";break
+        case"Reboot":if(code=="E102:")contextualDesc="UPS reboot not accepted — possibly blocked by runtime calibration or load conditions.";break
+        case"Sleep":if(code=="E102:")contextualDesc="UPS refused sleep mode — ensure supported model and conditions.";break
+        case"TestAlarm":if(code=="E102:")contextualDesc="Alarm test not accepted — may already be active or UPS in transition.";break
+        case"StartSelfTest":if(code=="E102:")contextualDesc="Self test refused — battery charge insufficient or UPS busy.";break
     }
+    emitChangedEvent("lastCommandResult","Failure","Command '${cmd}' failed (${code} ${contextualDesc})")
+    logWarn"UPS Command '${cmd}' failed (${code} ${contextualDesc})"
+    if(cmd in["CalibrateRuntime","CancelCalibration"])emitChangedEvent("runtimeCalibration","failed","UPS Runtime Calibration failed")
+    if(cmd in["UPSOn","UPSOff"])logError"UPS Output command failed"
+    if(code=="E101:")logWarn"UPS does not support 'ups ?' command; skipping outlet group detection"
+    updateConnectState("Disconnected");closeConnection();emitEvent("telnet","Ok")
 }
 
 private handleAlarmCount(List<String> lines){
@@ -527,9 +549,13 @@ private handleBannerData(String l){
     if(mName.find()){
         def nameVal=mName.group(1).trim()
         def curLbl=device.getLabel()
-        if(useUpsNameForLabel&&curLbl!=nameVal){
-            device.setLabel(nameVal)
-            logInfo "Device label updated from $curLbl to UPS name: $nameVal"
+        if (useUpsNameForLabel) {
+            if (state.upsControlEnabled) {
+                logDebug "handleBannerData(): Skipping label update — UPS Control Enabled"
+            } else if (curLbl != nameVal) {
+                device.setLabel(nameVal)
+                logInfo "Device label updated from $curLbl to UPS name: $nameVal"
+            }
         }
         emitChangedEvent("deviceName",nameVal)
     }
@@ -612,7 +638,7 @@ private handleNMCData(List<String> lines){
 
 private handleBannerSection(List<String> lines){lines.each{l->handleBannerData(l)}}
 private handleUPSAboutSection(List<String> lines){lines.each{l->handleIdentificationAndSelfTest(l.split(/\s+/))}}
-private handleDetStatus(List<String> lines){lines.each{l->def p=l.split(/\s+/);handleUPSStatus(p);handleLastTransfer(p);handleBatteryData(p);handleElectricalMetrics(p);handleIdentificationAndSelfTest(p);handleUPSError(p)};emitLastUpdate()}
+private handleDetStatus(List<String> lines){lines.each{l->def p=l.split(/\s+/);handleUPSStatus(p);handleLastTransfer(p);handleBatteryData(p);handleElectricalMetrics(p);handleIdentificationAndSelfTest(p);handleUPSError(p)};def cmd=state.lastCommand;if(cmd in["reconnoiter","refresh"])emitLastUpdate()else logDebug"handleDetStatus(): Skipping lastUpdate for command '${cmd}'"}
 private List<String> extractSection(List<Map> lines,String start,String end){def i0=lines.findIndexOf{it.line.startsWith(start)};if(i0==-1)return[];def i1=(i0+1..<lines.size()).find{lines[it].line.startsWith(end)}?:lines.size();lines.subList(i0+1,i1)*.line}
 
 /* ===============================
@@ -660,9 +686,9 @@ def parse(String msg){
             updateCommandState("Rescheduled")
             updateConnectState("Initialized")
             emitChangedEvent("nextCheckMinutes",device.currentValue("checkInterval"))
-            closeConnection()
-            emitEvent("telnet","Ok")
             processBufferedSession()
+            closeConnection(true)
+            emitEvent("telnet","Ok")
         }else{
             if(line.startsWith("apc>whoami"))state.whoamiEchoSeen=true
             if(line.startsWith("E000: Success"))state.whoamiAckSeen=true
@@ -671,7 +697,7 @@ def parse(String msg){
                 logDebug "whoami sequence complete, processing buffer..."
                 ["whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen","authStarted"].each{state.remove(it)}
                 processBufferedSession()
-                closeConnection()
+                closeConnection(true)
             }
         }
     }
@@ -685,6 +711,12 @@ def sendData(String msg,Integer millsec){
     def hubCmd=sendHubCommand(new hubitat.device.HubAction("${msg}",hubitat.device.Protocol.TELNET))
     pauseExecution(millsec)
     return hubCmd
+}
+
+boolean telnetSend(List msgs,Integer millisec){
+    logDebug "telnetSend(): sending ${msgs.size()} messages with ${millisec} ms delay"
+    msgs.each{msg->sendData("${msg}",millisec)}
+    true
 }
 
 def telnetStatus(String status){
@@ -701,24 +733,28 @@ def telnetStatus(String status){
         updateConnectState("Disconnected")
     }else if(status.contains("send error"))logWarn "Telnet send error: $status"
     else logDebug "telnetStatus: $status"
-    closeConnection()
+    closeConnection(true)
 }
 
-def closeConnection(){
+private void closeConnection(Boolean deferred=true){
     try{
-        telnetClose()
-        logDebug "Telnet connection closed"
-        if(state.telnetBuffer&&state.telnetBuffer.size()>0&&device.currentValue("lastCommand")=="Reconnoiter"){
-            def lastLine=state.telnetBuffer[-1]?.line?.toString()?: ""
-            def tail=(lastLine.size()>100?lastLine[-100..-1]:lastLine)
-            logDebug "Closing with buffered data (${state.telnetBuffer.size()} lines), tail=${tail}"
-            processBufferedSession()
+        if(state.connectStatus=="Disconnected")return
+        if(deferred){
+            if(!state.deferredClosePending){
+                state.deferredClosePending=true
+                logDebug "closeConnection(): deferring telnetClose by 250ms for event flush"
+                runInMillis(250,"finalizeTelnetClose",[overwrite:true])
+            }else logDebug "closeConnection(): deferred close already pending"
+            return
         }
-    }catch(e){logDebug "closeConnection(): ${e.message}"}
+        // Called from finalizeTelnetClose() after 250ms deferred flush window
+        telnetClose()
+        state.connectStatus="Disconnected"
+        state.remove("deferredClosePending");state.remove("telnetBuffer");state.remove("postAuthSent")
+        logDebug "Telnet connection closed cleanly"
+    }catch(e){logWarn "closeConnection(): ${e.message}"}
 }
 
-boolean telnetSend(List msgs,Integer millisec){
-    logDebug "telnetSend(): sending ${msgs.size()} messages with ${millisec} ms delay"
-    msgs.each{msg->sendData("${msg}",millisec)}
-    true
+private void finalizeTelnetClose() {
+    closeConnection(false)
 }
