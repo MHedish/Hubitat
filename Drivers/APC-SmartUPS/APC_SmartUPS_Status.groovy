@@ -27,13 +27,13 @@
 *  0.3.1.4   -- Added transient inUPSCommandSession flag to eliminate Telnet state race between command and reconnoiter sessions; ensures parse() isolation even during concurrent thread scheduling; finalizes dual-path Telnet determinism.
 *  0.3.1.5   -- Restored delayedTelnetSend() to defer initial command transmission until Telnet socket fully established; resolves final race condition causing concurrent auth/command sequences; preserves deterministic single-session behavior.
 *  0.3.1.6   -- Removed transient inUPSCommandSession flag; restored full stability using delayedTelnetSend() deferred send mechanism; state.connectStatus propagation now deterministic under Hubitat Telnet lifecycle.
-*  0.3.1.14  -- Replaced deprecated state.flush() with deterministic stateFlush(); fixed buffer init null exception; maintained deterministic Telnet and clean logging
+*  0.3.1.7   -- Added explicit guard in parse() preventing reconnoiter auth sequence from firing during UPSCommand sessions; fixes dual Telnet session overlap and ensures full command isolation.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME       = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION    = "0.3.1.14"
+@Field static final String DRIVER_VERSION    = "0.3.1.7"
 @Field static final String DRIVER_MODIFIED   = "2025.10.15"
 
 /* ===============================
@@ -350,7 +350,7 @@ private sendUPSCommand(String cmdName, List cmds) {
         }
         return
     }
-    state.remove("deferredCommand");updateCommandState(cmdName);stateFlush("sendUPSCommand");updateConnectState("Connecting");emitEvent("lastCommandResult", "N/A")
+    state.remove("deferredCommand");updateCommandState(cmdName);updateConnectState("Connecting");emitEvent("lastCommandResult", "N/A")
     emitChangedEvent("lastCommandResult", "Pending", "Command '${cmdName}' queued for UPS execution");logInfo "Executing UPS command: ${cmdName}"
     try {
         telnetClose();updateConnectState("UPSCommand");initTelnetBuffer();state.pendingCmds = ["$Username", "$Password"] + cmds
@@ -424,21 +424,6 @@ private Boolean isCommandSessionActive(){
     return (cmd in ["testalarm","upsoff","upson","reboot","sleep","setoutletgroup","startselftest","cancelcalibration","calibrateruntime"])
 }
 
-private void stateFlush(String context = "unspecified") {
-    try {
-        def cmd0 = state.lastCommand, conn0 = state.connectStatus
-        pauseExecution(50)
-        if (state.lastCommand != cmd0 || state.connectStatus != conn0) {
-            def start = now(); while (now() - start < 75) {
-                pauseExecution(10);if (state.lastCommand == cmd0 && state.connectStatus == conn0) break
-            }
-        }
-        logDebug "stateFlush(${context}): synced (cmd=${state.lastCommand}, conn=${state.connectStatus})"
-    } catch (e) {
-        logDebug "stateFlush(${context}): ${e.message}"
-    }
-}
-
 /* ===============================
    Commands
    =============================== */
@@ -468,8 +453,12 @@ def refresh() {
         logInfo "refresh(): Telnet session already active, skipping this refresh request"
         return
     }
+
     logInfo "${driverInfoString()} refreshing..."
-    state.sessionStart = now();updateCommandState("Reconnoiter");stateFlush("refresh");updateConnectState("Trying");state.remove("authStarted")
+    state.sessionStart = now()
+    updateCommandState("Connecting")
+    updateConnectState("Trying")
+    state.remove("authStarted")
     logDebug "Connecting to ${upsIP}:${upsPort}"
     safeTelnetConnect(upsIP, upsPort.toInteger())
 }
@@ -715,15 +704,13 @@ private processUPSCommand() {
    =============================== */
 def parse(String msg) {
     msg = msg.replaceAll('\r\n','\n').replaceAll('\r','\n');def lines = msg.split('\n').findAll { it.trim() }
-    def currentCmd = (state.lastCommand ?: "Unknown");logDebug "parse(): lastCommand=${currentCmd}, connectStatus=${state.connectStatus}"
-    if (currentCmd != "Reconnoiter") {
-    // --- UPSCommand Session ---
-    if (!state.telnetBuffer) state.telnetBuffer = []
+    // --- UPSCommand Session Isolation ---
+    if (state.connectStatus == "UPSCommand") {
         lines.each { line ->
             line = line.trim()
             if (line) {
                 logDebug "Buffering line (UPSCommand): ${line}"
-                state.telnetBuffer << [cmd: currentCmd, line: line]
+                state.telnetBuffer << [cmd: state.lastCommand ?: "UPSCommand", line: line]
             }
         }
         return
@@ -735,6 +722,7 @@ def parse(String msg) {
         state.telnetBuffer<<[cmd:device.currentValue("lastCommand")?:"unknown",line:line]
         if(!state.authStarted){
             logDebug "First telnet data seen, sending auth sequence"
+            updateConnectState("Connected")
             updateCommandState("Reconnoiter")
             state.upsBannerRefTime=now()
             telnetSend([Username,Password,"ups ?","upsabout","about","alarmcount -p critical","alarmcount -p warning","alarmcount -p informational","detstatus -all","whoami"],500)
@@ -796,26 +784,20 @@ def telnetStatus(String status) {
 def closeConnection() {
     try {
         telnetClose();logDebug "Telnet connection closed"
-        if (state.telnetBuffer && state.telnetBuffer.size() > 0) {
+        if (state.telnetBuffer && state.telnetBuffer.size() > 0 &&
+            (device.currentValue("lastCommand") == "Reconnoiter" || device.currentValue("lastCommand") == "UPSCommand")) {
             def lastLine = state.telnetBuffer[-1]?.line?.toString() ?: ""
             def tail = (lastLine.size() > 100 ? lastLine[-100..-1] : lastLine)
             logDebug "Closing with buffered data (${state.telnetBuffer.size()} lines), tail=${tail}"
-            def cmd = (state.lastCommand ?: device.currentValue("lastCommand") ?: "Unknown")
-            if (cmd == "Reconnoiter") {
+            if (device.currentValue("lastCommand") == "Reconnoiter") {
                 processBufferedSession()
-            } else if (isCommandSessionActive()) {
-                processUPSCommand()
             } else {
-                logDebug "closeConnection(): Ignored buffer from non-session command '${cmd}'"
+                processUPSCommand()
             }
-        } else {
-            logDebug "closeConnection(): no buffered data to process"
         }
     } catch (e) {
         logDebug "closeConnection(): ${e.message}"
     }
-    if (state.lastCommand != "Scheduled") updateCommandState("Idle")
-    stateFlush("closeConnection");updateConnectState("Disconnected")
 }
 
 boolean telnetSend(List msgs,Integer millisec){
