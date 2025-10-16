@@ -8,75 +8,33 @@
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  0.2.0.0   -- Reworked parsing to buffered-session model; all telnet output is now collected in memory and processed after session end; resolved UPS/NMC attribute collisions and eliminated timing race conditions; unified command sequencing to include 'about' with other queries; removed legacy sendAboutCommand() helper
-*  0.2.0.1   -- Restored UPS banner parsing under upsabout section (deviceName, upsUptime, upsDateTime, nmcStatus/Desc); added debug traces for UPS/NMC Serial, Manufacture Date, Uptime, and UPS DateTime parsing to validate attribute separation
-*  0.2.0.2   -- Fixed buffer segmentation logic (upsabout/about/detstatus) using command echoes; restored full UPS banner + NMC parsing; added .toString() safety in session handler
-*  0.2.0.3   -- Introduced whoami end-of-session marker (E000 + username + prompt) to deterministically detect completion under race conditions
-*  0.2.0.4   -- Improved whoami sequence handling to tolerate reversed order of E000/device lines; buffer is processed once all markers are seen
-*  0.2.0.5   -- Added UPS banner parsing back into processBufferedSession; deviceName, upsUptime, upsDateTime, nmcStatus/Desc now emitted again from banner block
-*  0.2.0.6   -- Added extractSection() helper for reliable block segmentation; resolves MissingMethodException during buffer processing
-*  0.2.0.7   -- Fixed extractSection() helper (replaced invalid findIndexAfter() with explicit sublist scan); banner block segmentation now works without MissingMethodException
-*  0.2.0.8   -- Filtered UPS banner parsing to exclude command echoes and E000 acknowledgements; only valid banner lines are passed to handleUPSAbout(), preventing MissingMethodException
-*  0.2.0.9   -- Restored device label updates from banner parsing when useUpsNameForLabel is enabled; ensures device label tracks UPS name consistently
-*  0.2.0.10  -- Restored UPSStatus parsing under detstatus -all; moved detection logic into handleUPSStatus() for cleaner flow; redundant empty-status guard removed
-*  0.2.0.11  -- Restored UPSStatus parsing from detstatus -all (detects 'Status of UPS:' prefix); integrated into handleDetStatus() with buffered model
-*  0.2.0.12  -- Fixed UPSStatus parsing; commas are now stripped from "Status of UPS" line before normalization, restoring clean values (e.g., "Online" instead of "On Line,")
-*  0.2.0.13  -- Added cleanup of telnetBuffer state after buffered session parsing completes; ensures no empty buffer objects linger between runs
-*  0.2.0.14  -- Added lastTransferCause attribute parsing under detstatus -all; captures and emits descriptive cause of last UPS transfer
-*  0.2.0.15  -- Fixed telnet lifecycle handling; initialize() now explicitly closes telnet before calling refresh(), preventing racey disconnect/connect churn during driver reloads or preference updates
-*  0.2.0.16  -- Changed initialize() to delay refresh() by 500 ms after closing telnet; prevents race where immediate reconnect could stall at reconnoiter during updated()/configure() runs
-*  0.2.0.17  -- Fixed false-positive UPS clock skew warnings; reference time is now captured at authentication instead of at end-of-session parse, eliminating artificial 1–3 minute drift; skew gates (>1m warn, >5m error) preserved
-*  0.2.0.18  -- Fixed UPS clock skew check; parse now includes seconds (MM/dd/yyyy h:mm:ss a), preventing false positives where times were rounded to the nearest minute
-*  0.2.0.19  -- Added upsTZOffset preference (minutes, -720 to +840 in 15-min steps) for correcting UPS clock skew checks across time zones; default=0 for same-TZ monitoring
-*  0.2.0.20  -- Improved telnet session closure handling; buffered data is now parsed on stream close or manual close even without quit/whoami; added debug logs for buffer size and last 100 chars of tail; prevents loss*
-*  0.2.0.21  -- Added guards to telnetStatus() and closeConnection(); buffered session is only processed if lastCommand=reconnoiter, preventing junk parses from negotiation bytes or login prompts; preserves 0.2.0.19 blind auth behavior
-*  0.2.0.22  -- Restored blind credential send on first telnet data (decoupled from lastCommand=Connecting); added authStarted guard to ensure creds/queries fire once per session; authStarted reset with whoami markers at session end
-*  0.2.0.23  -- Fixed UPS banner datetime parsing; added support for "MM/dd/yyyy h:mm a" format; Date/Time now normalized to include seconds and stored as epoch for 1-second precision in skew detection; corrected processBufferedSession() to pass epoch instead of string to checkUPSClock()
-*  0.2.0.24  -- Moved authStarted reset to session initiation (refresh) to prevent stale flag blocking login after preference changes or interrupted sessions
-*  0.2.0.25  -- Fixed leftover upsBannerEpoch state cleanup after banner parse; added handleUPSSection() with ups ? block parsing to detect outlet group support (-o flag); logs UPS outlet group support and calls sendAboutCommand() deterministically after ups ? section
-*  0.2.0.26  -- Fixed bug where upsBannerEpoch state variable was not being removed after use; restored normalizeDateTime() to support date-only values (MM/dd/yyyy) and proper 2-digit year pivot handling, correcting nmcManufactureDate, manufactureDate, and lastSelfTestDate parsing
-*  0.2.0.27  -- Fixed UPS clock skew false positives: restored second-level precision in upsBannerEpoch and normalizeDateTime(); UPS date/time now retains full seconds resolution instead of rounding to whole minutes.
-*  0.2.0.28  -- Cleanup: removed legacy state.lastRunOffset tracking from cron scheduling; driver now relies on Hubitat’s idempotent schedule() handling, ensuring jobs persist without resetting Prev Run Time.
-*  0.2.0.29  -- Removed legacy connectStatus attribute; this value is now tracked internally in state.connectStatus only, preventing stale/unused attribute entries in the device
-*  0.2.0.30  -- Moved lastUpdate event emission from session end to detstatus -all parsing; ensures timestamp reflects actual UPS data refresh instead of telnet lifecycle; reduces redundant event noise and aligns update timing with primary data capture
-*  0.2.0.31  -- Fixed extractSection() logic for buffered session parsing; replaced improper .find{} with .findIndexOf{} to correctly detect apc> section boundaries; added case-insensitive matching for start/end markers; restores full UPS banner and NMC attribute updates (deviceName, upsUptime, nmcUptime, nmcStatus) that were intermittently skipped since 0.2.0.30
-*  0.2.0.32  -- Added diagnostic tail preview to initTelnetBuffer(); now logs buffer size and last 100 chars when clearing leftover data, improving visibility into unexpected session residue.
-*  0.2.0.33  -- Fixed premature telnet buffer clearing in parse(); buffer now preserved through full session until post-whoami processing, restoring complete UPS/NMC data capture across refresh cycles.
-*  0.2.0.34  -- Cosmetic: enhanced temperature event formatting in handleBatteryData() to display both °F and °C in the same description while preserving preferred unit for dashboards.
-*  0.2.0.35  -- Added retry logic for telnetConnect() to gracefully recover from transient NoRouteToHost or unreachable host errors, improving connection resilience without disrupting scheduled polling.
-*  0.2.0.36  -- Added safeTelnetConnect() helper with automatic retry and structured logging for connection failures; standardized retry delay, attempt tracking, and log formatting for consistency across driver operations.
-*  0.2.0.37  -- Removed additional log.debug troubleshooting statements; removed checkOffset/Interval event - log only
-*  0.2.0.38  -- Normalized UPSStatus variable to correct camelcase
-*  0.2.0.39  -- Fixed Telnet message concatenation issue where multi-line packets (e.g., "Location" / "User" fields) within the UPS banner were being received as one string; parse() now normalizes and splits composite messages line-by-line for complete banner capture; verified restoration of full 23-line UPS banner including "Location", "User", and "Up Time" fields.
-*  0.2.0.42  -- Added upsContact and upsLocation attribute parsing from UPS banner block; relocated parsing logic into processBufferedSession() for accurate extraction; verified successful event emission and debug tracing for both fields
-*  0.2.0.43  -- Code cleanup and structural clarity update; removed redundant banner parsing logic from handleUPSAboutSection() (deviceName, upsUptime, upsDateTime, nmcStatus) since banner data is handled exclusively in processBufferedSession(); improved readability and maintainability without functional changes
-*  0.2.0.44  -- Introduced post-banner event commit stabilization delay (200ms) in processBufferedSession() to prevent intermittent event omission for upsUptime, nmcUptime, and upsDateTime on rapid parse cycles.
-*  0.2.0.45  -- Renamed UPS control methods and commands for naming consistency; replaced controlEnabled preference with dynamic state and new enableUPSControl/disableUPSControlNow commands; added autoDisableUPSControl helper for timed disable and label auto-restore
-*  0.2.0.46  -- Refactored UPS control handling; removed legacy disableUPSControlNow(), consolidated label and state logic within updateUPSControlState(), and streamlined enable/disable command flow for RM/WC compatibility.
-*  0.2.0.47  -- Added proactive NMC status health check; driver now issues logWarn if nmcStatus contains '-' or '!', logging "NMC is reporting an error state: ..." with translated description for immediate visibility of warning/failure conditions
-*  0.2.0.48  -- Added session runtime tracking; emitLastUpdate() now reports total Data Capture Runtime in seconds (to three decimals) for full session performance visibility.
-*  0.2.0.49  -- Streamlined initialize() and scheduler logic; removed redundant preference conversions and unreachable “parameters not filled” condition; preserved cadence-safe scheduleCheck() for interval/offset updates without unnecessary unscheduling.
-*  0.2.0.50  -- Removed change from 0.2.0.44 as that did not affect change.
-*  0.2.0.51  -- Improved UPS name handling; device label now updates only when changed, preventing redundant log entries and unnecessary setLabel calls.
-*  0.2.0.52  -- Updated initTelnetBuffer() to log last 3 buffered lines as tail preview instead of single truncated fragment; improves trace visibility during unexpected session residue cleanup.
-*  0.2.0.53  -- Fixed regression caused by removed seqSend(); refactored delayedTelnetSend() to use telnetSend(List,Integer) for queued command dispatch; preserved original sequencing behavior with compact implementation
-*  0.2.0.54  -- Renamed lastCommand marker from "getStatus" -> "reconnoiter" to better reflect buffered UPS data acquisition phase; semantic clarity improvement with stylistic flavor
-*  0.2.0.55  -- Improved buffered session diagnostics; debug log now reports line counts per section (UPSAbout, About(NMC), DetStatus) instead of command echo counts for accurate visibility into parsed data volume
-*  0.2.0.56  -- Code cleanup for final test before RC.
-*  0.2.0.57  -- Added alarmCountCrit, alarmCountWarn, alarmCountInfo attributes; driver now issues alarmcount -p queries during reconnoiter and parses counts for critical, warning, and informational alarms.
-*  0.2.0.62  -- Converted NMC banner to deterministic parse section using “Schneider” marker; eliminates timing dependencies, ensures full uptime/date/contact/location capture.
-*  0.2.0.63  -- Added deferred telnetClose() to ensure full event flush before disconnect; resolves intermittent missing uptime/date updates.
-*  0.2.0.64  -- Fixed closeConnection() logic to include deferred telnetClose() with finalizeTelnetClose(); ensures proper state cleanup and socket termination without triggering Hubitat interface errors; verified stable event flush and disconnect timing across multi-instance polling.
-*  0.2.0.65  -- Fixed race between processBufferedSession() and telnetClose(); now defers connection teardown by 250 ms post-parse to ensure complete event flush (restores missing lastUpdate, nmcUptime, upsUptime, upsDateTime emissions across all session paths).
-*  0.2.0.67  -- Fixed race condition between deferred telnetClose() and refresh(); initialize() now forces immediate closeConnection(false) to prevent overlapping socket sessions and eliminate “telnet input stream closed” warnings during scheduled polling.
-*  0.2.0.68  -- Added state-based label guard to prevent Control Enabled name overwrite; conditional lastUpdate emission; deferred command execution with Pending/Success/Failure event tracking; contextual UPS error responses; standardized event log formatting for consistency.
+*  0.3.0.0   -- Revert to what was 0.2.0.57
+*  0.3.0.1   -- Converted NMC banner to deterministic parse section using "Schneider" marker; eliminates timing dependencies, ensures full uptime/date/contact/location capture
+*  0.3.0.2   -- Updated emitEvent() for consistent formatted logging; handleDetStatus() now emits lastUpdate only for reconnoiter/refresh; handleBannerData() formatting cleanup
+*  0.3.0.3   -- Reworked UPS command handling with single-slot deferred command gate and non-blocking, session-aware safeTelnetConnect(); prevents Telnet collisions between control and reconnoiter sessions; no functional changes to UPS command logic yet
+*  0.3.0.4   -- Code cleanup: standardized variable names (UPSIP -> upsIP, UPSPort -> upsPort) for style consistency; no logic changes
+*  0.3.0.5   -- Added explicit session gate to refresh(); prevents Telnet overlap during preference updates or driver reloads; complements safeTelnetConnect() for full lifecycle protection
+*  0.3.0.6   -- Added detection for external upsControlEnabled changes (e.g. via Rule Machine/WebCoRE); driver now automatically updates label and auto-disable timer to match externally modified control state
+*  0.3.0.7   -- Added refresh() de-duplication and external control sync integration; prevents overlapping Telnet sessions from manual, cron, or RM/WC refresh calls. Driver now safely ignores duplicate refresh requests during active sessions and resets state after completion.
+*  0.3.0.8   -- Restored UPS command error handling; driver now parses E000/E001/E100/E102 codes for all control operations and emits contextual success/failure results via lastCommandResult.
+*  0.3.0.9   -- Restored UPS command error handling; reinstated handleUPSError() with contextual success/failure mapping for E000:/E001:/E100:/E102: codes; corrected type guard regression causing command parse failure; fixed session lock caused by improper connectStatus state update.
+*  0.3.0.10  -- Removed refreshQueued flag to eliminate refresh() deadlock; refresh gating now based solely on connectStatus; updated processBufferedSession() and telnetStatus() for deterministic disconnect and full state reset; retained forced parse-on-disconnect debug logic.
+*  0.3.0.11  -- Restored runtime calculation in emitLastUpdate(); added emission at end of processBufferedSession() to log total data capture duration before state reset.
+*  0.3.0.12  -- Fixed UPS command telnetConnect() argument type; cast upsPort to integer to restore direct command connectivity.
+*  0.3.1.1   -- Restored deterministic Telnet lifecycle handling in sendUPSCommand(); commands now transition Connecting->UPSCommand->Disconnected using existing connectStatus and lastCommand only; no forced close or new state keys.
+*  0.3.1.2   -- Reworked UPS command Telnet flow for full isolation; sendUPSCommand() now uses native telnetSend() and unified closeConnection() handoff to processUPSCommand(); removed delayedTelnetSend() for cleaner deterministic lifecycle.
+*  0.3.1.3   -- Added Telnet input normalization and full UPSCommand isolation in parse(); unified line trimming for both paths and ensured reconnoiter auth sequence only runs in Connected state; finalizes deterministic dual-path Telnet handling.
+*  0.3.1.4   -- Added transient inUPSCommandSession flag to eliminate Telnet state race between command and reconnoiter sessions; ensures parse() isolation even during concurrent thread scheduling; finalizes dual-path Telnet determinism.
+*  0.3.1.5   -- Restored delayedTelnetSend() to defer initial command transmission until Telnet socket fully established; resolves final race condition causing concurrent auth/command sequences; preserves deterministic single-session behavior.
+*  0.3.1.6   -- Removed transient inUPSCommandSession flag; restored full stability using delayedTelnetSend() deferred send mechanism; state.connectStatus propagation now deterministic under Hubitat Telnet lifecycle.
+*  0.3.1.14  -- Replaced deprecated state.flush() with deterministic stateFlush(); fixed buffer init null exception; maintained deterministic Telnet and clean logging
 */
 
 import groovy.transform.Field
 
-@Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.2.0.68"
-@Field static final String DRIVER_MODIFIED = "2025.10.13"
+@Field static final String DRIVER_NAME       = "APC SmartUPS Status"
+@Field static final String DRIVER_VERSION    = "0.3.1.14"
+@Field static final String DRIVER_MODIFIED   = "2025.10.15"
 
 /* ===============================
    Metadata
@@ -157,8 +115,8 @@ metadata {
        command "disableUPSControl"
        command "TestAlarm"
        command "StartSelfTest"
-       command "UPSOn"
-       command "UPSOff"
+       command "upsOn"
+       command "upsOff"
        command "Reboot"
        command "Sleep"
        command "toggleRuntimeCalibration"
@@ -174,8 +132,8 @@ metadata {
    Preferences
    =============================== */
 preferences {
-    input("UPSIP", "text", title: "Smart UPS (APC only) IP Address", required: true)
-    input("UPSPort", "integer", title: "Telnet Port", description: "Default 23", defaultValue: 23, required: true)
+    input("upsIP", "text", title: "Smart UPS (APC only) IP Address", required: true)
+    input("upsPort", "integer", title: "Telnet Port", description: "Default 23", defaultValue: 23, required: true)
     input("Username", "text", title: "Username for Login", required: true, defaultValue: "")
     input("Password", "password", title: "Password for Login", required: true, defaultValue: "")
     input("useUpsNameForLabel", "bool", title: "Use UPS name for Device Label", defaultValue: false)
@@ -196,7 +154,7 @@ private logDebug(msg) {if (logEnable) log.debug "[${DRIVER_NAME}] $msg"}
 private logInfo(msg)  {if (logEvents) log.info  "[${DRIVER_NAME}] $msg"}
 private logWarn(msg)  {log.warn "[${DRIVER_NAME}] $msg"}
 private logError(msg) {log.error"[${DRIVER_NAME}] $msg"}
-private emitLastUpdate(){def ts=new Date().format('MM/dd/yyyy h:mm a',location.timeZone);def runTime="";if(state.sessionStart){def elapsed=(now()-state.sessionStart)/1000.0;runTime=String.format("%.3f",elapsed);state.remove("sessionStart")};def desc=runTime?"Data Capture Runtime = ${runTime}s":null;emitChangedEvent("lastUpdate",ts,desc)}
+private emitLastUpdate(){def ts=new Date().format('MM/dd/yyyy h:mm:ss a',location.timeZone);def runTime="";if(state.sessionStart){def elapsed=(now()-state.sessionStart)/1000.0;runTime=String.format("%.3f",elapsed);state.remove("sessionStart")};def desc=runTime?"Data Capture Runtime = ${runTime}s":null;emitChangedEvent("lastUpdate",ts,desc)}
 private emitEvent(String name,def value,String desc=null,String unit=null){sendEvent(name:name,value:value,unit:unit,descriptionText:desc);if(logEvents)log.info"[${DRIVER_NAME}] ${desc? "${name}=${value} (${desc})":"${name}=${value}"}"}
 private emitChangedEvent(String name, def value, String desc=null, String unit=null) {
     def oldVal=device.currentValue(name)
@@ -231,6 +189,19 @@ private initTelnetBuffer(){
         logDebug "initTelnetBuffer(): clearing leftover buffer (${state.telnetBuffer.size()} lines, preview='${tail}')"
     }
     state.telnetBuffer=[]
+}
+
+private checkExternalUPSControlChange(){
+    def cur=device.currentValue("upsControlEnabled") as Boolean
+    def prev=state.lastUpsControlEnabled as Boolean
+    if(prev==null){state.lastUpsControlEnabled=cur;return}
+    if(cur!=prev){
+        logInfo "UPS Control state changed externally (${prev} -> ${cur})"
+        state.lastUpsControlEnabled=cur
+        updateUPSControlState(cur)
+        unschedule(autoDisableUPSControl)
+        if(cur) runIn(1800,"autoDisableUPSControl") else state.remove("controlDeviceName")
+    }
 }
 
 /* ==================================
@@ -338,8 +309,8 @@ def initialize(){
     if(device.currentValue("upsStatus")==null)emitEvent("upsStatus","Unknown")
     if(!tempUnits)tempUnits="F"
     state.upsControlEnabled=state.upsControlEnabled?:false
-    if(logEnable)logDebug "IP=$UPSIP, Port=$UPSPort, Username=$Username, Password=$Password" else logInfo "IP=$UPSIP, Port=$UPSPort"
-    if(UPSIP&&UPSPort&&Username&&Password){
+    if(logEnable)logDebug "IP=$upsIP, Port=$upsPort, Username=$Username, Password=$Password" else logInfo "IP=$upsIP, Port=$upsPort"
+    if(upsIP&&upsPort&&Username&&Password){
         unschedule(autoDisableDebugLogging)
         if(logEnable)runIn(1800,autoDisableDebugLogging)
         updateUPSControlState(state.upsControlEnabled)
@@ -347,7 +318,7 @@ def initialize(){
         scheduleCheck(runTime as Integer,runOffset as Integer)
         updateCommandState("Scheduled")
         updateConnectState("Initialized")
-        closeConnection(false)
+        closeConnection()
         runInMillis(500,"refresh")
     }
 }
@@ -366,47 +337,106 @@ private scheduleCheck(Integer interval,Integer offset){
 /* ===============================
    Command Helpers
    =============================== */
-private sendUPSCommand(String cmdName,List cmds){
-    if(state.connectStatus=="Connected"){
-        if(state.pendingDeferredCmd){logInfo"Command '${cmdName}' not queued — previous deferred command still pending.";return}
-        logInfo"Command '${cmdName}' deferred 15 seconds (active Telnet session detected)."
-        state.pendingDeferredCmd=true
-        runIn(15,cmdName,[overwrite:false])
+private sendUPSCommand(String cmdName, List cmds) {
+    if (!state.upsControlEnabled) {
+        logWarn "${cmdName} called but UPS control is disabled";state.remove("pendingDeferredCmd");return
+    }
+    if (state.connectStatus != "Disconnected") {
+        logInfo "${cmdName} deferred 15s (Telnet busy with ${state.lastCommand})"
+        if (!state.deferredCommand) {
+            state.deferredCommand = cmdName;runIn(15, cmdName)
+        } else {
+            logInfo "${cmdName} not queued; command '${state.deferredCommand}' already pending"
+        }
         return
     }
-    if(!state.upsControlEnabled){logWarn"$cmdName called but UPS control is disabled";return}
-    updateCommandState(cmdName)
-    updateConnectState("Trying")
-    emitChangedEvent("lastCommandResult","Pending","Command '${cmdName}' queued for UPS execution")
-    logInfo"$cmdName called"
-    safeTelnetConnect(UPSIP,UPSPort.toInteger())
-    state.pendingCmds=["$Username","$Password"]+cmds
-    runInMillis(500,"delayedTelnetSend")
-    state.remove("pendingDeferredCmd")
+    state.remove("deferredCommand");updateCommandState(cmdName);stateFlush("sendUPSCommand");updateConnectState("Connecting");emitEvent("lastCommandResult", "N/A")
+    emitChangedEvent("lastCommandResult", "Pending", "Command '${cmdName}' queued for UPS execution");logInfo "Executing UPS command: ${cmdName}"
+    try {
+        telnetClose();updateConnectState("UPSCommand");initTelnetBuffer();state.pendingCmds = ["$Username", "$Password"] + cmds
+        logDebug "sendUPSCommand(): Opening transient Telnet connection to ${upsIP}:${upsPort}"
+        telnetConnect(upsIP, upsPort.toInteger(), null, null);logDebug "sendUPSCommand(): queued ${state.pendingCmds.size()} Telnet lines for delayed send"
+        runInMillis(500, "delayedTelnetSend")
+    } catch (Exception e) {
+        logError "sendUPSCommand(${cmdName}): ${e.message}";emitEvent("lastCommandResult", "Failure");updateConnectState("Disconnected");closeConnection()
+    }
 }
 
-private delayedTelnetSend(){
-    if(state.pendingCmds){
+private delayedTelnetSend() {
+    if (state.pendingCmds) {
         logDebug "delayedTelnetSend(): sending ${state.pendingCmds.size()} queued commands"
-        telnetSend(state.pendingCmds,500)
-        state.remove("pendingCmds")
+        telnetSend(state.pendingCmds, 500);state.remove("pendingCmds")
     }
 }
 
-private void safeTelnetConnect(String ip,int port,int retries=3,int delayMs=10000){
-    int attempt=1
-    while(attempt<=retries){
-        try{
-            logDebug "safeTelnetConnect(): attempt ${attempt} of ${retries} connecting to ${ip}:${port}"
-            telnetClose();telnetConnect(ip,port,null,null)
-            logDebug "safeTelnetConnect(): connection established on attempt ${attempt}"
-            return
-        }catch(java.net.NoRouteToHostException e){logWarn "safeTelnetConnect(): No route to host (attempt ${attempt}/${retries}), retrying in ${delayMs/1000}s...";pauseExecution(delayMs)}
-        catch(java.net.ConnectException e){logWarn "safeTelnetConnect(): Connection refused or timed out (attempt ${attempt}/${retries}), retrying in ${delayMs/1000}s...";pauseExecution(delayMs)}
-        catch(Exception e){logError "safeTelnetConnect(): Unexpected error on attempt ${attempt}: ${e.message}";pauseExecution(delayMs)}
-        attempt++
+private void safeTelnetConnect(String ip, int port, int retries=3, int delayMs=10000) {
+    int attempt = (state.safeTelnetRetryCount ?: 1)
+
+    // Defer reconnoiter connect if a UPS command session is active or connecting
+    if (state.connectStatus in ["Connecting", "UPSCommand", "Connected"] && isCommandSessionActive()) {
+        if (attempt <= retries) {
+            logInfo "safeTelnetConnect(): Command session active, retrying in ${delayMs/1000}s (attempt ${attempt}/${retries})"
+            state.safeTelnetRetryCount = attempt + 1
+            runInMillis(delayMs, "retrySafeTelnetConnect")
+        } else {
+            logError "safeTelnetConnect(): Deferred connection aborted after ${retries} attempts"
+            state.remove("safeTelnetRetryCount")
+        }
+        return
     }
-    logError "safeTelnetConnect(): All ${retries} attempts to connect to ${ip}:${port} failed."
+
+    try {
+        logDebug "safeTelnetConnect(): attempt ${attempt} of ${retries} connecting to ${ip}:${port}"
+        telnetClose()
+        telnetConnect(ip, port, null, null)
+        logDebug "safeTelnetConnect(): connection established on attempt ${attempt}"
+        state.remove("safeTelnetRetryCount")
+    } catch (Exception e) {
+        def msg = e.message
+        def retryAllowed = (attempt < retries)
+        def retryText = "retrying in ${delayMs/1000}s (attempt ${attempt}/${retries})"
+        if (e instanceof java.net.NoRouteToHostException || e instanceof java.net.ConnectException) {
+            def errType = (e instanceof java.net.NoRouteToHostException) ? "No route to host" : "Connection refused or timed out"
+            logWarn "safeTelnetConnect(): ${errType}, ${retryAllowed ? retryText : 'max retries reached'}"
+        } else {
+            logError "safeTelnetConnect(): Unexpected error on attempt ${attempt}: ${msg}"
+        }
+        if (retryAllowed) {
+            state.safeTelnetRetryCount = attempt + 1
+            runInMillis(delayMs, "retrySafeTelnetConnect")
+        } else {
+            logError "safeTelnetConnect(): All ${retries} attempts to connect to ${ip}:${port} failed (${msg})"
+            state.remove("safeTelnetRetryCount")
+        }
+    }
+}
+
+private void retrySafeTelnetConnect(){
+    try{
+        safeTelnetConnect(upsIP,upsPort.toInteger())
+    }catch(Exception e){
+        logDebug "retrySafeTelnetConnect(): ${e.message}"
+    }
+}
+
+private Boolean isCommandSessionActive(){
+    def cmd=(state.lastCommand ?: "").toLowerCase()
+    return (cmd in ["testalarm","upsoff","upson","reboot","sleep","setoutletgroup","startselftest","cancelcalibration","calibrateruntime"])
+}
+
+private void stateFlush(String context = "unspecified") {
+    try {
+        def cmd0 = state.lastCommand, conn0 = state.connectStatus
+        pauseExecution(50)
+        if (state.lastCommand != cmd0 || state.connectStatus != conn0) {
+            def start = now(); while (now() - start < 75) {
+                pauseExecution(10);if (state.lastCommand == cmd0 && state.connectStatus == conn0) break
+            }
+        }
+        logDebug "stateFlush(${context}): synced (cmd=${state.lastCommand}, conn=${state.connectStatus})"
+    } catch (e) {
+        logDebug "stateFlush(${context}): ${e.message}"
+    }
 }
 
 /* ===============================
@@ -414,8 +444,8 @@ private void safeTelnetConnect(String ip,int port,int retries=3,int delayMs=1000
    =============================== */
 def TestAlarm()     {sendUPSCommand("TestAlarm",["ups -a start"])}
 def StartSelfTest() {sendUPSCommand("StartSelfTest",["ups -s start"])}
-def UPSOn()         {sendUPSCommand("UPSOn",["ups -c on"])}
-def UPSOff()        {sendUPSCommand("UPSOff",["ups -c off"])}
+def upsOn()         {sendUPSCommand("upsOn",["ups -c on"])}
+def upsOff()        {sendUPSCommand("upsOff",["ups -c off"])}
 def Reboot()        {sendUPSCommand("Reboot",["ups -c reboot"])}
 def Sleep()         {sendUPSCommand("Sleep",["ups -c sleep"])}
 def toggleRuntimeCalibration(){
@@ -432,12 +462,16 @@ def SetOutletGroup(p1,p2,p3){
     state.outlet=p1;state.command=p2;state.seconds=p3?: "0";sendUPSCommand("SetOutletGroup",["ups -o ${state.outlet} ${state.command} ${state.seconds}"])
 }
 
-def refresh(){
+def refresh() {
+    checkExternalUPSControlChange()
+    if (state.connectStatus in ["Connected", "Trying"]) {
+        logInfo "refresh(): Telnet session already active, skipping this refresh request"
+        return
+    }
     logInfo "${driverInfoString()} refreshing..."
-    state.sessionStart = now()
-    updateCommandState("Connecting");updateConnectState("Trying");state.remove("authStarted")
-    logDebug "Connecting to ${UPSIP}:${UPSPort}"
-    safeTelnetConnect(UPSIP, UPSPort.toInteger())
+    state.sessionStart = now();updateCommandState("Reconnoiter");stateFlush("refresh");updateConnectState("Trying");state.remove("authStarted")
+    logDebug "Connecting to ${upsIP}:${upsPort}"
+    safeTelnetConnect(upsIP, upsPort.toInteger())
 }
 
 /* ===============================
@@ -516,11 +550,13 @@ private handleIdentificationAndSelfTest(def pair){
 }
 
 private handleUPSError(def pair){
-    def code=pair[0],desc=translateUPSError(code),cmd=state.lastCommand?:"Unknown"
+    if (!pair) return;def code=pair[0]?.trim(),desc=translateUPSError(code),cmd=state.lastCommand
+    def validCmds=["TestAlarm","StartSelfTest","UPSOn","UPSOff","Reboot","Sleep","toggleRuntimeCalibration","SetOutletGroup"]
+    if(!(cmd in validCmds)){logDebug"handleUPSError(): Ignoring ${code} during non-control context (${cmd})";return}
     if(code in["E000:","E001:"]){emitChangedEvent("lastCommandResult","Success","Command '${cmd}' acknowledged by UPS (${desc})");logInfo"UPS Command '${cmd}' succeeded (${desc})";return}
     def contextualDesc=desc
     switch(cmd){
-        case"CalibrateRuntime":if(code in["E102:","E100:"])contextualDesc="Refused to start calibration — likely low battery or load conditions.";break
+        case"toggleRuntimeCalibration":if(code in["E102:","E100:"])contextualDesc="Refused to start calibration — likely low battery or load conditions.";break
         case"UPSOff":if(code=="E102:")contextualDesc="UPS refused shutdown — check outlet group configuration or NMC permissions.";break
         case"UPSOn":if(code=="E102:")contextualDesc="UPS power-on command refused — output already on or control locked.";break
         case"Reboot":if(code=="E102:")contextualDesc="UPS reboot not accepted — possibly blocked by runtime calibration or load conditions.";break
@@ -530,10 +566,6 @@ private handleUPSError(def pair){
     }
     emitChangedEvent("lastCommandResult","Failure","Command '${cmd}' failed (${code} ${contextualDesc})")
     logWarn"UPS Command '${cmd}' failed (${code} ${contextualDesc})"
-    if(cmd in["CalibrateRuntime","CancelCalibration"])emitChangedEvent("runtimeCalibration","failed","UPS Runtime Calibration failed")
-    if(cmd in["UPSOn","UPSOff"])logError"UPS Output command failed"
-    if(code=="E101:")logWarn"UPS does not support 'ups ?' command; skipping outlet group detection"
-    updateConnectState("Disconnected");closeConnection();emitEvent("telnet","Ok")
 }
 
 private handleAlarmCount(List<String> lines){
@@ -563,7 +595,6 @@ private handleBannerData(String l){
     if(mUp.find()){
         def v=mUp.group(1).trim()
         emitChangedEvent("upsUptime",v,"UPS Uptime = ${v}")
-        emitChangedEvent("nmcUptime",v,"NMC Uptime = ${v}")
     }
     def mDate=(l=~/Date\s*:\s*(\d{2}\/\d{2}\/\d{4})/)
     if(mDate.find()) state.upsBannerDate=mDate.group(1).trim()
@@ -638,15 +669,12 @@ private handleNMCData(List<String> lines){
 
 private handleBannerSection(List<String> lines){lines.each{l->handleBannerData(l)}}
 private handleUPSAboutSection(List<String> lines){lines.each{l->handleIdentificationAndSelfTest(l.split(/\s+/))}}
-private handleDetStatus(List<String> lines){lines.each{l->def p=l.split(/\s+/);handleUPSStatus(p);handleLastTransfer(p);handleBatteryData(p);handleElectricalMetrics(p);handleIdentificationAndSelfTest(p);handleUPSError(p)};def cmd=state.lastCommand;if(cmd in["reconnoiter","refresh"])emitLastUpdate()else logDebug"handleDetStatus(): Skipping lastUpdate for command '${cmd}'"}
+private handleDetStatus(List<String> lines){lines.each{l->def p=l.split(/\s+/);handleUPSStatus(p);handleLastTransfer(p);handleBatteryData(p);handleElectricalMetrics(p);handleIdentificationAndSelfTest(p);handleUPSError(p)};def cmd=(state.lastCommand?:'').toLowerCase();logDebug "handleDetStatus(): Completed detstatus parse for command '${cmd}'"}
 private List<String> extractSection(List<Map> lines,String start,String end){def i0=lines.findIndexOf{it.line.startsWith(start)};if(i0==-1)return[];def i1=(i0+1..<lines.size()).find{lines[it].line.startsWith(end)}?:lines.size();lines.subList(i0+1,i1)*.line}
 
-/* ===============================
-   Buffered Session Processing
-   =============================== */
 private processBufferedSession(){
-    def buf=state.telnetBuffer?:[]; if(!buf)return
-    def lines=buf.findAll{it.line}; state.telnetBuffer=[]
+    def buf=state.telnetBuffer?:[];if(!buf)return
+    def lines=buf.findAll{it.line};state.telnetBuffer=[]
     def secBanner=extractSection(lines,"Schneider","apc>")
     def secUps=extractSection(lines,"apc>ups ?","apc>")
     def secAbout=extractSection(lines,"apc>about","apc>")
@@ -661,33 +689,63 @@ private processBufferedSession(){
     if(secAbout)handleNMCData(secAbout)
     if(secAlarmCrit||secAlarmWarn||secAlarmInfo)handleAlarmCount(secAlarmCrit+secAlarmWarn+secAlarmInfo)
     if(secDetStatus)handleDetStatus(secDetStatus)
-    state.remove("telnetBuffer")
+    emitLastUpdate();updateConnectState("Disconnected");state.remove("telnetBuffer")
+}
+
+private processUPSCommand() {
+    def buf = state.telnetBuffer ?: []
+    if (!buf || buf.size() == 0) {
+        logDebug "processUPSCommand(): No buffered data to process";return
+    }
+    def lines = buf.findAll { it.line }.collect { it.line.trim() }
+    state.remove("telnetBuffer");def cmd = state.lastCommand ?: "Unknown";logDebug "processUPSCommand(): processing ${lines.size()} lines for UPS command '${cmd}'"
+    def errLine = lines.find { it ==~ /^E\d{3}:/ }
+    if (errLine) {
+        logInfo "processUPSCommand(): UPS command '${cmd}' returned '${errLine}'"
+        handleUPSError(errLine.split(/\s+/))
+    } else {
+        logWarn "processUPSCommand(): UPS command '${cmd}' completed with no E-code response"
+        emitChangedEvent("lastCommandResult", "No Response", "Command '${cmd}' completed without explicit result")
+    }
+    updateConnectState("Disconnected")
 }
 
 /* ===============================
    Parse
    =============================== */
-def parse(String msg){
-    msg=msg.replaceAll('\r\n','\n').replaceAll('\r','\n')
-    def lines=msg.split('\n').findAll{it.trim()}
+def parse(String msg) {
+    msg = msg.replaceAll('\r\n','\n').replaceAll('\r','\n');def lines = msg.split('\n').findAll { it.trim() }
+    def currentCmd = (state.lastCommand ?: "Unknown");logDebug "parse(): lastCommand=${currentCmd}, connectStatus=${state.connectStatus}"
+    if (currentCmd != "Reconnoiter") {
+    // --- UPSCommand Session ---
+    if (!state.telnetBuffer) state.telnetBuffer = []
+        lines.each { line ->
+            line = line.trim()
+            if (line) {
+                logDebug "Buffering line (UPSCommand): ${line}"
+                state.telnetBuffer << [cmd: currentCmd, line: line]
+            }
+        }
+        return
+    }
+    // --- Reconnoiter Session Handling ---
     lines.each{line->
         logDebug "Buffering line: ${line}"
         if(!state.authStarted)initTelnetBuffer()
         state.telnetBuffer<<[cmd:device.currentValue("lastCommand")?:"unknown",line:line]
         if(!state.authStarted){
             logDebug "First telnet data seen, sending auth sequence"
-            updateConnectState("Connected")
             updateCommandState("Reconnoiter")
             state.upsBannerRefTime=now()
             telnetSend([Username,Password,"ups ?","upsabout","about","alarmcount -p critical","alarmcount -p warning","alarmcount -p informational","detstatus -all","whoami"],500)
             state.authStarted=true
         }else if(device.currentValue("lastCommand")=="quit"&&line.toLowerCase().contains("goodbye")){
             logDebug "Quit acknowledged by UPS"
-            updateCommandState("Rescheduled")
             updateConnectState("Initialized")
+            updateCommandState("Rescheduled")
             emitChangedEvent("nextCheckMinutes",device.currentValue("checkInterval"))
             processBufferedSession()
-            closeConnection(true)
+            closeConnection()
             emitEvent("telnet","Ok")
         }else{
             if(line.startsWith("apc>whoami"))state.whoamiEchoSeen=true
@@ -697,7 +755,7 @@ def parse(String msg){
                 logDebug "whoami sequence complete, processing buffer..."
                 ["whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen","authStarted"].each{state.remove(it)}
                 processBufferedSession()
-                closeConnection(true)
+                closeConnection()
             }
         }
     }
@@ -713,48 +771,55 @@ def sendData(String msg,Integer millsec){
     return hubCmd
 }
 
+def telnetStatus(String status) {
+    if (status.contains("receive error: Stream is closed")) {
+        def buf = state.telnetBuffer?:[];logDebug "telnetStatus(): Stream closed, buffer has ${buf.size()} lines"
+        if (buf && buf.size() > 0 && device.currentValue("lastCommand") == "Reconnoiter") {
+            def lastLine = buf[-1]?.line?.toString()?:""
+            def tail = (lastLine.size() > 100 ? lastLine[-100..-1] : lastLine)
+            logDebug "telnetStatus(): Last buffer tail (up to 100 chars): ${tail}"
+            logDebug "telnetStatus(): Stream closed with unprocessed buffer, forcing parse"
+            processBufferedSession()
+        }
+        updateConnectState("Disconnected");logDebug "telnetStatus(): connection reset after stream close"
+    } else if (status.contains("send error")) {
+        logWarn "telnetStatus(): Telnet send error: ${status}";updateConnectState("Disconnected")
+    } else {
+        logDebug "telnetStatus(): ${status}"
+        if (status.toLowerCase().contains("closed") || status.toLowerCase().contains("error")) {
+            updateConnectState("Disconnected");logDebug "telnetStatus(): connection reset (generic close/error)"
+        }
+    }
+    closeConnection()
+}
+
+def closeConnection() {
+    try {
+        telnetClose();logDebug "Telnet connection closed"
+        if (state.telnetBuffer && state.telnetBuffer.size() > 0) {
+            def lastLine = state.telnetBuffer[-1]?.line?.toString() ?: ""
+            def tail = (lastLine.size() > 100 ? lastLine[-100..-1] : lastLine)
+            logDebug "Closing with buffered data (${state.telnetBuffer.size()} lines), tail=${tail}"
+            def cmd = (state.lastCommand ?: device.currentValue("lastCommand") ?: "Unknown")
+            if (cmd == "Reconnoiter") {
+                processBufferedSession()
+            } else if (isCommandSessionActive()) {
+                processUPSCommand()
+            } else {
+                logDebug "closeConnection(): Ignored buffer from non-session command '${cmd}'"
+            }
+        } else {
+            logDebug "closeConnection(): no buffered data to process"
+        }
+    } catch (e) {
+        logDebug "closeConnection(): ${e.message}"
+    }
+    if (state.lastCommand != "Scheduled") updateCommandState("Idle")
+    stateFlush("closeConnection");updateConnectState("Disconnected")
+}
+
 boolean telnetSend(List msgs,Integer millisec){
     logDebug "telnetSend(): sending ${msgs.size()} messages with ${millisec} ms delay"
     msgs.each{msg->sendData("${msg}",millisec)}
     true
-}
-
-def telnetStatus(String status){
-    if(status.contains("receive error: Stream is closed")){
-        def buf=state.telnetBuffer?:[]
-        logDebug "Telnet disconnected, buffer has ${buf.size()} lines"
-        if(buf&&buf.size()>0&&device.currentValue("lastCommand")=="Reconnoiter"){
-            def lastLine=buf[-1]?.line?.toString()?: ""
-            def tail=(lastLine.size()>100?lastLine[-100..-1]:lastLine)
-            logDebug "Last buffer tail (up to 100 chars): ${tail}"
-            logDebug "Stream closed with unprocessed buffer, forcing parse"
-            processBufferedSession()
-        }
-        updateConnectState("Disconnected")
-    }else if(status.contains("send error"))logWarn "Telnet send error: $status"
-    else logDebug "telnetStatus: $status"
-    closeConnection(true)
-}
-
-private void closeConnection(Boolean deferred=true){
-    try{
-        if(state.connectStatus=="Disconnected")return
-        if(deferred){
-            if(!state.deferredClosePending){
-                state.deferredClosePending=true
-                logDebug "closeConnection(): deferring telnetClose by 250ms for event flush"
-                runInMillis(250,"finalizeTelnetClose",[overwrite:true])
-            }else logDebug "closeConnection(): deferred close already pending"
-            return
-        }
-        // Called from finalizeTelnetClose() after 250ms deferred flush window
-        telnetClose()
-        state.connectStatus="Disconnected"
-        state.remove("deferredClosePending");state.remove("telnetBuffer");state.remove("postAuthSent")
-        logDebug "Telnet connection closed cleanly"
-    }catch(e){logWarn "closeConnection(): ${e.message}"}
-}
-
-private void finalizeTelnetClose() {
-    closeConnection(false)
 }
