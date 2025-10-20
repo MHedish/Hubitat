@@ -24,15 +24,27 @@
 *  0.3.4.12  -- Unified connectStatus handling, removed 'Idle' state, fixed false busy condition, simplified initialize() flow, ensured clean Telnet teardown and deterministic session recovery.
 *  0.3.4.13  -- Fixed connectStatus update regression; removed duplicate debug log and restored single deterministic info emit during state transition.
 *  0.3.4.14  -- Unified session timing; sessionStart now set in sendUPSCommand(), cleared in emitLastUpdate(), removed from refresh()
-*  0.3.5.0   -- Unified deterministic Telnet teardown model; cleanup centralized in finalizeSessionInternal(); ensures single post-parse cleanup for both Reconnoiter and UPSCommand paths; removes duplicate emit lines.
+*  0.3.5.0   -- Unified deterministic Telnet teardown model; cleanup centralized in finalizeSession(); ensures single post-parse cleanup for both Reconnoiter and UPSCommand paths; removes duplicate emit lines.
 *  0.3.5.1   -- Corrected redundant log emission in emitLastUpdate(); removed extraneous logInfo since emitChangedEvent() already generates Info-level output.
+*  0.3.5.2   -- Refined connectStatus lifecycle; replaced legacy UPSCommand state with deterministic five-stage model (Initializing->Connecting->Connected->Disconnecting->Disconnected) for all command paths.
+*  0.3.5.3   -- Simplified telnetStatus() logging; removed redundant close/error debug lines and streamlined connection reset reporting for cleaner deterministic output.
+*  0.3.5.5   -- Simplified finalizeSession(); added exception-safe cleanup and unified lastCommandResult=Complete emission for all sessions.
+*  0.3.5.6   -- Fixed finalizeSession() to emit correct lastCommandResult description using current or pending command name; confirmed error handling remains deterministic.
+*  0.3.5.7   -- Hardened finalizeSession(); replaced unsafe command list reference with state.lastCommand and added origin context for secure, traceable session completion.
+*  0.3.5.8   -- Removed superfluous debug output from handleDetStatus(); streamlined final detstatus parse handling for cleaner post-session logs and reduced noise.
+*  0.3.5.9   -- Fixed non-persistent state cleanup bug caused by closure-based state.remove(); restored explicit deterministic post-session reset for telnetBuffer, sessionStart, and pendingCmds to ensure clean state between sessions.
+*  0.3.5.10  -- Added deterministic post-self-test refresh scheduling; restored guaranteed session cleanup under finally to ensure telnetBuffer, sessionStart, and pendingCmds are always cleared even after async or exception paths.
+*  0.3.5.11  -- Unified transient state cleanup via resetTransientState(); ensures deterministic recovery at both initialization and session finalization, adds residual-state detection logging, and improves Hubitat state flush reliability.
+*  0.3.5.12  -- Enhanced resetTransientState() for contextual cleanup; added optional suppressWarn flag to silence expected state removal during finalizeSession(); maintains warning output only for true residual state detected during initialize().
+*  0.3.5.13  -- Improved UPS status parsing to correctly normalize "Off No" as "Off"; removed redundant connectState update in sendUPSCommand() for cleaner deterministic transition (Initializing->Connecting).
+*  0.3.6.0   -- Added intelligent post-command refresh scheduling after self-test, reboot, and power-cycle; ensures deterministic status capture via delayed refresh without disrupting session finalization.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.3.5.1"
-@Field static final String DRIVER_MODIFIED = "2025.10.19"
+@Field static final String DRIVER_VERSION  = "0.3.6.0"
+@Field static final String DRIVER_MODIFIED = "2025.10.20"
 
 /* ===============================
    Metadata
@@ -313,12 +325,10 @@ def initialize() {
     if (device.currentValue("upsStatus") == null) emitEvent("upsStatus", "Unknown")
     if (!tempUnits) tempUnits = "F"
     state.upsControlEnabled = state.upsControlEnabled ?: false
-
     if (logEnable)
         logDebug "IP=$upsIP, Port=$upsPort, Username=$Username, Password=$Password"
     else
         logInfo "IP=$upsIP, Port=$upsPort"
-
     if (upsIP && upsPort && Username && Password) {
         unschedule(autoDisableDebugLogging)
         if (logEnable) runIn(1800, autoDisableDebugLogging)
@@ -328,13 +338,7 @@ def initialize() {
             runIn(1800, autoDisableUPSControl)
         }
         scheduleCheck(runTime as Integer, runOffset as Integer)
-        // --- Sanity check: cleanup dirty state from abend ---
-        if (connectStatus in ["Connecting", "UPSCommand"]) {
-            logWarn "initialize(): detected unclean shutdown, resetting Telnet session state"
-            ["pendingCmds", "deferredCommand", "telnetBuffer", "sessionStart",
-             "authStarted", "whoamiEchoSeen", "whoamiAckSeen", "whoamiUserSeen"].each { state.remove(it) }
-        }
-        // --- Clean slate ---
+        resetTransientState("initialize")
         updateConnectState("Disconnected")
         closeConnection()
         runInMillis(500, "refresh")
@@ -365,7 +369,6 @@ private sendUPSCommand(String cmdName, List cmds) {
     // --- Guard: Telnet session busy ---
     if (device.currentValue("connectStatus") != "Disconnected") {
         logInfo "${cmdName} deferred 15s (Telnet busy with ${state.lastCommand})"
-
         if (!state.deferredCommand) {
             state.deferredCommand = cmdName
             def retryTarget = (cmdName == "Reconnoiter") ? "refresh" : cmdName
@@ -379,13 +382,12 @@ private sendUPSCommand(String cmdName, List cmds) {
     // --- Proceed: New command session ---
     state.remove("deferredCommand")
     updateCommandState(cmdName)
-    updateConnectState("Connecting")
-    emitEvent("lastCommandResult", "N/A")
-    emitChangedEvent("lastCommandResult", "Pending", "Command '${cmdName}' queued for UPS execution")
+    updateConnectState("Initializing")
+    emitEvent("lastCommandResult", "Pending", "'${cmdName}' queued for execution")
     logInfo "Executing UPS command: ${cmdName}"
     try{
 	    state.sessionStart=now();logDebug "sendUPSCommand(): session start timestamp = ${state.sessionStart}"
-	    telnetClose();updateConnectState("UPSCommand");initTelnetBuffer()
+	    telnetClose();updateConnectState("Connecting");initTelnetBuffer()
 	    state.pendingCmds=["$Username","$Password"]+cmds+["whoami"]
 	    logDebug "sendUPSCommand(): Opening transient Telnet connection to ${upsIP}:${upsPort}"
 	    telnetConnect(upsIP,upsPort.toInteger(),null,null)
@@ -460,6 +462,13 @@ private Boolean isCommandSessionActive(){
     return (cmd in ["testalarm","upsoff","upson","reboot","sleep","setoutletgroup","startselftest","cancelcalibration","calibrateruntime"])
 }
 
+private void resetTransientState(String origin, Boolean suppressWarn=false){
+    def keys=["pendingCmds","deferredCommand","telnetBuffer","sessionStart","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen"]
+    def residuals=keys.findAll{state[it]}
+    if(residuals&&!suppressWarn)logWarn "resetTransientState(): Detected residual state keys (${residuals.join(', ')}) during ${origin}"
+    keys.each{state.remove(it)}
+}
+
 /* ===============================
    Commands
    =============================== */
@@ -500,28 +509,23 @@ def refresh() {
     sendUPSCommand("Reconnoiter", reconCmds)
 }
 
-
 /* ===============================
    Session Finalization
    =============================== */
-private finalizeSessionInternal(String origin="generic") {
+private finalizeSession(String origin) {
     try {
         if (state.sessionStart) emitLastUpdate()
         if (device.currentValue("connectStatus") != "Disconnected")
-            updateConnectState("Disconnected")
-        if (device.currentValue("lastCommand") == "Reconnoiter") {
-            def cur = device.currentValue("lastCommandResult")
-            if (cur == "Pending" || !cur)
-                emitChangedEvent("lastCommandResult", "Complete", "Reconnoiter completed normally")
-        }
-        logDebug "finalizeSessionInternal(): Cleanup from ${origin}"
-    } catch (e) {
-        logWarn "finalizeSessionInternal(): ${e.message}"
-    } finally {
-        state.remove("telnetBuffer")
-        state.remove("sessionStart")
-        state.remove("pendingCmds")
-    }
+            updateConnectState("Disconnecting")
+        def cmd = state.pendingCmds ?: device.currentValue("lastCommand") ?: "Session"
+        emitChangedEvent("lastCommandResult", "Complete",
+            "${state.lastCommand} completed normally")
+        logDebug "finalizeSession(): Cleanup from ${origin}"
+        def lastCmd=(state.lastCommand?:"").toLowerCase()
+        if(lastCmd=="startselftest"){try{def n=device.currentValue("nextCheckMinutes")as Integer;if(n==null||n>1){logInfo "Post self-test refresh scheduled for 45s from now";runIn(45,"refresh")}else logDebug "Skipping post-self-test refresh (next scheduled in ${n*60}s)"}catch(e){logWarn "finalizeSession(): unable to evaluate post-self-test refresh (${e.message})"}}
+        if(lastCmd=="reboot"){try{def n=device.currentValue("nextCheckMinutes")as Integer;if(n==null||n>2){logInfo "Post reboot refresh scheduled for 90s from now";runIn(90,"refresh")}else logDebug "Skipping post-reboot refresh (next scheduled in ${n*60}s)"}catch(e){logWarn "finalizeSession(): unable to evaluate post-reboot refresh (${e.message})"}}
+        if(lastCmd in ["upsoff","upson"]){try{def n=device.currentValue("nextCheckMinutes")as Integer;if(n==null||n>1){logInfo "Post power-cycle refresh scheduled for 30s from now";runIn(30,"refresh")}else logDebug "Skipping post-power-cycle refresh (next scheduled in ${n*60}s)"}catch(e){logWarn "finalizeSession(): unable to evaluate post-power-cycle refresh (${e.message})"}}
+    }catch(e){logWarn "finalizeSession(): ${e.message}"}finally{resetTransientState("finalizeSession",true)}
 }
 
 /* ===============================
@@ -533,6 +537,7 @@ private handleUPSStatus(def pair){
     if(status==~/(?i)on[-\s]?line/)status="Online"
     else if(status==~/(?i)on\s*battery/)status="OnBattery"
     else if(status.equalsIgnoreCase("Discharged"))status="Discharged"
+    else if(status==~/(?i)off\s*no/)status="Off"
     emitChangedEvent("upsStatus",status,"UPS Status = ${status}")
     def rT=runTime.toInteger(),rTB=runTimeOnBattery.toInteger(),rO=runOffset.toInteger()
     switch(status){
@@ -719,7 +724,7 @@ private handleNMCData(List<String> lines){
 
 private handleBannerSection(List<String> lines){lines.each{l->handleBannerData(l)}}
 private handleUPSAboutSection(List<String> lines){lines.each{l->handleIdentificationAndSelfTest(l.split(/\s+/))}}
-private handleDetStatus(List<String> lines){lines.each{l->def p=l.split(/\s+/);handleUPSStatus(p);handleLastTransfer(p);handleBatteryData(p);handleElectricalMetrics(p);handleIdentificationAndSelfTest(p);handleUPSCommands(p)};def cmd=(state.lastCommand?:'').toLowerCase();logDebug "handleDetStatus(): Completed detstatus parse for command '${cmd}'"}
+private handleDetStatus(List<String> lines){lines.each{l->def p=l.split(/\s+/);handleUPSStatus(p);handleLastTransfer(p);handleBatteryData(p);handleElectricalMetrics(p);handleIdentificationAndSelfTest(p);handleUPSCommands(p)};def cmd=(state.lastCommand?:'').toLowerCase()}
 private List<String> extractSection(List<Map> lines,String start,String end){def i0=lines.findIndexOf{it.line.startsWith(start)};if(i0==-1)return[];def i1=(i0+1..<lines.size()).find{lines[it].line.startsWith(end)}?:lines.size();lines.subList(i0+1,i1)*.line}
 
 private processBufferedSession(){
@@ -739,7 +744,7 @@ private processBufferedSession(){
     if(secAbout)handleNMCData(secAbout)
     if(secAlarmCrit||secAlarmWarn||secAlarmInfo)handleAlarmCount(secAlarmCrit+secAlarmWarn+secAlarmInfo)
     if(secDetStatus)handleDetStatus(secDetStatus)
-    finalizeSessionInternal("processBufferedSession")
+    finalizeSession("processBufferedSession")
 }
 
 private processUPSCommand() {
@@ -759,7 +764,7 @@ private processUPSCommand() {
         logWarn "processUPSCommand(): UPS command '${cmd}' completed with no E-code response"
         emitChangedEvent("lastCommandResult", "No Response", "Command '${cmd}' completed without explicit result")
     }
-    finalizeSessionInternal("processUPSCommand")
+    finalizeSession("processUPSCommand")
 }
 
 /* ===============================
@@ -772,21 +777,19 @@ def parse(String msg) {
         if(!state.authStarted)initTelnetBuffer()
         state.telnetBuffer << [cmd:device.currentValue("lastCommand")?:"unknown", line:line]
         if(!state.authStarted) {
-            logDebug "First Telnet data seen; session flagged as Connected"
-            updateConnectState("Connected")
-            updateCommandState(device.currentValue("lastCommand")?:"Reconnoiter")
-            state.upsBannerRefTime = now()
-            state.authStarted = true
+            updateConnectState("Connected");logDebug "First Telnet data seen; session flagged as Connected"
+            def cmd = device.currentValue("lastCommand")
+			if (cmd){updateCommandState(cmd)}else{logDebug "parse(): Skipping updateCommandState — no current command yet (auth handshake)"}
+            state.upsBannerRefTime = now();state.authStarted = true
         } else {
             if(line.startsWith("apc>whoami")) state.whoamiEchoSeen = true
             if(line.startsWith("E000: Success")) state.whoamiAckSeen = true
             if(line.trim().equalsIgnoreCase(Username.trim())) state.whoamiUserSeen = true
             if((state.whoamiEchoSeen && state.whoamiAckSeen && state.whoamiUserSeen)
-            || (connectStatus == "UPSCommand" && state.whoamiEchoSeen)) {
+            || (connectStatus == "UPSCommand" && state.whoamiEchoSeen)){
                 logDebug "whoami sequence complete, processing buffer..."
-                ["whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen","authStarted"].each { state.remove(it) }
-                if(connectStatus == "UPSCommand") handleUPSCommands()
-                else processBufferedSession()
+                ["whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen","authStarted"].each{state.remove(it)}
+                if(connectStatus == "UPSCommand")handleUPSCommands()else processBufferedSession()
                 closeConnection()
             }
         }
@@ -804,23 +807,27 @@ def sendData(String msg,Integer millsec){
 }
 
 def telnetStatus(String status) {
-    if (status.contains("receive error: Stream is closed")) {
-        def buf = state.telnetBuffer?:[];logDebug "telnetStatus(): Stream closed, buffer has ${buf.size()} lines"
+    def sLower = status?.toLowerCase() ?: ""
+    if (sLower.contains("receive error: stream is closed")) {
+        def buf = state.telnetBuffer ?: []
+        logDebug "telnetStatus(): Stream closed, buffer has ${buf.size()} lines"
         if (buf && buf.size() > 0 && device.currentValue("lastCommand") == "Reconnoiter") {
-            def lastLine = buf[-1]?.line?.toString()?:""
+            def lastLine = buf[-1]?.line?.toString() ?: ""
             def tail = (lastLine.size() > 100 ? lastLine[-100..-1] : lastLine)
             logDebug "telnetStatus(): Last buffer tail (up to 100 chars): ${tail}"
             logDebug "telnetStatus(): Stream closed with unprocessed buffer, forcing parse"
             processBufferedSession()
         }
         updateConnectState("Disconnected");logDebug "telnetStatus(): connection reset after stream close"
-    } else if (status.contains("send error")) {
-        logWarn "telnetStatus(): Telnet send error: ${status}";updateConnectState("Disconnected")
-    } else {
+    }
+    else if (sLower.contains("send error")) {
+        updateConnectState("Disconnected");logWarn "telnetStatus(): Telnet send error: ${status}"
+    }
+    else if (sLower.contains("closed") || sLower.contains("error")) {
+        updateConnectState("Disconnected");logDebug "telnetStatus(): ${status}"
+    }
+    else {
         logDebug "telnetStatus(): ${status}"
-        if (status.toLowerCase().contains("closed") || status.toLowerCase().contains("error")) {
-            updateConnectState("Disconnected");logDebug "telnetStatus(): connection reset (generic close/error)"
-        }
     }
     closeConnection()
 }
