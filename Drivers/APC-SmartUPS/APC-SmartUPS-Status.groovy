@@ -103,12 +103,12 @@ metadata {
         command "disableDebugLoggingNow"
         command "enableUPSControl"
         command "disableUPSControl"
-        command "AlarmTest"
-        command "SelfTest"
+        command "alarmTest"
+        command "selfTest"
         command "upsOn"
         command "upsOff"
-        command "Reboot"
-        command "Sleep"
+        command "reboot"
+        command "sleep"
         command "toggleRuntimeCalibration"
         command "SetOutletGroup",[
             [name:"outletGroup",description:"Outlet Group 1 or 2",type:"enum",constraints:["1","2"],required:true,default:"1"],
@@ -351,12 +351,12 @@ private void resetTransientState(String origin, Boolean suppressWarn=false){
 /* ===============================
    Commands
    =============================== */
-def AlarmTest() {sendUPSCommand("Alarm Test",["ups -a start"])}
-def SelfTest()  {sendUPSCommand("Self Test",["ups -s start"])}
+def alarmTest() {sendUPSCommand("Alarm Test",["ups -a start"])}
+def selfTest()  {sendUPSCommand("Self Test",["ups -s start"])}
 def upsOn()     {sendUPSCommand("UPS On",["ups -c on"])}
 def upsOff()    {sendUPSCommand("UPS Off",["ups -c off"])}
-def Reboot()    {sendUPSCommand("Reboot",["ups -c reboot"])}
-def Sleep()     {sendUPSCommand("Sleep",["ups -c sleep"])}
+def reboot()    {sendUPSCommand("Reboot",["ups -c reboot"])}
+def sleep()     {sendUPSCommand("Sleep",["ups -c sleep"])}
 def toggleRuntimeCalibration(){
     def active=(device.currentValue("runtimeCalibration")=="active")
     if(active){sendUPSCommand("Cancel Calibration",["ups -r stop"])}
@@ -396,7 +396,7 @@ private finalizeSession(String origin) {
         emitChangedEvent("lastCommandResult","Complete","${state.lastCommand} completed normally")
         logDebug "finalizeSession(): Cleanup from ${origin}"
         def lastCmd=(state.lastCommand?:"").toLowerCase()
-        if(lastCmd=="startselftest"){try{def n=device.currentValue("nextCheckMinutes")as Integer;if(n==null||n>1){logInfo "Post self-test refresh scheduled for 45s from now";runIn(45,"refresh")}else logDebug "Skipping post-self-test refresh (next scheduled in ${n*60}s)"}catch(e){logWarn "finalizeSession(): unable to evaluate post-self-test refresh (${e.message})"}}
+        if(lastCmd=="selfTest"){try{def n=device.currentValue("nextCheckMinutes")as Integer;if(n==null||n>1){logInfo "Post self-test refresh scheduled for 45s from now";runIn(45,"refresh")}else logDebug "Skipping post-self-test refresh (next scheduled in ${n*60}s)"}catch(e){logWarn "finalizeSession(): unable to evaluate post-self-test refresh (${e.message})"}}
         if(lastCmd=="reboot"){try{def n=device.currentValue("nextCheckMinutes")as Integer;if(n==null||n>2){logInfo "Post reboot refresh scheduled for 90s from now";runIn(90,"refresh")}else logDebug "Skipping post-reboot refresh (next scheduled in ${n*60}s)"}catch(e){logWarn "finalizeSession(): unable to evaluate post-reboot refresh (${e.message})"}}
         if(lastCmd in ["upsoff","upson"]){try{def n=device.currentValue("nextCheckMinutes")as Integer;if(n==null||n>1){logInfo "Post power-cycle refresh scheduled for 30s from now";runIn(30,"refresh")}else logDebug "Skipping post-power-cycle refresh (next scheduled in ${n*60}s)"}catch(e){logWarn "finalizeSession(): unable to evaluate post-power-cycle refresh (${e.message})"}}
     }catch(e){logWarn "finalizeSession(): ${e.message}"}finally{resetTransientState("finalizeSession",true)}
