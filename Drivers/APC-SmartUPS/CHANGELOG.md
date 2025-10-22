@@ -123,3 +123,4 @@
 *  0.3.6.5   -- Expanded transientContext to replace state vars (upsBanner* & nmc*); reduced runtime <5s; retained whoami state for stability
 *  0.3.6.6   -- Final code cleanup before RC; cosmetic label changes
 *  0.3.6.7   -- Standardized all utility methods to condensed format; finalized transientContext integration; removed obsolete state usage for stateless ops; prep for RC release
+*  0.3.6.8   -- Corrected case sensitivity mismatch in handleUPSCommands() to align with camelCase command definitions.
