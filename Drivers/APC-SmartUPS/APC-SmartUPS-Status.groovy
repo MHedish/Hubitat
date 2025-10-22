@@ -110,7 +110,7 @@ metadata {
         command "reboot"
         command "sleep"
         command "toggleRuntimeCalibration"
-        command "SetOutletGroup",[
+        command "setOutletGroup",[
             [name:"outletGroup",description:"Outlet Group 1 or 2",type:"enum",constraints:["1","2"],required:true,default:"1"],
             [name:"command",description:"Command to execute",type:"enum",constraints:["Off","On","DelayOff","DelayOn","Reboot","DelayReboot","Shutdown","DelayShutdown","Cancel"],required:true],
             [name:"seconds",description:"Delay in seconds",type:"enum",constraints:["1","2","3","4","5","10","20","30","45","60","90","120","180","240","300","600"],required:true]
@@ -362,13 +362,13 @@ def toggleRuntimeCalibration(){
     if(active){sendUPSCommand("Cancel Calibration",["ups -r stop"])}
     else{sendUPSCommand("Calibrate Runtime",["ups -r start"])}
 }
-def SetOutletGroup(p0, p1, p2) {
+def setOutletGroup(p0, p1, p2) {
     emitEvent("lastCommandResult","N/A");logInfo "Set Outlet Group called [$p0 $p1 $p2]"
-    if (!device.currentValue("upsSupportsOutlet")) {logWarn "SetOutletGroup unsupported on this UPS model";emitEvent("lastCommandResult","Unsupported");return}
+    if (!device.currentValue("upsSupportsOutlet")) {logWarn "setOutletGroup unsupported on this UPS model";emitEvent("lastCommandResult","Unsupported");return}
     if (!p1) {logError "Outlet group is required.";return}
     if (!p2) {logError "Command is required.";return}
-    def cmd="ups -o ${p0.trim()} ${p1.trim()} ${(p2?:'0').trim()}";logDebug "SetOutletGroup(): issuing UPS command '${cmd}'"
-    sendUPSCommand("SetOutletGroup",[cmd])
+    def cmd="ups -o ${p0.trim()} ${p1.trim()} ${(p2?:'0').trim()}";logDebug "setOutletGroup(): issuing UPS command '${cmd}'"
+    sendUPSCommand("setOutletGroup",[cmd])
 }
 
 def refresh() {
@@ -479,7 +479,7 @@ private handleIdentificationAndSelfTest(def pair){
 
 private handleUPSCommands(def pair){
     if (!pair) return;def code=pair[0]?.trim(),desc=translateUPSError(code),cmd=state.lastCommand
-    def validCmds=["AlarmTest","SelfTest","UPSOn","UPSOff","Reboot","Sleep","toggleRuntimeCalibration","SetOutletGroup"]
+    def validCmds=["AlarmTest","SelfTest","UPSOn","UPSOff","Reboot","Sleep","toggleRuntimeCalibration","setOutletGroup"]
     if(!(cmd in validCmds))return
     if(code in["E000:","E001:"]){emitChangedEvent("lastCommandResult","Success","Command '${cmd}' acknowledged by UPS (${desc})");logInfo"UPS Command '${cmd}' succeeded (${desc})";return}
     def contextualDesc=desc
