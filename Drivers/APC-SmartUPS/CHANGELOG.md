@@ -1,755 +1,125 @@
-# APC SmartUPS Status Driver — Changelog
-
-## [0.2.0.52] - 2025-10-08
-### Changed
-- Updated `initTelnetBuffer()` to log the **last 3 buffered lines** instead of a single truncated fragment when clearing leftover data.  
-- Uses `tail` variable internally to maintain consistency with existing log formats.  
-- Improves trace visibility for diagnosing unexpected Telnet session residue during cleanup.  
-
-## [0.2.0.51] - 2025-10-08
-### Changed
-- Improved UPS name handling: device label now updates **only when changed**, preventing redundant log entries and unnecessary `setLabel()` calls.  
-
-## [0.2.0.50] - 2025-10-07
-### Changed
-- Reverted non-functional change from `0.2.0.44` that did not affect driver behavior.  
-
-## [0.2.0.49] - 2025-10-07
-### Changed
-- Streamlined `initialize()` and scheduler logic.  
-- Removed redundant preference conversions and unreachable “parameters not filled” condition.  
-- Preserved cadence-safe `scheduleCheck()` for interval/offset updates without unnecessary unscheduling.  
-
-## [0.2.0.48] - 2025-10-07
-### Added
-- Added **session runtime tracking**: `emitLastUpdate()` now reports total *Data Capture Runtime (seconds, to three decimals)* for improved session performance visibility.  
-
-## [0.2.0.47] - 2025-10-07
-### Added
-- Introduced **proactive NMC status health check**.  
-- Driver now issues a warning if `nmcStatus` contains `-` or `!`, logging “NMC is reporting an error state: …” for immediate operator visibility.  
-
-## [0.2.0.46] - 2025-10-07
-### Changed
-- Refactored UPS control handling:  
-  - Removed legacy `disableUPSControlNow()`.  
-  - Consolidated label and state logic within `updateUPSControlState()`.  
-  - Streamlined enable/disable command flow for Rule Machine and WebCore compatibility.  
-
-## [0.2.0.45] - 2025-10-07
-### Changed
-- Renamed UPS control methods and commands for naming consistency.  
-- Replaced `controlEnabled` preference with dynamic state variable.  
-- Added `enableUPSControl()` and `disableUPSControl()` commands, plus `autoDisableUPSControl` helper for timed disable and label auto-restore.  
-
-## [0.2.0.44] - 2025-10-07
-### Changed
-- Added post-banner **event commit stabilization delay (200ms)** in `processBufferedSession()` to prevent intermittent omissions of `upsUptime`, `nmcUptime`, and `upsDateTime` on rapid parse cycles.  
-
-## [0.2.0.43] - 2025-10-07
-### Changed
-- Code cleanup for structural clarity:  
-  - Removed redundant banner parsing logic from `handleUPSAboutSection()`.  
-  - Banner data now handled exclusively in `processBufferedSession()`.  
-  - No functional change — purely readability and maintainability improvement.  
-
-## [0.2.0.42] - 2025-10-07
-### Added
-- Added parsing for **UPS Contact** and **UPS Location** attributes from the UPS banner block.  
-- Parsing logic moved into `processBufferedSession()` for accurate extraction and reliable event emission.  
-
-## [0.2.0.39] - 2025-10-06
-### Fixed
-- Corrected Telnet message concatenation issue where multi-line packets (e.g., “Location” / “User” fields) were received as one string.  
-- `parse()` now normalizes and splits composite messages line-by-line.  
-- Restored full 23-line UPS banner capture including “Location”, “User”, and “Up Time”.  
-
-## [0.2.0.38] - 2025-10-06
-### Changed
-- Normalized `UPSStatus` variable casing for consistency.  
-
-## [0.2.0.37] - 2025-10-06
-### Changed
-- Removed temporary debug/troubleshooting statements.  
-- Logging for `checkOffset` and `checkInterval` is now informational only.  
-
-## [0.2.0.36] - 2025-10-06
-### Added
-- Introduced `safeTelnetConnect()` helper with automatic retry and structured logging for connection failures.  
-- Standardized retry delay, attempt tracking, and log formatting for consistent connection handling.  
-
-## [0.2.0.35] - 2025-10-06
-### Added
-- Implemented retry logic for `telnetConnect()` to gracefully recover from transient “No Route to Host” or timeout errors.  
-- Improves connection resilience without disrupting scheduled polling.  
-
-## [0.2.0.34] - 2025-10-05
-### Changed
-- Enhanced temperature event formatting in `handleBatteryData()` to display both **°F and °C** in the description while preserving the user’s preferred unit for dashboards.  
-
-## [0.2.0.33] - 2025-10-05
-### Fixed
-- Fixed premature Telnet buffer clearing in `parse()`.  
-- Buffer now persists through full session until post-`whoami` processing, restoring complete UPS/NMC data capture.  
-
-## [0.2.0.32] - 2025-10-05
-### Added
-- Added diagnostic **tail preview** to `initTelnetBuffer()`.  
-- Logs buffer size and last 100 characters when clearing leftover data to aid in diagnosing unexpected session residue.  
-
-## [0.2.0.31] - 2025-10-05
-### Fixed
-- Corrected `extractSection()` logic for buffered session parsing.  
-- Replaced improper `.find{}` with `.findIndexOf{}` to correctly detect `apc>` section boundaries.  
-- Added case-insensitive matching for start/end markers.  
-- Restores full UPS banner and NMC attribute updates that were intermittently skipped.  
-
-## [0.2.0.30] - 2025-10-05
-### Changed
-- Moved `lastUpdate` event emission from session end to `detstatus -all` parsing.  
-- Timestamp now reflects *actual UPS data refresh* instead of Telnet lifecycle.  
-
-## [0.2.0.29] - 2025-10-03
-### Changed
-- Removed unused `connectStatus` attribute declaration.  
-- Connection state is now tracked internally with `state.connectStatus` only.  
-
-## [0.2.0.28] - 2025-10-03
-### Fixed
-- Corrected `scheduleCheck()` logic:
-  - Reschedules monitoring if either interval **or** offset preference changes.  
-  - Preserves existing schedules when values are unchanged.  
-
-## [0.2.0.27] - 2025-10-02
-### Fixed
-- Restored second-level precision in UPS banner `Date/Time` parsing.  
-- `upsBannerEpoch` and `normalizeDateTime()` now retain seconds instead of rounding to minutes.  
-- Eliminates false-positive UPS clock skew warnings.  
-
-## [0.2.0.26] - 2025-10-02
-### Fixed
-- Corrected bug where `upsBannerEpoch` state variable was not removed after use.  
-- Restored `normalizeDateTime()` support for:
-  - Date-only values (`MM/dd/yyyy`).  
-  - Proper 2-digit year pivot handling.  
-- Fixes parsing for `nmcManufactureDate`, `manufactureDate`, and `lastSelfTestDate`.  
-
-## [0.2.0.25] - 2025-10-02
-### Added
-- `handleUPSSection()` handler with UPS `?` block parsing to detect outlet group support (`-o` flag).  
-- Logs whether outlet group control is supported by the UPS.  
-### Fixed
-- Cleaned up leftover `upsBannerEpoch` state after banner parse.  
-
-## [0.2.0.24] - 2025-10-02
-### Fixed
-- Reset `authStarted` at session initiation (`refresh()`) instead of session end.  
-- Prevents stale authentication flag from blocking login after preference changes or interrupted sessions.  
-
-## [0.2.0.23] - 2025-10-02
-### Fixed
-- UPS banner `Date/Time` parsing corrected:
-  - Added support for `"MM/dd/yyyy h:mm a"` format.  
-  - Normalized to include seconds.  
-- `upsBannerEpoch` stored as epoch with 1-second precision.  
-- `processBufferedSession()` now passes epoch directly to `checkUPSClock()`.  
-
-## [0.2.0.22] - 2025-10-02
-### Changed
-- Restored blind credential send on first telnet data.  
-- Decoupled from `lastCommand=Connecting` to improve login reliability.  
-- Added `authStarted` guard to ensure credentials/queries fire only once per session.  
-
-## [0.2.0.21] - 2025-10-02
-### Fixed
-- Added guards to `telnetStatus()` and `closeConnection()`.  
-- Buffered session only processed if `lastCommand=getStatus`.  
-- Prevents junk parsing from negotiation bytes or login prompts.  
-
-## [0.2.0.20] - 2025-10-02
-### Fixed
-- Improved telnet session closure handling:
-  - Buffered data parsed on stream close or manual close, even without `quit`/`whoami`.  
-  - Added debug logs for buffer size and trailing data.  
-- Prevents silent data loss.  
-
-## [0.2.0.19] - 2025-10-02
-### Added
-- New `upsTZOffset` preference (minutes, -720 to +840 in 15-minute steps).  
-- Corrects UPS clock skew checks across time zones.  
-- Default = `0` for same-TZ monitoring.  
-
-## [0.2.0.18] - 2025-10-01
-### Fixed
-- UPS clock skew detection corrected:
-  - Date parsing now includes seconds (`MM/dd/yyyy h:mm:ss a`).  
-  - Prevents false positives caused by rounding to minutes.  
-
-## [0.2.0.17] - 2025-10-01
-### Fixed
-- Corrected false-positive UPS clock skew warnings.  
-- Reference time for UPS banner `Date/Time` is now captured immediately at authentication (`seqSend` trigger) instead of after session parse.  
-- Preserves skew detection thresholds:  
-  - >1 minute → warning  
-  - >5 minutes → error  
-
-## [0.2.0.16] — 2025-10-01
-### Fixed
-- Changed `initialize()` to delay `refresh()` by 500 ms after closing telnet.
-- Prevents race where immediate reconnect could stall at `getStatus` during `updated()` or `configure()` runs.
-
-## [0.2.0.15] — 2025-10-01
-### Fixed
-- Improved telnet lifecycle handling.
-- `initialize()` now explicitly closes telnet before calling `refresh()`, preventing racey disconnect/connect churn during driver reloads or preference updates.
-
-## [0.2.0.14] — 2025-10-01
-### Added
-- `lastTransferCause` attribute parsing under `detstatus -all`.
-- Captures and emits descriptive cause of last UPS transfer.
-
-## [0.2.0.13] — 2025-10-01
-### Fixed
-- Added cleanup of `telnetBuffer` state after buffered session parsing completes.
-- Ensures no empty buffer objects linger between runs.
-
-## [0.2.0.12] — 2025-10-01
-### Fixed
-- Corrected UPSStatus parsing: commas are now stripped from `"Status of UPS"` line before normalization.
-- Restores clean values (e.g., `"Online"` instead of `"On Line,"`).
-
-## [0.2.0.11] — 2025-10-01
-### Changed
-- Restored `UPSStatus` parsing from `detstatus -all` (detects `"Status of UPS:"` prefix).
-- Integrated into `handleDetStatus()` with buffered model.
-
-## [0.2.0.10] — 2025-10-01
-### Changed
-- Restored UPSStatus parsing under `detstatus -all`.
-- Moved detection logic into `handleUPSStatus()` for cleaner flow.
-- Removed redundant empty-status guard.
-
-## [0.2.0.9] — 2025-10-01
-### Changed
-- Restored device label updates from banner parsing when `useUpsNameForLabel` is enabled.
-- Ensures device label tracks UPS name consistently.
-
-## [0.2.0.8] — 2025-10-01
-### Fixed
-- Filtered UPS banner parsing to exclude command echoes and `E000` acknowledgements.
-- Only valid banner lines are passed to `handleUPSAbout()`, preventing `MissingMethodException`.
-
-## [0.2.0.7] — 2025-10-01
-### Fixed
-- Fixed `extractSection()` helper (replaced invalid `findIndexAfter()` with explicit sublist scan).
-- Banner block segmentation now works without `MissingMethodException`.
-
-## [0.2.0.6] — 2025-10-01
-### Added
-- `extractSection()` helper for reliable block segmentation.
-- Resolves `MissingMethodException` during buffer processing.
-
-## [0.2.0.5] — 2025-10-01
-### Changed
-- Added UPS banner parsing back into `processBufferedSession`.
-- `deviceName`, `upsUptime`, `upsDateTime`, `nmcStatus/Desc` now emitted again from banner block.
-
-## [0.2.0.4] — 2025-10-01
-### Changed
-- Improved `whoami` sequence handling to tolerate reversed order of `E000`/device lines.
-- Buffer is processed once all markers are seen.
-
-## [0.2.0.3] — 2025-10-01
-### Added
-- Introduced `whoami` end-of-session marker (`E000 + username + prompt`) to deterministically detect completion under race conditions.
-
-## [0.2.0.2] — 2025-10-01
-### Fixed
-- Fixed buffer segmentation logic (`upsabout`/`about`/`detstatus`) using command echoes.
-- Restored full UPS banner + NMC parsing.
-- Added `.toString()` safety in session handler.
-
-## [0.2.0.1] — 2025-10-01
-### Changed
-- Restored UPS banner parsing under `upsabout` section:
-  - `deviceName`, `upsUptime`, `upsDateTime`, `nmcStatus/Desc`.
-- Added debug traces for UPS/NMC Serial, Manufacture Date, Uptime, and UPS DateTime parsing to validate attribute separation.
-
-## [0.2.0.0] — 2025-10-01
-### Stable Release
-- **Material change bump from 0.1.32.9 → 0.2.0.0.**
-- **Stable release baseline** for buffered-session model.
-- Major change: reworked parsing to buffered-session model.
-- All telnet output is now collected in memory and processed after session end.
-- Resolved UPS/NMC attribute collisions and eliminated timing race conditions.
-- Unified command sequencing to include `about` with other queries.
-- Removed legacy `sendAboutCommand()` helper.
-
-## 0.1.31.31 (2025-09-27)
-- Stable release
-- Fixed auto-disable cleanup: debug and control disable methods now unschedule their own jobs, preventing lingering scheduled tasks
-- Improved initialize() and scheduleCheck() logic to avoid clearing unrelated jobs, preserving refresh scheduling
-- Confirmed stable under live test: auto-disable timers, refresh intervals, and UPS control behavior all validated
-
-## [0.1.31.30] - 2025-09-27
-### Fixed
-- Auto-disable jobs (`debug` and `control`) are only scheduled when those features are enabled.
-
-## [0.1.31.29] - 2025-09-27
-### Fixed
-- Prevented `initialize()` and `scheduleCheck()` from unscheduling unrelated jobs (refresh scheduling preserved).
-- `scheduleCheck()` now only reschedules if interval/offset values actually change.
-
-## [0.1.31.28] - 2025-09-27
-### Fixed
-- Corrected `disableDebugLoggingNow` and `disableControlNow` behavior.
-- Added `safeRestoreLabel()` helper to safely restore labels when disabling control.
-
-## [0.1.31.22] - 2025-09-27
-### Added
-- Auto-disable safety for UPS control commands (`controlEnabled` resets to false after 30 minutes).
-- Manual disable command `disableControlNow`.
-
-## [0.1.31.21] - 2025-09-26
-### Changed
-- Normalized casing for all UPS control commands (lowercase).
-- Added deterministic success/failure event reporting for `UPSOn` and `UPSOff`.
-
-## [0.1.31.20] - 2025-09-26
-### Changed
-- `initialize()` now always calls `refresh()` to establish UPS communication immediately.
-
-## [0.1.31.19] - 2025-09-26
-### Fixed
-- Corrected stuck `connectStatus=Trying` by resetting to `Initialized` after `quit`.
-- `handleUPSError()` now explicitly sets `connectStatus=Disconnected`.
-
-## [0.1.31.18] - 2025-09-26
-### Fixed
-- Corrected regression where suppression in 0.1.31.17 prevented data collection.
-- Restored state-backed tracking with breadcrumb cleanup.
-
-## [0.1.31.17] - 2025-09-25
-### Changed
-- Suppressed redundant `lastCommand` and `connectStatus` events (debug-only now).
-- Restored `driverInfo` attribute in `initialize()`.
-- Cleaned up `state.pendingCmds` in `parse()`.
-
-## [0.1.31.16] - 2025-09-25
-### Changed
-- Prevented `UPSStatus` from resetting to `Unknown` on initialize if already set.
-- Updated preference labels and descriptions for clarity.
-- Renamed `StartAlarm` command to `TestAlarm` for consistency.
-
-## [0.1.31.15] - 2025-09-25
-### Changed
-- Introduced `emitLastUpdate()` helper to centralize updates to the `lastUpdate` attribute.
-- Updated `parse()` and `telnetStatus()` to call `emitLastUpdate()` only when attributes change.
-- Corrected `refresh()` to use `driverInfoString()` and proper `UPSIP`/`UPSPort` parameters (silent internal fix).
-
-## [0.1.30.14] - 2025-09-24
-### Changed
-- Added support for APC NMC date format (`MMM dd yyyy HH:mm:ss`).
-- All UPS and NMC date/time attributes now normalized to `MM/dd/yyyy h:mm a` (or date-only when time not present).
-- Marked stable.
-
-## [0.1.30.13] - 2025-09-24
-### Fixed
-- Corrected `handleNMCData()` bug: OS and BootMon sections now emit the correct attribute names and descriptions.
-
-## [0.1.30.12] - 2025-09-24
-### Fixed
-- Improved `normalizeDateTime()` handling for 2-digit years with pivot at 1980.
-- Correctly expands `01/13/05` -> `01/13/2005` and `08/31/96` -> `08/31/1996`.
-
-## [0.1.30.11] - 2025-09-24
-### Changed
-- Refined NMC "about" parsing to emit datetime events only once after full date+time build.
-- Reduced redundant event emissions.
-
-## [0.1.30.10] - 2025-09-24
-### Fixed
-- Updated `normalizeDateTime()` to suppress default `12:00 AM` when no time is present.
-
-## [0.1.30.9] - 2025-09-24
-### Changed
-- Silent refinements to `normalizeDateTime()` for `MM/dd/yy` handling with pivot logic.
-
-## [0.1.30.8] - 2025-09-24
-### Changed
-- Cleaned NMC parsing to reduce redundant events.
-- Ensured consistent date handling across UPS and NMC attributes.
-
-## [0.1.30.7] - 2025-09-24
-### Fixed
-- Temperature unit handling in `handleBatteryData()` now uses the `unit` variable consistently.
-
-## [0.1.30.6] - 2025-09-24
-### Changed
-- Standardized unit handling across electrical metrics.
-
-## [0.1.30.5] - 2025-09-24
-### Changed
-- Adjusted `telnetStatus()` logging to debug level for disconnect messages.
-
-## [0.1.30.4] - 2025-09-24
-### Changed
-- Lifecycle cleanup: removed redundant state usage.
-- Improved compactness of `configure()` and `initialize()` methods.
-
-## [0.1.30.3] - 2025-09-24
-### Changed
-- Refined `telnetStatus()` handling: disconnects now debug-only; reduced "quit" noise.
-
-## [0.1.30.2] — 2025-09-23
-### Fixed
-- Prevented `deviceName` from being overwritten by NMC `Name` values (`sumx`, `aos`, `bootmon`) when parsing `about` output.  
-- `deviceName` updates are now restricted to UPS data (`getStatus`) only.  
-- Keeps device label stable while still capturing all 14 NMC attributes.
-
-## [0.1.30.1] — 2025-09-23
-### Changed
-- Removed use of `state.aboutSection` in NMC parsing.  
-- Section tracking is now handled inline during parse, eliminating unnecessary state persistence.  
-- Cleaner, more compact design while preserving full NMC attribute capture.
-
-## [0.1.30.0] — 2025-09-23
-### Stable Release
-- First **stable baseline** since refactor from fork.
-- Fully validated UPS + NMC attribute parsing:
-  - 14 new NMC attributes (hardware, firmware, OS, boot monitor).
-  - Fixed serial number overwrite bug (UPS vs NMC serial separation).
-  - Device name handling restored and hardened.
-  - NMC MAC address normalized (colon-delimited).
-- Logging refinements:
-  - Consistent per-attribute descriptions.
-  - Suppressed duplicate/unnecessary events.
-- Connection flow hardened (`refresh -> Connecting -> Connected -> getStatus -> about -> quit`).
-- Marked as **stable baseline** for production deployments.
-
-## [0.1.27.4] — 2025-09-23
-### Changed
-- Finalized NMC parsing; colon-delimited MAC format.
-- Device name and UPS serial number parsing verified stable.
-
-## [0.1.27.1] — 2025-09-23
-### Changed
-- Cleaned parse() routing for UPS vs NMC attributes.  
-- Ensured UPS `serialNumber` and `manufactureDate` are not overwritten by NMC values.  
-
-## [0.1.27.0] — 2025-09-23
-### Added
-- Implemented NMC `about` parsing.  
-- Captured 14 new attributes for NMC hardware, application, OS, and boot monitor data:
-  - `nmcModel`, `nmcSerialNumber`, `nmcHardwareRevision`, `nmcManufactureDate`, `nmcMACAddress`, `nmcUptime`
-  - `nmcApplicationName`, `nmcApplicationVersion`, `nmcApplicationDate`
-  - `nmcOSName`, `nmcOSVersion`, `nmcOSDate`
-  - `nmcBootMonitor`, `nmcBootMonitorVersion`, `nmcBootMonitorDate`
-
-## [0.1.26.8] — 2025-09-23
-### Changed
-- Renamed `refresh()` flow to report `"Connecting"` → `"Connected"` → `"getStatus"` for clarity.  
-- Fixed `Runtime Remaining` logic:
-  - Updates when values drop to **0 minutes/hours** (previously skipped).  
-  - Added descriptive event strings to both `runtimeHours` and `runtimeMinutes`.  
-- Restored descriptive event messages for **Battery metrics** (`Voltage`, `Charge`, `Temperature`).  
-- Restored descriptive event messages for **Electrical metrics** (`Input/Output Voltage`, `Frequency`, `Current`, `Energy`, `Watts`, `VA`).  
-- Cleaned redundant event descriptions for `outputWattsPercent` and `outputVAPercent` (no longer log `"Percent Percent"`).  
-
-## [0.1.26.7] — 2025-09-23
-### Changed
-- De-duplicated `UPSStatus` logging:
-  - `logInfo` now only fires on changes.  
-  - Repeated values logged at `debug` level.  
-
-## [0.1.26.6] — 2025-09-23
-### Changed
-- Moved `lastUpdate` event stamping to the end of a good telnet session.  
-- Restored `UPS Runtime Remaining = hh:mm` logging output.  
-
-## [0.1.26.5] — 2025-09-22
-### Added
-- `emitChangedEvent()` helper:
-  - Prevents redundant events when values haven’t changed.  
-  - Ensures `logInfo` still records all captured UPS data if **Log all events** is enabled.  
-### Changed
-- Optimized event/logging behavior to reduce event spam but preserve visibility.  
-
-## [0.1.26.4] — 2025-09-22
-### Changed
-- Event/log cleanup groundwork:
-  - Centralized event emission logic.  
-  - Adjusted telnet close handling to reduce noisy warnings.  
-
-## [0.1.26.3] — 2025-09-22
-### Changed
-- `initialize()` compact cleanup.  
-- Replaced repetitive `emitEvent()` calls with map iteration.  
-- Minor logic streamlining.  
-
-## [0.1.26.2] — 2025-09-22
-### Changed
-- `telnetStatus()` now emits `connectStatus=Disconnected` on stream close.  
-- Aligned quit/parse handling with telnet closure.  
-
-## [0.1.26.1] — 2025-09-22
-### Changed
-- Compact cleanup of `parse()`.  
-- Unified `connectStatus` handling.  
-- Removed redundant state usage for connection tracking.  
-
-## [0.1.26.0] — 2025-09-22
-### Stable
-- Stable baseline: runtime capture restored.  
-- Marked rollback point for cleanup/refinement.  
-
-## [0.1.25.5] — 2025-09-21
-### Fixed
-- Restored runtime reporting:
-  - Moved parsing outside `switch`.  
-  - Regex on full line for robust capture of `hr/min`.  
-  - Populates `runtimeHours`, `runtimeMinutes`, and `runtimeRemaining` correctly.  
-
-## [0.1.25.4] — 2025-09-21
-### Changed
-- Removed redundant `detstatus -rt` command.  
-- Runtime now parsed from `detstatus -all` only.  
-- Improved runtime parsing with token-based handler.  
-
-## [0.1.25.3] — 2025-09-21
-### Fixed
-- Runtime parsing corrected:
-  - Case-insensitive match for `hr/min` tokens in `detstatus` output.  
-
-## [0.1.25.2] — 2025-09-21
-### Changed
-- Reordered and clarified preferences for better grouping and readability.  
-
-## [0.1.25.1] — 2025-09-21
-### Fixed
-- Corrected UPS `Name` regex for `deviceName` parsing and label updates.  
-
-## [0.1.25.0] — 2025-09-21
-### Added
-- Preference to auto-update Hubitat device label with UPS name.  
-
-## [0.1.24.1] — 2025-09-20
-### Changed
-- Temperature handler now uses UPS-provided units with explicit `°` symbol.  
-
-## [0.1.24.0] — 2025-09-20
-### Changed
-- Refactored Battery/Electrical handlers to use UPS-supplied units in logs/events instead of hardcoded designators.  
-
-## [0.1.23.3] — 2025-09-20
-### Changed
-- Removed redundant `detstatus -soc` command.  
-- Battery % now reported only once per cycle.  
-
-## [0.1.23.2] — 2025-09-20
-### Fixed
-- Tightened Battery State Of Charge match.  
-- Prevented duplicate Battery % reporting.  
-
-## [0.1.23.1] — 2025-09-20
-### Added
-- Parse dispatcher to prevent duplicate events/logging.  
-- Helpers now routed by line type.  
-
-## [0.1.23.0] — 2025-09-20
-### Changed
-- Improved Runtime Remaining parsing with regex.  
-- Handles `hr/min` variations more robustly.  
-
-## [0.1.19.10] — 2025-09-19
-### Fixed
-- UPSStatus parsing improved:
-  - Trims full `"On Line"` status instead of `"On"`.  
-  - Regex normalization for Online/OnBattery applied.  
-
-## [0.1.19.9] — 2025-09-19
-### Added
-- NMC Stat translation helper.  
-- New `nmcStatusDesc` attribute with human-readable values.  
-
-## [0.1.19.8] — 2025-09-19
-### Changed
-- Improved banner parsing with regex:  
-  - `deviceName` clean extraction.  
-  - `nmcStatus` multi-value support.  
-
-## [0.1.19.7] — 2025-09-19
-### Added
-- `deviceName` (from NMC banner).  
-- `nmcStatus` (P+/N+/A+ health codes).  
-
-## [0.1.19.6] — 2025-09-19
-### Added
-- Event emission for `outputWatts` (calculated).  
-- Implemented `outputEnergy` attribute.  
-
-## [0.1.19.5] — 2025-09-19
-### Fixed
-- Model attribute parsing now properly reported.  
-
-## [0.1.19.4] — 2025-09-19
-### Changed
-- Removed unused attribute `nextBatteryReplacementDate`.  
-
-## [0.1.19.3] — 2025-09-19
-### Changed
-- Renamed attribute `manufDate` → `manufactureDate`.  
-
-## [0.1.19.2] — 2025-09-19
-### Changed
-- Removed unused attributes `SKU` and `batteryType`.  
-
-## [0.1.19.1] — 2025-09-19
-### Fixed
-- Restored Model attribute parsing.  
-
-## [0.1.19.0] — 2025-09-19
-### Stable
-- New baseline for incremental refactor (Phase B).  
-
-## [0.1.18.11] — 2025-09-18
-### Fixed
-- Restored temperature parsing (`temperatureC`, `temperatureF`, `temperature`) in `handleBatteryData`.  
-
-## [0.1.18.10] — 2025-09-18
-### Fixed
-- Refined `handleElectricalMetrics`:
-  - Properly tokenize and capture `OutputWattsPercent` and `OutputVAPercent`.  
-
-## [0.1.18.9] — 2025-09-18
-### Fixed
-- Corrected `handleElectricalMetrics` parsing for Output Watts %, Output VA %, Current, and Energy.  
-
-## [0.1.18.8] — 2025-09-18
-### Changed
-- Renamed `checkIntervalMinutes` → `checkInterval` (attribute only).  
-- Removed `controlDisabled` artifact.  
-- Monitoring schedule always logged.  
-
-## [0.1.18.7] — 2025-09-18
-### Changed
-- Normalized log strings.  
-- Fixed scheduling logic.  
-- Removed redundant state variables.  
-
-## [0.1.18.6] — 2025-09-18
-### Changed
-- Removed `state.name`.  
-- Renamed `RuntimeCalibrate` → `CalibrateRuntime`.  
-
-## [0.1.18.5] — 2025-09-18
-### Changed
-- Removed version state tracking (driverInfo only).  
-
-## [0.1.18.3] — 2025-09-18
-### Fixed
-- `refresh()` null init.  
-- Model parsing cleanup.  
-
-## [0.1.18.2] — 2025-09-18
-### Changed
-- Removed redundant `batteryPercent` attribute/state.  
-- Hubitat-native battery reporting only.  
-
-## [0.1.18.1] — 2025-09-18
-### Fixed
-- Null concatenation in `firmwareVersion` and `lastSelfTestResult`.  
-
-## [0.1.18.0] — 2025-09-18
-### Changed
-- Refactored helpers to use `switch` statements for readability.  
-
-## [0.1.17.1] — 2025-09-18
-### Fixed
-- Helper signatures (`def` vs `List`).  
-- Restricted UPS status dispatch to actual status lines.  
-
-## [0.1.13.0] — 2025-09-18
-### Changed
-- Replaced confusing **Disable driver?** preference with positive **Enable UPS Control?**.  
-- Renamed internal variable `disable` → `controlEnabled`.  
-- Logic flipped: UPS control commands only run if `controlEnabled` is true.  
-- Monitoring always works regardless of setting.  
-
-## [0.1.12.0] — 2025-09-18
-### Added
-- `logEvents` preference.  
-### Changed
-- Converted all `sendEvent` calls to centralized `emitEvent()` wrapper.  
-- Quieted duplicate telnet close warnings.  
-- `closeConnection()` now logs at debug level only.  
-- Confirmed event/log alignment.  
-
-## [0.1.11.0] — 2025-09-17
-### Added
-- Preference: **Log all events**.  
-### Changed
-- `logInfo` respects `logEvents` flag.  
-
-## [0.1.10.0] — 2025-09-17
-### Changed
-- Unified `parse()` logging:
-  - Combined temps into one entry.  
-  - Runtime displayed as `hh:mm`.  
-  - Logs consistently include value + unit.  
-- Fixed brace alignment preventing compile.  
-
-## [0.1.9.0] — 2025-09-17
-### Changed
-- Improved temperature and runtime logging.  
-
-## [0.1.8.2] — 2025-09-16
-### Fixed
-- Restored missing `autoDisableDebugLogging()` method.  
-
-## [0.1.8.1] — 2025-09-16
-### Added
-- Command: `disableDebugLoggingNow`.  
-### Changed
-- Cleaned `batteryPercent` initialization.  
-
-## [0.1.8.0] — 2025-09-16
-### Changed
-- Cleaned state variables (`null` vs strings).  
-- Full `parse()` refactor with error handling.  
-
-## [0.1.7.0] — 2025-09-16
-### Changed
-- Updated `quit` handling.  
-- Improved scheduling state.  
-
-## [0.1.6.0] — 2025-09-16
-### Changed
-- Moved logging utilities section after preferences.  
-- Unified `setVersion`/`initialize`.  
-
-## [0.1.5.0] — 2025-09-16
-### Changed
-- Phase A refactor complete (logging, lifecycle, preferences).  
-
-## [0.1.4.0] — 2025-09-16
-### Changed
-- Phase A refactor started.  
-
-## [0.1.3.0] — 2025-09-16
-### Changed
-- Removed `logLevel`.  
-- Cleaned extraneous log entries.  
-
-## [0.1.2.0] — 2025-09-16
-### Changed
-- Additional refactor of logging utilities.  
-- Language cleanup.  
-
-## [0.1.1.0] — 2025-09-16
-### Changed
-- Refactored logging utilities.  
-
-## [0.1.0.0] — 2025-09-16
-### Added
-- Initial refactor from fork.
+# APC SmartUPS Status Driver — Unified Changelog
+
+> This changelog consolidates all development history from v0.1.0.0 through v0.3.6.7-RC1.  
+> Versions prior to 0.3.x have been summarized for brevity, focusing on key milestones and major feature sets.
+
+---
+
+## 🧱 0.1.x.x — Foundational Development (Initial Driver Framework)
+- Established the base Groovy driver architecture for APC SmartUPS monitoring.
+- Implemented Telnet connectivity, authentication, and basic command parsing.
+- Added event emission and logging structure (`emitEvent`, `logInfo`, `logDebug`).
+- Initial UPS metrics implemented: voltage, runtime, battery percentage, and UPS status.
+
+## ⚙️ 0.2.x.x — Core Stabilization and Feature Expansion
+- Introduced `Reconnoiter` and structured multi-command sessions.
+- Added automatic UPS self-test and alarm status parsing.
+- Improved state management, error recovery, and command queueing.
+- Introduced early scheduling and refresh cycle logic.
+- Gradual migration toward transient-style cleanup (precursor to 0.3.x model).
+
+---
+
+## 🚀 Modern Transient Architecture — 0.3.x.x Series
+
+*  0.2.0.53  -- Fixed regression caused by removed seqSend(); refactored delayedTelnetSend() to use telnetSend(List,Integer) for queued command dispatch; preserved original sequencing behavior with compact implementation
+*  0.2.0.54  -- Renamed lastCommand marker from "getStatus" -> "reconnoiter" to better reflect buffered UPS data acquisition phase; semantic clarity improvement with stylistic flavor
+*  0.2.0.55  -- Improved buffered session diagnostics; debug log now reports line counts per section (UPSAbout, About(NMC), DetStatus) instead of command echo counts for accurate visibility into parsed data volume
+*  0.2.0.56  -- Code cleanup for final test before RC.
+*  0.2.0.57  -- Added alarmCountCrit, alarmCountWarn, alarmCountInfo attributes; driver now issues alarmcount -p queries during reconnoiter and parses counts for critical, warning, and informational alarms.
+*  0.2.0.62  -- Converted NMC banner to deterministic parse section using ?Schneider? marker; eliminates timing dependencies, ensures full uptime/date/contact/location capture.
+*  0.2.0.63  -- Added deferred telnetClose() to ensure full event flush before disconnect; resolves intermittent missing uptime/date updates.
+*  0.2.0.64  -- Fixed closeConnection() logic to include deferred telnetClose() with finalizeTelnetClose(); ensures proper state cleanup and socket termination without triggering Hubitat interface errors; verified stable event flush and disconnect timing across multi-instance polling.
+*  0.2.0.65  -- Fixed race between processBufferedSession() and telnetClose(); now defers connection teardown by 250 ms post-parse to ensure complete event flush (restores missing lastUpdate, nmcUptime, upsUptime, upsDateTime emissions across all session paths).
+*  0.2.0.67  -- Fixed race condition between deferred telnetClose() and refresh(); initialize() now forces immediate closeConnection(false) to prevent overlapping socket sessions and eliminate ?telnet input stream closed? warnings during scheduled polling.
+*  0.2.0.68  -- Added state-based label guard to prevent Control Enabled name overwrite; conditional lastUpdate emission; deferred command execution with Pending/Success/Failure event tracking; contextual UPS error responses; standardized event log formatting for consistency.
+*  0.2.0.70  -- Restored stable telnet session lifecycle; corrected command deferral logic with single queued execution; reinstated conditional lastUpdate emission for refresh/reconnoiter only; preserved contextual UPS error feedback and label guard behavior.
+*  0.2.0.71  -- Fixed deferred command guard retention when UPS Control disabled mid-delay; deferred queue now clears on cancellation ensuring new commands execute normally.
+*  0.2.0.72  -- Corrected Telnet session handling for UPS commands; added context-aware guard in safeTelnetConnect() to prevent premature socket closure during command execution; ensured cmdSession flag auto-resets via try/finally for reliable lifecycle recovery.
+*  0.2.0.73  -- Fixed missing lastUpdate events by restoring second-level timestamp resolution; ensures consecutive sessions within same minute emit distinct updates and accurate runtime metrics.
+*  0.3.0.0   -- Revert to what was 0.2.0.57
+*  0.3.0.1   -- Converted NMC banner to deterministic parse section using "Schneider" marker; eliminates timing dependencies, ensures full uptime/date/contact/location capture
+*  0.3.0.2   -- Updated emitEvent() for consistent formatted logging; handleDetStatus() now emits lastUpdate only for reconnoiter/refresh; handleBannerData() formatting cleanup
+*  0.3.0.3   -- Reworked UPS command handling with single-slot deferred command gate and non-blocking, session-aware safeTelnetConnect(); prevents Telnet collisions between control and reconnoiter sessions; no functional changes to UPS command logic yet
+*  0.3.0.4   -- Code cleanup: standardized variable names (UPSIP -> upsIP, UPSPort -> upsPort) for style consistency; no logic changes
+*  0.3.0.5   -- Added explicit session gate to refresh(); prevents Telnet overlap during preference updates or driver reloads; complements safeTelnetConnect() for full lifecycle protection
+*  0.3.0.6   -- Added detection for external upsControlEnabled changes (e.g. via Rule Machine/WebCoRE); driver now automatically updates label and auto-disable timer to match externally modified control state
+*  0.3.0.7   -- Added refresh() de-duplication and external control sync integration; prevents overlapping Telnet sessions from manual, cron, or RM/WC refresh calls. Driver now safely ignores duplicate refresh requests during active sessions and resets state after completion.
+*  0.3.0.8   -- Restored UPS command error handling; driver now parses E000/E001/E100/E102 codes for all control operations and emits contextual success/failure results via lastCommandResult.
+*  0.3.0.9   -- Restored UPS command error handling; reinstated handleUPSError() with contextual success/failure mapping for E000:/E001:/E100:/E102: codes; corrected type guard regression causing command parse failure; fixed session lock caused by improper connectStatus state update.
+*  0.3.0.10  -- Removed refreshQueued flag to eliminate refresh() deadlock; refresh gating now based solely on connectStatus; updated processBufferedSession() and telnetStatus() for deterministic disconnect and full state reset; retained forced parse-on-disconnect debug logic.
+*  0.3.0.11  -- Restored runtime calculation in emitLastUpdate(); added emission at end of processBufferedSession() to log total data capture duration before state reset.
+*  0.3.0.12  -- Fixed UPS command telnetConnect() argument type; cast upsPort to integer to restore direct command connectivity.
+*  0.3.1.1   -- Restored deterministic Telnet lifecycle handling in sendUPSCommand(); commands now transition Connecting->UPSCommand->Disconnected using existing connectStatus and lastCommand only; no forced close or new state keys.
+*  0.3.1.2   -- Reworked UPS command Telnet flow for full isolation; sendUPSCommand() now uses native telnetSend() and unified closeConnection() handoff to processUPSCommand(); removed delayedTelnetSend() for cleaner deterministic lifecycle.
+*  0.3.1.3   -- Added Telnet input normalization and full UPSCommand isolation in parse(); unified line trimming for both paths and ensured reconnoiter auth sequence only runs in Connected state; finalizes deterministic dual-path Telnet handling.
+*  0.3.1.4   -- Added transient inUPSCommandSession flag to eliminate Telnet state race between command and reconnoiter sessions; ensures parse() isolation even during concurrent thread scheduling; finalizes dual-path Telnet determinism.
+*  0.3.1.5   -- Restored delayedTelnetSend() to defer initial command transmission until Telnet socket fully established; resolves final race condition causing concurrent auth/command sequences; preserves deterministic single-session behavior.
+*  0.3.1.6   -- Removed transient inUPSCommandSession flag; restored full stability using delayedTelnetSend() deferred send mechanism; state.connectStatus propagation now deterministic under Hubitat Telnet lifecycle.
+*  0.3.1.7   -- Added explicit guard in parse() preventing reconnoiter auth sequence from firing during UPSCommand sessions; fixes dual Telnet session overlap and ensures full command isolation.
+*  0.3.0.0   -- Revert to what was 0.2.0.57
+*  0.3.0.1   -- Converted NMC banner to deterministic parse section using "Schneider" marker; eliminates timing dependencies, ensures full uptime/date/contact/location capture
+*  0.3.0.2   -- Updated emitEvent() for consistent formatted logging; handleDetStatus() now emits lastUpdate only for reconnoiter/refresh; handleBannerData() formatting cleanup
+*  0.3.0.3   -- Reworked UPS command handling with single-slot deferred command gate and non-blocking, session-aware safeTelnetConnect(); prevents Telnet collisions between control and reconnoiter sessions; no functional changes to UPS command logic yet
+*  0.3.0.4   -- Code cleanup: standardized variable names (UPSIP -> upsIP, UPSPort -> upsPort) for style consistency; no logic changes
+*  0.3.0.5   -- Added explicit session gate to refresh(); prevents Telnet overlap during preference updates or driver reloads; complements safeTelnetConnect() for full lifecycle protection
+*  0.3.0.6   -- Added detection for external upsControlEnabled changes (e.g. via Rule Machine/WebCoRE); driver now automatically updates label and auto-disable timer to match externally modified control state
+*  0.3.0.7   -- Added refresh() de-duplication and external control sync integration; prevents overlapping Telnet sessions from manual, cron, or RM/WC refresh calls. Driver now safely ignores duplicate refresh requests during active sessions and resets state after completion.
+*  0.3.0.8   -- Restored UPS command error handling; driver now parses E000/E001/E100/E102 codes for all control operations and emits contextual success/failure results via lastCommandResult.
+*  0.3.0.9   -- Restored UPS command error handling; reinstated handleUPSError() with contextual success/failure mapping for E000:/E001:/E100:/E102: codes; corrected type guard regression causing command parse failure; fixed session lock caused by improper connectStatus state update.
+*  0.3.0.10  -- Removed refreshQueued flag to eliminate refresh() deadlock; refresh gating now based solely on connectStatus; updated processBufferedSession() and telnetStatus() for deterministic disconnect and full state reset; retained forced parse-on-disconnect debug logic.
+*  0.3.0.11  -- Restored runtime calculation in emitLastUpdate(); added emission at end of processBufferedSession() to log total data capture duration before state reset.
+*  0.3.0.12  -- Fixed UPS command telnetConnect() argument type; cast upsPort to integer to restore direct command connectivity.
+*  0.3.1.1   -- Restored deterministic Telnet lifecycle handling in sendUPSCommand(); commands now transition Connecting->UPSCommand->Disconnected using existing connectStatus and lastCommand only; no forced close or new state keys.
+*  0.3.1.2   -- Reworked UPS command Telnet flow for full isolation; sendUPSCommand() now uses native telnetSend() and unified closeConnection() handoff to processUPSCommand(); removed delayedTelnetSend() for cleaner deterministic lifecycle.
+*  0.3.1.3   -- Added Telnet input normalization and full UPSCommand isolation in parse(); unified line trimming for both paths and ensured reconnoiter auth sequence only runs in Connected state; finalizes deterministic dual-path Telnet handling.
+*  0.3.1.4   -- Added transient inUPSCommandSession flag to eliminate Telnet state race between command and reconnoiter sessions; ensures parse() isolation even during concurrent thread scheduling; finalizes dual-path Telnet determinism.
+*  0.3.1.5   -- Restored delayedTelnetSend() to defer initial command transmission until Telnet socket fully established; resolves final race condition causing concurrent auth/command sequences; preserves deterministic single-session behavior.
+*  0.3.1.6   -- Removed transient inUPSCommandSession flag; restored full stability using delayedTelnetSend() deferred send mechanism; state.connectStatus propagation now deterministic under Hubitat Telnet lifecycle.
+*  0.3.1.7   -- Added explicit guard in parse() preventing reconnoiter auth sequence from firing during UPSCommand sessions; fixes dual Telnet session overlap and ensures full command isolation.
+*  0.3.2.0   -- Baseline functional; UPS Command logging and parsing not fully addressed.
+*  0.3.2.1   -- Corrected handleUPSError() guard logic; now only excludes Reconnoiter sessions from UPS error interpretation. All other command contexts (existing or future) now receive full error handling and contextual reporting.
+*  0.3.2.2   -- Removed superfluous logDebug from handleDetStatus(); this method only executes during Reconnoiter sessions and does not require post-parse debug output.
+*  0.3.2.3   -- Removed redundant driverInfoString() logging from configure(), initialize(), and refresh(); retained attribute emission only. Simplifies logs while preserving version info in driver attributes.
+*  0.3.2.4   -- Fully isolated UPSCommand and Reconnoiter Telnet sessions; parse() no longer triggers auth/command sequences during UPSCommand operations. Hardened safeTelnetConnect() with intelligent defer logic, added isCommandSessionActive() for future command extensibility, and refined connection-state promotion to prevent race conditions.
+*  0.3.2.5   -- Achieved full Telnet stream isolation. UPSCommand sessions now operate independently of Reconnoiter with proper buffer initialization (initTelnetBuffer()) and deterministic connection teardown. Eliminated NullPointerException during UPSCommand parse. Added line-count diagnostic to processUPSCommand() for verification of command response completeness.
+*  0.3.2.6   -- Finalized Telnet lifecycle hygiene: removed legacy closeConnection() calls from initialize() and telnetStatus(), ensuring all disconnects occur strictly through parse() (Reconnoiter) or processUPSCommand() (UPSCommand). Driver now guarantees single close event per session with full buffer integ*
+*  0.3.2.7   -- Finalized UPSCommand Telnet lifecycle. processUPSCommand() now explicitly closes the Telnet socket following buffer processing, ensuring deterministic disconnect and preventing Hubitat?s 3-minute idle timeout warning (?telnet input stream closed?). Reconnoiter and UPSCommand lifecycles now operate independently with mirrored open/close ownership, completing full dual-session isolation.
+*  0.3.2.8   -- Added deterministic UPSCommand completion handling in parse(); driver now detects E-codes or ?Connection Closed - Bye? markers to trigger processUPSCommand() immediately, eliminating 3-minute Telnet timeout warnings and ensuring clean session closure.
+*  0.3.2.9   -- Hardened Telnet session isolation; Reconnoiter authentication now explicitly blocked during UPSCommand sessions, preventing dual-session collisions and unauthorized command overlap.
+*  0.3.2.10  -- Added explicit 'quit' in processUPSCommand() after E000: Success to ensure clean Telnet closure and eliminate UPS idle timeout disconnects.
+*  0.3.2.11  -- Restored strict session gating in parse(); Reconnoiter auth sequence now fully suppressed during UPSCommand sessions to prevent dual Telnet collisions.
+*  0.3.4.0   -- Reverted to 0.3.2.0 for decoupling of UPS Commands and Reconnoiter
+*  0.3.4.1   -- Unified Telnet session model; single deterministic path for Reconnoiter and UPSCommand; whoami appended automatically; removed UPSCommand branch from parse(); no password persistence.
+*  0.3.4.4   -- Added initialize() self-healing reset restoring Disconnected baseline before each scheduled session; restored automatic recovery from Scheduled or Trying states; validated full autonomous cycle and deterministic session closure.
+*  0.3.4.5   -- Centralized post-session cleanup; state.telnetBuffer and sessionStart now purged deterministically after parse completion; removed redundant guards for leaner lifecycle finalization.
+*  0.3.4.6   -- Restored minimal deterministic session teardown; processBufferedSession() and processUPSCommand() now finalize with emit/stateFlush->updateConnectState("Disconnected")->remove telnetBuffer/sessionStart for clean post-session reset.
+*  0.3.4.12  -- Unified connectStatus handling, removed 'Idle' state, fixed false busy condition, simplified initialize() flow, ensured clean Telnet teardown and deterministic session recovery.
+*  0.3.4.13  -- Fixed connectStatus update regression; removed duplicate debug log and restored single deterministic info emit during state transition.
+*  0.3.4.14  -- Unified session timing; sessionStart now set in sendUPSCommand(), cleared in emitLastUpdate(), removed from refresh()
+*  0.3.5.0   -- Unified deterministic Telnet teardown model; cleanup centralized in finalizeSession(); ensures single post-parse cleanup for both Reconnoiter and UPSCommand paths; removes duplicate emit lines.
+*  0.3.5.1   -- Corrected redundant log emission in emitLastUpdate(); removed extraneous logInfo since emitChangedEvent() already generates Info-level output.
+*  0.3.5.2   -- Refined connectStatus lifecycle; replaced legacy UPSCommand state with deterministic five-stage model (Initializing->Connecting->Connected->Disconnecting->Disconnected) for all command paths.
+*  0.3.5.3   -- Simplified telnetStatus() logging; removed redundant close/error debug lines and streamlined connection reset reporting for cleaner deterministic output.
+*  0.3.5.5   -- Simplified finalizeSession(); added exception-safe cleanup and unified lastCommandResult=Complete emission for all sessions.
+*  0.3.5.6   -- Fixed finalizeSession() to emit correct lastCommandResult description using current or pending command name; confirmed error handling remains deterministic.
+*  0.3.5.7   -- Hardened finalizeSession(); replaced unsafe command list reference with state.lastCommand and added origin context for secure, traceable session completion.
+*  0.3.5.8   -- Removed superfluous debug output from handleDetStatus(); streamlined final detstatus parse handling for cleaner post-session logs and reduced noise.
+*  0.3.5.9   -- Fixed non-persistent state cleanup bug caused by closure-based state.remove(); restored explicit deterministic post-session reset for telnetBuffer, sessionStart, and pendingCmds to ensure clean state between sessions.
+*  0.3.5.10  -- Added deterministic post-self-test refresh scheduling; restored guaranteed session cleanup under finally to ensure telnetBuffer, sessionStart, and pendingCmds are always cleared even after async or exception paths.
+*  0.3.5.11  -- Unified transient state cleanup via resetTransientState(); ensures deterministic recovery at both initialization and session finalization, adds residual-state detection logging, and improves Hubitat state flush reliability.
+*  0.3.5.12  -- Enhanced resetTransientState() for contextual cleanup; added optional suppressWarn flag to silence expected state removal during finalizeSession(); maintains warning output only for true residual state detected during initialize().
+*  0.3.5.13  -- Improved UPS status parsing to correctly normalize "Off No" response; removed redundant connectState update in sendUPSCommand() for cleaner deterministic transition (Initializing->Connecting).
+*  0.3.5.14  -- Changed Telnet buffer teardown to reset state.telnetBuffer to [] instead of removing it, ensuring consistent state structure and deterministic post-session cleanup.
+*  0.3.5.15  -- Added intelligent post-command refresh scheduling after self-test, reboot, and power-cycle; ensures deterministic status capture via delayed refresh without disrupting session finalization.
+*  0.3.5.16  -- Unified Telnet connection handling; all UPS command and Reconnoiter sessions now use safeTelnetConnect() for consistent retry, error recovery, and deterministic session lifecycle stability. Simplified safeTelnetConnect() by removing recursive helper and consolidating retry logic for cleaner, self-contained Telnet recovery.
+*  0.3.5.17  -- Unified Telnet connection model; refresh(), sendUPSCommand(), and safeTelnetConnect() now share a single deterministic lifecycle with integrated retry, deferral, and automatic recovery. Removed redundant guards for cleaner and more stable Telnet session control across all command types.
+*  0.3.5.18  -- Reworked delayedTelnetSend() with minimal stateless retry logic (2,4,8,16s) and aligned log format; preserves deterministic behavior without adding code bloat or persistent state.
+*  0.3.6.0   -- Added intelligent post-command refresh scheduling after self-test, reboot, and power-cycle; ensures deterministic status capture via delayed refresh without disrupting session finalization.
+*  0.3.6.1   -- Restored safeTelnetConnect() from 0.3.5.16; removed deferred retry logic and isCommandSessionActive() dependency for deterministic connection handling under Hubitat Telnet lifecycle.
+*  0.3.6.2   -- Restored resetTransientState() after safeTelnetConnect() reintegration; removed residual retrySafeTelnetConnect() and isCommandSessionActive() artifacts; validated deterministic lifecycle and session finalization sequence.
+*  0.3.6.3   -- Introduced transientContext framework to replace temporary device data storage; refactored nmcStatusDesc and aboutSection to use in-memory transients for improved performance and cleaner metadata.
+*  0.3.6.4   -- Migrated sessionStart and telnetBuffer from persistent state to transientContext; eliminates redundant serialization, reduces I/O overhead, and maintains deterministic Telnet session performance.
+*  0.3.6.5   -- Expanded transientContext to replace state vars (upsBanner* & nmc*); reduced runtime <5s; retained whoami state for stability
+*  0.3.6.6   -- Final code cleanup before RC; cosmetic label changes
+*  0.3.6.7   -- Standardized all utility methods to condensed format; finalized transientContext integration; removed obsolete state usage for stateless ops; prep for RC release
