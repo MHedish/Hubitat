@@ -1,6 +1,6 @@
 # APC SmartUPS Status Driver
 
-[![Version](https://img.shields.io/badge/version-0.3.6.2-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.6.5-blue.svg)](./CHANGELOG.md)
 [![Status](https://img.shields.io/badge/release-IN%20TEST-yellow.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
@@ -8,9 +8,9 @@
 A [Hubitat Elevation](https://hubitat.com/) custom driver for monitoring and controlling **APC Smart-UPS** devices via the Network Management Card (NMC) Telnet interface.
 
 ⚙️ **TESTING NOTICE:**  
-Version `0.3.6.2` is the current **candidate under active test**.  
+Version `0.3.6.5` is the current **candidate under active test**.  
 This build improves Telnet buffer diagnostics, refines UPS label handling, and includes multiple lifecycle and control logic improvements.  
-Once verified, it will form the basis of the **0.3.6.2 stable release candidate**.
+Once verified, it will form the basis of the **0.3.6.5 stable release candidate**.
 
 ---
 
