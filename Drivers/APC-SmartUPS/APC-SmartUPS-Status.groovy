@@ -16,12 +16,14 @@
 *  0.3.6.5   -- Expanded transientContext to replace state vars (upsBanner* & nmc*); reduced runtime <5s; retained whoami state for stability
 *  0.3.6.6   -- Final code cleanup before RC; cosmetic label changes
 *  0.3.6.7   -- Standardized all utility methods to condensed format; finalized transientContext integration; removed obsolete state usage for stateless ops; prep for RC release
+*  0.3.6.8   -- Corrected case sensitivity mismatch in handleUPSCommands() to align with camelCase command definitions.
+
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.3.6.7"
+@Field static final String DRIVER_VERSION  = "0.3.6.8"
 @Field static final String DRIVER_MODIFIED = "2025.10.22"
 @Field static transientContext = [:]
 
@@ -296,7 +298,7 @@ private void sendUPSCommand(String cmdName, List cmds) {
         logInfo "${cmdName} deferred 15s (Telnet busy with ${state.lastCommand})"
         if (!state.deferredCommand) {
             state.deferredCommand = cmdName
-            def retryTarget = (cmdName == "Reconnoiter") ? "refresh" : cmdName
+            def retryTarget = (cmdName == "Reconnoiter")?"refresh" : cmdName
             logDebug "sendUPSCommand(): scheduling deferred ${retryTarget} retry in 15s"
             runIn(15, retryTarget)
         } else {
@@ -396,9 +398,9 @@ private finalizeSession(String origin) {
         emitChangedEvent("lastCommandResult","Complete","${state.lastCommand} completed normally")
         logDebug "finalizeSession(): Cleanup from ${origin}"
         def lastCmd=(state.lastCommand?:"").toLowerCase()
-        if(lastCmd=="selfTest"){try{def n=device.currentValue("nextCheckMinutes")as Integer;if(n==null||n>1){logInfo "Post self-test refresh scheduled for 45s from now";runIn(45,"refresh")}else logDebug "Skipping post-self-test refresh (next scheduled in ${n*60}s)"}catch(e){logWarn "finalizeSession(): unable to evaluate post-self-test refresh (${e.message})"}}
-        if(lastCmd=="reboot"){try{def n=device.currentValue("nextCheckMinutes")as Integer;if(n==null||n>2){logInfo "Post reboot refresh scheduled for 90s from now";runIn(90,"refresh")}else logDebug "Skipping post-reboot refresh (next scheduled in ${n*60}s)"}catch(e){logWarn "finalizeSession(): unable to evaluate post-reboot refresh (${e.message})"}}
-        if(lastCmd in ["upsoff","upson"]){try{def n=device.currentValue("nextCheckMinutes")as Integer;if(n==null||n>1){logInfo "Post power-cycle refresh scheduled for 30s from now";runIn(30,"refresh")}else logDebug "Skipping post-power-cycle refresh (next scheduled in ${n*60}s)"}catch(e){logWarn "finalizeSession(): unable to evaluate post-power-cycle refresh (${e.message})"}}
+        if(lastCmd=="self test"){try{def n=device.currentValue("nextCheckMinutes")as Integer;if(n==null||n>1){logInfo "Post self-test refresh scheduled for 45s from now";runIn(45,"refresh")}else logDebug "Skipping post-self-test refresh (next scheduled in ${n*60}s)"}catch(e){logWarn "finalizeSession(): unable to evaluate post-self-test refresh (${e.message})"}}
+        if(lastCmd=="reboot"){try{def n=device.currentValue("nextCheckMinutes")as Integer;if(n==null||n>2){logInfo "Post-reboot refresh scheduled for 90s from now";runIn(90,"refresh")}else logDebug "Skipping post-reboot refresh (next scheduled in ${n*60}s)"}catch(e){logWarn "finalizeSession(): unable to evaluate post-reboot refresh (${e.message})"}}
+        if(lastCmd in ["ups off","ups on"]){try{def n=device.currentValue("nextCheckMinutes")as Integer;if(n==null||n>1){logInfo "Post power-cycle refresh scheduled for 30s from now";runIn(30,"refresh")}else logDebug "Skipping post-power-cycle refresh (next scheduled in ${n*60}s)"}catch(e){logWarn "finalizeSession(): unable to evaluate post-power-cycle refresh (${e.message})"}}
     }catch(e){logWarn "finalizeSession(): ${e.message}"}finally{resetTransientState("finalizeSession",true)}
 }
 
@@ -479,18 +481,18 @@ private handleIdentificationAndSelfTest(def pair){
 
 private handleUPSCommands(def pair){
     if (!pair) return;def code=pair[0]?.trim(),desc=translateUPSError(code),cmd=state.lastCommand
-    def validCmds=["AlarmTest","SelfTest","UPSOn","UPSOff","Reboot","Sleep","toggleRuntimeCalibration","setOutletGroup"]
+    def validCmds=["Alarm Test","Self Test","UPS On","UPS Off","Reboot","Sleep","Calibrate Runtime","setOutletGroup"]
     if(!(cmd in validCmds))return
     if(code in["E000:","E001:"]){emitChangedEvent("lastCommandResult","Success","Command '${cmd}' acknowledged by UPS (${desc})");logInfo"UPS Command '${cmd}' succeeded (${desc})";return}
     def contextualDesc=desc
     switch(cmd){
-        case"toggleRuntimeCalibration":if(code in["E102:","E100:"])contextualDesc="Refused to start calibration – likely low battery or load conditions.";break
-        case"UPSOff":if(code=="E102:")contextualDesc="UPS refused shutdown – check outlet group configuration or NMC permissions.";break
-        case"UPSOn":if(code=="E102:")contextualDesc="UPS power-on command refused – output already on or control locked.";break
+        case"Calibrate Runtime":if(code in["E102:","E100:"])contextualDesc="Refused to start calibration – likely low battery or load conditions.";break
+        case"UPS Off":if(code=="E102:")contextualDesc="UPS refused shutdown – check outlet group configuration or NMC permissions.";break
+        case"UPS On":if(code=="E102:")contextualDesc="UPS power-on command refused – output already on or control locked.";break
         case"Reboot":if(code=="E102:")contextualDesc="UPS reboot not accepted – possibly blocked by runtime calibration or load conditions.";break
         case"Sleep":if(code=="E102:")contextualDesc="UPS refused sleep mode – ensure supported model and conditions.";break
-        case"AlarmTest":if(code=="E102:")contextualDesc="Alarm test not accepted – may already be active or UPS in transition.";break
-        case"SelfTest":if(code=="E102:")contextualDesc="Self test refused – battery charge insufficient or UPS busy.";break
+        case"Alarm Test":if(code=="E102:")contextualDesc="Alarm test not accepted – may already be active or UPS in transition.";break
+        case"Self Test":if(code=="E102:")contextualDesc="Self test refused – battery charge insufficient or UPS busy.";break
     }
     emitChangedEvent("lastCommandResult","Failure","Command '${cmd}' failed (${code} ${contextualDesc})")
     logWarn"UPS Command '${cmd}' failed (${code} ${contextualDesc})"
