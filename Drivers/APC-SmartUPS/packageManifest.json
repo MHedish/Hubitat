@@ -1,7 +1,6 @@
 {
   "packageName": "APC SmartUPS Status",
   "author": "Marc Hedish",
-  "category": "Utility",
   "version": "0.3.6.8",
   "minimumHEVersion": "2.3.0",
   "dateReleased": "2025-10-22",
