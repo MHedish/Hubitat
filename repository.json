@@ -41,7 +41,7 @@
       "name": "APC SmartUPS Status",
       "category": "Utility",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/APC-SmartUPS/packageManifest.json",
-      "description": "Hubitat driver for monitoring and managing APC Smart-UPS systems — providing reliable runtime statistics, event emission, and control for APC devices."
+      "description": "Hubitat driver for monitoring and managing APC Smart-UPS systems — providing reliable runtime statistics, event emission, and control for APC devices.",
       "tags": [
         "UPS",
         "APC",
@@ -51,4 +51,5 @@
     }
   ]
 }
+
 
