@@ -5,7 +5,13 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
 
-A modern, deterministic **Hubitat driver** for monitoring and managing **APC Smart-UPS** systems via Telnet — providing reliable runtime statistics, event emission, and self-test control for APC devices equipped with **Network Management Cards (NMC)**.
+**APC SmartUPS Status** is a high-performance Hubitat driver for APC Smart-UPS devices equipped with Network Management Cards (NMC).  
+It uses a **deterministic Telnet session model** to collect complete UPS telemetry in under five seconds while avoiding race conditions and connection timeouts common to continuous Telnet sessions.
+
+Built on a **transient context architecture**, the driver eliminates unnecessary persistent state, improving efficiency and reliability.  
+Control functions such as **UPS power, reboot, calibration, and alarm testing** are safely gated behind an automatic 30-minute enable timeout to prevent unintended actions.
+
+All events and telemetry are fully **Rule Machine and webCoRE compatible**, enabling precise automation and monitoring with minimal resource overhead.
 
 ---
 
@@ -246,6 +252,15 @@ This driver follows semantic-style versioning:
 | 0.1.x | Prototype | Initial Hubitat SmartUPS driver |
 
 See [`CHANGELOG.md`](CHANGELOG.md) for full release notes.
+
+---
+## 🧠 Why This Driver
+
+Unlike typical polling-based integrations, **APC SmartUPS Status** is engineered around a **deterministic command lifecycle** that ensures each Telnet session is atomic, self-contained, and verifiable.
+
+By avoiding persistent connections and using transient in-memory context instead of long-lived state variables, the driver delivers consistent, predictable performance regardless of hub load or network latency.
+
+Every component — from the buffer parser to the UPS command scheduler — was designed for **clarity, safety, and diagnostic transparency**, ensuring clean recovery even under edge conditions like dropped Telnet streams or incomplete NMC responses.
 
 ---
 
