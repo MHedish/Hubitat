@@ -1,15 +1,12 @@
 {
   "packageName": "APC SmartUPS Status",
   "author": "Marc Hedish",
-  "namespace": "MHedish",
   "category": "Utility",
   "version": "0.3.6.8",
-  "minimumHEVersion": "2.2.0",
+  "minimumHEVersion": "2.3.0",
   "dateReleased": "2025-10-22",
-  "licenseFile": "LICENSE",
   "releaseNotes": "RELEASE CANDIDATE — Hubitat driver for monitoring and managing APC Smart-UPS systems — providing reliable runtime statistics, event emission, and control for APC devices.",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/README.md",
-  "communityLink": "",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/CHANGELOG.md",
   "tags": ["UPS","APC","Smart-UPS","Telnet","Monitoring","Hubitat"],
   "drivers": [
@@ -18,7 +15,8 @@
       "name": "APC SmartUPS Status",
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/APC-SmartUPS/APC-SmartUPS-Status.groovy",
-      "required": true
+      "required": true,
+      "version": "0.3.6.8"
     }
   ]
 }
