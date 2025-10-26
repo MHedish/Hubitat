@@ -124,3 +124,4 @@
 *  0.3.6.6   -- Final code cleanup before RC; cosmetic label changes
 *  0.3.6.7   -- Standardized all utility methods to condensed format; finalized transientContext integration; removed obsolete state usage for stateless ops; prep for RC release
 *  0.3.6.8   -- Corrected case sensitivity mismatch in handleUPSCommands() to align with camelCase command definitions.
+*  0.3.6.9   -- Removed extraneous attribute; code cleanup.
