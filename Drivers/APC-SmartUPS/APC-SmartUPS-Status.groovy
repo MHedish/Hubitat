@@ -17,14 +17,14 @@
 *  0.3.6.6   -- Final code cleanup before RC; cosmetic label changes
 *  0.3.6.7   -- Standardized all utility methods to condensed format; finalized transientContext integration; removed obsolete state usage for stateless ops; prep for RC release
 *  0.3.6.8   -- Corrected case sensitivity mismatch in handleUPSCommands() to align with camelCase command definitions.
-
+*  0.3.6.9   -- Removed extraneous attribute; code cleanup.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.3.6.8"
-@Field static final String DRIVER_MODIFIED = "2025.10.22"
+@Field static final String DRIVER_VERSION  = "0.3.6.9"
+@Field static final String DRIVER_MODIFIED = "2025.10.26"
 @Field static transientContext = [:]
 
 /* ===============================
@@ -92,7 +92,6 @@ metadata {
         attribute "runtimeHours","number"
         attribute "runtimeMinutes","number"
         attribute "serialNumber","string"
-        attribute "telnet","string"
         attribute "temperatureC","number"
         attribute "temperatureF","number"
         attribute "upsContact","string"
@@ -256,8 +255,7 @@ def initialize() {
     if (device.currentValue("upsStatus") == null) emitEvent("upsStatus", "Unknown")
     if (!tempUnits) tempUnits = "F"
     state.upsControlEnabled = state.upsControlEnabled?:false
-    if (logEnable)
-        logDebug "IP=$upsIP, Port=$upsPort, Username=$Username, Password=$Password"
+    if (logEnable) logDebug "IP=$upsIP, Port=$upsPort, Username=$Username, Password=$Password"
     else
         logInfo "IP=$upsIP, Port=$upsPort"
     if (upsIP && upsPort && Username && Password) {
@@ -566,10 +564,10 @@ private void handleNMCData(List<String> lines){
         switch(s){
             case"Hardware":
                 if(k=="Model Number")emitChangedEvent("nmcModel",v,"NMC Model = ${v}")
-                if(k=="Serial Number"){logDebug "NMC Serial Number parsed: ${v}";emitChangedEvent("nmcSerialNumber",v,"NMC Serial Number = ${v}") }
+                if(k=="Serial Number"){logDebug "NMC Serial Number parsed: ${v}";emitChangedEvent("nmcSerialNumber",v,"NMC Serial Number = ${v}")}
                 if(k=="Hardware Revision")emitChangedEvent("nmcHardwareRevision",v,"NMC Hardware Revision = ${v}")
-                if(k=="Manufacture Date"){def dt=normalizeDateTime(v);logDebug "NMC Manufacture Date parsed: ${dt}";emitChangedEvent("nmcManufactureDate",dt,"NMC Manufacture Date = ${dt}") }
-                if(k=="MAC Address"){def mac=v.replaceAll(/\s+/,":").toUpperCase();emitChangedEvent("nmcMACAddress",mac,"NMC MAC Address = ${mac}") }
+                if(k=="Manufacture Date"){def dt=normalizeDateTime(v);logDebug "NMC Manufacture Date parsed: ${dt}";emitChangedEvent("nmcManufactureDate",dt,"NMC Manufacture Date = ${dt}")}
+                if(k=="MAC Address"){def mac=v.replaceAll(/\s+/,":").toUpperCase();emitChangedEvent("nmcMACAddress",mac,"NMC MAC Address = ${mac}")}
                 if(k=="Management Uptime"){logDebug "NMC Uptime parsed: ${v}";emitChangedEvent("nmcUptime",v,"NMC Uptime = ${v}")};break
             case"Application":
                 if(k=="Name")emitChangedEvent("nmcApplicationName",v,"NMC Application Name = ${v}")
@@ -669,7 +667,7 @@ def parse(String msg) {
             if ((state.whoamiEchoSeen && state.whoamiAckSeen && state.whoamiUserSeen)
                 || (connectStatus == "UPSCommand" && state.whoamiEchoSeen)) {
                 logDebug "whoami sequence complete, processing buffer..."
-                ["whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen","authStarted"].each { state.remove(it) }
+                ["whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen","authStarted"].each {state.remove(it)}
                 if (connectStatus == "UPSCommand") {
                     handleUPSCommands()
                 } else {
