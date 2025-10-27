@@ -1,53 +1,53 @@
 {
-  "author": "Marc Hedish",
-  "gitHubUrl": "https://github.com/MHedish/Hubitat",
-  "packages": [
-    {
-      "id": "6e5251ae-6faf-42f6-94a5-341806660b76",
-      "name": "Telnyx SMS",
-      "category": "Notifications",
-      "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Telnyx/packageManifest.json",
-      "description": "Telnyx SMS allows you to send SMS messages from Rule Machine, webCoRE, and the HE device pages.",
-      "tags": [
-        "Notifications"
-      ]
-    },
-    {
-      "id": "3e9ba706-857a-4f84-ab3b-2ddce486aaca",
-      "name": "Springs Window Fashions Shade Drivers",
-      "category": "Control",
-      "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Springs-Window-Fashions/packageManifest.json",
-      "description": "Drivers specifically for Sheer and Roller Shade window coverings. Fixes the issue where the standard drivers report 'partially open' when they are opaque and 'closed' when actually sheer.",
-      "tags": [
-        "Doors & Windows",
-        "Window Coverings",
-        "ZWave"
-      ]
-    },
-    {
-      "id": "b68d2d46-e199-46c9-a654-68ec7a1884a6",
-      "name": "UniFi Presence Drivers",
-      "category": "Utility",
-      "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/packageManifest.json",
-      "description": "Hubitat driver pair for UniFi presence detection with client and hotspot monitoring.",
-      "tags": [
-        "Presence & Location",
-        "Network",
-        "UniFi"
-      ]
-    },
-    {
-      "id": "4e5c389d-a3d5-4214-b24f-971b975cf7ae",
-      "name": "APC SmartUPS Status",
-      "category": "Utility",
-      "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/APC-SmartUPS/packageManifest.json",
-      "description": "Hubitat driver for monitoring and managing APC Smart-UPS systems — providing reliable runtime statistics, event emission, and control for APC devices.",
-      "tags": [
-        "UPS",
-        "APC",
-        "Smart-UPS",
-        "Monitoring"
-      ]
-    }
+    "author": "Marc Hedish",
+    "gitHubUrl": "https://github.com/MHedish/Hubitat",
+    "packages": [
+        {
+            "id": "6e5251ae-6faf-42f6-94a5-341806660b76",
+            "name": "Telnyx SMS",
+            "category": "Notifications",
+            "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Telnyx/packageManifest.json",
+            "description": "Telnyx SMS allows you to send SMS messages from Rule Machine, webCoRE, and the HE device pages.",
+            "tags": [
+                "Notifications"
+            ]
+        },
+        {
+            "id": "3e9ba706-857a-4f84-ab3b-2ddce486aaca",
+            "name": "Springs Window Fashions Shade Drivers",
+            "category": "Control",
+            "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/Springs-Window-Fashions/packageManifest.json",
+            "description": "Drivers specifically for Sheer and Roller Shade window coverings. Fixes the issue where the standard drivers report 'partially open' when they are opaque and 'closed' when actually sheer.",
+            "tags": [
+                "Doors & Windows",
+                "Window Coverings",
+                "ZWave"
+            ]
+        },
+        {
+            "id": "b68d2d46-e199-46c9-a654-68ec7a1884a6",
+            "name": "UniFi Presence Drivers",
+            "category": "Utility",
+            "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/packageManifest.json",
+            "description": "Hubitat driver pair for UniFi presence detection with client and hotspot monitoring.",
+            "tags": [
+                "Presence & Location",
+                "Network",
+                "UniFi"
+            ]
+        },
+        {
+            "id": "4e5c389d-a3d5-4214-b24f-971b975cf7ae",
+            "name": "APC SmartUPS Status",
+            "category": "Utility",
+            "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/APC-SmartUPS/packageManifest.json",
+            "description": "Hubitat driver for monitoring and managing APC Smart-UPS systems — providing reliable runtime statistics, event emission, and control for APC devices.",
+            "tags": [
+                "UPS",
+                "APC",
+                "Smart-UPS",
+                "Monitoring"
+            ]
+        }
+    ]
 }
-
