@@ -22,12 +22,13 @@
 *  0.3.6.11  -- Integrated low-battery and hub auto-shutdown logic directly into handleBatteryData(); adds symmetrical recovery clearing when runtime rises above threshold; eliminates redundant runtime lookups; refines try{} encapsulation for reliability.
 *  0.3.6.12  -- Added configuration anomaly checks to initialize(); now emits warnings when check interval exceeds nominal runtime or when shutdown threshold is smaller than interval; ensures lowBattery baseline is initialized with calculated threshold; improved startup reliability and diagnostic transparency.
 *  0.3.6.13  -- Added UPS status gating to low-battery shutdown logic; Hubitat shutdown now triggers only when lowBattery=true and upsStatus is neither "Online" nor "Off". Finalized handleBatteryData() symmetry and optimized conditional flow for reliability.
+*  0.3.6.14  -- Restored correct parsing logic for “Battery State Of Charge”; reverted case mapping to "Battery State" with conditional match on p2/p3 to properly detect and update the battery attribute. Resolves lost battery reporting and restores full capability compliance after reinstall.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.3.6.13"
+@Field static final String DRIVER_VERSION  = "0.3.6.14"
 @Field static final String DRIVER_MODIFIED = "2025.10.27"
 @Field static transientContext = [:]
 
@@ -51,6 +52,7 @@ metadata {
         attribute "alarmCountCrit","number"
         attribute "alarmCountInfo","number"
         attribute "alarmCountWarn","number"
+        attribute "battery","number"
         attribute "batteryVoltage","number"
         attribute "checkInterval","number"
         attribute "connectStatus", "string"
@@ -444,7 +446,7 @@ private handleBatteryData(def pair){
     def(p0,p1,p2,p3,p4,p5)=(pair+[null,null,null,null,null,null])
     switch("$p0 $p1"){
         case"Battery Voltage:":emitChangedEvent("batteryVoltage", p2, "Battery Voltage = ${p2} ${p3}", p3);break
-        case"Battery State Of":if (p3 == "Charge:"){int pct = p4.toDouble().toInteger();emitChangedEvent("battery", pct, "UPS Battery Percentage = $pct ${p5}", "%")};break
+        case"Battery State":if(p2=="Of"&&p3=="Charge:"){int pct=p4.toDouble().toInteger();emitChangedEvent("battery",pct,"UPS Battery Percentage = $pct ${p5}","%")};break
         case "Runtime Remaining:":def s = pair.join(" ");def m = s =~ /Runtime Remaining:\s*(?:(\d+)\s*(?:hr|hrs))?\s*(?:(\d+)\s*(?:min|mins))?/;int h=0,mn=0;if (m.find()){h=m[0][1]?.toInteger()?:0;mn=m[0][2]?.toInteger()?:0};def f=String.format("%02d:%02d",h,mn);emitChangedEvent("runtimeHours",h,"UPS Runtime Remaining = ${f}","h");emitChangedEvent("runtimeMinutes",mn,"UPS Runtime Remaining = ${f}","min");logInfo "UPS Runtime Remaining = ${f}"
             try {def remMins=(h*60)+mn;def threshold=(settings.runTimeOnBattery?:2)*2;def prevLow=(device.currentValue("lowBattery")as Boolean)?:false;def isLow=remMins<=threshold
                 if (isLow != prevLow){emitChangedEvent("lowBattery", isLow, "UPS low battery state changed to ${isLow}")
