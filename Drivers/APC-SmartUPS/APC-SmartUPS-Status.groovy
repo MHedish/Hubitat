@@ -18,13 +18,16 @@
 *  0.3.6.7   -- Standardized all utility methods to condensed format; finalized transientContext integration; removed obsolete state usage for stateless ops; prep for RC release
 *  0.3.6.8   -- Corrected case sensitivity mismatch in handleUPSCommands() to align with camelCase command definitions.
 *  0.3.6.9   -- Removed extraneous attribute; code cleanup.
+*  0.3.6.10  -- Added low-battery monitoring and optional Hubitat auto-shutdown feature with new 'lowBattery' attribute and 'autoShutdownHub' preference.
+*  0.3.6.11  -- Integrated low-battery and hub auto-shutdown logic directly into handleBatteryData(); adds symmetrical recovery clearing when runtime rises above threshold; eliminates redundant runtime lookups; refines try{} encapsulation for reliability.
+*  0.3.6.12  -- Added configuration anomaly checks to initialize(); now emits warnings when check interval exceeds nominal runtime or when shutdown threshold is smaller than interval; ensures lowBattery baseline is initialized with calculated threshold; improved startup reliability and diagnostic transparency.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.3.6.9"
-@Field static final String DRIVER_MODIFIED = "2025.10.26"
+@Field static final String DRIVER_VERSION  = "0.3.6.12"
+@Field static final String DRIVER_MODIFIED = "2025.10.27"
 @Field static transientContext = [:]
 
 /* ===============================
@@ -61,6 +64,7 @@ metadata {
         attribute "lastSelfTestResult","string"
         attribute "lastTransferCause","string"
         attribute "lastUpdate","string"
+        attribute "lowBattery","boolean"
         attribute "manufactureDate","string"
         attribute "model","string"
         attribute "nextCheckMinutes","number"
@@ -132,6 +136,7 @@ preferences {
     input("runTime", "number", title: "Check interval for UPS status (minutes, 1–59)", description: "Default 15",defaultValue: 15, range: "1..59", required: true)
     input("runOffset", "number", title: "Check Interval Offset (minutes past the hour, 0–59)", defaultValue: 0, range: "0..59", required: true)
     input("runTimeOnBattery", "number", title: "Check interval when on battery (minutes, 1–59)", defaultValue: 2, range: "1..59", required: true)
+    input("autoShutdownHub", "bool", title: "Shutdown Hubitat when UPS battery is low", defaultValue: true)
     input("upsTZOffset", "number",title: "UPS Time Zone Offset (minutes)",description: "Offset UPS-reported time from hub (-720 to +840). Default=0 for same TZ", defaultValue: 0, range: "-720..840")
     input("logEnable", "bool", title: "Enable Debug Logging", defaultValue: false)
     input("logEvents", "bool", title: "Log All Events", defaultValue: false)
@@ -252,21 +257,22 @@ def configure() {logInfo "${driverInfoString()} configured";initialize()}
 def initialize() {
     logInfo "${driverInfoString()} initializing..."
     emitEvent("driverInfo", driverInfoString())
-    if (device.currentValue("upsStatus") == null) emitEvent("upsStatus", "Unknown")
-    if (!tempUnits) tempUnits = "F"
-    state.upsControlEnabled = state.upsControlEnabled?:false
+    state.upsControlEnabled=state.upsControlEnabled?:false
+    def threshold=settings.runTimeOnBattery*2
+    if (!tempUnits)tempUnits="F"
+    if (device.currentValue("upsStatus")==null)emitEvent("upsStatus","Unknown")
+    if (device.currentValue("lowBattery")==null)emitEvent("lowBattery",false,"Threshold = ${threshold} minutes")
+    if (settings.runTimeOnBattery > settings.runTime)logWarn "Configuration anomaly: Check interval when on battery exceeds nominal check interval."
+    if (threshold<settings.runTimeOnBattery)logWarn "Configuration anomaly: Shutdown threshold (${threshold} minutes) is not greater than nominal check interval (${device.currentValue("runTime")})."
     if (logEnable) logDebug "IP=$upsIP, Port=$upsPort, Username=$Username, Password=$Password"
-    else
-        logInfo "IP=$upsIP, Port=$upsPort"
+    else logInfo "IP=$upsIP, Port=$upsPort"
     if (upsIP && upsPort && Username && Password) {
         unschedule(autoDisableDebugLogging)
-        if (logEnable) runIn(1800, autoDisableDebugLogging)
+        if (logEnable)runIn(1800,autoDisableDebugLogging)
         updateUPSControlState(state.upsControlEnabled)
-        if (state.upsControlEnabled) {
-            unschedule(autoDisableUPSControl);runIn(1800, autoDisableUPSControl)
-        }
+        if (state.upsControlEnabled){unschedule(autoDisableUPSControl);runIn(1800,autoDisableUPSControl)}
         scheduleCheck(runTime as Integer, runOffset as Integer)
-        resetTransientState("initialize");updateConnectState("Disconnected");closeConnection();runInMillis(500, "refresh")
+        resetTransientState("initialize");updateConnectState("Disconnected");closeConnection();runInMillis(500,"refresh")
     }
 }
 
@@ -285,13 +291,11 @@ private scheduleCheck(Integer interval,Integer offset){
    Command Helpers
    =============================== */
 private void sendUPSCommand(String cmdName, List cmds) {
-    // --- Guard: UPS control state ---
     if (!state.upsControlEnabled && cmdName != "Reconnoiter") {
         logWarn "${cmdName} called but UPS control is disabled"
         state.remove("pendingDeferredCmd")
         return
     }
-    // --- Guard: Telnet session busy ---
     if (device.currentValue("connectStatus") != "Disconnected") {
         logInfo "${cmdName} deferred 15s (Telnet busy with ${state.lastCommand})"
         if (!state.deferredCommand) {
@@ -304,20 +308,19 @@ private void sendUPSCommand(String cmdName, List cmds) {
         }
         return
     }
-    // --- Proceed: New command session ---
     state.remove("deferredCommand");updateCommandState(cmdName);updateConnectState("Initializing")
     emitEvent("lastCommandResult", "Pending", "${cmdName} queued for execution");logInfo "Executing UPS command: ${cmdName}"
     try {
         // Initialize transient session timing and buffer
         setTransient("sessionStart",now());logDebug "sendUPSCommand(): session start timestamp = ${getTransient('sessionStart')}"
         telnetClose();updateConnectState("Connecting");initTelnetBuffer()
-        state.pendingCmds = ["$Username", "$Password"] + cmds + ["whoami"]
+        state.pendingCmds=["$Username","$Password"]+cmds+["whoami"]
         logDebug "sendUPSCommand(): Opening transient Telnet connection to ${upsIP}:${upsPort}"
         safeTelnetConnect(upsIP, upsPort.toInteger());logDebug "sendUPSCommand(): queued ${state.pendingCmds.size()} Telnet lines for delayed send"
-        runInMillis(500, "delayedTelnetSend")
+        runInMillis(500,"delayedTelnetSend")
     } catch (Exception e) {
         logError "sendUPSCommand(${cmdName}): ${e.message}"
-        emitEvent("lastCommandResult", "Failure");updateConnectState("Disconnected");closeConnection()
+        emitEvent("lastCommandResult","Failure");updateConnectState("Disconnected");closeConnection()
     }
 }
 
@@ -439,15 +442,25 @@ private handleBatteryData(def pair){
     pair=pair.collect{it?.replaceAll(",","")}
     def(p0,p1,p2,p3,p4,p5)=(pair+[null,null,null,null,null,null])
     switch("$p0 $p1"){
-        case"Battery Voltage:":emitChangedEvent("batteryVoltage",p2,"Battery Voltage = ${p2} ${p3}",p3);break
-        case"Battery State":if(p2=="Of"&&p3=="Charge:"){int pct=p4.toDouble().toInteger();emitChangedEvent("battery",pct,"UPS Battery Percentage = $pct ${p5}","%")};break
-        case"Runtime Remaining:":def s=pair.join(" ");def m=s=~/Runtime Remaining:\s*(?:(\d+)\s*(?:hr|hrs))?\s*(?:(\d+)\s*(?:min|mins))?/;int h=0,mn=0;if(m.find()){h=m[0][1]?.toInteger()?:0;mn=m[0][2]?.toInteger()?:0};def f=String.format("%02d:%02d",h,mn);emitChangedEvent("runtimeHours",h,"UPS Runtime Remaining = ${f}","h");emitChangedEvent("runtimeMinutes",mn,"UPS Runtime Remaining = ${f}","min");logInfo "UPS Runtime Remaining = ${f}";break
+        case"Battery Voltage:":emitChangedEvent("batteryVoltage", p2, "Battery Voltage = ${p2} ${p3}", p3);break
+        case"Battery State Of":if (p3 == "Charge:"){int pct = p4.toDouble().toInteger();emitChangedEvent("battery", pct, "UPS Battery Percentage = $pct ${p5}", "%")};break
+        case "Runtime Remaining:":def s = pair.join(" ");def m = s =~ /Runtime Remaining:\s*(?:(\d+)\s*(?:hr|hrs))?\s*(?:(\d+)\s*(?:min|mins))?/;int h=0,mn=0;if (m.find()){h=m[0][1]?.toInteger()?:0;mn=m[0][2]?.toInteger()?:0};def f=String.format("%02d:%02d",h,mn);emitChangedEvent("runtimeHours",h,"UPS Runtime Remaining = ${f}","h");emitChangedEvent("runtimeMinutes",mn,"UPS Runtime Remaining = ${f}","min");logInfo "UPS Runtime Remaining = ${f}"
+            try {def remMins=(h*60)+mn;def threshold=(settings.runTimeOnBattery?:2)*2;def prevLow=(device.currentValue("lowBattery")as Boolean)?:false;def isLow=remMins<=threshold
+                if (isLow != prevLow){emitChangedEvent("lowBattery", isLow, "UPS low battery state changed to ${isLow}")
+                    if (isLow) {logWarn "Battery below ${threshold} minutes (${remMins} min remaining)"
+                        if ((settings.autoShutdownHub ?: false) && !state.hubShutdownIssued) {
+                            logWarn "Initiating Hubitat shutdown...";sendHubShutdown();state.hubShutdownIssued=true
+                        } else if (state.hubShutdownIssued){logDebug "Hub shutdown already issued; skipping repeat trigger"}
+                    } else {logInfo "Battery runtime recovered above ${threshold} minutes (${remMins} remaining)";state.remove("hubShutdownIssued")}
+                }
+            } catch (e) {logWarn "handleBatteryData(): low-battery evaluation error (${e.message})"};break
         default:if((p0 in["Internal","Battery"])&&p1=="Temperature:"){emitChangedEvent("temperatureC",p2,"UPS Temperature = ${p2}°${p3}","°C");emitChangedEvent("temperatureF",p4,"UPS Temperature = ${p4}°${p5}","°F");if(tempUnits=="F")emitChangedEvent("temperature",p4,"UPS Temperature = ${p4}°${p5} / ${p2}°${p3}","°F")else emitChangedEvent("temperature",p2,"UPS Temperature = ${p2}°${p3} / ${p4}°${p5}","°C")};break
     }
 }
 
 private handleElectricalMetrics(def pair){
-    def(p0,p1,p2,p3,p4)=(pair+[null,null,null,null,null])
+    pair=pair.collect{it?.replaceAll(",","")}
+    def(p0,p1,p2,p3,p4,p5)=(pair+[null,null,null,null,null,null])
     switch(p0){
         case"Output":
             switch(p1){
@@ -535,7 +548,7 @@ private void handleBannerData(String l) {
         def statVal = mStat.group(1).trim()
         setTransient("nmcStatusDesc", translateNmcStatus(statVal))
         emitChangedEvent("nmcStatus", statVal, "${getTransient('nmcStatusDesc')}")
-        if (statVal.contains('-') || statVal.contains('!'))
+        if (statVal.contains('-')||statVal.contains('!'))
             logWarn "NMC is reporting an error state: ${getTransient('nmcStatusDesc')}"
         clearTransient("nmcStatusDesc")
     }
@@ -611,14 +624,14 @@ private void processBufferedSession(){
     if(secUps)        handleUPSSection(secUps)
     if(secUpsAbout)   handleUPSAboutSection(secUpsAbout)
     if(secAbout)      handleNMCData(secAbout)
-    if(secAlarmCrit || secAlarmWarn || secAlarmInfo)handleAlarmCount(secAlarmCrit + secAlarmWarn + secAlarmInfo)
+    if(secAlarmCrit||secAlarmWarn||secAlarmInfo)handleAlarmCount(secAlarmCrit + secAlarmWarn + secAlarmInfo)
     if(secDetStatus)  handleDetStatus(secDetStatus)
     finalizeSession("processBufferedSession")
 }
 
 private void processUPSCommand() {
     def buf = getTransient("telnetBuffer")?:[]
-    if (!buf || buf.isEmpty()) {
+    if (!buf||buf.isEmpty()) {
         logDebug "processUPSCommand(): No buffered data to process"
         return
     }
@@ -634,6 +647,13 @@ private void processUPSCommand() {
         emitChangedEvent("lastCommandResult", "No Response", "Command '${cmd}' completed without explicit result")
     }
     finalizeSession("processUPSCommand")
+}
+
+private void sendHubShutdown(){
+    try{
+        def postParams=[uri:"http://127.0.0.1:8080",path:"/hub/shutdown"];logWarn "Sending hub shutdown command..."
+        httpPost(postParams){r->if(r?.status==200)logWarn"Hub shutdown acknowledged by Hubitat."else logWarn"Hub shutdown returned status ${r?.status?:'unknown'}."}
+    }catch(e){logError "sendHubShutdown(): ${e.message}"}
 }
 
 private void setTransient(String key, value) {transientContext[key] = value}
@@ -664,8 +684,8 @@ def parse(String msg) {
             if (line.startsWith("apc>whoami")) state.whoamiEchoSeen = true
             if (line.startsWith("E000: Success")) state.whoamiAckSeen = true
             if (line.trim().equalsIgnoreCase(Username.trim())) state.whoamiUserSeen = true
-            if ((state.whoamiEchoSeen && state.whoamiAckSeen && state.whoamiUserSeen)
-                || (connectStatus == "UPSCommand" && state.whoamiEchoSeen)) {
+            if ((state.whoamiEchoSeen&&state.whoamiAckSeen&&state.whoamiUserSeen)
+                ||(connectStatus == "UPSCommand" && state.whoamiEchoSeen)) {
                 logDebug "whoami sequence complete, processing buffer..."
                 ["whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen","authStarted"].each {state.remove(it)}
                 if (connectStatus == "UPSCommand") {
