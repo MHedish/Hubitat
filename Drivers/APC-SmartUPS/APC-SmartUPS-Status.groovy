@@ -21,12 +21,13 @@
 *  0.3.6.10  -- Added low-battery monitoring and optional Hubitat auto-shutdown feature with new 'lowBattery' attribute and 'autoShutdownHub' preference.
 *  0.3.6.11  -- Integrated low-battery and hub auto-shutdown logic directly into handleBatteryData(); adds symmetrical recovery clearing when runtime rises above threshold; eliminates redundant runtime lookups; refines try{} encapsulation for reliability.
 *  0.3.6.12  -- Added configuration anomaly checks to initialize(); now emits warnings when check interval exceeds nominal runtime or when shutdown threshold is smaller than interval; ensures lowBattery baseline is initialized with calculated threshold; improved startup reliability and diagnostic transparency.
+*  0.3.6.13  -- Added UPS status gating to low-battery shutdown logic; Hubitat shutdown now triggers only when lowBattery=true and upsStatus is neither "Online" nor "Off". Finalized handleBatteryData() symmetry and optimized conditional flow for reliability.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.3.6.12"
+@Field static final String DRIVER_VERSION  = "0.3.6.13"
 @Field static final String DRIVER_MODIFIED = "2025.10.27"
 @Field static transientContext = [:]
 
@@ -448,8 +449,8 @@ private handleBatteryData(def pair){
             try {def remMins=(h*60)+mn;def threshold=(settings.runTimeOnBattery?:2)*2;def prevLow=(device.currentValue("lowBattery")as Boolean)?:false;def isLow=remMins<=threshold
                 if (isLow != prevLow){emitChangedEvent("lowBattery", isLow, "UPS low battery state changed to ${isLow}")
                     if (isLow) {logWarn "Battery below ${threshold} minutes (${remMins} min remaining)"
-                        if ((settings.autoShutdownHub ?: false) && !state.hubShutdownIssued) {
-                            logWarn "Initiating Hubitat shutdown...";sendHubShutdown();state.hubShutdownIssued=true
+                        if ((settings.autoShutdownHub?:false)&&!state.hubShutdownIssued) {
+						    if (!(upsStatus in ["Online","Off"])){logWarn "Initiating Hubitat shutdown...";sendHubShutdown();state.hubShutdownIssued=true}
                         } else if (state.hubShutdownIssued){logDebug "Hub shutdown already issued; skipping repeat trigger"}
                     } else {logInfo "Battery runtime recovered above ${threshold} minutes (${remMins} remaining)";state.remove("hubShutdownIssued")}
                 }
