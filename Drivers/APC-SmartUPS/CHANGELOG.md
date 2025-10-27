@@ -125,3 +125,6 @@
 *  0.3.6.7   -- Standardized all utility methods to condensed format; finalized transientContext integration; removed obsolete state usage for stateless ops; prep for RC release
 *  0.3.6.8   -- Corrected case sensitivity mismatch in handleUPSCommands() to align with camelCase command definitions.
 *  0.3.6.9   -- Removed extraneous attribute; code cleanup.
+*  0.3.6.10  -- Added low-battery monitoring and optional Hubitat auto-shutdown feature with new 'lowBattery' attribute and 'autoShutdownHub' preference.
+*  0.3.6.11  -- Integrated low-battery and hub auto-shutdown logic directly into handleBatteryData(); adds symmetrical recovery clearing when runtime rises above threshold; eliminates redundant runtime lookups; refines try{} encapsulation for reliability.
+*  0.3.6.12  -- Added configuration anomaly checks to initialize(); now emits warnings when check interval exceeds nominal runtime or when shutdown threshold is smaller than interval; ensures lowBattery baseline is initialized with calculated threshold; improved startup reliability and diagnostic transparency.
