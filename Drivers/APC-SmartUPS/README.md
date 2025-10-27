@@ -1,6 +1,6 @@
 # ⚡ APC SmartUPS Status (Hubitat Driver)
 
-[![Version](https://img.shields.io/badge/version-0.3.6.12--RC-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.6.13--RC-blue.svg)](./CHANGELOG.md)
 [![Status](https://img.shields.io/badge/release-IN%20TEST-yellow.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
