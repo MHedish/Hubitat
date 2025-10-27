@@ -118,6 +118,7 @@ Each setting plays a specific role in how the driver connects to and interprets 
 | **Check Interval for UPS Status (minutes, 1–59)** | The frequency (in minutes) at which the UPS is polled during normal operation. Recommended: 15. | 15 |
 | **Check Interval Offset (minutes past the hour, 0–59)** | Offsets the polling schedule to distribute load across multiple UPS devices. Example: Setting this to `5` runs checks at `05, 20, 35, 50` past the hour. | 0 |
 | **Check Interval When On Battery (minutes, 1–59)** | When the UPS is running on battery, status is polled more frequently to improve responsiveness. Recommended: 2. | 2 |
+| **Shutdown Hubitat when UPS battery is low** | Automatically issue shutdown command to Hubitat hub when UPS battery is low. | `true` |
 | **UPS Time Zone Offset (minutes)** | Adjusts for UPS-reported time differences relative to the Hubitat hub. Used to verify and correct **clock drift** for accurate event correlation. Range: `-720` to `+840` minutes. Example: `-300` for EST. | 0 |
 | **Enable Debug Logging** | Enables detailed driver-level debug logs. Automatically turns off after 30 minutes. | `false` |
 | **Log All Events** | When enabled, logs all attribute changes to the Hubitat log for traceability. Recommended for testing or troubleshooting. | `false` |
