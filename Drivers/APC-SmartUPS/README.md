@@ -246,7 +246,7 @@ This driver follows semantic-style versioning:
 
 | Version | Status | Description |
 |----------|----------|-------------|
-| 0.3.6.7 | RC | Transient context fully implemented, sub-5s reconnoiters |
+| 0.3.6.9 | RC | Transient context fully implemented, sub-5s reconnoiters |
 | 0.3.x | Stable | Deterministic Telnet lifecycle, finalized cleanup model |
 | 0.2.x | Legacy | State-based control, early session management |
 | 0.1.x | Prototype | Initial Hubitat SmartUPS driver |
