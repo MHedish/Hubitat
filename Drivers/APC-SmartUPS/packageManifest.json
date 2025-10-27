@@ -1,9 +1,9 @@
 {
   "packageName": "APC SmartUPS Status",
   "author": "Marc Hedish",
-  "version": "0.3.6.9",
+  "version": "0.3.6.13",
   "minimumHEVersion": "2.3.0",
-  "dateReleased": "2025-10-26",
+  "dateReleased": "2025-10-27",
   "releaseNotes": "RELEASE CANDIDATE — Hubitat driver for monitoring and managing APC Smart-UPS systems — providing reliable runtime statistics, event emission, and control for APC devices.",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/README.md",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/CHANGELOG.md",
@@ -15,7 +15,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/APC-SmartUPS/APC-SmartUPS-Status.groovy",
       "required": true,
-      "version": "0.3.6.9"
+      "version": "0.3.6.13"
     }
   ]
 }
