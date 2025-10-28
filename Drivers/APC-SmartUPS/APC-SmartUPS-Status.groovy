@@ -23,13 +23,14 @@
 *  0.3.6.12  -- Added configuration anomaly checks to initialize(); now emits warnings when check interval exceeds nominal runtime or when shutdown threshold is smaller than interval; ensures lowBattery baseline is initialized with calculated threshold; improved startup reliability and diagnostic transparency.
 *  0.3.6.13  -- Added UPS status gating to low-battery shutdown logic; Hubitat shutdown now triggers only when lowBattery=true and upsStatus is neither "Online" nor "Off". Finalized handleBatteryData() symmetry and optimized conditional flow for reliability.
 *  0.3.6.14  -- Restored correct parsing logic for “Battery State Of Charge”; reverted case mapping to "Battery State" with conditional match on p2/p3 to properly detect and update the battery attribute. Resolves lost battery reporting and restores full capability compliance after reinstall.
+*  0.3.6.15  -- Corrected type declaration for setOutletGroup.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.3.6.14"
-@Field static final String DRIVER_MODIFIED = "2025.10.27"
+@Field static final String DRIVER_VERSION  = "0.3.6.15"
+@Field static final String DRIVER_MODIFIED = "2025.10.28"
 @Field static transientContext = [:]
 
 /* ===============================
@@ -119,9 +120,9 @@ metadata {
         command "sleep"
         command "toggleRuntimeCalibration"
         command "setOutletGroup",[
-            [name:"outletGroup",description:"Outlet Group 1 or 2",type:"enum",constraints:["1","2"],required:true,default:"1"],
-            [name:"command",description:"Command to execute",type:"enum",constraints:["Off","On","DelayOff","DelayOn","Reboot","DelayReboot","Shutdown","DelayShutdown","Cancel"],required:true],
-            [name:"seconds",description:"Delay in seconds",type:"enum",constraints:["1","2","3","4","5","10","20","30","45","60","90","120","180","240","300","600"],required:true]
+            [name:"outletGroup",description:"Outlet Group 1 or 2 ",type:"ENUM",constraints:["1","2"],required:true,default:"1"],
+            [name:"command",description:"Command to execute ",type:"ENUM",constraints:["Off","On","DelayOff","DelayOn","Reboot","DelayReboot","Shutdown","DelayShutdown","Cancel"],required:true],
+            [name:"seconds",description:"Delay in seconds ",type:"ENUM",constraints:["1","2","3","4","5","10","20","30","45","60","90","120","180","240","300","600"],required:true]
         ]
     }
 }
