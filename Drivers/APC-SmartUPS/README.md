@@ -11,7 +11,7 @@ It uses a **deterministic Telnet session model** to collect complete UPS telemet
 Built on a **transient context architecture**, the driver eliminates unnecessary persistent state, improving efficiency and reliability.  
 Control functions such as **UPS power, reboot, calibration, and alarm testing** are safely gated behind an automatic 30-minute enable timeout to prevent unintended actions.
 
-All events and telemetry are fully **Rule Machine and webCoRE compatible**, enabling precise automation and monitoring with minimal resource overhead.
+All events and telemetry are fully **Rule Machine and WebCoRE compatible**, enabling precise automation and monitoring with minimal resource overhead.
 
 ---
 
@@ -208,27 +208,30 @@ These values can be used in **dashboards**, **Rule Machine triggers**, **notific
 
 | Attribute | Units | Description |
 |------------|--------|-------------|
-| **inputVoltage** | VAC | Line input voltage from utility. |
-| **outputVoltage** | VAC | Output voltage supplied to connected devices. |
-| **outputFrequency** | Hz | UPS output frequency. |
-| **outputWattsPercent** | % | Current load as a percentage of UPS rated capacity. |
-| **batteryVoltage** | VDC | Current battery voltage. |
+| **alarmCountCrit**, **alarmCountInfo**, **alarmCountWarn** | — | Current count of UPS alarms. |
 | **battery** | % | Battery charge level. |
-| **temperature**, **temperatureF**, **temperatureC** | °F / °C | UPS internal temperature (dual representation for flexibility). |
-| **runtimeMinutes**, **runtimeHours** | min / hr | Estimated remaining runtime at current load. |
-| **upsStatus** | — | Current UPS operating mode (Online, On Battery, On Bypass, etc.). |
-| **lastTransferCause** | — | Reason for the last transfer to battery power. |
+| **batteryVoltage** | VDC | Current battery voltage. |
+| **connectStatus** | — | Driver’s current Telnet connection state (Initializing, Connecting, Connected, Disconnecting, Disconnected). |
+| **deviceName** | — | Current UPS device name. |
+| **driverInfo** | — | Installed driver name, version, and build date. |
+| **inputVoltage** | VAC | Line input voltage from utility. |
+| **lastCommandResult** | — | Result of the last command executed (Pending, Complete, Failure, etc.). |
 | **lastSelfTestDate** | — | Date of the last UPS self-test. |
 | **lastSelfTestResult** | — | Result of the last self-test (Passed, Failed, etc.). |
+| **lastTransferCause** | — | Reason for the last transfer to battery power. |
+| **lastUpdate** | — | Timestamp of the most recent full data capture. |
+| **lowBattery** | — | Boolean — True when the UPS is in a low battery state. |
+| **model**, **serialNumber**, **firmwareVersion**, **manufactureDate** | — | UPS hardware identity. |
+| **nmcModel**, **nmcSerialNumber**, **nmcHardwareRevision**, **nmcApplicationVersion**, **nmcOSVersion**, **nmcBootMonitorVersion** | — | NMC identity and firmware details. |
 | **nmcStatus** | — | NMC health summary (OS, Network, Application). |
 | **nmcUptime**, **upsUptime** | — | Time since last restart for the NMC or UPS. |
-| **nmcModel**, **nmcSerialNumber**, **nmcHardwareRevision**, **nmcApplicationVersion**, **nmcOSVersion**, **nmcBootMonitorVersion** | — | NMC identity and firmware details. |
-| **model**, **serialNumber**, **firmwareVersion**, **manufactureDate** | — | UPS hardware identity. |
+| **outputFrequency** | Hz | UPS output frequency. |
+| **outputVoltage** | VAC | Output voltage supplied to connected devices. |
+| **outputWattsPercent** | % | Current load as a percentage of UPS rated capacity. |
+| **runtimeMinutes**, **runtimeHours** | min / hr | Estimated remaining runtime at current load. |
+| **temperature**, **temperatureF**, **temperatureC** | °F / °C | UPS internal temperature (dual representation for flexibility). |
 | **upsContact**, **upsLocation** | — | UPS contact and location information. |
-| **connectStatus** | — | Driver’s current Telnet connection state (Initializing, Connecting, Connected, Disconnecting, Disconnected). |
-| **lastCommandResult** | — | Result of the last command executed (Pending, Complete, Failure, etc.). |
-| **lastUpdate** | — | Timestamp of the most recent full data capture, including runtime in seconds. |
-| **driverInfo** | — | Installed driver name, version, and build date. |
+| **upsStatus** | — | Current UPS operating mode (Online, On Battery, On Bypass, etc.). |
 
 ---
 
@@ -247,7 +250,7 @@ This driver follows semantic-style versioning:
 
 | Version | Status | Description |
 |----------|----------|-------------|
-| 0.3.6.9 | RC | Transient context fully implemented, sub-5s reconnoiters |
+| 0.3.6.15 | RC | Transient context fully implemented, sub-5s reconnoiters |
 | 0.3.x | Stable | Deterministic Telnet lifecycle, finalized cleanup model |
 | 0.2.x | Legacy | State-based control, early session management |
 | 0.1.x | Prototype | Initial Hubitat SmartUPS driver |
