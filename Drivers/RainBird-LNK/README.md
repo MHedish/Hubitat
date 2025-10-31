@@ -30,6 +30,74 @@ The driver supports both **legacy (2.x)** and **modern (3.x / 4.x)** firmware ve
 ✅ Auto-detects controller model, protocol, and serial  
 ✅ Built-in driver self-diagnostics and network health tracking  
 
+## 🌿 Features
+
+The **Rain Bird LNK WiFi Module Controller Driver** provides full local control and telemetry for Rain Bird irrigation controllers via encrypted JSON-RPC over HTTP.
+
+It supports automatic time synchronization, full telemetry reporting, and adaptive command pacing for stable operation across both legacy and modern firmware versions.
+
+### Capability Overview
+
+| Capability         | Supported? | Notes                                                |
+| ------------------ | ---------- | ---------------------------------------------------- |
+| **Model / Serial**     | ✅         | Full support.                                        |
+| **Date / Time**        | ✅         | Full support. Time can be synchronized; date cannot. |
+| **Rain Delay**         | ✅         | Full support.                                        |
+| **Controller State**   | ✅         | Full support.                                        |
+| **Rain Sensor**        | ✅         | Full support.                                        |
+| **Available Stations** | ⚠️         | Detected dynamically via opcode 0x03/0x83 hybrid probe (v2.9–3.x). |
+| **Water Budget**       | ⚠️         | Exists but replies only on multi-program controllers. |
+| **Zone Adjust**        | ❌         | Never implemented in pre-3.x firmware.              |
+| **Event Timestamp**    | ❌         | Available only on v4.x+ hardware (ESP-ME3 / ESP-TM3). |
+
+> ⚙️ *Firmware-aware command gating ensures unsupported requests are automatically skipped with debug notification.*
+
+---
+## 🧩 Requirements & Compatibility
+
+The driver is designed for **local-network control** of Rain Bird controllers equipped with an **LNK or LNK2 WiFi Module**.  
+It communicates directly over HTTP using Rain Bird’s JSON-RPC protocol — **no cloud or external API dependency.**
+
+### ✅ Supported Hardware
+
+| Controller Model | WiFi Module | Firmware | Status | Notes |
+| ---------------- | ------------ | -------- | ------- | ----- |
+| **ESP-TM2**      | LNK / LNK2   | 2.5 – 3.0 | ✅ Stable | Fully compatible; tested on v2.9. |
+| **ESP-Me**       | LNK / LNK2   | 2.9 – 3.2 | ✅ Stable | Supports multi-zone and hybrid opcode detection. |
+| **ESP-Me3**      | LNK2         | 4.0 +     | ⚠️ Partial | Adds extended telemetry (Event Timestamp, Zone Adjust). |
+| **ST8 / ST8i**   | LNK          | 2.5 – 3.0 | ⚠️ Limited | Supports basic control, no extended telemetry. |
+
+> 💡 *All features requiring protocol ≥ 3.x or ≥ 4.x are automatically gated; unsupported requests are silently skipped with debug notice.*
+
+---
+
+### 💻 Hubitat Platform Compatibility
+
+| Platform | Version | Status |
+| --------- | -------- | ------- |
+| **Hubitat Elevation C-7 / C-8 / C-8 Pro** | 2.3.9 + | ✅ Fully tested |
+| **Hubitat Elevation C-5** | 2.3.6 + | ⚠️ Works, but slower crypto routines may cause delays |
+| **C-4 (Legacy)** | — | ❌ Unsupported (no AES library support) |
+
+> ⚙️ Requires **AES-128 encryption** (built-in on Hubitat 2.3.6 +).  
+> 🌐 Operates entirely **LAN-local** — no Rain Bird cloud or account login needed.
+
+---
+
+### 📡 Network & Access Notes
+
+- Controller and Hubitat hub **must be on the same LAN** and subnet.  
+- **Static IP assignment** (DHCP reservation) for the Rain Bird module is highly recommended.  
+- The driver communicates over port **80/TCP**.  
+
+---
+
+### 🧰 Optional Configuration
+
+- Automatic time synchronization can be enabled via the **`autoTimeSync`** preference.
+- Debug logging is automatically disabled after 30 minutes by default.  
+- Refresh interval is user-selectable from **1–60 minutes**, with adaptive back-off logic for unstable networks.
+
 ---
 
 ## ⚙️ Installation
@@ -61,7 +129,6 @@ In the device’s **Preferences** section:
 
 Click **Save Preferences** and then **Configure** to initialize.
 
----
 ---
 
 ## ⚙️ Device Preferences
