@@ -104,16 +104,14 @@ If you prefer to install manually:
 
 ### ⚙️ Device Settings (Preferences)
 
-These options let you customize how your Rain Bird controller behaves within Hubitat.
-
 | Setting | What It Does | Example / Notes |
 |----------|---------------|-----------------|
 | **IP Address** | The local LAN IP of your Rain Bird LNK or LNK2 module. Must be on the same network as your Hubitat hub. | `192.168.1.50` |
 | **Password** | The same password used in the Rain Bird mobile app to access your controller. | `rainbird123` |
-| **Number of Zones** | Total number of irrigation zones configured on your controller. <br>💡 *This is automatically updated from the controller if supported (ESP-Me / ESP-Me3 models).* | `6` |
+| **Number of Zones** | Total number of irrigation zones configured on your controller. <br>💡 *Automatically updated from the controller if supported (ESP-Me / ESP-Me3).* | `6` |
 | **Refresh Interval** | How often Hubitat polls the controller to update zone and sensor status. Default = `5 minutes` (range `1–60`). | `5` |
 | **Auto Time Sync** | Automatically keeps your controller’s internal clock synchronized with Hubitat. Highly recommended. | ✅ Enabled |
-| **Log All Events** | Logs every event (zone changes, rain delays, etc.) to Hubitat’s event history. Recommended if you use dashboards or automations that rely on device states. | ⚙️ Optional |
+| **Log All Events** | Logs every event (zone changes, rain delays, etc.) to Hubitat’s event history. Recommended for dashboards and event-based rules. | ⚙️ Optional |
 | **Debug Logging** | Enables detailed developer logs for troubleshooting. Automatically turns off after 30 minutes. | ⚙️ Optional |
 
 > 💡 *After changing settings, always click **Save Preferences** and then **Configure** to apply changes.*
@@ -123,10 +121,10 @@ These options let you customize how your Rain Bird controller behaves within Hub
 ### 🔍 Preference Notes
 
 - **Auto Time Sync**: Prevents time drift so watering days and times remain correct.  
-- **Number of Zones**: For compatible controllers (ESP-Me / ESP-Me3), this value is automatically detected and updated after the first successful connection.  
-- **Refresh Interval**: Setting a longer interval (e.g., 60 minutes) during winterization reduces unnecessary network traffic.  
-- **Log All Events**: Ideal for users who monitor irrigation states on dashboards or use event-based rules.  
-- **Debug Logging**: Should only be enabled for troubleshooting — it automatically disables to prevent log overflow.
+- **Number of Zones**: Automatically updated for compatible controllers (ESP-Me / ESP-Me3).  
+- **Refresh Interval**: Adjust between 1–60 minutes. Use 60 minutes when winterized to reduce network traffic.  
+- **Log All Events**: Logs all zone and rain sensor changes.  
+- **Debug Logging**: Automatically disables after 30 minutes.
 
 ---
 
@@ -154,14 +152,6 @@ Hubitat’s time is extremely accurate, so your irrigation programs always run a
 - ✅ Watering always happens on the correct day and time  
 - ✅ No need to manually reset the date or time  
 - ✅ Automatically corrects time after power loss or reboot  
-
-### How It Works
-- The driver compares the controller’s time to Hubitat’s.
-- If drift exceeds tolerance, it resynchronizes automatically.
-- You can also trigger a manual sync anytime using **Sync Time**.
-
-### Recommended Setting
-Leave **Auto Time Sync** turned **ON** — it’s lightweight, automatic, and ensures year-round accuracy.
 
 > 💡 *Once enabled, you’ll never have to reset your controller’s date again.*
 
@@ -195,10 +185,9 @@ You can run these directly from the **Device Commands** section in Hubitat, or i
 | **Stop All** | Stop all watering activity. |
 | **Run Program (A–D)** | Start one of your controller’s preset watering programs. |
 | **Set Rain Delay** | Pause watering for 1–14 days. |
-| **Sync Time** | Manually synchronize controller time with Hubitat. |
+| **Stop Irrigation** | Immediately stop all watering operations across all zones. |
+| **Disable Debug Logging Now** | Immediately turns off debug logging before the 30-minute timeout. |
 | **Refresh** | Manually check the current controller status. |
-
-> ⚙️ Advanced commands (diagnostics, telemetry, etc.) are still available for technical users — see **Advanced Features** below.
 
 ---
 
@@ -220,20 +209,29 @@ Ensures robust network communication with smart retry pacing and backoff.
 
 ## 📡 Attributes Exposed
 
-These values are available for dashboards, automations, and status displays:
+These attributes are available for dashboards, automations, and status displays within Hubitat.  
+They update automatically during each refresh or zone change.
 
 | Attribute | Description |
 |------------|-------------|
-| `activeZone` | Currently active zone |
-| `availableStations` | List of active zones |
-| `controllerTime` | Current time on controller |
-| `controllerDate` | Current date on controller |
-| `irrigationState` | Idle / Watering / Rain Delay |
-| `rainDelay` | Days remaining for rain delay |
-| `rainSensorState` | Dry / Wet / Bypassed |
-| `protocolVersion` | Controller protocol version |
-| `waterBudget` | Current seasonal adjustment (%) |
-| `zoneCount` | Number of detected zones |
+| `activeZone` | Currently active irrigation zone (number or name). |
+| `availableStations` | Comma-separated list of active or detected zones. |
+| `clockDrift` | Difference (in seconds) between Hubitat time and controller time. Helps detect if the controller’s clock has drifted. |
+| `controllerDate` | Current date reported by the controller. |
+| `controllerTime` | Current time reported by the controller. |
+| `driverInfo` | Basic driver build information (version, release channel). |
+| `driverStatus` | Consolidated status summary including communication, time sync, date retrieval, and controller state. |
+| `irrigationState` | Current watering mode: `Idle`, `Watering`, or `Rain Delay`. |
+| `lastSync` | Timestamp of the most recent successful time synchronization with Hubitat. |
+| `model` | Controller model name (e.g., `ESP-TM2`, `ESP-Me`, `ESP-Me3`). |
+| `protocolVersion` | Detected Rain Bird protocol version (2.x, 3.x, 4.x). |
+| `rainDelay` | Number of days remaining for an active rain delay (0–14). |
+| `rainSensorState` | Current state of the rain sensor (`Dry`, `Wet`, or `Bypassed`). |
+| `watering` | Boolean indicating whether the system is currently watering (`true` / `false`). |
+| `waterBudget` | Current seasonal watering adjustment percentage. |
+| `zoneCount` | Number of detected zones available for control. |
+
+> 💡 *Attributes like `clockDrift`, `lastSync`, and `driverStatus` are especially helpful for diagnosing time sync accuracy and network reliability.*
 
 ---
 
@@ -256,6 +254,7 @@ These values are available for dashboards, automations, and status displays:
 - Simplified refresh scheduling
 - Improved diagnostics and stability
 - Enhanced clock sync reliability
+- Updated documentation: installation, preferences, attributes, and commands
 
 *(See [CHANGELOG.md](./CHANGELOG.md) for full version history.)*
 
@@ -276,3 +275,5 @@ and share feedback in the Hubitat community thread.
 **Platform:** [Hubitat Elevation](https://hubitat.com)
 
 ---
+
+
