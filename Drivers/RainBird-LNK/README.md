@@ -62,6 +62,68 @@ In the device’s **Preferences** section:
 Click **Save Preferences** and then **Configure** to initialize.
 
 ---
+---
+
+## ⚙️ Device Preferences
+
+These options are available under the **Preferences** section of the Hubitat device page.  
+Most changes take effect immediately when you click **Save Preferences**.
+
+| Preference | Type | Default | Description |
+|-------------|------|----------|--------------|
+| **IP Address** | `text` | — | The local LAN IP address of your Rain Bird LNK or LNK2 WiFi module (e.g., `192.168.1.133`). |
+| **Password** | `text` | — | The controller’s access password. Must match the credential used in the Rain Bird mobile app. |
+| **Number of Zones** (`zonePref`) | `number` | `6` | Total number of zones (stations) configured on the controller. This value can be dynamically updated by the driver after first detection. |
+| **Refresh Interval** (`refreshInterval`) | `enum` | `5` (minutes) | How often the driver refreshes controller status. Options: `1–60` minutes. |
+| **Enable Auto Time Sync** (`autoTimeSync`) | `bool` | `true` | Keeps the controller clock synchronized with Hubitat. Automatically checks drift and corrects if necessary. |
+| **Enable Debug Logging** (`logEnable`) | `bool` | `false` | Enables verbose debug messages for troubleshooting. Automatically disables after 30 minutes. |
+
+---
+
+## 💻 Available Commands
+
+These commands can be run manually from the **Device Commands** section in Hubitat or invoked in automations and rules.
+
+| Command | Parameters | Description |
+|----------|-------------|-------------|
+| **configure()** | — | Initializes the driver and controller. Should be run after installing or updating the driver. |
+| **initialize()** | — | Reinitializes the driver state and schedules periodic refresh tasks. Called automatically by `configure()`. |
+| **refresh()** | — | Manually polls the controller for current status, time, date, and all zone states. |
+| **driverStatus()** | *(optional)* `String context` | Performs a self-test of communication, time/date retrieval, and reports network health. |
+| **runZone(zone, duration)** | `zone (int)`, `duration (int)` | Starts a specific irrigation zone for the given duration (1–120 minutes). |
+| **stopZone(zone)** | `zone (int)` | Stops watering for the specified zone. |
+| **stopIrrigation()** | — | Stops **all** irrigation activity across zones. |
+| **runProgram(programCode)** | `"A"`, `"B"`, `"C"`, or `"D"` | Manually starts one of the controller’s preset programs. |
+| **getAvailableStations()** | — | Queries the controller for all active zones. Updates `availableStations` and `zoneCount`. |
+| **getWaterBudget()** | — | Retrieves and updates the current seasonal watering percentage. |
+| **getZoneSeasonalAdjustments()** | — | Reads individual zone adjustment percentages (protocol ≥ 3.1 required). |
+| **getRainSensorState()** | — | Checks the current rain sensor state (`Dry`, `Wet`, or `Bypassed`). |
+| **getRainDelay()** | — | Reads the current rain delay in days. |
+| **setRainDelay(days)** | `days (0–14)` | Sets a new rain delay value in days. `0` clears any active delay. |
+| **setControllerTime()** | — | Syncs the controller’s internal clock to the Hubitat hub’s current time. |
+| **syncRainbirdClock()** | — | Forces a full clock resynchronization if drift is detected. |
+| **getControllerIdentity()** | — | Queries and displays model, protocol version, and serial number. |
+| **getControllerEventTimestamp()** | — | Retrieves the last recorded controller event timestamp (protocol ≥ 4.0). |
+| **autoDisableDebugLogging()** | — | Automatically disables debug logging after the timeout period. |
+
+---
+
+### 🧭 Command Execution Notes
+
+- All commands are sent directly over LAN to the module’s `/stick` endpoint.  
+- Commands automatically retry up to **3 times** with adaptive backoff and pacing.  
+- Successful commands pause briefly (`125 ms`) before returning to prevent packet overlap.  
+- Certain protocol features (e.g., `getZoneSeasonalAdjustments`, `getControllerEventTimestamp`) are automatically skipped if the detected firmware version does not support them.
+
+---
+
+### 🔒 Safety and Performance Notes
+
+- Avoid running multiple high-frequency commands in parallel; the Rain Bird API processes requests sequentially.  
+- Use **Rules Machine**, **WebCoRE**, or **Basic Rules** with modest delays (`≥1 second`) between command actions.  
+- If debug logs show repeated “Backoff” messages, check WiFi signal strength or module power stability.
+
+---
 
 ## 🧠 Advanced Features
 
