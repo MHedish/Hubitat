@@ -62,18 +62,44 @@ Your Hubitat hub and Rain Bird controller must be on the same LAN.
 
 ## ⚙️ Installation
 
-### 1. Add the Driver to Hubitat
-- Open **Hubitat Web UI → Drivers Code**
-- Click **New Driver**
-- Paste the contents of `rainbird_lnk_driver.groovy`
-- Click **Save**
+You can install this driver **two ways** — using **Hubitat Package Manager (HPM)** or by importing it directly from GitHub.
 
-### 2. Create the Device
-- Go to **Devices → Add Virtual Device**
-- Set:
-  - **Name:** Rain Bird LNK WiFi Module Controller  
-  - **Type:** *Rain Bird LNK WiFi Module Controller*  
-- Click **Save Device**
+---
+
+### 🧩 Option 1 — Install via Hubitat Package Manager (Recommended)
+
+1. Open **Hubitat Web UI → Apps**  
+2. Launch **Hubitat Package Manager (HPM)**  
+3. Choose **Install → Search by Keywords**  
+4. Search for **"Rain Bird LNK"**  
+5. Select **Rain Bird LNK WiFi Module Controller** from the list  
+6. Follow the prompts to complete installation
+
+> 💡 *HPM will automatically install updates when new versions are released.*
+
+---
+
+### 🌐 Option 2 — Manual Install via Import URL
+
+If you prefer to install manually:
+
+1. Go to **Hubitat Web UI → Drivers Code**  
+2. Click **+ New Driver**  
+3. Click the **Import** button  
+4. Paste the following URL into the import field:
+https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Module"
+5. Click **Import**, then **Save**
+
+---
+
+### 💧 Create and Configure the Device
+
+1. Go to **Devices → Add Virtual Device**
+2. Set:
+- **Name:** `Rain Bird LNK WiFi Module Controller`
+- **Type:** *Rain Bird LNK WiFi Module Controller*
+3. Click **Save Device**
+4. Open the new device page and enter the following under **Preferences**:
 
 ### 3. Configure Preferences
 Enter your controller’s information under **Preferences**, then click **Save Preferences** and **Configure**.
