@@ -9,65 +9,41 @@
 
 ## 🧩 Overview
 
-This Hubitat driver provides **direct local control and monitoring** for Rain Bird irrigation controllers using the **LNK WiFi Module**.  
-It communicates directly with the controller’s embedded JSON-RPC API, bypassing cloud services for fast, reliable automation.
+The **Rain Bird LNK WiFi Module Controller** driver gives Hubitat users **local, reliable control** of Rain Bird irrigation systems.  
+It connects directly over your home network — no cloud or external account needed.
 
-The driver supports both **legacy (2.x)** and **modern (3.x / 4.x)** firmware versions, automatically adapting to each controller’s capabilities and opcodes.
-
-**Supported Devices:** Rain Bird LNK and LNK2 WiFi Modules (ESP-based controllers)  
+This driver supports both **LNK** and **LNK2** WiFi modules, automatically adapting to firmware versions (2.x, 3.x, and 4.x).  
+You can manage zones, apply rain delays, run preset programs, and keep your controller’s clock perfectly in sync.
 
 ---
 
 ## ✨ Key Features
 
-✅ Local LAN communication (no cloud dependency)  
-✅ Full zone control (start, stop, run programmatically)  
-✅ Manual and scheduled irrigation support  
-✅ Automatic controller time synchronization  
-✅ Rain delay and seasonal adjustment management  
-✅ Real-time state updates: zones, rain sensor, watering status, etc.  
-✅ Smart failover with exponential retry & adaptive backoff  
-✅ Auto-detects controller model, protocol, and serial  
-✅ Built-in driver self-diagnostics and network health tracking  
+✅ 100% local control (no internet required)  
+✅ Start, stop, or schedule irrigation zones directly from Hubitat  
+✅ Supports manual watering, automations, and seasonal adjustments  
+✅ Automatically keeps your controller’s time accurate (no more clock drift)  
+✅ Detects connected zones and controller details  
+✅ Reports live rain sensor and watering status  
+✅ Includes built-in diagnostics and automatic retry handling  
 
-## 🌿 Features
-
-The **Rain Bird LNK WiFi Module Controller Driver** provides full local control and telemetry for Rain Bird irrigation controllers via encrypted JSON-RPC over HTTP.
-
-It supports automatic time synchronization, full telemetry reporting, and adaptive command pacing for stable operation across both legacy and modern firmware versions.
-
-### Capability Overview
-
-| Capability         | Supported? | Notes                                                |
-| ------------------ | ---------- | ---------------------------------------------------- |
-| **Model / Serial Number** | ✅         | Full support.                                        |
-| **Date / Time**        | ✅         | Full support. Time can be synchronized; date cannot. |
-| **Rain Delay**         | ✅         | Full support.                                        |
-| **Controller State**   | ✅         | Full support.                                        |
-| **Rain Sensor**        | ✅         | Full support.                                        |
-| **Available Stations** | ⚠️         | Detected dynamically via opcode 0x03/0x83 hybrid probe (v2.9–3.x). |
-| **Water Budget**       | ⚠️         | Exists but replies only on multi-program controllers. |
-| **Zone Adjust**        | ❌         | Never implemented in pre-3.x firmware.              |
-| **Event Timestamp**    | ❌         | Available only on v4.x+ hardware (ESP-ME3 / ESP-TM3). |
-
-> ⚙️ *Firmware-aware command gating ensures unsupported requests are automatically skipped with debug notification.*
+> 💡 Designed to be *“install and forget”* — once configured, it maintains time, state, and reliability automatically.
 
 ---
+
 ## 🧩 Requirements & Compatibility
 
-The driver is designed for **local-network control** of Rain Bird controllers equipped with an **LNK or LNK2 WiFi Module**.  
-It communicates directly over HTTP using Rain Bird’s JSON-RPC protocol — **no cloud or external API dependency.**
+The driver communicates directly with your controller over **HTTP (port 80)** using Rain Bird’s local JSON protocol.  
+Your Hubitat hub and Rain Bird controller must be on the same LAN.
 
 ### ✅ Supported Hardware
 
 | Controller Model | WiFi Module | Firmware | Status | Notes |
 | ---------------- | ------------ | -------- | ------- | ----- |
-| **ESP-TM2**      | LNK / LNK2   | 2.5 – 3.0 | ✅ Stable | Fully compatible; tested on v2.9. |
-| **ESP-Me**       | LNK / LNK2   | 2.9 – 3.2 | ✅ Stable | Supports multi-zone and hybrid opcode detection. |
-| **ESP-Me3**      | LNK2         | 4.0 +     | ⚠️ Partial | Adds extended telemetry (Event Timestamp, Zone Adjust). |
-| **ST8 / ST8i**   | LNK          | 2.5 – 3.0 | ⚠️ Limited | Supports basic control, no extended telemetry. |
-
-> 💡 *All features requiring protocol ≥ 3.x or ≥ 4.x are automatically gated; unsupported requests are silently skipped with debug notice.*
+| **ESP-TM2** | LNK / LNK2 | 2.5 – 3.0 | ✅ Stable | Fully compatible; tested on v2.9 |
+| **ESP-Me** | LNK / LNK2 | 2.9 – 3.2 | ✅ Stable | Multi-zone + hybrid opcode support |
+| **ESP-Me3** | LNK2 | 4.0 + | ⚠️ Partial | Adds extended telemetry (Event Timestamp, Zone Adjust) |
+| **ST8 / ST8i** | LNK | 2.5 – 3.0 | ⚠️ Limited | Basic control only |
 
 ---
 
@@ -75,161 +51,149 @@ It communicates directly over HTTP using Rain Bird’s JSON-RPC protocol — **n
 
 | Platform | Version | Status |
 | --------- | -------- | ------- |
-| **Hubitat Elevation C-7 / C-8 / C-8 Pro** | 2.3.9 + | ✅ Fully tested |
-| **Hubitat Elevation C-5** | 2.3.6 + | ⚠️ Works, but slower crypto routines may cause delays |
-| **C-4 (Legacy)** | — | ❌ Unsupported (no AES library support) |
+| **C-7 / C-8 / C-8 Pro** | 2.3.9 + | ✅ Fully tested |
+| **C-5** | 2.3.6 + | ⚠️ Works, but slower crypto routines may cause minor delay |
+| **C-4 (Legacy)** | — | ❌ Not supported |
 
-> ⚙️ Requires **AES-128 encryption** (built-in on Hubitat 2.3.6 +).  
-> 🌐 Operates entirely **LAN-local** — no Rain Bird cloud or account login needed.
-
----
-
-### 📡 Network & Access Notes
-
-- Controller and Hubitat hub **must be on the same LAN** and subnet.  
-- **Static IP assignment** (DHCP reservation) for the Rain Bird module is highly recommended.  
-- The driver communicates over port **80/TCP**.  
-
----
-
-### 🧰 Optional Configuration
-
-- Automatic time synchronization can be enabled via the **`autoTimeSync`** preference.
-- Debug logging is automatically disabled after 30 minutes by default.  
-- Refresh interval is user-selectable from **1–60 minutes**, with adaptive back-off logic for unstable networks.
+> ⚙️ Requires AES-128 encryption (built-in to Hubitat 2.3.6+).  
+> 🌐 Operates entirely **LAN-local** — no Rain Bird cloud or login.
 
 ---
 
 ## ⚙️ Installation
 
-### 1. Add Driver to Hubitat
+### 1. Add the Driver to Hubitat
 - Open **Hubitat Web UI → Drivers Code**
 - Click **New Driver**
 - Paste the contents of `rainbird_lnk_driver.groovy`
 - Click **Save**
 
-### 2. Create a New Device
-- Navigate to **Devices → Add Virtual Device**
+### 2. Create the Device
+- Go to **Devices → Add Virtual Device**
 - Set:
   - **Name:** Rain Bird LNK WiFi Module Controller  
   - **Type:** *Rain Bird LNK WiFi Module Controller*  
 - Click **Save Device**
 
-### 3. Configure
-In the device’s **Preferences** section:
+### 3. Configure Preferences
+Enter your controller’s information under **Preferences**, then click **Save Preferences** and **Configure**.
 
-| Setting | Description | Example |
-|----------|--------------|----------|
-| **IP Address** | Local IP of your Rain Bird LNK module | `192.168.1.50` |
-| **Password** | Module access password | `rainbird123` |
-| **Number of Zones** | Total irrigation zones configured on the controller | `7` |
-| **Refresh Interval** | How often to poll controller status | `5` (minutes) |
-| **Enable Auto Time Sync** | Keeps controller time aligned with hub clock | ✅ Enabled |
-| **Enable Debug Logging** | Verbose logs for troubleshooting | ⚙️ Temporary |
+| Setting | What It Does | Example |
+|----------|---------------|---------|
+| **IP Address** | The local IP of your Rain Bird module. Must be on the same network as Hubitat. | `192.168.1.50` |
+| **Password** | The same password used in the Rain Bird mobile app. | `rainbird123` |
+| **Number of Zones** | How many sprinkler zones your controller supports. | `6` |
+| **Refresh Interval** | How often the driver checks for updates (default **5 minutes**, adjustable 1–60). | `5` |
+| **Auto Time Sync** | Keeps the controller’s clock in sync with Hubitat automatically. | ✅ Enabled |
+| **Debug Logging** | Enables extra logs for troubleshooting. Auto-disables after 30 minutes. | ⚙️ Optional |
 
-Click **Save Preferences** and then **Configure** to initialize.
-
----
-
-## ⚙️ Device Preferences
-
-These options are available under the **Preferences** section of the Hubitat device page.  
-Most changes take effect immediately when you click **Save Preferences**.
-
-| Preference | Type | Default | Description |
-|-------------|------|----------|--------------|
-| **IP Address** | `text` | — | The local LAN IP address of your Rain Bird LNK or LNK2 WiFi module (e.g., `192.168.1.133`). |
-| **Password** | `text` | — | The controller’s access password. Must match the credential used in the Rain Bird mobile app. |
-| **Number of Zones** (`zonePref`) | `number` | `6` | Total number of zones (stations) configured on the controller. This value can be dynamically updated by the driver after first detection. |
-| **Refresh Interval** (`refreshInterval`) | `enum` | `5` (minutes) | How often the driver refreshes controller status. Options: `1–60` minutes. |
-| **Enable Auto Time Sync** (`autoTimeSync`) | `bool` | `true` | Keeps the controller clock synchronized with Hubitat. Automatically checks drift and corrects if necessary. |
-| **Enable Debug Logging** (`logEnable`) | `bool` | `false` | Enables verbose debug messages for troubleshooting. Automatically disables after 30 minutes. |
+> 💡 *After editing preferences, always click **Save Preferences** and then **Configure** to apply.*
 
 ---
 
-## 💻 Available Commands
+## 🧭 Getting Started
 
-These commands can be run manually from the **Device Commands** section in Hubitat or invoked in automations and rules.
+Once configured:
+1. Click **Refresh** to verify connection.  
+2. Use **Run Zone** to start a test zone for a few minutes.  
+3. Set a **Rain Delay** (e.g., 1 day) to pause watering during wet weather.  
+4. Automate watering using **Hubitat Rules** or **Dashboards**.
 
-| Command | Parameters | Description |
-|----------|-------------|-------------|
-| **configure()** | — | Initializes the driver and controller. Should be run after installing or updating the driver. |
-| **initialize()** | — | Reinitializes the driver state and schedules periodic refresh tasks. Called automatically by `configure()`. |
-| **refresh()** | — | Manually polls the controller for current status, time, date, and all zone states. |
-| **driverStatus()** | *(optional)* `String context` | Performs a self-test of communication, time/date retrieval, and reports network health. |
-| **runZone(zone, duration)** | `zone (int)`, `duration (int)` | Starts a specific irrigation zone for the given duration (1–120 minutes). |
-| **stopZone(zone)** | `zone (int)` | Stops watering for the specified zone. |
-| **stopIrrigation()** | — | Stops **all** irrigation activity across zones. |
-| **runProgram(programCode)** | `"A"`, `"B"`, `"C"`, or `"D"` | Manually starts one of the controller’s preset programs. |
-| **getAvailableStations()** | — | Queries the controller for all active zones. Updates `availableStations` and `zoneCount`. |
-| **getWaterBudget()** | — | Retrieves and updates the current seasonal watering percentage. |
-| **getZoneSeasonalAdjustments()** | — | Reads individual zone adjustment percentages (protocol ≥ 3.1 required). |
-| **getRainSensorState()** | — | Checks the current rain sensor state (`Dry`, `Wet`, or `Bypassed`). |
-| **getRainDelay()** | — | Reads the current rain delay in days. |
-| **setRainDelay(days)** | `days (0–14)` | Sets a new rain delay value in days. `0` clears any active delay. |
-| **setControllerTime()** | — | Syncs the controller’s internal clock to the Hubitat hub’s current time. |
-| **syncRainbirdClock()** | — | Forces a full clock resynchronization if drift is detected. |
-| **getControllerIdentity()** | — | Queries and displays model, protocol version, and serial number. |
-| **getControllerEventTimestamp()** | — | Retrieves the last recorded controller event timestamp (protocol ≥ 4.0). |
-| **autoDisableDebugLogging()** | — | Automatically disables debug logging after the timeout period. |
+> 🌿 *For most users, Hubitat’s Basic Rules app is the simplest way to automate watering schedules.*
 
 ---
 
-### 🧭 Command Execution Notes
+## 🕒 Keep Your Controller on Time — Automatically
 
-- All commands are sent directly over LAN to the module’s `/stick` endpoint.  
-- Commands automatically retry up to **3 times** with adaptive backoff and pacing.  
-- Successful commands pause briefly (`125 ms`) before returning to prevent packet overlap.  
-- Certain protocol features (e.g., `getZoneSeasonalAdjustments`, `getControllerEventTimestamp`) are automatically skipped if the detected firmware version does not support them.
+Rain Bird controllers include an internal clock (RTC), but it’s **notoriously inaccurate** — often drifting by **hours or even a full day** over time.  
+When that happens, watering schedules can shift to the wrong day or time.
+
+The **Auto Time Sync** feature solves this by keeping the controller’s clock synchronized with your Hubitat hub.  
+Hubitat’s time is extremely accurate, so your irrigation programs always run as expected.
+
+### Benefits
+- ✅ Watering always happens on the correct day and time  
+- ✅ No need to manually reset the date or time  
+- ✅ Automatically corrects time after power loss or reboot  
+
+### How It Works
+- The driver compares the controller’s time to Hubitat’s.
+- If drift exceeds tolerance, it resynchronizes automatically.
+- You can also trigger a manual sync anytime using **Sync Time**.
+
+### Recommended Setting
+Leave **Auto Time Sync** turned **ON** — it’s lightweight, automatic, and ensures year-round accuracy.
+
+> 💡 *Once enabled, you’ll never have to reset your controller’s date again.*
 
 ---
 
-### 🔒 Safety and Performance Notes
+## 🔁 Status Refresh Interval
 
-- Avoid running multiple high-frequency commands in parallel; the Rain Bird API processes requests sequentially.  
-- Use **Rules Machine**, **WebCoRE**, or **Basic Rules** with modest delays (`≥1 second`) between command actions.  
-- If debug logs show repeated “Backoff” messages, check WiFi signal strength or module power stability.
+Hubitat periodically polls the Rain Bird controller to keep its state updated.  
+This ensures dashboards and rules always show the correct zone and rain status.
+
+The **default interval** is **5 minutes**, but it can be adjusted from **1 to 60 minutes** to suit your needs.
+
+| Interval | Recommended For | Notes |
+|-----------|-----------------|-------|
+| **1–5 minutes** | Active watering season | Keeps dashboards and automations instantly updated |
+| **10–30 minutes** | Normal operation | Reduces network traffic but stays current |
+| **60 minutes** | Winterized / off-season | Keeps device connected while minimizing LAN activity |
+
+> 🌱 *If you’ve winterized your irrigation system, set the refresh interval to **60 minutes** to reduce unnecessary checks.*
+
+---
+
+## 💧 Common Commands
+
+You can run these directly from the **Device Commands** section in Hubitat, or include them in automations:
+
+| Command | What It Does |
+|----------|---------------|
+| **Run Zone** | Start a specific zone for a set number of minutes. |
+| **Stop Zone** | Stop watering a specific zone. |
+| **Stop All** | Stop all watering activity. |
+| **Run Program (A–D)** | Start one of your controller’s preset watering programs. |
+| **Set Rain Delay** | Pause watering for 1–14 days. |
+| **Sync Time** | Manually synchronize controller time with Hubitat. |
+| **Refresh** | Manually check the current controller status. |
+
+> ⚙️ Advanced commands (diagnostics, telemetry, etc.) are still available for technical users — see **Advanced Features** below.
 
 ---
 
 ## 🧠 Advanced Features
 
 ### 🕒 Clock Drift Detection & Auto-Sync
-The driver monitors controller time and automatically resynchronizes it with Hubitat when drift exceeds tolerance thresholds.
+Automatically monitors the controller’s time accuracy and resynchronizes as needed.
 
-### 🌦️ Rain Delay
-Manages and reports controller rain delay status.  
-Supports both legacy (36xxxx6B) and variant (B6xxxx) response formats.
+### 🌦️ Rain Delay Management
+Manages and reports controller rain delay status across multiple firmware generations.
 
-### 🧾 Diagnostics
-The driver performs a lightweight self-test (`driverStatus()`) during each refresh cycle, verifying communication, time/date responses, and network health.
+### 🧾 Self-Diagnostics
+Performs communication tests and monitors controller health on each refresh.
 
 ### ⚡ Adaptive Retry Logic
-All Rain Bird commands are sent via `sendRainbirdCommand()`, featuring:
-- Up to **3 retry attempts**
-- Incremental **250 ms inter-attempt delay**
-- **125 ms post-success delay**
-- Exponential **network backoff** after consecutive failures (max 900 s)
+Ensures robust network communication with smart retry pacing and backoff.
 
 ---
 
 ## 📡 Attributes Exposed
 
+These values are available for dashboards, automations, and status displays:
+
 | Attribute | Description |
-|------------|--------------|
+|------------|-------------|
 | `activeZone` | Currently active zone |
-| `availableStations` | Comma-separated list of active zones |
-| `clockDrift` | Controller-to-hub time difference (seconds) |
-| `controllerDate` | Current date on controller |
-| `controllerState` | Current controller operating state |
+| `availableStations` | List of active zones |
 | `controllerTime` | Current time on controller |
-| `driverStatus` | Consolidated driver health and summary |
+| `controllerDate` | Current date on controller |
 | `irrigationState` | Idle / Watering / Rain Delay |
-| `protocolVersion` | Firmware protocol version |
-| `rainDelay` | Active rain delay (days) |
+| `rainDelay` | Days remaining for rain delay |
 | `rainSensorState` | Dry / Wet / Bypassed |
-| `waterBudget` | Seasonal watering percentage |
-| `watering` | Boolean indicator of watering activity |
+| `protocolVersion` | Controller protocol version |
+| `waterBudget` | Current seasonal adjustment (%) |
 | `zoneCount` | Number of detected zones |
 
 ---
@@ -238,45 +202,38 @@ All Rain Bird commands are sent via `sendRainbirdCommand()`, featuring:
 
 | Symptom | Possible Cause | Resolution |
 |----------|----------------|-------------|
-| `503 Service Unavailable` | Controller socket race / retry overlap | The driver now inserts 125 ms pacing; wait for recovery |
-| Missing `availableStations` | Firmware < 3.0 using hybrid opcode | Detected automatically — no action required |
-| Drift never resets | Auto time sync disabled | Enable **Auto Time Sync** in preferences |
-| Flood of “Backoff” messages | Persistent network failure | Check WiFi signal and DHCP stability |
+| Controller loses schedule accuracy | Clock drift | Enable **Auto Time Sync** |
+| “Backoff” messages appear in logs | Weak WiFi signal or network drop | Check WiFi strength or DHCP stability |
+| No zones detected | Older firmware (2.x) | Detected automatically after refresh |
+| “503 Service Unavailable” | Controller busy | Wait a few seconds; driver auto-retries |
 
 ---
 
 ## 📜 Changelog
 
-**v0.0.5.18**  
-- Added adaptive 125 ms inter-command delay  
-- Implemented exponential 250 ms retry pacing  
-- Reduced maximum network backoff to 900 s  
-- Cleaned up redundant state variables (`diagnostics`, `zones`)  
-- Refactored refresh scheduling and simplified CRON handling  
-- General optimization and stability improvements  
+**v0.0.5.18–RC**
+- Added adaptive inter-command delay (125 ms)
+- Smarter retry and backoff logic
+- Simplified refresh scheduling
+- Improved diagnostics and stability
+- Enhanced clock sync reliability
 
-*(Full changelog available in `CHANGELOG.md`)*
+*(See [CHANGELOG.md](./CHANGELOG.md) for full version history.)*
 
 ---
 
-## 💡 Notes
+## ❤️ Support the Project
 
-- This driver **does not require Rain Bird’s cloud account or app** once configured.
-- Works reliably on **LNK (legacy)** and **LNK2 (newer ESP32-based)** modules.
-- Minimal state footprint for speed and data safety.
-- Optimized for Hubitat’s local Groovy runtime — no external dependencies.
+If this driver improves your irrigation automation, please ⭐ the repository  
+and share feedback in the Hubitat community thread.
 
 ---
 
 ## 🧰 Credits
 
 **Author:** Marc Hedish (@MHedish)  
-**Documentation:** ChatGPT (OpenAI) 
+**Documentation:** ChatGPT (OpenAI)  
 **License:** Apache 2.0  
-**Platform:** [Hubitat Elevation](https://hubitat.com)  
+**Platform:** [Hubitat Elevation](https://hubitat.com)
 
 ---
-
-## ❤️ Support the Project
-
-If this driver helps you, please ⭐ the repository and share feedback in the Hubitat community thread!
