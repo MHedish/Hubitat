@@ -86,8 +86,7 @@ If you prefer to install manually:
 1. Go to **Hubitat Web UI → Drivers Code**  
 2. Click **+ New Driver**  
 3. Click the **Import** button  
-4. Paste the following URL into the import field:
-https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Module"
+4. Paste the following URL into the import field: https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Module
 5. Click **Import**, then **Save**
 
 ---
@@ -101,19 +100,33 @@ https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBi
 3. Click **Save Device**
 4. Open the new device page and enter the following under **Preferences**:
 
-### 3. Configure Preferences
-Enter your controller’s information under **Preferences**, then click **Save Preferences** and **Configure**.
+---
 
-| Setting | What It Does | Example |
-|----------|---------------|---------|
-| **IP Address** | The local IP of your Rain Bird module. Must be on the same network as Hubitat. | `192.168.1.50` |
-| **Password** | The same password used in the Rain Bird mobile app. | `rainbird123` |
-| **Number of Zones** | How many sprinkler zones your controller supports. | `6` |
-| **Refresh Interval** | How often the driver checks for updates (default **5 minutes**, adjustable 1–60). | `5` |
-| **Auto Time Sync** | Keeps the controller’s clock in sync with Hubitat automatically. | ✅ Enabled |
-| **Debug Logging** | Enables extra logs for troubleshooting. Auto-disables after 30 minutes. | ⚙️ Optional |
+### ⚙️ Device Settings (Preferences)
 
-> 💡 *After editing preferences, always click **Save Preferences** and then **Configure** to apply.*
+These options let you customize how your Rain Bird controller behaves within Hubitat.
+
+| Setting | What It Does | Example / Notes |
+|----------|---------------|-----------------|
+| **IP Address** | The local LAN IP of your Rain Bird LNK or LNK2 module. Must be on the same network as your Hubitat hub. | `192.168.1.50` |
+| **Password** | The same password used in the Rain Bird mobile app to access your controller. | `rainbird123` |
+| **Number of Zones** | Total number of irrigation zones configured on your controller. <br>💡 *This is automatically updated from the controller if supported (ESP-Me / ESP-Me3 models).* | `6` |
+| **Refresh Interval** | How often Hubitat polls the controller to update zone and sensor status. Default = `5 minutes` (range `1–60`). | `5` |
+| **Auto Time Sync** | Automatically keeps your controller’s internal clock synchronized with Hubitat. Highly recommended. | ✅ Enabled |
+| **Log All Events** | Logs every event (zone changes, rain delays, etc.) to Hubitat’s event history. Recommended if you use dashboards or automations that rely on device states. | ⚙️ Optional |
+| **Debug Logging** | Enables detailed developer logs for troubleshooting. Automatically turns off after 30 minutes. | ⚙️ Optional |
+
+> 💡 *After changing settings, always click **Save Preferences** and then **Configure** to apply changes.*
+
+---
+
+### 🔍 Preference Notes
+
+- **Auto Time Sync**: Prevents time drift so watering days and times remain correct.  
+- **Number of Zones**: For compatible controllers (ESP-Me / ESP-Me3), this value is automatically detected and updated after the first successful connection.  
+- **Refresh Interval**: Setting a longer interval (e.g., 60 minutes) during winterization reduces unnecessary network traffic.  
+- **Log All Events**: Ideal for users who monitor irrigation states on dashboards or use event-based rules.  
+- **Debug Logging**: Should only be enabled for troubleshooting — it automatically disables to prevent log overflow.
 
 ---
 
