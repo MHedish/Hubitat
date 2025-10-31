@@ -142,7 +142,8 @@ All Rain Bird commands are sent via `sendRainbirdCommand()`, featuring:
 ## 🧰 Credits
 
 **Author:** Marc Hedish (@MHedish)  
-**Documentation:** ChatGPT (OpenAI)  
+**Documentation:** ChatGPT (OpenAI) 
+**License:** Apache 2.0  
 **Platform:** [Hubitat Elevation](https://hubitat.com)  
 
 ---
