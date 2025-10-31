@@ -40,7 +40,7 @@ It supports automatic time synchronization, full telemetry reporting, and adapti
 
 | Capability         | Supported? | Notes                                                |
 | ------------------ | ---------- | ---------------------------------------------------- |
-| **Model / Serial**     | ✅         | Full support.                                        |
+| **Model / Serial Number** | ✅         | Full support.                                        |
 | **Date / Time**        | ✅         | Full support. Time can be synchronized; date cannot. |
 | **Rain Delay**         | ✅         | Full support.                                        |
 | **Controller State**   | ✅         | Full support.                                        |
