@@ -13,6 +13,20 @@
 *  0.0.5.15 -– Streamlined refresh(): minute-based CRON, zero waste syntax
 *  0.0.5.17 –- Finalized network pacing fix: restored serialized command handling, eliminated 503 race, confirmed stable under legacy firmware 2.9
 *  0.0.5.18 –- Refined command pacing and retry logic; added adaptive inter-attempt delay and reduced max backoff to 900s
+*  0.0.5.19 -- Increased static delay from 125ms to 150ms to help reduce/eliminate 503 errors.
+*  0.0.5.20 -- Replaced static inter-command delay with adaptive ephemeral pacing (non-persistent @Field), stabilizing 503 recovery without state I/O overhead.
+*  0.0.5.25 -- Stability release: reordered refresh telemetry sequence, eliminated pendingDrift, added jittered runIn() offsets for clock resync and backoff; resolved CRON collision under load.
+*  0.0.5.26 -- Refined drift synchronization logic: removed redundant resync scheduling, added dynamic refresh-interval awareness, extended post-sync delay to 10s for controller settle time; finalized async stability loop.
+*  0.0.5.28 –- Localized controller time/date parsing; respects Hubitat timezone and user formats
+*  0.0.5.32 –- Restored controller date/time parsing (firmware 2.9 frame compatibility, deterministic verification sequence)
+*  0.0.6.3  –– Finalized deterministic clock synchronization; added deferred drift check to resolve event propagation race condition.
+*  0.0.6.4  –– Integer-epoch drift normalization finalized; controller and hub clocks now in deterministic lockstep.
+*  0.0.6.5  –– Unified parser format and finalized deterministic time handling; codebase cleanup and stylistic consolidation.
+*  0.0.6.6  –– Simplified time sync logic; removed deferred mode, lowered sync threshold to 5s for responsive drift correction.
+*  0.0.6.7  –– Simplified and accelerated drift correction; unified sync reporting and removed legacy mode logic.
+*  0.0.6.8  –– Simplified drift logic; unified DST detection and resync trigger under single event-driven handler.
+*  0.0.7.0  –– Hardened initialization sequence; reconnoiter held through identity and scheduling to eliminate re-entrant refresh during preference updates.
+*  0.0.7.1  –– Refined event telemetry phrasing; standardized exception handling (catch(e)) for consistency; improved sync reporting clarity.
 */
 
 import groovy.transform.Field
@@ -25,10 +39,16 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "RainBird LNK WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "0.0.5.18"
-@Field static final String DRIVER_MODIFIED = "2025.10.30"
+@Field static final String DRIVER_VERSION  = "0.0.7.1"
+@Field static final String DRIVER_MODIFIED = "2025.11.02"
 @Field static final String PAD = "\u0016"
 @Field static final int BLOCK_SIZE = 16
+@Field static int delayMs=150
+@Field static int minDelay=50
+@Field static int maxDelay=500
+@Field static int successStreak=0
+@Field static Boolean reconnoiter=false
+@Field static Long lastRefreshEpoch=0
 @Field static final MessageDigest SHA256 = MessageDigest.getInstance("SHA-256")
 @Field static final Cipher AES_CIPHER = Cipher.getInstance("AES/CBC/NoPadding", "SunJCE")
 
@@ -71,26 +91,27 @@ metadata {
 
         command "configure"
         command "disableDebugLoggingNow"
-        command "setRainDelay", [[name:"Rain Delay (0–14 days) ", type:"NUMBER"]]
-        command "runProgram", [[name: "program",type: "ENUM",description: "Select Rain Bird program to run manually",constraints: ["A", "B", "C", "D"]]]
-        command "runZone", [[name:"Zone Number ", type:"NUMBER"], [name:"Duration (minutes) ", type:"NUMBER"]]
-        command "stopZone", [[name:"Zone Number", type:"NUMBER"]]
+        command "setRainDelay",[[name:"Rain Delay (0–14 days) ",type:"NUMBER"]]
+        command "runProgram",[[name: "program",type: "ENUM",description: "Select Rain Bird program to run manually",constraints: ["A", "B", "C", "D"]]]
+        command "runZone",[[name:"Zone Number ",type:"NUMBER"],[name:"Duration (minutes) ", type:"NUMBER"]]
+        command "stopZone",[[name:"Zone Number",type:"NUMBER"]]
         command "stopIrrigation"
     }
 
     preferences {
-        input("ipAddress", "text", title:"RainBird Controller IP", required:true)
-        input("password", "password", title:"RainBird Controller Password", required:true)
-        input("zonePref", "number", title:"Number of Zones", defaultValue:6, range:"1..16")
-        input name:"refreshInterval", type:"enum", title:"Refresh Interval", defaultValue:"5",
+        input("ipAddress","text",title:"RainBird Controller IP",required:true)
+        input("password","password",title:"RainBird Controller Password",required:true)
+        input("zonePref","number",title:"Number of Zones", defaultValue:6,range:"1..16")
+        input("autoTimeSync","bool",title:"Automatically sync RainBird to Hubitat clock",defaultValue:true)
+        input("refreshGuardSeconds","number",title:"Minimum seconds between refreshes",defaultValue:20,range:"15..45",required:true)
+        input("logEnable","bool",title:"Enable Debug Logging",defaultValue:false)
+        input("logEvents","bool",title:"Log All Events",defaultValue:false)
+        input name:"refreshInterval", type:"enum", title:"Refresh Interval",defaultValue:"5",
 		    options:[
 		        "1":"Every 1 minute","2":"Every 2 minutes","3":"Every 3 minutes","4":"Every 4 minutes",
 		        "5":"Every 5 minutes","10":"Every 10 minutes","15":"Every 15 minutes","20":"Every 20 minutes",
 		        "30":"Every 30 minutes","45":"Every 45 minutes","60":"Every 60 minutes"
 		    ]
-        input("autoTimeSync", "bool", title:"Automatically sync RainBird to Hubitat clock", defaultValue:true)
-        input("logEnable", "bool", title:"Enable Debug Logging", defaultValue:false)
-        input("logEvents", "bool", title:"Log All Events", defaultValue:false)
     }
 }
 
@@ -108,28 +129,17 @@ def autoDisableDebugLogging(){try{unschedule(autoDisableDebugLogging);device.upd
 def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo"Debug logging disabled (manual)"}catch(e){logDebug"disableDebugLoggingNow(): ${e.message}"}}
 
 /* =============================== Lifecycle =============================== */
-def installed() {
-    logInfo "Installed.";initialize()
-}
-
-def updated() {
-    logInfo "Preferences updated.";unschedule();configure()
-}
-
-def configure() {
-    logInfo "Configured.";zoneCount=zonePref;unschedule();setControllerTime();initialize()
-}
-
+def installed(){log.info "Installed. ${driverInfoString()}";initialize()}
+def updated(){logInfo "Preferences updated.";unschedule();configure()}
+def configure(){logInfo "Configured.";zoneCount=zonePref;unschedule();initialize()}
 def initialize(){
-    logInfo"${driverInfoString()} Initializing..."
-    emitEvent("driverInfo",driverInfoString())
-    state.failCount=0
-    if(logEnable)logDebug"IP=${ipAddress}, Password=${password}"
+    reconnoiter=true;state.failCount=0;emitEvent("driverInfo",driverInfoString());logDebug"IP=${ipAddress}, Password=${password}"
     if(ipAddress&&password){
         unschedule(autoDisableDebugLogging)
         if(logEnable)runIn(1800,autoDisableDebugLogging)
-        driverStatus();getControllerIdentity();scheduleRefresh();runInMillis(500,"refresh")
+        driverStatus();getControllerIdentity();scheduleRefresh();reconnoiter=false;runInMillis(500,"refresh")
     }
+    else logWarn"Cannot initialize. Preferences must be set."
 }
 
 /* =============================== Driver Maintenance =============================== */
@@ -138,7 +148,7 @@ def driverStatus(String controllerContext=null){
     def results=[]
     [["4C","Status"],["10","Time"],["12","Date"]].each{k,v->
         try{def r=parseIfString(sendRainbirdCommand(k,1),"driverStatus-${v}");results<< (r?"${v} OK":"${v} FAIL (no response)")}
-        catch(ex){results<<"${v} FAIL (${ex.message})"}
+        catch(e){results<<"${v} FAIL (${e.message})"}
     }
     def baseStatus=results.join(" | ")
     if(controllerContext)baseStatus+=" | ${controllerContext}"
@@ -317,10 +327,10 @@ def getRainDelay(){
         if(!d){logWarn"getRainDelay: No valid response";return}
         if(d.startsWith("36")&&d.size()>=6){
             def delay=Integer.parseInt(d.substring(2,6),16)
-            emitChangedEvent("rainDelay",delay,"Controller rain delay=${delay} day(s)")
+            emitChangedEvent("rainDelay",delay,"Controller rain delay: ${delay} day(s)")
         }else if(d.startsWith("B6")&&d.size()>=6){
             def delay=Integer.parseInt(d.substring(2,6),16)
-            emitChangedEvent("rainDelay",delay,"Controller rain delay=${delay} day(s) [variant response]")
+            emitChangedEvent("rainDelay",delay,"Controller rain delay: ${delay} day(s) [variant response]")
         }else logWarn"getRainDelay: Unexpected data format (${d})"
     }catch(e){logError"getRainDelay() failed: ${e.message}"}
 }
@@ -342,43 +352,21 @@ def setRainDelay(days){
 }
 
 /* =============================== Time / Date =============================== */
-def getControllerTime(){logDebug"Requesting controller time...";parseTimeResponse(parseIfString(sendRainbirdCommand("10",1),"getControllerTime"));if (autoTimeSync) checkAndSyncClock()}
+def getControllerTime(){logDebug"Requesting controller time...";parseTimeResponse(parseIfString(sendRainbirdCommand("10",1),"getControllerTime"));if(autoTimeSync)runInMillis(250,"checkAndSyncClock")}
 def getControllerDate(){logDebug"Requesting controller date...";parseDateResponse(parseIfString(sendRainbirdCommand("12",1),"getControllerDate"))}
 def setControllerDate(){logInfo"Controller date reporting only (LNK ignores SetDate)";getControllerDate()}
 def setControllerTime(){
-    def now=new Date()
-    def cmd="11${sprintf('%02x',now.format('HH',location.timeZone).toInteger())}" +
-             "${sprintf('%02x',now.format('mm',location.timeZone).toInteger())}" +
-             "${sprintf('%02x',now.format('ss',location.timeZone).toInteger())}"
+    def now=new Date();def cmd="11${sprintf('%02x',now.format('HH',location.timeZone).toInteger())}${sprintf('%02x',now.format('mm',location.timeZone).toInteger())}${sprintf('%02x',now.format('ss',location.timeZone).toInteger())}"
     logDebug"Setting controller time (encoded ${cmd})"
-    parseIfString(sendRainbirdCommand(cmd,4),"setControllerTime")
-    getControllerTime()
-}
-
-// --- Adaptive RainBird Clock Drift Correction ---
-private checkAndSyncClock(){
-    if(!autoTimeSync)return
-    try{
-        def hubNow=new Date()
-        def rbTime=parseControllerTimeToDate(device.currentValue("controllerTime"))
-        if(!rbTime)return
-        def drift=Math.abs((hubNow.time-rbTime.time)/1000)
-        emitChangedEvent("clockDrift",drift,"Clock drift=${drift}s")
-        if(drift<=2)return
-        if(drift<=30){runIn(21600,"syncRainbirdClock");return}
-        if(drift<=300){logInfo"Detected clock drift of ${drift}s — scheduling time resync in 10 min.";runIn(600,"syncRainbirdClock");return}
-        logWarn"Significant RainBird clock drift detected (${drift}s). Syncing immediately."
-        syncRainbirdClock()
-    }catch(ex){logError"checkAndSyncClock() failed: ${ex.message}"}
+    parseIfString(sendRainbirdCommand(cmd,4),"setControllerTime");getControllerTime()
 }
 
 private parseControllerTimeToDate(timeStr){
     if(!timeStr)return null
     try{
-        def p=timeStr.split(":")*.toInteger()
-        def now=new Date()
-        return new Date(now.year,now.month,now.date,p[0],p[1],p[2])
-    }catch(e){return null}
+        def p=timeStr.split(":")*.toInteger();def n=new Date()
+        return new Date(n.year,n.month,n.date,p[0],p[1],p[2])
+    }catch(e){logWarn"parseControllerTimeToDate() failed: ${e.message}";return null}
 }
 
 private buildTimeCommand(Date dt){
@@ -386,44 +374,79 @@ private buildTimeCommand(Date dt){
         def h=sprintf("%02X",dt.format("HH").toInteger())
         def m=sprintf("%02X",dt.format("mm").toInteger())
         def s=sprintf("%02X",dt.format("ss").toInteger())
-        def cmd="10${h}${m}${s}"
-        logDebug"buildTimeCommand(): ${cmd}"
-        return cmd
-    }catch(ex){logError"buildTimeCommand() failed: ${ex.message}";return null}
+        def cmd="10${h}${m}${s}";logDebug"buildTimeCommand(): ${cmd}";return cmd
+    }catch(e){logError"buildTimeCommand() failed: ${e.message}";return null}
 }
 
-private syncRainbirdClock(){
+// --- Adaptive RainBird Clock Drift Correction ---
+private checkAndSyncClock(){
     if(!autoTimeSync)return
     try{
-        def now=new Date()
-        def cmd=buildTimeCommand(now)
-        if(cmd)sendRainbirdCommand(cmd,5)
-        emitChangedEvent("lastSync",now.format("yyyy-MM-dd HH:mm:ss"),"Clock synced at ${now}")
-    }catch(ex){logError"syncRainbirdClock() failed: ${ex.message}"}
+        def cDate=device.currentValue("controllerDate");def cTime=device.currentValue("controllerTime")
+        if(!cDate||!cTime){logDebug"checkAndSyncClock(): missing controller date/time";return}
+        def fmt=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");fmt.setTimeZone(location.timeZone)
+        def parsed=fmt.parse("${cDate} ${cTime}");if(!parsed){logWarn"checkAndSyncClock(): parse failed for ${cDate} ${cTime}";return}
+        def controllerEpoch=parsed.time;def hubNow=now()
+        def clockDrift=(int)(Math.abs((hubNow.intdiv(1000))-(controllerEpoch.intdiv(1000))))
+        def dstAdj=(clockDrift>=3595&&clockDrift<=3605)
+        def desc=dstAdj?"Daylight Saving Time adjustment detected.":"Clock drift: ${clockDrift}s"
+        emitChangedEvent("clockDrift",clockDrift,desc)
+        if(!dstAdj&&clockDrift>=5)syncRainbirdClock(clockDrift)
+    }catch(e){logError"checkAndSyncClock(): ${e.message}"}
+}
+
+private syncRainbirdClock(drift){
+    try{
+        def tz=location?.timeZone?:TimeZone.getDefault()
+        def fmt=new java.text.SimpleDateFormat(dateFormat?:"yyyy-MM-dd HH:mm:ss");fmt.setTimeZone(tz)
+        def now=new Date();def nowStr=fmt.format(now);def cmd=buildTimeCommand(now)
+        if(cmd){
+            sendRainbirdCommand(cmd,5)
+            emitEvent("lastSync", nowStr, "Clock synchronized at ${nowStr} (drift ${drift}s corrected)")
+            logInfo"Controller clock synchronized | Drift corrected: ${drift}s";runIn(30,"verifyClockUpdate")
+        }
+    }catch(e){logError"syncRainbirdClock() failed: ${e.message}"}
+}
+
+private verifyClockUpdate(){
+    logDebug"Verifying RainBird clock after sync commit..."
+    def prev=device.currentValue("controllerTime")
+    getControllerTime();def newVal=device.currentValue("controllerTime")
+    if(prev!=newVal){
+        emitChangedEvent("clockDrift",0,"Controller clock verified updated.");logInfo"Controller clock verification successful."
+    }else logWarn"Controller clock unchanged; verification deferred to next CRON refresh."
 }
 
 /* =============================== Refresh & Scheduling =============================== */
 def refresh(){
-    def min=refreshInterval.toInteger();def failCount=state.failCount?:0
-    if(failCount>3){
-        def backoff=Math.min(1800,300*failCount)
-        logWarn"Network instability detected. Backing off refresh to ${backoff}s."
-        runIn(backoff,"refresh");return
-    }
-    def cron="0 0/${min} * ? * *";logDebug"Refreshing RainBird controller (CRON=${cron})"
-    try{
-        driverStatus();def r=parseIfString(sendRainbirdCommand("4C",1),"refresh")
-        if(r)parseCombinedControllerState(r)
-        getControllerTime();getControllerDate();getRainSensorState();getWaterBudget();getRainDelay()
-        getZoneSeasonalAdjustments();getControllerEventTimestamp();getAvailableStations()
-        logDebug"Zones: ${device.currentValue('availableStations')?:'None'} | Rain Delay: ${device.currentValue('rainDelay')} | FailCount: ${failCount}"
-    }catch(e){logError"Refresh failed: ${e.message}"}
+	if(reconnoiter){logDebug"Refresh skipped; another refresh in progress.";return}
+	def nowEpoch=now();def guard=(refreshGuardSeconds?:15)*1000
+	if(nowEpoch-lastRefreshEpoch<guard){logDebug"Refresh skipped; last run ${(nowEpoch-lastRefreshEpoch)/1000}s ago.";return}
+	reconnoiter=true;lastRefreshEpoch=nowEpoch
+	if(!ipAddress||!password){logWarn"Cannot refresh. Preferences must be set and driver initialized.";reconnoiter=false;return}
+	def min=refreshInterval.toInteger();def failCount=state.failCount?:0
+	if(failCount>=10){logWarn"Too many consecutive failures (${failCount}). Forcing reinitialization.";state.failCount=0;runIn(5,"initialize");reconnoiter=false;return}
+	if(failCount>3){
+		def backoff=Math.min(1800,300*failCount)
+		if(!atomicState.refreshPending){
+			atomicState.refreshPending=true;logWarn"Network instability detected. Backing off refresh to ${backoff}s.";runIn(backoff){atomicState.refreshPending=false;refresh()}
+		}else logDebug"Backoff already pending; skipping duplicate scheduling."
+		reconnoiter=false;return
+	}
+	def cron="0 0/${min} * ? * *";logDebug"Refreshing RainBird controller (CRON=${cron})"
+	try{
+		driverStatus();def r=parseIfString(sendRainbirdCommand("4C",1),"refresh")
+		if(r)parseCombinedControllerState(r)
+		getRainSensorState();getWaterBudget();getRainDelay();getZoneSeasonalAdjustments()
+		getAvailableStations();getControllerEventTimestamp();getControllerDate();getControllerTime()
+		logDebug"Zones: ${device.currentValue('availableStations')?:'None'} | Rain Delay: ${device.currentValue('rainDelay')} | FailCount: ${failCount}"
+		state.failCount=0;atomicState.refreshPending=false
+	}catch(e){state.failCount=(state.failCount?:0)+1;logError"Refresh failed (${state.failCount}): ${e.message}"}
+	finally{reconnoiter=false}
 }
 
 private scheduleRefresh(){
-    unschedule("refresh")
-    def min=refreshInterval.toInteger()
-    def cron="0 0/${min} * ? * *"
+    unschedule("refresh");def min=refreshInterval.toInteger();def cron="0 0/${min} * ? * *"
     try{
         schedule(cron,"refresh")
         logInfo"Controller refresh scheduled: ${cron}"
@@ -433,38 +456,30 @@ private scheduleRefresh(){
 /* =============================== Parsing Helpers =============================== */
 private parseTimeResponse(resp){
     if(!resp)return
-    def data=(resp instanceof Map)?resp?.result?.data:null
-    if(!data&&(resp instanceof String)){
-        def m=resp=~/"data":"(.*?)"/
-        data=m?m[0][1]:null
-    }
-    if(!data){logWarn"parseTimeResponse(): No valid data found.";return}
-    if(data.length()>=8&&data.startsWith("90")){
-        def h=Integer.parseInt(data[2..3],16)
-        def mnt=Integer.parseInt(data[4..5],16)
-        def s=Integer.parseInt(data[6..7],16)
-        emitEvent("controllerTime",sprintf("%02d:%02d:%02d",h,mnt,s))
-    }
+    try{
+        def data=(resp instanceof Map)?resp?.result?.data:(resp instanceof String?(resp=~/"data":"(.*?)"/)?[0][1]:null:null)
+        if(!data){logWarn"parseTimeResponse(): no valid data";return}
+        if(data.length()>=8&&data.startsWith("90")){
+            def h=Integer.parseInt(data[2..3],16);def m=Integer.parseInt(data[4..5],16);def s=Integer.parseInt(data[6..7],16)
+            def t=sprintf("%02d:%02d:%02d",h,m,s);emitChangedEvent("controllerTime",t,"${device.currentValue('controllerDate')?:''} ${t}".trim())
+        }
+    }catch(e){logWarn"parseTimeResponse() failed: ${e.message}"}
 }
 
 private parseDateResponse(resp){
     if(!resp)return
-    def data=(resp instanceof Map)?resp?.result?.data:null
-    if(!data&&(resp instanceof String)){
-        def m=resp=~/"data":"(.*?)"/
-        data=m?m[0][1]:null
-    }
-    if(!data){logWarn"parseDateResponse(): No valid data found.";return}
-    if(data.length()>=8&&data.startsWith("92")){
-        def day=Integer.parseInt(data[2..3],16)
-        def month=Integer.parseInt(data[4..4],16)
-        def year=Integer.parseInt(data[5..7],16)
-        emitEvent("controllerDate",sprintf("%04d-%02d-%02d",year,month,day))
-    }
+    try{
+        def data=(resp instanceof Map)?resp?.result?.data:(resp instanceof String?(resp=~/"data":"(.*?)"/)?[0][1]:null:null)
+        if(!data){logWarn"parseDateResponse(): no valid data";return}
+        if(data.length()>=8&&data.startsWith("92")){
+            def d=Integer.parseInt(data[2..3],16);def m=Integer.parseInt(data[4..4],16);def y=Integer.parseInt(data[5..7],16)
+            def dt=sprintf("%04d-%02d-%02d",y,m,d);emitChangedEvent("controllerDate",dt,"${dt} ${device.currentValue('controllerTime')?:''}".trim())
+        }
+    }catch(e){logWarn"parseDateResponse() failed: ${e.message}"}
 }
 
 private getControllerIdentity(){
-    logDebug"Requesting controller identity (model + protocol + serial)..."
+    logDebug"Requesting controller identity (model/protocol/serial)..."
     try{
         def r02=parseIfString(sendRainbirdCommand("02",1),"getControllerIdentity-Model")
         def data02=extractHexData(r02)
@@ -483,95 +498,107 @@ private getControllerIdentity(){
             serial=data05.substring(2)
             logDebug"Parsed 0x85 → serial=${serial}"
         }else logWarn"SerialNumberRequest failed: ${data05}"
-        emitChangedEvent("model","RainBird ${modelID}","Controller model=RainBird ${modelID}")
-        emitChangedEvent("serialNumber",serial,"Controller serial=${serial}")
-        emitChangedEvent("protocolVersion",protoVersion,"Protocol version=${protoVersion}")
-    }catch(ex){logError"getControllerIdentity() failed: ${ex.message}"}
+        emitChangedEvent("model","RainBird ${modelID}","Controller model: RainBird ${modelID}")
+        emitChangedEvent("serialNumber",serial,"Controller serial number: ${serial}")
+        emitChangedEvent("protocolVersion",protoVersion,"Protocol version: ${protoVersion}")
+    }catch(e){logError"getControllerIdentity() failed: ${e.message}"}
 }
 
 private parseCombinedControllerState(resp,boolean summaryOnly=false){
-    def hex=extractHexData(resp)
-    logDebug"parseCombinedControllerState(): raw data=${hex}"
-    if(!hex){logWarn"parseCombinedControllerState(): No valid data received.";return}
-    if(hex.startsWith("004C")){
-        def status=hex[-2..-1]
-        def irrigationText=(status=="02"?"Watering":status=="01"?"Idle":status=="03"?"Rain Delay":"Unknown (${status})")
-        def currentIrr=device.currentValue("irrigationState")
-        if(!currentIrr||currentIrr=="Unknown"){
-            emitChangedEvent("irrigationState",irrigationText,"Irrigation state=${irrigationText}")
-            emitChangedEvent("controllerState",irrigationText,"Controller state=${irrigationText}")
-        }
-        emitChangedEvent("watering",(status=="02"),"Watering=${status=='02'}")
-        if(status=="01")emitChangedEvent("activeZone",0,"Active zone=0")
-        def base=driverStatus()
-        emitChangedEvent("driverStatus","${base} | Controller ${irrigationText}","driverStatus=${base} | Controller ${irrigationText}")
-        return
-    }
-    if(!hex.startsWith("CC"))return
     try{
-        def hour=Integer.parseInt(hex[2..3],16)
-        def minute=Integer.parseInt(hex[4..5],16)
-        def second=Integer.parseInt(hex[6..7],16)
-        def day=Integer.parseInt(hex[8..9],16)
-        def month=Integer.parseInt(hex[10..10],16)
-        def year=2000+Integer.parseInt(hex[11..13],16)
-        def delay=Integer.parseInt(hex[14..17],16)
-        def sensor=Integer.parseInt(hex[18..19],16)
-        def irrig=Integer.parseInt(hex[20..21],16)
-        def season=Integer.parseInt(hex[22..25],16)
-        def remain=Integer.parseInt(hex[26..29],16)
-        def zone=Integer.parseInt(hex[30..31],16)
-        def irrigationText=(irrig==1?"Watering":irrig==0?"Idle":irrig==2?"Rain Delay":"Unknown (${irrig})")
-        def watering=(irrig==1)
-        def timeStr=sprintf("%02d:%02d:%02d",hour,minute,second)
-        def dateStr=sprintf("%04d-%02d-%02d",year,month,day)
-        emitChangedEvent("controllerTime",timeStr,"Controller time=${timeStr}")
-        emitChangedEvent("controllerDate",dateStr,"Controller date=${dateStr}")
-        emitChangedEvent("delaySetting",delay,"Rain delay=${delay}")
-        emitChangedEvent("sensorState",sensor,"Sensor state=${sensor}")
-        emitChangedEvent("irrigationState",irrigationText,"Irrigation state=${irrigationText}")
-        emitChangedEvent("seasonalAdjust",season,"Seasonal adjust=${season}%")
-        emitChangedEvent("remainingRuntime",remain,"Remaining runtime=${remain}s")
-        emitChangedEvent("activeZone",zone,"Active zone=${zone}")
-        emitChangedEvent("watering",watering,"Watering=${watering}")
-        emitChangedEvent("controllerState",irrigationText,"Controller state=${irrigationText}")
-        def base=driverStatus()
-        if(irrigationText&&irrigationText!="Unknown")
-            emitChangedEvent("driverStatus","${base} | Controller ${irrigationText}","driverStatus=${base} | Controller ${irrigationText}")
-        else{
-            logDebug"parseCombinedControllerState(): No valid irrigation status decoded (hex=${hex?:'null'})."
-            emitChangedEvent("driverStatus","${base} | Controller Status Unknown","driverStatus=${base} | Controller Status Unknown")
+        def hex=extractHexData(resp)
+        logDebug"parseCombinedControllerState(): raw data=${hex}"
+        if(!hex){logWarn"parseCombinedControllerState(): no valid data";return}
+        if(hex.startsWith("004C")){
+            def status=hex[-2..-1]
+            def irrigationText=(status=="02"?"Watering":status=="01"?"Idle":status=="03"?"Rain Delay":"Unknown (${status})")
+            def currentIrr=device.currentValue("irrigationState")
+            if(!currentIrr||currentIrr=="Unknown"){
+                emitChangedEvent("irrigationState",irrigationText,"Irrigation state: ${irrigationText}")
+                emitChangedEvent("controllerState",irrigationText,"Controller state: ${irrigationText}")
+            }
+            emitChangedEvent("watering",(status=="02"),"Watering: ${status=='02'}")
+            if(status=="01")emitChangedEvent("activeZone",0,"No active zones")
+            def base=driverStatus()
+            emitChangedEvent("driverStatus","${base} | Controller ${irrigationText}","${base} | Controller ${irrigationText}")
+            return
         }
-        if(summaryOnly)return"Time:${timeStr}, Date:${dateStr}, Zone:${zone}, Runtime:${remain}s, Delay:${delay}, SeasonAdj:${season}%"
-    }catch(ex){
+        if(!hex.startsWith("CC"))return
+        try{
+            def hour=Integer.parseInt(hex[2..3],16)
+            def minute=Integer.parseInt(hex[4..5],16)
+            def second=Integer.parseInt(hex[6..7],16)
+            def day=Integer.parseInt(hex[8..9],16)
+            def month=Integer.parseInt(hex[10..10],16)
+            def year=2000+Integer.parseInt(hex[11..13],16)
+            def delay=Integer.parseInt(hex[14..17],16)
+            def sensor=Integer.parseInt(hex[18..19],16)
+            def irrig=Integer.parseInt(hex[20..21],16)
+            def season=Integer.parseInt(hex[22..25],16)
+            def remain=Integer.parseInt(hex[26..29],16)
+            def zone=Integer.parseInt(hex[30..31],16)
+            def irrigationText=(irrig==1?"Watering":irrig==0?"Idle":irrig==2?"Rain Delay":"Unknown (${irrig})")
+            def watering=(irrig==1)
+            def timeStr=sprintf("%02d:%02d:%02d",hour,minute,second)
+            def dateStr=sprintf("%04d-%02d-%02d",year,month,day)
+            emitChangedEvent("controllerTime",timeStr,"Controller time=${timeStr}")
+            emitChangedEvent("controllerDate",dateStr,"Controller date=${dateStr}")
+            emitChangedEvent("delaySetting",delay,"Rain delay=${delay}")
+            emitChangedEvent("sensorState",sensor,"Sensor state=${sensor}")
+            emitChangedEvent("irrigationState",irrigationText,"Irrigation state=${irrigationText}")
+            emitChangedEvent("seasonalAdjust",season,"Seasonal adjust=${season}%")
+            emitChangedEvent("remainingRuntime",remain,"Remaining runtime=${remain}s")
+            emitChangedEvent("activeZone",zone,"Active zone=${zone}")
+            emitChangedEvent("watering",watering,"Watering=${watering}")
+            emitChangedEvent("controllerState",irrigationText,"Controller state=${irrigationText}")
+            def base=driverStatus()
+            if(irrigationText&&irrigationText!="Unknown")
+                emitChangedEvent("driverStatus","${base} | Controller ${irrigationText}","driverStatus=${base} | Controller ${irrigationText}")
+            else{
+                logDebug"parseCombinedControllerState(): no valid irrigation status (hex=${hex?:'null'})"
+                emitChangedEvent("driverStatus","${base} | Controller Status Unknown","driverStatus=${base} | Controller Status Unknown")
+            }
+            if(summaryOnly)return"Time:${timeStr}, Date:${dateStr}, Zone:${zone}, Runtime:${remain}s, Delay:${delay}, SeasonAdj:${season}%"
+        }catch(e){logWarn"parseCombinedControllerState() inner parse failed: ${e.message}"}
+    }catch(e){
         emitChangedEvent("driverStatus","Status FAIL | Combined State Parse Error","Combined state parse error")
-        logError"parseCombinedControllerState() failed: ${ex.message}"
+        logError"parseCombinedControllerState() failed: ${e.message}"
     }
 }
 
 /* =============================== Communication / Crypto =============================== */
 private sendRainbirdCommand(cmdHex,length=1){
     try{
-        def id=Math.floor((new Date()).time/1000);def pld=JsonOutput.toJson([id:id,jsonrpc:"2.0",method:"tunnelSip",params:[data:cmdHex,length:length]])
-        def enc=encryptRainbird(pld,password);def prm=[uri:"http://${ipAddress}/stick",contentType:"application/octet-stream",requestContentType:"application/octet-stream",body:enc]
+        def id=Math.floor((new Date()).time/1000)
+        def pld=JsonOutput.toJson([id:id,jsonrpc:"2.0",method:"tunnelSip",params:[data:cmdHex,length:length]])
+        def enc=encryptRainbird(pld,password)
+        def prm=[uri:"http://${ipAddress}/stick",contentType:"application/octet-stream",requestContentType:"application/octet-stream",body:enc]
         def r=null
+        pauseExecution(delayMs)
         for(int i=1;i<=3;i++){
             try{
-                httpPost(prm){resp->r=decryptRainbird(resp.data.bytes,password)};if(r){state.failCount=0;pauseExecution(125);return r}
-            }catch(ex){
-                logWarn"Attempt ${i}/3 failed: ${ex.message}";if(i<3)pauseExecution(250*i)
+                httpPost(prm){resp->r=decryptRainbird(resp.data.bytes,password)}
+                if(r){
+                    if(successStreak<10)successStreak++
+                    if(successStreak>5&&delayMs>minDelay)delayMs=Math.max(minDelay,delayMs-10)
+                    state.failCount=0
+                    logDebug"command ok (delay=${delayMs}ms, streak=${successStreak})";pauseExecution(delayMs)
+                    return r
+                }
+            }catch(e){
+                logWarn"attempt ${i}/3 failed (${e.message})";successStreak=0
+                if(delayMs<maxDelay)delayMs=Math.min(maxDelay,delayMs+25)
+                logDebug"adjusting pacing delay → ${delayMs}ms";pauseExecution(delayMs)
             }
         }
-        state.failCount=(state.failCount?:0)+1;def f=state.failCount;logError"HTTP request failed after 3 attempts (failCount=${f})"
+        state.failCount=(state.failCount?:0)+1;def f=state.failCount;logError"http request failed after 3 attempts (failCount=${f})"
         if(f>3){
-            def b=Math.min(900,120*f)
-            logWarn"Network instability detected — scheduling refresh retry in ${b}s"
-            runIn(b,"refresh")
-            emitEvent("driverStatus","Backoff ${b}s (${f} fails)")
+            def b=Math.min(900,120*f);def j=(new Random().nextInt(50)+5);def defer=b+j;logWarn "network instability detected — scheduling refresh retry in ${defer}s"
+            runIn(defer,"refresh");emitEvent("driverStatus","backoff ${defer}s (${f} fails)")
         }
         return null
-    }catch(ex){
-        logError"sendRainbirdCommand error: ${ex.message}";pauseExecution(125)
+    }catch(e){
+        logError"sendRainbirdCommand error (${e.message})";pauseExecution(delayMs)
         return null
     }
 }
@@ -588,7 +615,7 @@ def encryptRainbird(String json,String pwd){
         byte[]enc=cipher.doFinal(msg.getBytes("UTF-8"))
         byte[]mh=sha.digest(json.getBytes("UTF-8"))
         def o=new ByteArrayOutputStream();o.write(mh);o.write(iv);o.write(enc);return o.toByteArray()
-    }catch(ex){logError"encryptRainbird error: ${ex.message}";return new byte[0]}
+    }catch(e){logError"encryptRainbird error: ${e.message}";return new byte[0]}
 }
 
 def decryptRainbird(byte[]cb,String pwd){
@@ -603,7 +630,7 @@ def decryptRainbird(byte[]cb,String pwd){
         String dec=new String(cipher.doFinal(d),"UTF-8")
         dec=dec.replaceAll("\u0000","").replaceAll(PAD,"")
         return dec
-    }catch(ex){logError"decryptRainbird error: ${ex.message}";return""}
+    }catch(e){logError"decryptRainbird error: ${e.message}";return""}
 }
 
 def padToBlock(String s){int r=s.length()%BLOCK_SIZE;if(r==0)return s;int p=BLOCK_SIZE-r;return s+(PAD*p)}
