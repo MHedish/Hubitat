@@ -118,6 +118,56 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 
 ---
 
+## 🧭 0.0.7.x — Deterministic Program Handling and Legacy Firmware Optimization  
+**Scope:** Schedule query stabilization, program context reliability, and log clarity.  
+**Status:** Stable (Release Candidate → Production Ready)
+
+---
+
+### **0.0.7.22**
+- Corrected reference to `firmwareVersion` in `getProgramSchedule()` — switched from bare variable to `device.currentValue("firmwareVersion")`.
+- Eliminated misleading `"firmware null"` messages under legacy firmware (2.9).
+- Validated deterministic attribute resolution within Hubitat sandbox.
+
+### **0.0.7.23**
+- Refined log and event model for `getProgramSchedule()`.
+- Removed redundant “Unsupported” event emissions for cleaner log output.
+- Consolidated unsupported response handling via single `programScheduleSupport=false` event.
+
+### **0.0.7.24**
+- Unified logging and event consistency across all `programSchedule` queries.
+- Finalized early-return handling for stubbed program responses.
+- Improved runtime determinism under older firmware without breaking newer hybrid opcode handling.
+
+### **0.0.7.25**
+- Implemented boolean-return refactor for `getProgramSchedule()` to eliminate asynchronous attribute race conditions.
+- Centralized final `programScheduleSupport` emission inside `getAllProgramSchedules()` for atomic state reporting.
+- Ensured no more false `true → false → true` event flip sequences under any firmware.
+
+### **0.0.7.26**
+- Fixed Groovy meta-scope masking issue causing `${prog}` interpolation loss.
+- Now logs per-program context (`Program A–D`) deterministically in all conditions.
+- Updated internal logging helpers for consistent string coercion and eager evaluation.
+- Verified full backward compatibility with firmware 2.9+ and hybrid 3.x/4.x modules.
+
+---
+
+### **Summary of 0.0.7.x Line**
+- ✅ Deterministic, sandbox-safe program schedule handling  
+- ✅ Accurate per-program logging and diagnostic visibility  
+- ✅ Consistent firmware version reporting across all query paths  
+- ✅ Zero redundant events or race conditions  
+- ✅ Fully stable under legacy and LNK2 hardware
+
+---
+
+**Current Stable Build:** `v0.0.7.26`  
+**Validated Firmware:** 2.9, 3.0, 3.2, and 4.0+  
+**Test Platforms:** Hubitat C-7 / C-8 / C-8 Pro (2.3.9+)
+
+---
+
+
 ## 📘 Versioning Notes
 
 - Version numbering follows **0.0.MAJOR.MINOR** convention.  
