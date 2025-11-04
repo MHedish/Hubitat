@@ -260,6 +260,25 @@ They update automatically during each refresh or zone change.
 
 ---
 
+### Developer Diagnostics
+
+**getCommandSupport(cmdToTest = "4A")**
+
+Queries the Rain Bird controller for support of a specific command opcode (hex string).  
+Returns a diagnostic event under `commandSupport` indicating whether the opcode is supported by the current firmware.
+
+Example:
+```groovy
+getCommandSupport()
+
+'''Logs
+Command 0x4A is supported by controller
+
+?? Note: This command is not exposed in the Hubitat device UI by design.
+It is intended for advanced users and integrators writing custom Rule Machine or WebCoRE automations.
+
+---
+
 ## ❤️ Support the Project
 
 If this driver improves your irrigation automation, please ⭐ the repository  
