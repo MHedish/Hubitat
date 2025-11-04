@@ -7,24 +7,12 @@
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  0.0.5.12 -– Lifecycle + Telemetry sync stabilization; redundant zoneCount updates resolved
-*  0.0.5.13 –- Removed legacy state.zones cache; migrated to attribute-only telemetry
-*  0.0.5.14 -– Removed unused DEFAULT_STATE; dynamic diagnostics initialization retained
-*  0.0.5.15 -– Streamlined refresh(): minute-based CRON, zero waste syntax
-*  0.0.5.17 –- Finalized network pacing fix: restored serialized command handling, eliminated 503 race, confirmed stable under legacy firmware 2.9
-*  0.0.5.18 –- Refined command pacing and retry logic; added adaptive inter-attempt delay and reduced max backoff to 900s
-*  0.0.5.19 -- Increased static delay from 125ms to 150ms to help reduce/eliminate 503 errors.
-*  0.0.5.20 -- Replaced static inter-command delay with adaptive ephemeral pacing (non-persistent @Field), stabilizing 503 recovery without state I/O overhead.
-*  0.0.5.25 -- Stability release: reordered refresh telemetry sequence, eliminated pendingDrift, added jittered runIn() offsets for clock resync and backoff; resolved CRON collision under load.
-*  0.0.5.26 -- Refined drift synchronization logic: removed redundant resync scheduling, added dynamic refresh-interval awareness, extended post-sync delay to 10s for controller settle time; finalized async stability loop.
-*  0.0.5.28 –- Localized controller time/date parsing; respects Hubitat timezone and user formats
-*  0.0.5.32 –- Restored controller date/time parsing (firmware 2.9 frame compatibility, deterministic verification sequence)
-*  0.0.6.3  –– Finalized deterministic clock synchronization; added deferred drift check to resolve event propagation race condition.
-*  0.0.6.4  –– Integer-epoch drift normalization finalized; controller and hub clocks now in deterministic lockstep.
-*  0.0.6.5  –– Unified parser format and finalized deterministic time handling; codebase cleanup and stylistic consolidation.
-*  0.0.6.6  –– Simplified time sync logic; removed deferred mode, lowered sync threshold to 5s for responsive drift correction.
-*  0.0.6.7  –– Simplified and accelerated drift correction; unified sync reporting and removed legacy mode logic.
-*  0.0.6.8  –– Simplified drift logic; unified DST detection and resync trigger under single event-driven handler.
+*  0.0.1.x  –– Legacy   –– Initial direct HTTP control implementation
+*  0.0.2.x  –– Stable   –– Added encrypted transport and telemetry foundation
+*  0.0.3.x  –– Mature   –– Dynamic controller adaptation and full opcode coverage
+*  0.0.4.x  –– Reverted –– Asynchronous command experiment rolled back
+*  0.0.5.x  –– Refactor –– Stability, pacing, and lifecycle optimization
+*  0.0.6.x  –– Stable   –– Deterministic time sync and drift correction
 *  0.0.7.0  –– Hardened initialization sequence; reconnoiter held through identity and scheduling to eliminate re-entrant refresh during preference updates.
 *  0.0.7.1  –– Refined event telemetry phrasing; standardized exception handling (catch(e)) for consistency; improved sync reporting clarity.
 *  0.0.7.2  –– Renamed “Protocol Version” to “Firmware Version” for clarity; streamlined attribute set for improved telemetry focus and readability.
