@@ -1,7 +1,7 @@
 # 🌧️ Rain Bird LNK WiFi Module Controller (Hubitat Driver)
 
-[![Version](https://img.shields.io/badge/version-0.0.5.18--RC-blue.svg)](./CHANGELOG.md)
-[![Status](https://img.shields.io/badge/release-IN%20TEST-yellow.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.0.7.26-blue.svg)](./CHANGELOG.md)
+[![Status](https://img.shields.io/badge/release-STABLE-brightgreen.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
 
@@ -9,25 +9,35 @@
 
 ## 🧩 Overview
 
-The **Rain Bird LNK WiFi Module Controller** driver gives Hubitat users **local, reliable control** of Rain Bird irrigation systems.  
-It connects directly over your home network — no cloud or external account needed.
+The **Rain Bird LNK WiFi Module Controller** driver gives Hubitat users **local, reliable, and deterministic control** of Rain Bird irrigation systems.  
+It communicates directly with your controller over LAN — **no cloud, no external accounts, and no internet dependency**.
 
-This driver supports both **LNK** and **LNK2** WiFi modules, automatically adapting to firmware versions (2.x, 3.x, and 4.x).  
-You can manage zones, apply rain delays, run preset programs, and keep your controller’s clock perfectly in sync.
+Now fully optimized for firmware 2.x through 4.x, the driver intelligently adapts its command set for legacy, hybrid, and LNK2 controllers.  
+With automatic time sync, real-time zone status, and resilient network handling, it’s designed to “just work” season after season.
+
+---
+
+## ✨ What’s New in v0.0.7.26
+
+✅ **Deterministic schedule handling** — eliminates false positives and event flip-flops  
+✅ **Accurate per-program logging** — `${prog}` context now resolves reliably across iterations  
+✅ **Improved legacy firmware support** — firmware 2.9+ correctly reports schedule query acknowledgements  
+✅ **Refined event model** — one authoritative `programScheduleSupport` event per controller  
+✅ **Cleaner logs** — removed redundant “Unsupported” attributes for reduced noise  
 
 ---
 
 ## ✨ Key Features
 
-✅ 100% local control (no internet required)  
-✅ Start, stop, or schedule irrigation zones directly from Hubitat  
-✅ Supports manual watering, automations, and seasonal adjustments  
-✅ Automatically keeps your controller’s time accurate (no more clock drift)  
-✅ Detects connected zones and controller details  
-✅ Reports live rain sensor and watering status  
-✅ Includes built-in diagnostics and automatic retry handling  
+✅ 100% local control — no internet required  
+✅ Supports **LNK** and **LNK2** WiFi modules with adaptive opcode logic  
+✅ Time synchronization keeps your controller’s clock accurate  
+✅ Per-zone and per-program control with automatic detection  
+✅ Rain sensor, rain delay, and water budget reporting  
+✅ Built-in diagnostics and event logging for troubleshooting  
+✅ Designed for **Hubitat C-7 / C-8 / C-8 Pro** with AES-128 LAN encryption
 
-> 💡 Designed to be *“install and forget”* — once configured, it maintains time, state, and reliability automatically.
+> 💡 Designed to be *“install and forget”* — once configured, it maintains schedule accuracy, time sync, and controller reliability automatically.
 
 ---
 
