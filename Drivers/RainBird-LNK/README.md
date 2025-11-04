@@ -119,10 +119,12 @@ If you prefer to install manually:
 | **IP Address** | The local LAN IP of your Rain Bird LNK or LNK2 module. Must be on the same network as your Hubitat hub. | `192.168.1.50` |
 | **Password** | The same password used in the Rain Bird mobile app to access your controller. | `rainbird123` |
 | **Number of Zones** | Total number of irrigation zones configured on your controller. <br>💡 *Automatically updated from the controller if supported (ESP-Me / ESP-Me3).* | `6` |
-| **Refresh Interval** | How often Hubitat polls the controller to update zone and sensor status. Default = `5 minutes` (range `1–60`). | `5` |
-| **Auto Time Sync** | Automatically keeps your controller’s internal clock synchronized with Hubitat. Highly recommended. | ✅ Enabled |
+| **Refresh Interval** | How often Hubitat polls the controller to update zone and sensor status. Default = `5 minutes` (range `1–480`). Can be set to Manual for when the system is winterized and/or to use Rule Machine or WebCoRE to control the refresh period. | `5` |
+| **Auto Time Sync** | Automatically keeps your controller’s internal clock synchronized with Hubitat. Highly recommended. Can be used to keep the clock curretn even when set to Manual Refresh. | ✅ Enabled |
+| **Get All Program Schedules** | Returns all program schedules is supported by LNK firmware (3.0 or later). |
 | **Log All Events** | Logs every event (zone changes, rain delays, etc.) to Hubitat’s event history. Recommended for dashboards and event-based rules. | ⚙️ Optional |
 | **Debug Logging** | Enables detailed developer logs for troubleshooting. Automatically turns off after 30 minutes. | ⚙️ Optional |
+| **Test All Supported Commands** | Used for diagnostics and verifying supported firmware |
 
 > 💡 *After changing settings, always click **Save Preferences** and then **Configure** to apply changes.*
 
@@ -132,7 +134,7 @@ If you prefer to install manually:
 
 - **Auto Time Sync**: Prevents time drift so watering days and times remain correct.  
 - **Number of Zones**: Automatically updated for compatible controllers (ESP-Me / ESP-Me3).  
-- **Refresh Interval**: Adjust between 1–60 minutes. Use 60 minutes when winterized to reduce network traffic.  
+- **Refresh Interval**: Adjust between 1 minute to 8 hours. There is also a manual option for when the system is winterized. The default is 5 minutes.
 - **Log All Events**: Logs all zone and rain sensor changes.  
 - **Debug Logging**: Automatically disables after 30 minutes.
 
@@ -178,7 +180,8 @@ The **default interval** is **5 minutes**, but it can be adjusted from **1 to 60
 |-----------|-----------------|-------|
 | **1–5 minutes** | Active watering season | Keeps dashboards and automations instantly updated |
 | **10–30 minutes** | Normal operation | Reduces network traffic but stays current |
-| **60 minutes** | Winterized / off-season | Keeps device connected while minimizing LAN activity |
+| **60 minutes-8 Hours** | Winterized / off-season | Keeps device connected while minimizing LAN activity |
+| **Manual**| Winterized / off or when controlled via Rule Machine or WebCoRE |
 
 > 🌱 *If you’ve winterized your irrigation system, set the refresh interval to **60 minutes** to reduce unnecessary checks.*
 
@@ -231,12 +234,15 @@ They update automatically during each refresh or zone change.
 | `controllerTime` | Current time reported by the controller. |
 | `driverInfo` | Basic driver build information (version, release channel). |
 | `driverStatus` | Consolidated status summary including communication, time sync, date retrieval, and controller state. |
+| `firmwareVersion` | Detected Rain Bird protocol version (2.x, 3.x, 4.x). |
 | `irrigationState` | Current watering mode: `Idle`, `Watering`, or `Rain Delay`. |
 | `lastSync` | Timestamp of the most recent successful time synchronization with Hubitat. |
 | `model` | Controller model name (e.g., `ESP-TM2`, `ESP-Me`, `ESP-Me3`). |
-| `protocolVersion` | Detected Rain Bird protocol version (2.x, 3.x, 4.x). |
+| 'programScheduleSupport' | Boolean indicating whether the LNK module supports retrieval of progamming information. (`true` / `false`) |
 | `rainDelay` | Number of days remaining for an active rain delay (0–14). |
 | `rainSensorState` | Current state of the rain sensor (`Dry`, `Wet`, or `Bypassed`). |
+| `remainingRuntime` | Remaining runtime (if supported by firmware). |
+| `seasonalAdjust` | Seasonal Adjustment (requires firmware ≥3.1). |
 | `watering` | Boolean indicating whether the system is currently watering (`true` / `false`). |
 | `waterBudget` | Current seasonal watering adjustment percentage. |
 | `zoneCount` | Number of detected zones available for control. |
@@ -258,19 +264,21 @@ They update automatically during each refresh or zone change.
 
 ## 📜 Changelog
 
-**v0.0.5.18–RC**
-- Added adaptive inter-command delay (125 ms)
-- Smarter retry and backoff logic
-- Simplified refresh scheduling
-- Improved diagnostics and stability
-- Enhanced clock sync reliability
-- Updated documentation: installation, preferences, attributes, and commands
+| Series | Status | Key Focus |
+|---------|---------|------------|
+| **0.0.1.x** | Legacy | Initial direct HTTP control implementation |
+| **0.0.2.x** | Stable | Added encrypted transport and telemetry foundation |
+| **0.0.3.x** | Mature | Dynamic controller adaptation and full opcode coverage |
+| **0.0.4.x** | Reverted | Asynchronous command experiment rolled back |
+| **0.0.5.x** | Refactor | Stability, pacing, and lifecycle optimization |
+| **0.0.6.x** | Stable | Deterministic time sync and drift correction |
+| **0.0.7.x** | Current | Deterministic schedule handling, legacy firmware support, and diagnostic clarity |
 
 *(See [CHANGELOG.md](./CHANGELOG.md) for full version history.)*
 
 ---
 
-### Developer Diagnostics
+## Developer Diagnostics
 
 **getCommandSupport(cmdToTest = "4A")**
 
@@ -279,10 +287,10 @@ Returns a diagnostic event under `commandSupport` indicating whether the opcode 
 
 Example:
 ```groovy
-getCommandSupport()
+getCommandSupport(opcode)
+```
 
-'''Logs
-Command 0x4A is supported by controller
+Logs: Command 0x4A is supported by controller
 
 ?? Note: This command is not exposed in the Hubitat device UI by design.
 It is intended for advanced users and integrators writing custom Rule Machine or WebCoRE automations.
@@ -304,5 +312,3 @@ and share feedback in the Hubitat community thread.
 **Platform:** [Hubitat Elevation](https://hubitat.com)
 
 ---
-
-
