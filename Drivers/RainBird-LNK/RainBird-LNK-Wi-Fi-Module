@@ -94,7 +94,6 @@ metadata {
 		attribute "rainSensorState", "string"
         attribute "remainingRuntime", "number"
         attribute "seasonalAdjust", "number"
-        attribute "sensorState", "number"
         attribute "serialNumber", "string"
 		attribute "waterBudget", "number"
         attribute "watering", "boolean"
@@ -624,7 +623,7 @@ private parseCombinedControllerState(resp,boolean summaryOnly=false){
             emitChangedEvent("controllerTime",timeStr,"Controller time=${timeStr}")
             emitChangedEvent("controllerDate",dateStr,"Controller date=${dateStr}")
             emitChangedEvent("delaySetting",delay,"Rain delay=${delay}")
-            emitChangedEvent("sensorState",sensor,"Sensor state=${sensor}")
+            emitChangedEvent("rainSensorState",sensor,"Sensor state=${sensor}")
             emitChangedEvent("irrigationState",irrigationText,"Irrigation state=${irrigationText}")
             emitChangedEvent("seasonalAdjust",season,"Seasonal adjust=${season}%","%")
             emitChangedEvent("remainingRuntime",remain,"Remaining runtime=${remain}s")
