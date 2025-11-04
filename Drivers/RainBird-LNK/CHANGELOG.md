@@ -10,10 +10,12 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 | Series | Status | Key Focus |
 |---------|---------|------------|
 | **0.0.1.x** | Legacy | Initial direct HTTP control implementation |
-| **0.0.2.x** | Stable | Added encrypted transport and full telemetry parsing |
-| **0.0.3.x** | Mature | Complete protocol support, dynamic zone discovery, and version-aware gating |
-| **0.0.4.x** | Reverted | Experimental branch rolled back |
-| **0.0.5.x** | Current | Refactor, performance optimization, and pacing reliability |
+| **0.0.2.x** | Stable | Added encrypted transport and telemetry foundation |
+| **0.0.3.x** | Mature | Dynamic controller adaptation and full opcode coverage |
+| **0.0.4.x** | Reverted | Asynchronous command experiment rolled back |
+| **0.0.5.x** | Refactor | Stability, pacing, and lifecycle optimization |
+| **0.0.6.x** | Stable | Deterministic time sync and drift correction |
+| **0.0.7.x** | Current | Deterministic schedule handling, legacy firmware support, and diagnostic clarity |
 
 ---
 
@@ -63,8 +65,7 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 - Refined `sendRainbirdCommand()` with safe synchronous retry loop.
 - Unified attribute names (`activeStation` → `activeZone`).
 - Added numeric input validation and dynamic initialization of diagnostics.
-
-**Final build:** `v0.0.3.29` — validated against Rain Bird LNK (firmware 2.9).
+- Validated against Rain Bird LNK (firmware 2.9).
 
 </details>
 
@@ -83,7 +84,7 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 
 ## 🚀 0.0.5.x — Modern Refactor and Stability Line  
 **Scope:** Lifecycle optimization, state cleanup, refresh scheduling, and pacing control.  
-**Status:** Current active development line.
+**Status:** Stable Baseline.
 
 ---
 
@@ -118,9 +119,41 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 
 ---
 
+## ⏱️ 0.0.6.x — Deterministic Time Sync and Drift Correction  
+**Scope:** Time synchronization, clock drift normalization, and simplified resync logic.  
+**Status:** Stable and widely deployed.
+
+---
+
+### **0.0.6.3**
+- Finalized deterministic clock synchronization.
+- Added deferred drift check to resolve event propagation race condition.
+
+### **0.0.6.4**
+- Integer-epoch drift normalization finalized.
+- Controller and hub clocks now maintain deterministic lockstep.
+
+### **0.0.6.5**
+- Unified parser format and finalized deterministic time handling.
+- Codebase cleanup and stylistic consolidation.
+
+### **0.0.6.6**
+- Simplified time sync logic.
+- Removed deferred mode and lowered sync threshold to 5s for responsive drift correction.
+
+### **0.0.6.7**
+- Simplified and accelerated drift correction.
+- Unified sync reporting and removed legacy mode logic.
+
+### **0.0.6.8**
+- Simplified drift logic further.
+- Unified DST detection and resync trigger under a single event-driven handler.
+
+---
+
 ## 🧭 0.0.7.x — Deterministic Program Handling and Legacy Firmware Optimization  
 **Scope:** Schedule query stabilization, program context reliability, and log clarity.  
-**Status:** Stable (Release Candidate → Production Ready)
+**Status:** Stable (Production Ready)
 
 ---
 
@@ -164,15 +197,6 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 **Current Stable Build:** `v0.0.7.26`  
 **Validated Firmware:** 2.9, 3.0, 3.2, and 4.0+  
 **Test Platforms:** Hubitat C-7 / C-8 / C-8 Pro (2.3.9+)
-
----
-
-
-## 📘 Versioning Notes
-
-- Version numbering follows **0.0.MAJOR.MINOR** convention.  
-- Each `.x` series represents a functional baseline, with incremental refinements and hotfixes tracked under that branch.
-- The driver remains backward-compatible with all Rain Bird LNK firmware versions **≥ 2.5**.
 
 ---
 
