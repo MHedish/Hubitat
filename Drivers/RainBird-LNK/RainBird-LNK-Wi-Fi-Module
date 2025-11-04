@@ -41,6 +41,13 @@
 *  0.0.7.13 –– Added transient cmdBusy lock to prevent overlapping commands (fixes rare 503 race).
 *  0.0.7.14 –– Fixed runIn() closure bug; restored automatic self-recovery/backoff after network instability.
 *  0.0.7.15 –– Internal optimization: replaced user-facing refreshGuardSeconds with fixed REFRESH_GUARD_MS constant (15s default) for cleaner, self-documenting debounce protection.
+*  0.0.7.16 –– Added full program schedule retrieval (0x36/0x38/0x3A) with decoded days, start times, and zone lists for Programs A–D; standardized program map usage across all functions.
+*  0.0.7.18 –– Adjusted parseProgramDays()/parseProgramZones() for legacy 2.x short responses (6 chars); prevents substring range errors and correctly decodes compact masks.
+*  0.0.7.20 –– Finalized legacy-firmware schedule parsing; 2.x short-form responses now decode days and zones reliably; Unified commandSupport() → getCommandSupport(), hardened refresh() logic, and added adaptive parsing for 0x36/38/3A.
+*  0.0.7.22 –– Added boolean programScheduleSupport attribute for RM/WC compatibility; updated getProgramSchedule() and getAllProgramSchedules() to use emitEvent for static reporting and improved legacy stub detection.
+*  0.0.7.23 –– Fixed null firmwareVersion reference in getProgramSchedule(); log now resolves via device.currentValue() for deterministic attribute access.
+*  0.0.7.24 –– Reduced event noise in getProgramSchedule(); removed redundant “Unsupported” attribute emits for cleaner logs and deterministic reporting.
+*  0.0.7.26 –– Fixed Groovy scope binding issue causing ${prog} interpolation loss within getProgramSchedule().
 */
 
 import groovy.transform.Field
@@ -53,8 +60,8 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "RainBird LNK WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "0.0.7.16"
-@Field static final String DRIVER_MODIFIED = "2025.11.03"
+@Field static final String DRIVER_VERSION  = "0.0.7.26"
+@Field static final String DRIVER_MODIFIED = "2025.11.04"
 @Field static final String PAD = "\u0016"
 @Field static final int BLOCK_SIZE = 16
 @Field static int delayMs=150
@@ -94,6 +101,7 @@ metadata {
 		attribute "lastEventTime", "string"
         attribute "lastSync", "string"
         attribute "model", "string"
+        attribute "programScheduleSupport", "boolean"
         attribute "rainDelay", "number"
 		attribute "rainSensorState", "string"
         attribute "remainingRuntime", "number"
@@ -112,6 +120,7 @@ metadata {
         command "runZone",[[name:"Zone Number ",type:"NUMBER"],[name:"Duration (minutes) ", type:"NUMBER"]]
         command "stopZone",[[name:"Zone Number",type:"NUMBER"]]
         command "stopIrrigation"
+        command "getAllProgramSchedules"
         command "testAllSupportedCommands",[[name:"Diagnostic: Validate supported LNK commands."]]
     }
 
@@ -194,14 +203,16 @@ private boolean isLegacyFirmware(BigDecimal minVersion=3.0){
 def getCommandSupport(cmdToTest="4A"){
     logDebug"Querying command support for 0x${cmdToTest.toUpperCase()}..."
     try{
-        def cmd="04${cmdToTest.padLeft(2,'0')}00";def r=parseIfString(sendRainbirdCommand(cmd,2),"getCommandSupport");def d=r?.result?.data
-        if(!d){logWarn"getCommandSupport(): No valid response";return}
+        def cmd="04${cmdToTest.padLeft(2,'0')}00";def r=parseIfString(sendRainbirdCommand(cmd,2),"getCommandSupport")
+        def d=r?.result?.data
+        if(!d){logWarn"getCommandSupport(): No valid response";return false}
         if(d.startsWith("84")){
             def echo=d.substring(2,4);def support=Integer.parseInt(d.substring(4,6),16);def supported=(support==1)
-            emitEvent("commandSupport","0x${echo}:${supported}","Command 0x${echo} is ${supported?'supported':'not supported'} by controller")
-        }else logWarn"getCommandSupport(): Unexpected data (${d})"
-    }catch(e){logError"getCommandSupport() failed: ${e.message}"}
+            logDebug"Command 0x${echo} is ${supported ? 'supported' : 'not supported'} by controller";return supported
+        }else{logWarn"getCommandSupport(): Unexpected data (${d})";return false}
+    }catch(e){logError"getCommandSupport() failed: ${e.message}";return false}
 }
+
 
 def testAllSupportedCommands(){
     logInfo"Running full command support diagnostic..."
@@ -351,7 +362,7 @@ def getControllerEventTimestamp(){
 
 def runProgram(programCode){
     if(!programCode){logWarn"runProgram(): No program specified.";return}
-    def map=["A":1,"B":2,"C":3,"D":4]
+    def map=["A":0,"B":1,"C":2,"D":3]
     def code=map.get(programCode.toString().toUpperCase(),1)
     def cmd="38${sprintf('%02x00',code)}"
     logDebug"Manually starting Rain Bird Program ${programCode} (encoded ${cmd})"
@@ -366,6 +377,39 @@ def runProgram(programCode){
             logWarn"runProgram(): Unexpected ACK/NAK (${d})"
         }
     }catch(e){logError"runProgram() failed: ${e.message}"}
+}
+
+private isStubProgramResponse(hex){return["003A02","003802","B60000"].contains(hex)}
+
+def getProgramSchedule(prog='A'){
+    if(isLegacyFirmware(2.5)){logDebug"Skipping getProgramSchedule(): requires firmware ≥2.6";return false}
+    def map=["A":0,"B":1,"C":2,"D":3];def pid=map[prog?.toUpperCase()]
+    if(pid==null){logWarn"Invalid program ${prog}";return false}
+    if(!getCommandSupport("36")){logWarn"Program ${prog} schedule query not supported on this controller.";emitEvent("programScheduleSupport",false);return}
+    logDebug"Requesting schedule for program ${prog}..."
+    try{
+        def t=parseIfString(sendRainbirdCommand(String.format("36%02X",pid),1),"getProgramStartTimes")
+        def d=parseIfString(sendRainbirdCommand(String.format("38%02X",pid),1),"getProgramDays")
+        def z=parseIfString(sendRainbirdCommand(String.format("3A%02X",pid),1),"getProgramZones")
+        def tData=t?.result?.data;def dData=d?.result?.data;def zData=z?.result?.data
+        logDebug"Raw data (start times): ${tData}";logDebug"Raw data (days): ${dData}";logDebug"Raw data (zones): ${zData}"
+        if(isStubProgramResponse(tData)&&isStubProgramResponse(dData)&&isStubProgramResponse(zData)){
+            logWarn"Program ${prog} query acknowledged but data unavailable (firmware ${device.currentValue('firmwareVersion')})."
+            return false
+        }
+        def times=parseProgramTimes(tData);def days=parseProgramDays(dData);def zones=parseProgramZones(zData)
+        logInfo"Program ${prog}: ${days} | ${times} | Zones ${zones}"
+        emitEvent("program${prog}_days",days);emitEvent("program${prog}_startTimes",times.join(', '));emitEvent("program${prog}_zones",zones.join(', '))
+        return (times||days||zones)
+    }catch(e){logError"getProgramSchedule(${prog}) failed: ${e.message}";return false}
+}
+
+def getAllProgramSchedules(){
+    if(isLegacyFirmware(2.5)){logDebug"Skipping getAllProgramSchedules(): requires firmware ≥2.6";emitEvent("programScheduleSupport",false);return}
+    if(!getCommandSupport("36")){logWarn"Program schedule query not supported on this controller";emitEvent("programScheduleSupport",false);return}
+    logDebug"Retrieving all available program schedules..."
+    def supported=["A","B","C","D"].collect{getProgramSchedule(it)}.any{it}
+    emitEvent("programScheduleSupport",supported)
 }
 
 /* =============================== Rain Delay Control =============================== */
@@ -427,7 +471,7 @@ private buildTimeCommand(Date dt){
     }catch(e){logError"buildTimeCommand() failed: ${e.message}";return null}
 }
 
-// --- Adaptive RainBird Clock Drift Correction ---
+// Adaptive RainBird Clock Drift Correction
 private checkAndSyncClock(){
     if(!autoTimeSync)return
     try{
@@ -612,6 +656,34 @@ private parseCombinedControllerState(resp,boolean summaryOnly=false){
         emitChangedEvent("driverStatus","Status FAIL | Combined State Parse Error","Combined state parse error")
         logError"parseCombinedControllerState() failed: ${e.message}"
     }
+}
+
+private parseProgramTimes(hex){
+    if(!hex){logWarn"parseProgramTimes(): No data";return[]}
+    if(hex.length()<=6){logWarn"parseProgramTimes(): Legacy short response (${hex}) – no start times defined";return[]}
+    def payload=hex.substring(hex.length()-12)
+    def times=[]
+    (0..<payload.length()).step(4).each{i->
+        def hh=Integer.parseInt(payload.substring(i,i+2),16)
+        def mm=Integer.parseInt(payload.substring(i+2,i+4),16)
+        if(hh<24&&mm<60)times<<String.format('%02d:%02d',hh,mm)
+    }
+    return times
+}
+
+private parseProgramDays(hex){
+    if(!hex){logWarn"parseProgramDays(): No data";return'Unknown'}
+    def mask=Integer.parseInt(hex.substring(hex.length()-2),16)
+    def days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+    def active=(0..6).collect{mask&(1<<it)?days[it]:null}.findAll{it}
+    return active?active.join(', '):'None'
+}
+
+private parseProgramZones(hex){
+    if(!hex){logWarn"parseProgramZones(): No data";return[]}
+    def mask=Integer.parseInt(hex.substring(hex.length()-2),16)
+    def zones=(1..8).collect{mask&(1<<(it-1))?it:null}.findAll{it}
+    return zones
 }
 
 /* =============================== Communication / Crypto =============================== */
