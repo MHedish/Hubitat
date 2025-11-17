@@ -7,7 +7,7 @@
   "releaseNotes": "RELEASE CANDIDATE — Hubitat driver for monitoring and managing APC Smart-UPS systems — providing reliable runtime statistics, event emission, and control for APC devices.",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/README.md",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/CHANGELOG.md",
-  "tags": ["UPS","APC","Smart-UPS","Telnet","Monitoring","Hubitat"],
+  "tags": ["UPS","APC","Smart-UPS","Integrations","Monitoring","Hubitat","Tools & Utilities"],
   "drivers": [
     {
       "id": "MHedish-APC-SmartUPS-Status",
