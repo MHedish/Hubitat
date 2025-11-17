@@ -32,13 +32,15 @@
 *  0.3.6.21  -- Obfuscated password in debug log.
 *  0.3.6.22  -- Fixed takeRight() bug.
 *  0.3.6.23  -- Restored original closeConnection() command routing logic with case-sensitive Reconnoiter handling; fixed incorrect UPSCommand fallback causing false “no E-code” warnings; retained Hubitat-safe string slicing and deterministic cleanup.
+*  0.3.6.24  -- Removed explicit Telnet capability declaration. Clarifies this driver is not a “Telnet device” — it’s a UPS telemetry driver that uses Telnet internally.
+*  0.3.6.25  -- Removed Configuration capability declaration and replaced it with Initialize; removed Configure() method.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.3.6.23"
+@Field static final String DRIVER_VERSION  = "0.3.6.25"
 @Field static final String DRIVER_MODIFIED = "2025.11.17"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -54,9 +56,9 @@ metadata {
     ){
         capability "Actuator"
         capability "Battery"
-        capability "Configuration"
+        capability "Initialize"
+        capability "PowerSource"
         capability "Refresh"
-        capability "Telnet"
         capability "Temperature Measurement"
 
         attribute "alarmCountCrit","number"
@@ -265,8 +267,7 @@ private updateUPSControlState(Boolean enable){
    Lifecycle
    =============================== */
 def installed(){logInfo "Installed";initialize()}
-def updated() {logInfo "Preferences updated";configure()}
-def configure() {logInfo "${driverInfoString()} configured";initialize()}
+def updated() {logInfo "Preferences updated";initialize()}
 def initialize() {
     logInfo "${driverInfoString()} initializing..."
     emitEvent("driverInfo", driverInfoString())
