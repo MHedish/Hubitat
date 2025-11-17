@@ -254,7 +254,7 @@ This driver follows semantic-style versioning:
 
 | Version | Status | Description |
 |----------|----------|-------------|
-| 0.3.6.20 | RC | Added transient watchdog recovery for Reconnoiter lockups; adaptive cron compatibility |
+| 0.3.6.23 | RC | Added transient watchdog recovery for Reconnoiter lockups; adaptive cron compatibility |
 | 0.3.6.15 | RC | Transient context fully implemented, sub-5s reconnoiters |
 | 0.3.x | Stable | Deterministic Telnet lifecycle, finalized cleanup model |
 | 0.2.x | Legacy | State-based control, early session management |
