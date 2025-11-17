@@ -1,6 +1,6 @@
 # APC SmartUPS Status Driver — Unified Changelog
 
-> This changelog consolidates all development history from v0.1.0.0 through v0.3.6.20-RC.  
+> This changelog consolidates all development history from v0.1.0.0 through v0.3.6.23-RC.  
 > Versions prior to 0.2.x have been summarized for brevity, focusing on key milestones and major feature sets.
 
 ---
