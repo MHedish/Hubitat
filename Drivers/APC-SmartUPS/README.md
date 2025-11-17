@@ -95,15 +95,26 @@ Transient values (such as `telnetBuffer` and `sessionStart`) are cleared automat
 ## ⚙️ Installation
 
 ### Option 1: Hubitat Package Manager (Recommended)
-1. Open **Hubitat Package Manager** on your hub.
-2. Choose **Install a Package → Search by Keyword**.
-3. Search for **`UPS`** or **`SmartUPS`**.
-4. Select **APC SmartUPS Status** and install.
+1. Open **Hubitat Package Manager (HPM)** from your Hubitat Apps list.
+2. Choose **Install → Search by Keyword**.
+3. Enter **`UPS`** or **`SmartUPS`** in the search box.
+4. Select **APC SmartUPS Status** from the results and install.
+5. Once installed, open the new device’s **Preferences**, configure your UPS IP, port, username, and password, then click **Save Preferences**.
 
 ### Option 2: Manual Installation
-1. Copy the contents of the driver Groovy file into a **new Hubitat driver**.
-2. Save and assign it to your UPS device.
-3. Configure IP and port (default: `23`).
+1. In Hubitat, go to **Drivers Code → + New Driver**.
+2. Click **Import**, then paste this [URL](https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/APC-SmartUPS/APC-SmartUPS-Status.groovy):
+
+```
+https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/APC-SmartUPS/APC-SmartUPS-Status.groovy
+```
+
+3. Click **Import**, then **Save**.
+4. Go to **Devices → Add Device → Virtual**, then:
+  * Name your device (e.g., *APC SmartUPS*).
+  * Under **Type**, select *APC SmartUPS Status*.
+  * Click **Save Device**.
+5. Enter your UPS **IP address**, **Telnet port (default 23)**, **Username**, and **Password** under Preferences, then click **Save Preferences**.
 
 ---
 
