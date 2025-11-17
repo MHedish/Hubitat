@@ -96,8 +96,8 @@ Transient values (such as `telnetBuffer` and `sessionStart`) are cleared automat
 
 ### Option 1: Hubitat Package Manager (Recommended)
 1. Open **Hubitat Package Manager** on your hub.
-2. Choose **Install a Package → From a Repository**.
-3. Add the repository for this driver (GitHub URL).
+2. Choose **Install a Package → Search by Keyword**.
+3. Search for **`UPS`** or **`SmartUPS`**.
 4. Select **APC SmartUPS Status** and install.
 
 ### Option 2: Manual Installation
