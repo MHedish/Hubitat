@@ -53,3 +53,6 @@
 *  0.3.6.18  -- Updated telnetStatus() to eliminate duplicate state transition emissions.  
 *  0.3.6.19  -- Updated scheduleCheck() to allow for pre- and post-2.3.9.x (Q3 2025) cron parsing compatibility.  
 *  0.3.6.20  -- Added transient watchdog counter in sendUPSCommand() to automatically recover from rare *Reconnoiter* lockups caused by premature Telnet closure. Implements self-reset logic using transient context (non-persistent) to maintain deterministic session reliability without leaving residual state. Validated elimination of persistent “Telnet busy with Reconnoiter” condition across back-to-back scheduled cycles.
+*  0.3.6.21  -- Obfuscated password in debug log.
+*  0.3.6.22  -- Fixed takeRight() bug.
+*  0.3.6.23  -- Restored original closeConnection() command routing logic with case-sensitive Reconnoiter handling; fixed incorrect UPSCommand fallback causing false “no E-code” warnings; retained Hubitat-safe string slicing and deterministic cleanup.
