@@ -1,6 +1,6 @@
 # ⚡ APC SmartUPS Status (Hubitat Driver)
 
-[![Version](https://img.shields.io/badge/version-0.3.6.23--RC-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.6.25--RC-blue.svg)](./CHANGELOG.md)
 [![Status](https://img.shields.io/badge/release-IN%20TEST-yellow.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
@@ -157,7 +157,7 @@ This pattern guarantees that even automated sequences remain deterministic and f
 | Command | Description |
 |----------|-------------|
 | **Refresh** | Initiates a full UPS data reconnoiter sequence — connects via Telnet, collects all status metrics, and updates attributes. |
-| **Configure** | Performs a complete reinitialization and cleanup of driver state. Use this if connection issues occur or after significant UPS configuration changes. |
+| **Initialize** | Performs a complete reinitialization and cleanup of driver state. Use this if connection issues occur or after significant UPS configuration changes. |
 | **Disable Debug Logging Now** | Immediately turns off debug logging rather than waiting for the automatic 30-minute timeout. |
 
 ---
@@ -255,7 +255,7 @@ This driver follows semantic-style versioning:
 
 | Version | Status | Description |
 |----------|----------|-------------|
-| 0.3.6.23 | RC | Added transient watchdog recovery for Reconnoiter lockups; adaptive cron compatibility |
+| 0.3.6.25 | RC | Added transient watchdog recovery for Reconnoiter lockups; adaptive cron compatibility |
 | 0.3.6.15 | RC | Transient context fully implemented, sub-5s reconnoiters |
 | 0.3.x | Stable | Deterministic Telnet lifecycle, finalized cleanup model |
 | 0.2.x | Legacy | State-based control, early session management |
