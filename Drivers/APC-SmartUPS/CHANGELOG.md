@@ -1,6 +1,6 @@
 # APC SmartUPS Status Driver — Unified Changelog
 
-> This changelog consolidates all development history from v0.1.0.0 through v0.3.6.23-RC.  
+> This changelog consolidates all development history from v0.1.0.0 through v0.3.6.25-RC.  
 > Versions prior to 0.2.x have been summarized for brevity, focusing on key milestones and major feature sets.
 
 ---
@@ -56,3 +56,5 @@
 *  0.3.6.21  -- Obfuscated password in debug log.
 *  0.3.6.22  -- Fixed takeRight() bug.
 *  0.3.6.23  -- Restored original closeConnection() command routing logic with case-sensitive Reconnoiter handling; fixed incorrect UPSCommand fallback causing false “no E-code” warnings; retained Hubitat-safe string slicing and deterministic cleanup.
+*  0.3.6.24  -- Removed explicit Telnet capability declaration. Clarifies this driver is not a “Telnet device” — it’s a UPS telemetry driver that uses Telnet internally.
+*  0.3.6.25  -- Removed Configuration capability declaration and replaced it with Initialize; removed Configure() method.
