@@ -1,12 +1,13 @@
 # ⚡ APC SmartUPS Status (Hubitat Driver)
 
-[![Version](https://img.shields.io/badge/version-0.3.6.15--RC-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.6.20--RC-blue.svg)](./CHANGELOG.md)
 [![Status](https://img.shields.io/badge/release-IN%20TEST-yellow.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
 
 **APC SmartUPS Status** is a high-performance Hubitat driver for APC Smart-UPS devices equipped with Network Management Cards (NMC).  
-It uses a **deterministic Telnet session model** to collect complete UPS telemetry in under five seconds while avoiding race conditions and connection timeouts common to continuous Telnet sessions.
+It uses a **deterministic Telnet session model** to collect complete UPS telemetry in under five seconds while avoiding race conditions and connection timeouts common to continuous Telnet sessions.  
+New in this release: **automatic Telnet watchdog recovery** prevents the rare locked *Reconnoiter* state without requiring manual intervention.
 
 Built on a **transient context architecture**, the driver eliminates unnecessary persistent state, improving efficiency and reliability.  
 Control functions such as **UPS power, reboot, calibration, and alarm testing** are safely gated behind an automatic 30-minute enable timeout to prevent unintended actions.
@@ -45,7 +46,8 @@ To achieve industrial-grade reliability for a Telnet-connected UPS, this driver 
 
 4. 🧠 **Self-healing logic**  
    Any error or stream closure triggers automatic cleanup and state normalization.  
-   Even failed sessions leave the driver in a known good state, ready for the next run.
+   Even failed sessions leave the driver in a known good state, ready for the next run.  
+   A transient watchdog now detects and clears stalled *Reconnoiter* cycles automatically, preventing long-lived Telnet busy states.
 
 5. 🧼 **Readable, maintainable, and testable code**  
    Utility functions are standardized and condensed for clarity.  
@@ -62,6 +64,8 @@ Average reconnoiter runtime: **<5 seconds**, with deterministic session closure 
 - 🧠 **Transient context engine** — replaces persistent `state.*` usage for fast, reliable in-memory tracking  
 - ⚙️ **Safe Telnet handling** via `safeTelnetConnect()` and deferred connection retries  
 - 🧽 **Automatic cleanup** through `finalizeSession()` for residual-free operation  
+- 🧯 **Transient watchdog recovery** — detects and clears stalled *Reconnoiter* sessions automatically  
+- ⏱ **Cron compatibility fallback** — supports both pre- and post-2.3.9.x Hubitat cron parsers  
 - 🧾 **UPS data parsing** for runtime, voltage, load, alarms, and self-test status  
 - 🔄 **Scheduled reconnoiter** with adjustable interval and offset  
 - 🔋 **Battery and power metrics:** voltage, runtime, temperature, load percentage, input/output voltage, and frequency  
@@ -82,7 +86,7 @@ The driver employs a **deterministic Telnet lifecycle**, ensuring that every ses
 6. Finalize and teardown (`finalizeSession()`)
 
 ### Transient Context Framework
-This system was designed to avoid as many `state.*` variables as possible by using short-lived, session-local context data, this reducing hub load and write times.
+This system was designed to avoid as many `state.*` variables as possible by using short-lived, session-local context data, thus reducing hub load and write times.  
 Transient values (such as `telnetBuffer` and `sessionStart`) are cleared automatically after processing, eliminating stale data, state bloat, and race conditions.
 
 ---
@@ -250,6 +254,7 @@ This driver follows semantic-style versioning:
 
 | Version | Status | Description |
 |----------|----------|-------------|
+| 0.3.6.20 | RC | Added transient watchdog recovery for Reconnoiter lockups; adaptive cron compatibility |
 | 0.3.6.15 | RC | Transient context fully implemented, sub-5s reconnoiters |
 | 0.3.x | Stable | Deterministic Telnet lifecycle, finalized cleanup model |
 | 0.2.x | Legacy | State-based control, early session management |
@@ -258,6 +263,7 @@ This driver follows semantic-style versioning:
 See [`CHANGELOG.md`](CHANGELOG.md) for full release notes.
 
 ---
+
 ## 🧠 Why This Driver
 
 Unlike typical polling-based integrations, **APC SmartUPS Status** is engineered around a **deterministic command lifecycle** that ensures each Telnet session is atomic, self-contained, and verifiable.
@@ -272,7 +278,7 @@ Every component — from the buffer parser to the UPS command scheduler — was 
 
 **Author:** Marc Hedish (@MHedish)  
 **Documentation:** ChatGPT (OpenAI)  
-**Platform:** [Hubitat Elevation](https://hubitat.com)  
+**Platform:** [Hubitat Elevation](https://hubitat.com)
 
 ---
 
