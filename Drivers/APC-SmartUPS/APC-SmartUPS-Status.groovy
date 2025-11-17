@@ -28,7 +28,7 @@
 *  0.3.6.17  -- Various methods hardened against edge cases and added explicit typing. Modified updateConnectState() to deduplicate events within the same millisecond.
 *  0.3.6.18  -- Updated telnetStatus() to elminiate not emit state transition.
 *  0.3.6.19  -- Updated scheduleCheck() to allow for pre and post 2.3.9.x (Q3 2025) cron parsing.
-*  0.3.6.20  -- Added watchdog count to sendUPSCommand() to eliminate hung state during reconnoiter if telent closes prematurely.
+*  0.3.6.20  -- Added watchdog count to sendUPSCommand() to eliminate hung state during reconnoiter if telnet closes prematurely.
 */
 
 import groovy.transform.Field
