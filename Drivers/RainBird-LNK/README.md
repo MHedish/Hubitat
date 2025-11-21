@@ -1,6 +1,6 @@
 # 🌧️ Rain Bird LNK WiFi Module Controller (Hubitat Driver)
 
-[![Version](https://img.shields.io/badge/version-0.0.7.26-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.0.8.45-blue.svg)](./CHANGELOG.md)
 [![Status](https://img.shields.io/badge/release-STABLE-brightgreen.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
