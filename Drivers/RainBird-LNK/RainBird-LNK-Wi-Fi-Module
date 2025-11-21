@@ -54,7 +54,10 @@
 *  0.0.8.43 –– Restored authoritative zone telemetry for firmware 2.9 hybrids via verified 0x3F BF-mask decoding; unified 1-based zone normalization across all opcode paths and removed simulated state dependencies.
 *  0.0.8.43 –– Added advanceZone() command.
 *  0.0.8.44 –– Refined advanceZone() for firmware 2.9–3.1 hybrid compatibility; corrected encoding to 4200ZZ for legacy controllers, unified verification pacing, and removed undefined variable references. Added command metadata for advanceZone() with typed numeric parameter.
-*  0.0.8.44 –– Updated advanceZone() to clamp zone parameter to 0 for legacy firmware.
+*  0.0.8.45 –– Updated advanceZone() to clamp zone parameter to 0 for legacy firmware.
+*  0.0.8.46 –– Added adaptive fast-polling loop (5s) during watering events with optional user toggle (wateringRefresh); transitions automatically between fast and scheduled refresh modes.
+*  0.0.8.47 –– Added synchronized updates for Switch and Valve capability attributes alongside watering state; finalized adaptive fast-polling cycle for stable transitions.
+*  0.0.8.48 –– Corrected checkAndSyncClock() method signature (poll parameter) to restore CRON and ad-hoc compatibility; verified stable execution under firmware 2.9.
 */
 
 import groovy.transform.Field
@@ -67,7 +70,7 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "RainBird LNK WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "0.0.8.45"
+@Field static final String DRIVER_VERSION  = "0.0.8.48"
 @Field static final String DRIVER_MODIFIED = "2025.11.20"
 @Field static final String PAD = "\u0016"
 @Field static final int BLOCK_SIZE = 16
@@ -122,6 +125,7 @@ metadata {
         attribute "seasonalAdjust", "number"
         attribute "serialNumber", "string"
         attribute "watering", "boolean"
+        attribute "wateringRefresh", "boolean"
         attribute "zoneCount", "number"
 
         command "configure"
@@ -147,6 +151,7 @@ metadata {
         input("autoTimeSync","bool",title:"Automatically sync RainBird to Hubitat clock",defaultValue:true)
         input("logEnable","bool",title:"Enable Debug Logging",defaultValue:false)
         input("logEvents","bool",title:"Log All Events",defaultValue:false)
+        input("wateringRefresh","bool",title:"Increase polling frequency during watering events",defaultValue:true)
         input name:"refreshInterval", type:"enum", title:"Refresh Interval",defaultValue:"5",
 		    options:[
 		        "0":"Manual","1":"Every minute","2":"Every 2 minutes","3":"Every 3 minutes",
@@ -488,8 +493,9 @@ def setControllerTime(){
     parseIfString(sendRainbirdCommand(cmd,4),"setControllerTime");getControllerTime()
 }
 
-// Adaptive RainBird Clock Drift Correction
-private checkAndSyncClock(){
+private void hourlyClockSync(){checkAndSyncClock(true)} // CRON Helper
+
+private checkAndSyncClock(poll=false){
     if(!autoTimeSync)return
 	if(poll){logDebug"checkAndSyncClock(poll): refreshing controller clock values before drift check";getControllerDate();getControllerTime()}
     try{
@@ -556,8 +562,6 @@ def refresh(){
 	}finally{reconnoiter=false}
 }
 
-private void hourlyClockSync(){checkAndSyncClock(true)} // CRON helper
-
 private scheduleRefresh(){
 	unschedule("refresh");unschedule("hourlyClockSync");def min=refreshInterval?.toInteger()?:0
 	try{
@@ -594,12 +598,15 @@ private verifyActiveZone(data=null,passive=false){
 	}else if(getCommandSupport("4C")){
 		def r=parseIfString(sendRainbirdCommand("4C",1),"verifyActiveZone");if(r){parseCombinedControllerState(r);return}
 	}else logWarn"No compatible controller-state opcode supported; skipping zone status check."
+	def wasWatering=device.currentValue("watering")=="true"
 	if(watering){
-		emitChangedEvent("irrigationState","Watering");emitChangedEvent("watering",true);emitChangedEvent("activeZone",zone)
-		logInfo"Controller reports watering (zone=${zone?:'unknown'})."
+		emitChangedEvent("irrigationState","Watering");emitChangedEvent("watering",true);emitChangedEvent("activeZone",zone);emitChangedEvent("switch","on");emitChangedEvent("valve","open");logInfo"Controller reports watering (zone=${zone?:'unknown'})."
+		if(wateringRefresh&&!wasWatering)logInfo"Watering: Fast polling started (5s intervals)."
+		if(wateringRefresh){runIn(5,"verifyActiveZone");return}
 	}else{
-		emitChangedEvent("irrigationState","Idle");emitChangedEvent("watering",false);emitChangedEvent("activeZone",0)
+		emitChangedEvent("irrigationState","Idle");emitChangedEvent("watering",false);emitChangedEvent("activeZone",0);emitChangedEvent("switch","off");emitChangedEvent("valve","closed")
 		logDebug"verifyActiveZone(): No active watering detected (mask=${String.format('%02X',mask)})."
+		if(wateringRefresh&&wasWatering)logInfo"Watering: Fast polling ended; reverting to scheduled refresh."
 	}
 	runInMillis(isLegacyFirmware(2.9)?2000:1000,"refresh")
 }
