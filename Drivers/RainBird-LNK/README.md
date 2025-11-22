@@ -120,6 +120,41 @@ https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBi
 | **Run Zone** | Start a zone for a specified duration |
 | **Set Rain Delay** | Apply a rain delay (0–14 days) |
 | **Stop Irrigation** | Halt all watering activity |
+
+---
+
+## 📊 Exposed Attributes
+
+| Attribute                | Type    | Values / Notes                                     |
+| ------------------------ | ------- | -------------------------------------------------- |
+| `lastEventTime`          | string  | Timestamp of last received event                   |
+| `rainSensorState`        | enum    | `bypassed`, `dry`, `wet`                           |
+| `switch`                 | enum    | `on`, `off`                                        |
+| `valve`                  | enum    | `open`, `closed`                                   |
+| `waterBudget`            | number  | Seasonal watering percentage                       |
+| `zoneAdjustments`        | string  | JSON string of per-zone runtime adjustments        |
+| `activeZone`             | number  | Currently active zone number                       |
+| `autoTimeSync`           | boolean | Whether auto time synchronization is enabled       |
+| `availableStations`      | string  | List of active zones/stations detected             |
+| `clockDrift`             | number  | Time drift between hub and controller (seconds)    |
+| `controllerDate`         | string  | Controller-reported date                           |
+| `controllerTime`         | string  | Controller-reported time                           |
+| `delaySetting`           | number  | Rain delay duration (days)                         |
+| `driverInfo`             | string  | Driver metadata including version and mode         |
+| `driverStatus`           | string  | Current driver health or command response          |
+| `firmwareVersion`        | string  | Controller firmware revision                       |
+| `irrigationState`        | string  | `watering`, `idle`, or `off`                       |
+| `lastSync`               | string  | Timestamp of last successful time sync             |
+| `model`                  | string  | Controller model identifier                        |
+| `programScheduleSupport` | boolean | Indicates if controller supports program retrieval |
+| `rainDelay`              | number  | Current active rain delay days                     |
+| `remainingRuntime`       | number  | Seconds left in current watering cycle             |
+| `seasonalAdjust`         | number  | Active seasonal adjustment factor (%)              |
+| `serialNumber`           | string  | Controller serial number                           |
+| `watering`               | boolean | Indicates irrigation is currently active           |
+| `wateringRefresh`        | boolean | Internal refresh flag during watering              |
+| `zoneCount`              | number  | Number of detected zones                           |
+
 ---
 
 ## 🧪 Diagnostics
