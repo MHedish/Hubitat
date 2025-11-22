@@ -13,6 +13,8 @@ Their [solution](https://wifi.rainbird.com/articles/rain-bird-underground-irriga
 
 All events and telemetry are fully **Rule Machine and WebCoRE compatible**, enabling precise automation and monitoring with minimal resource overhead.
 
+> See the [Changelog](../../changelog.md) for full release notes.
+
 ---
 
 ## 🚀 Overview
@@ -30,8 +32,8 @@ With advanced telemetry, adaptive pacing, and hourly drift correction, it’s de
 
 🧩 **Hybrid + Modern Firmware Convergence** — validated on firmware 2.9 and 3.2  
 💧 **Switch & Valve capabilities:** dashboard integration for on/off/open/close parity  
-🕒 **Time sync reliability:** hourly drift checks, DST detection, and random offset scheduling to reduce hub load 
-🔁 **Deterministic refresh engine:** resilient pacing and adaptive polling under watering conditions
+🕒 **Time sync reliability:** hourly drift checks, DST detection, and random offset scheduling to reduce hub load  
+🔁 **Deterministic refresh engine:** resilient pacing and adaptive polling under watering conditions  
 📈 **Diagnostics:** `testAllSupportedCommands()` now emits firmware and module identity  
 
 > 🧠 *This release unifies command, telemetry, and refresh systems across firmware lines — marking readiness for 0.1.x Stable.*
