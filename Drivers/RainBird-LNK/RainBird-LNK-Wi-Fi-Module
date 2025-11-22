@@ -14,50 +14,9 @@
 *  0.0.5.x  –– Refactor   –– Stability, pacing, and lifecycle optimization
 *  0.0.6.x  –– Stable     –– Deterministic time sync and drift correction
 *  0.0.7.x  –– Resilience –– Major refactor cycle focused on stability, legacy firmware compatibility, and deterministic state management.
-*  0.0.8.1  –– Corrected 3F/BF bitmask decoding for firmware 2.9; verifyActiveZone() now interprets 1-based active-zone masks accurately and supports up to 16 zones.
-*  0.0.8.2  –– Finalized hybrid zone feedback: unified 1-based mask decode across all firmware; verifyActiveZone() now reports exact active zone on 2.9.
-*  0.0.8.3  –– Restored 0x3F short-form command for firmware 2.9 hybrid controllers; active zone verification restored and aligned to 1-based mask decode.
-*  0.0.8.4  –– Added firmware 2.9 hybrid handling: verifyActiveZone() now uses 0x42 (Get Current Station) opcode; restores active-zone reporting when 3F returns 003F02.
-*  0.0.8.5  –– Implemented firmware 2.9 fallback to 0x39 readback opcode for active-zone verification when 3F/42 return ack-only frames.
-*  0.0.8.6  –– Restored 0x3F short-form command for firmware 2.9 and unified 1-based bitmask decode; resolves off-by-one active-zone reporting seen in 0.0.7.56/0.0.7.59.
-*  0.0.8.7  –– Restored firmware 2.9 hybrid polling via 0x39 readback opcode; verifyActiveZone() now correctly interprets B9 payloads and reports exact active zone.
-*  0.0.8.8  –– Corrected firmware 2.9 active-zone query to use opcode 0x39 with trailing 0x01 (390001); restores B9 payloads and accurate active-zone reporting.
-*  0.0.8.9  –– Adjusted firmware 2.9 hybrid query to use 4-byte opcode 39000001 for active-zone readback; restores B9 payload responses and correct zone detection.
-*  0.0.8.10 –– Restored 0x3F two-byte status query for firmware ≤ 2.9; resolves BF response loss and reinstates correct active-zone feedback.
-*  0.0.8.16 –– Added dual-CRON (6/7-field) compatibility handling for Hubitat ≥2.3.9 across initialize(), scheduleRefresh(), and refresh() to ensure reliable scheduling and consistent logging.
-*  0.0.8.17 –– Reverted
-*  0.0.8.18 –– Reverted
-*  0.0.8.19 –– Reverted
-*  0.0.8.20 –– Increased clock drift tolerance from ±5s to ±60s to avoid false syncs from Rain Bird’s minute-register delay.
-*  0.0.8.21 –– Reverted
-*  0.0.8.22 –– Reverted
-*  0.0.8.23 –– Corrected hybrid opcode (390001) and readiness handling in verifyActiveZone() for firmware 2.9 to eliminate false retry loops.
-*  0.0.8.24 –– Corrected controller clock set.
-*  0.0.8.25 –– Minor code cleanup. Moved irrigationState, watering, and activeZone for legacy firmware to emitChangedEvent to reduce unnecessary event firing.
-*  0.0.8.26 –– Removed verifyClockUpdate(). Obviated by 0.0.8.24 update.
-*  0.0.8.27 –– Corrected setRainDelay().
-*  0.0.8.28 –– Converted internal helper methods to private for cleaner encapsulation and reduced command surface; cleaned up various LogInfo messages.
-*  0.0.8.29 –– Add support for Switch and Valve capabilities — implemented on()/off() and open()/close() commands mapped to irrigation start/stop, with synchronized switch, valve, and watering state events for dashboard consistency.
-*  0.0.8.30 –– Refactored CRON scheduling logic into a unified scheduleRefresh() method supporting both CRON6 and CRON7 formats; restored correct minute/hour conversions and reintroduced unschedule handling for consistent refresh and clock-sync scheduling across Hubitat platform versions.
-*  0.0.8.31 –– Removed scheduleRefresh() from inside refresh().
-*  0.0.8.32 –– Corrected CRON schedule generation logic to apply hour-based offsets for refresh intervals ≥60 minutes, ensuring valid expressions and consistent scheduling across all supported intervals.
-*  0.0.8.33 –– Obfuscated password in debug log.
-*  0.0.8.34 –– Explicity declared attributes for Switch and Valve; added descriptions to clarify on/off/open/close
-*  0.0.8.35 –– Reverted
-*  0.0.8.36 –– Reworked verifyActiveZone() for firmware 2.9 hybrid controllers to prefer opcode 0x3F (BF response parsing) with attribute-based fallback, removing all state variables and improving watering/zone reporting accuracy.
-*  0.0.8.37 –– Fixed checkAndSyncClock() to support optional polling flag with CRON integration; CRON now passes true for hourly syncs to refresh controller date/time before drift check, eliminating midnight rollover drift loops.
-*  0.0.8.38 –– Added randomized hourly offset for checkAndSyncClock() scheduling to prevent top-of-hour collisions; maintains non-blocking behavior and CRON fallback logic consistency.
-*  0.0.8.39 –– Refined scheduleRefresh() housekeeping: unified unschedule() preamble to clear both refresh and clock sync jobs before reinitialization, preventing dangling CRON schedules during mode transitions (manual ↔ interval).
-*  0.0.8.40 –– Unified zone normalization and consistent legacy/modern handling across runZone() and stopZone(); introduced shared normalization logic for deterministic input bounds and consistent maxZones behavior.
-*  0.0.8.41 –– Consolidated post-command refresh logic; verifyActiveZone() now unconditionally schedules refresh(), removing redundant calls from runZone(), stopZone(), advanceZone(), and stopIrrigation(); added normalized zone logging across all zone actions.
-*  0.0.8.42 –– Updated runZone() to prevnet null duration error; set default to 2 minutes.
-*  0.0.8.43 –– Restored authoritative zone telemetry for firmware 2.9 hybrids via verified 0x3F BF-mask decoding; unified 1-based zone normalization across all opcode paths and removed simulated state dependencies.
-*  0.0.8.43 –– Added advanceZone() command.
-*  0.0.8.44 –– Refined advanceZone() for firmware 2.9–3.1 hybrid compatibility; corrected encoding to 4200ZZ for legacy controllers, unified verification pacing, and removed undefined variable references. Added command metadata for advanceZone() with typed numeric parameter.
-*  0.0.8.45 –– Updated advanceZone() to clamp zone parameter to 0 for legacy firmware.
-*  0.0.8.46 –– Added adaptive fast-polling loop (5s) during watering events with optional user toggle (wateringRefresh); transitions automatically between fast and scheduled refresh modes.
-*  0.0.8.47 –– Added synchronized updates for Switch and Valve capability attributes alongside watering state; finalized adaptive fast-polling cycle for stable transitions.
-*  0.0.8.48 –– Corrected checkAndSyncClock() method signature (poll parameter) to restore CRON and ad-hoc compatibility; verified stable execution under firmware 2.9.
+*  0.0.8.x  –– Hybrid     –– Comprehensive firmware 2.9 compatibility cycle: refined opcode handling, adaptive fast-polling during watering, synchronized capability states, and stabilized clock synchronization logic.
+*  0.0.9.x  –– Modern     –– Transition cycle introducing full firmware 3.x (LNK2/ESP-ME) compatibility, unified identity detection, opcode refinements, and final hybrid/legacy convergence ahead of 0.1.x RC release.
+*  0.1.0.0  –– Release    –– Finalized hybrid and modern (≥3.x) controller compatibility; validated firmware 3.2 opcode handling, consolidated command surface, refined diagnostics and event logic, and completed stability verification for transition to 0.1.x stable branch.
 */
 
 import groovy.transform.Field
@@ -69,9 +28,9 @@ import javax.crypto.spec.SecretKeySpec
 import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
-@Field static final String DRIVER_NAME     = "RainBird LNK WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "0.0.8.48"
-@Field static final String DRIVER_MODIFIED = "2025.11.20"
+@Field static final String DRIVER_NAME     = "RainBird LNK/LNK2 WiFi Module Controller"
+@Field static final String DRIVER_VERSION  = "0.1.0.0"
+@Field static final String DRIVER_MODIFIED = "2025.11.21"
 @Field static final String PAD = "\u0016"
 @Field static final int BLOCK_SIZE = 16
 @Field static int delayMs=150
@@ -135,7 +94,6 @@ metadata {
         command "runZone",[[name:"Zone Number ",type:"NUMBER"],[name:"Duration (minutes) ", type:"NUMBER"]]
         command "setRainDelay",[[name:"Rain Delay (0–14 days) ",type:"NUMBER"]]
         command "stopIrrigation"
-        command "stopZone",[[name:"Zone Number",type:"NUMBER"]]
         command "advanceZone",[[name:"Advance Zone",type:"NUMBER"]]
         command "testAllSupportedCommands",[[name:"Diagnostic: Validate supported LNK commands."]]
         command "on",[[name: "Turn Irrigation On",description: "Starts watering using Program A (same as Run Program 'A')"]]
@@ -227,20 +185,33 @@ private getCommandSupport(cmdToTest="4A"){
 }
 
 def testAllSupportedCommands(){
-    logInfo"Running full command support diagnostic..."
-    def cmds=["02","03","04","05","10","12","30","32","36","37","38","39","3A","3E","3F","40","42","48","49","4A","4B","4C"];def results=[:]
-    cmds.each{c->
-        try{
-            def r=parseIfString(sendRainbirdCommand("04${c}00",2),"testCommandSupport-${c}");def d=r?.result?.data
-            if(d?.startsWith("84")){
-                def supported=Integer.parseInt(d.substring(4,6),16)==1;results[c]=supported
-                logDebug"Command 0x${c} → ${supported?'supported':'not supported'}"
-            }else results[c]="?"
-        }catch(e){results[c]="ERR";logWarn"testAllSupportedCommands(): 0x${c} failed (${e.message})"}
-    }
-    def supported=results.findAll{k,v->v==true}.collect{k->"0x${k}"};def unsupported=results.findAll{k,v->v==false}.collect{k->"0x${k}"};def unknown=results.findAll{k,v->v in ["?","ERR"]}.collect{k->"0x${k}"}
-    def summary="Supported: ${supported.join(', ')?:'none'} | Unsupported: ${unsupported.join(', ')?:'none'} | Unknown: ${unknown.join(', ')?:'none'}"
-    emitEvent("commandSupport",summary,"Command support diagnostic complete.")
+	try{
+		logInfo"Running full command and firmware diagnostic..."
+		def r=parseIfString(sendRainbirdCommand("03",1),"diagnosticFirmwareReport");def d=r?.result?.data
+		def fw=parseFirmwareVersion(d);emitEvent("firmwareVersion",fw,"Controller firmware ${fw}")
+		logInfo"Controller firmware: ${d?:'none'} (parsed=${fw})"
+		try{
+			def m=httpGet([uri:"http://${deviceIp}/irrigation/status.json",timeout:5])
+			def mv=m?.data?.ver?:'unavailable';emitEvent("moduleFirmware",mv,"LNK/LNK2 adapter firmware ${mv}")
+			logInfo"LNK/LNK2 adapter firmware: ${mv}"
+		}catch(e){logWarn"Adapter firmware check failed: ${e.message}"}
+		def cmds=["02","03","04","05","10","12","30","32","36","37","38","39","3A","3E","3F","40","42","48","49","4A","4B","4C"];def results=[:]
+		cmds.each{c->try{
+			def rr=parseIfString(sendRainbirdCommand("04${c}00",2),"testCommandSupport-${c}");def dd=rr?.result?.data
+			if(dd?.startsWith("84")){def supported=Integer.parseInt(dd.substring(4,6),16)==1;results[c]=supported;logDebug"Command 0x${c} → ${supported?'supported':'not supported'}"}
+			else results[c]="?"
+		}catch(e){results[c]="ERR";logWarn"testAllSupportedCommands(): 0x${c} failed (${e.message})"}}
+		def supported=results.findAll{k,v->v==true}.collect{k->"0x${k}"}
+		def unsupported=results.findAll{k,v->v==false}.collect{k->"0x${k}"}
+		def unknown=results.findAll{k,v->v in ['?','ERR']}.collect{k->"0x${k}"}
+		def summary="Supported: ${supported.join(', ')?:'none'} | Unsupported: ${unsupported.join(', ')?:'none'} | Unknown: ${unknown.join(', ')?:'none'}"
+		emitEvent("commandSupport",summary,"Command support diagnostic complete.")
+	}catch(e){logError"testAllSupportedCommands(): ${e.message}"}
+}
+
+private parseFirmwareVersion(d){
+	try{def h=d?.replaceAll('[^0-9A-Fa-f]','');if(h?.size()>=4){def M=Integer.parseInt(h[-4..-3],16);def m=Integer.parseInt(h[-2..-1],16);return String.format('%d.%d',M,m)}}catch(e){}
+	return'unknown'
 }
 
 /* =============================== Manual Irrigation Control =============================== */
@@ -268,27 +239,16 @@ def runZone(zone,duration=null){
 	}catch(e){logError"runZone() failed: ${e.message}"}
 }
 
-def stopZone(zone){
-	logDebug"Stopping irrigation for zone ${zone}"
-	try{
-		def z=normalizeZoneInput(zone);def encodedZone=z.hybrid?(z.normZone-1):z.normZone
-		def cmd=String.format("42%04X",encodedZone);logDebug"stopZone(): encoded=${cmd}"
-		def r=parseIfString(sendRainbirdCommand(cmd,1),"stopZone");def d=r?.result?.data
-		if(!d){logWarn"stopZone(): Empty response";runInMillis(z.legacy?2000:1000,"refresh");return}
-		if(d.reverse().endsWith("10")){logInfo"Zone ${z.normZone} stop acknowledged by controller.";runInMillis(z.legacy?2000:1000,"verifyActiveZone",[data:[zone:0]])}
-		else{logWarn"stopZone(): Controller did not acknowledge (data=${d}); issuing stopIrrigation() fallback.";runInMillis(z.legacy?500:200,"stopIrrigation")}
-	}catch(e){logError"stopZone() failed: ${e.message}"}
-}
-
 def advanceZone(zone=0){
 	try{
 		def fw=device.currentValue("firmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
-		def legacy=isLegacyFirmware(3.0);def encodedZone=legacy?0:Math.max(0,(zone?:0).toInteger())
+		def legacy=isLegacyFirmware(3.3);def encodedZone=Math.max(0,(zone?:0).toInteger());
 		def cmd=legacy?String.format("42%02X",encodedZone):String.format("4200%02X",encodedZone)
 		logDebug"advanceZone(): mode=${legacy?'legacy/hybrid':'modern'}, encoded=${cmd}"
+		if(!device.currentValue("watering")){logWarn"advanceZone(): Ignored — controller not currently watering";return}
 		def r=parseIfString(sendRainbirdCommand(cmd,legacy?2:1),"advanceZone");def d=r?.result?.data
 		if(!d){logWarn"advanceZone(): Empty response";runInMillis(legacy?2000:1000,"refresh");return}
-		if(d.reverse().endsWith("10")){
+		if(d.reverse().endsWith("10") || d in ["004202","42000010","42000002"]){
 			if(encodedZone>0)logInfo"Controller acknowledged skip to zone ${encodedZone}."
 			else logInfo"Controller acknowledged advance to next zone."
 			runInMillis(legacy?2000:1000,"verifyActiveZone",[data:[zone:encodedZone]])
@@ -363,7 +323,11 @@ private getZoneSeasonalAdjustments(){
                 zones<<"${(i/4)+1}:${pct}%"
             }
             emitChangedEvent("zoneAdjustments",zones.join(","),"Zone adjustments: ${zones.join(', ')}")
-        }else logWarn"getZoneSeasonalAdjustments: Unexpected data (${d})"
+        }else if(d in ["003201","B201"]){
+            logInfo"getZoneSeasonalAdjustments(): Controller reports global adjustment mode (no per-zone data)"
+        }else{
+            logWarn"getZoneSeasonalAdjustments: Unexpected data (${d})"
+        }
     }catch(e){logError"getZoneSeasonalAdjustments() failed: ${e.message}"}
 }
 
@@ -441,7 +405,28 @@ def getProgramSchedule(prog='A'){
 
 def getAllProgramSchedules(){
     if(isLegacyFirmware(2.5)){logDebug"Skipping getAllProgramSchedules(): requires firmware ≥2.6";emitEvent("programScheduleSupport",false);return}
-    if(!getCommandSupport("36")){logWarn"Program schedule query not supported on this controller";emitEvent("programScheduleSupport",false);return}
+    if(!getCommandSupport("36")&&!getCommandSupport("4A")){logWarn"Program schedule query not supported on this controller";emitEvent("programScheduleSupport",false);return}
+    if(!isLegacyFirmware(3.0)){
+        logInfo"getAllProgramSchedules(): Using modern opcode set (0x4A–0x4C)"
+        def programs=["A","B","C","D"];def results=[]
+        programs.each{p->
+            try{
+                def rA=parseIfString(sendRainbirdCommand(String.format("4A00%02X",p.charAt(0)-65),2),"getProgramInfo-${p}")?.result?.data
+                def rB=parseIfString(sendRainbirdCommand(String.format("4B00%02X",p.charAt(0)-65),2),"getProgramStarts-${p}")?.result?.data
+                def rC=parseIfString(sendRainbirdCommand(String.format("4C00%02X",p.charAt(0)-65),2),"getProgramDurations-${p}")?.result?.data
+                def responses=[rA,rB,rC].findAll{it}
+                if(responses.any{it?.startsWith("B")}){
+                    results<<"Program ${p}: data retrieved"
+                    logDebug"Program ${p}: info=${rA}, starts=${rB}, durations=${rC}"
+                }else if(responses.every{it in ["004A02","004B02","004C02"]}){
+                    logInfo"Program ${p}: data restricted (ACK-only; controller 3.x secure mode)"
+                }else{
+                    logWarn"Program ${p}: no valid schedule data (firmware 3.x)"
+                }
+            }catch(e){logWarn"Program ${p} query failed: ${e.message}"}
+        }
+        emitChangedEvent("programScheduleSupport",results?true:false,"Program schedule data via 0x4A–0x4C: ${results.join(', ')}");return
+    }
     logDebug"Retrieving all available program schedules..."
     def supported=["A","B","C","D"].collect{getProgramSchedule(it)}.any{it}
     emitEvent("programScheduleSupport",supported)
@@ -497,7 +482,7 @@ private void hourlyClockSync(){checkAndSyncClock(true)} // CRON Helper
 
 private checkAndSyncClock(poll=false){
     if(!autoTimeSync)return
-	if(poll){logDebug"checkAndSyncClock(poll): refreshing controller clock values before drift check";getControllerDate();getControllerTime()}
+	if(poll){logDebug"checkAndSyncClock(poll): refreshing controller clock values before drift check";getControllerDate();getControllerTime();return}
     try{
         def cDate=device.currentValue("controllerDate");def cTime=device.currentValue("controllerTime")
         if(!cDate||!cTime){logDebug"checkAndSyncClock(): missing controller date/time";return}
@@ -508,7 +493,7 @@ private checkAndSyncClock(poll=false){
         def dstAdj=(clockDrift>=3595&&clockDrift<=3605)
         def desc=dstAdj?"Daylight Saving Time adjustment detected.":"Clock drift: ${clockDrift}s"
         emitChangedEvent("clockDrift",clockDrift,desc,"s")
-        if(!dstAdj&&clockDrift>5)syncRainbirdClock(clockDrift)
+        if(!poll&&!dstAdj&&clockDrift>5)syncRainbirdClock(clockDrift)
     }catch(e){logError"checkAndSyncClock(): ${e.message}"}
 }
 
@@ -636,29 +621,32 @@ private parseDateResponse(resp){
 }
 
 private getControllerIdentity(){
-    logDebug"Requesting controller identity (model/firmware/serial)..."
-    try{
-        def r02=parseIfString(sendRainbirdCommand("02",1),"getControllerIdentity-Model")
-        def data02=extractHexData(r02)
-        def modelID="Unknown";def fwareVersion="Unknown"
-        if(data02?.reverse()?.endsWith("28")){
-            modelID=data02.substring(2,6)
-            def fwareMaj=Integer.parseInt(data02.substring(6,8),16)
-            def fwareMin=Integer.parseInt(data02.substring(8,10),16)
-            fwareVersion="${fwareMaj}.${fwareMin}"
-            logDebug"Parsed 0x82 → modelID=${modelID}, firmware=${fwareVersion}"
-        }else logWarn"ModelAndVersionRequest failed: ${data02}"
-        def r05=parseIfString(sendRainbirdCommand("05",1),"getControllerIdentity-Serial")
-        def data05=extractHexData(r05)
-        def serial="Unavailable"
-        if(data05?.reverse()?.endsWith("58")){
-            serial=data05.substring(2)
-            logDebug"Parsed 0x85 → serial=${serial}"
-        }else logWarn"SerialNumberRequest failed: ${data05}"
-        emitChangedEvent("model","RainBird ${modelID}","Controller model: RainBird ${modelID}")
-        emitChangedEvent("serialNumber",serial,"Controller serial number: ${serial}")
-        emitChangedEvent("firmwareVersion",fwareVersion,"Firmware version: ${fwareVersion}")
-    }catch(e){logError"getControllerIdentity() failed: ${e.message}"}
+	try{
+		logDebug"Requesting controller identity (model/firmware/serial)..."
+		def r02=parseIfString(sendRainbirdCommand("02",1),"getControllerIdentity-Model")
+		def data02=extractHexData(r02);def modelID="Unknown";def fwareVersion="Unknown"
+		if(data02?.reverse()?.endsWith("28")){
+			modelID=data02.substring(2,6)
+			def fwareMaj=Integer.parseInt(data02.substring(6,8),16)
+			def fwareMin=Integer.parseInt(data02.substring(8,10),16)
+			fwareVersion="${fwareMaj}.${fwareMin}"
+			logDebug"Parsed 0x82 → modelID=${modelID}, legacy firmware=${fwareVersion}"
+		}else logWarn"ModelAndVersionRequest failed: ${data02}"
+		def r05=parseIfString(sendRainbirdCommand("05",1),"getControllerIdentity-Serial")
+		def data05=extractHexData(r05);def serial="Unavailable"
+		if(data05?.reverse()?.endsWith("58")){
+			serial=data05.substring(2)
+			logDebug"Parsed 0x85 → serial=${serial}"
+		}else logWarn"SerialNumberRequest failed: ${data05}"
+		def fwModern=parseFirmwareVersion(parseIfString(sendRainbirdCommand("03",1),"getControllerFirmware")?.result?.data)
+		if(fwModern && fwModern!=fwareVersion){
+			logInfo"Detected modern firmware ${fwModern} (replaces legacy ${fwareVersion})"
+			fwareVersion=fwModern
+		}
+		emitChangedEvent("model","${modelID}","Controller model: ${modelID}")
+		emitChangedEvent("serialNumber",serial,"Controller serial number: ${serial}")
+		emitChangedEvent("firmwareVersion",fwareVersion,"Firmware version: ${fwareVersion}")
+	}catch(e){logError"getControllerIdentity() failed: ${e.message}"}
 }
 
 private parseCombinedControllerState(resp,boolean summaryOnly=false){
