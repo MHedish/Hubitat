@@ -206,7 +206,7 @@ The refresh interval defines how often Hubitat polls the controller for status u
 - It's still best to allow the Rain Bird controller to manage automatic watering, but if you want to manage it within Hubitat, you can now use Hubitat’s **Rule Machine** or **WebCoRE** to automate watering windows, including the *water budget* attribute to reduce watering based on the forecasted weather.
 - Avoid scheduling overlapping zones to minimize command queue congestion.
 - When creating custom schedules, leave 3–5 seconds between zone transitions for pacing stability.
-- You can create a routine to update *refreshInterval* to one minute just before your scheduled watering event and then monitor/record the program status via Hubitat.  Set an event for *watering==false* and then reset the refreshInterval to either 15 minuts or manual.
+- You can create a routine to update *refreshInterval* to one minute just before your scheduled watering event and then monitor/record the program status via Hubitat.  Set an event for *watering==false* and then reset the refreshInterval to either 15 minutes or manual.
 
 ### 🖧 Network Stability
 - Reserve a **static IP** for your Rain Bird controller in your router.
