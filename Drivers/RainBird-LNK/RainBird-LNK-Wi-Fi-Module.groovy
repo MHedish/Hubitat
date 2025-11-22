@@ -49,7 +49,7 @@ metadata {
         name: DRIVER_NAME,
         namespace: "MHedish",
         author: "Marc Hedish",
-        importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Module"
+        importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Module.groovy"
     ) {
 		capability "Actuator"
 		capability "Configuration"
