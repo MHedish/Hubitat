@@ -1,5 +1,5 @@
 /*
-*  RainBird LNK WiFi Module Driver
+*  Rain Bird LNK WiFi Module Driver
 *  Copyright 2025 Marc Hedish
 *  Licensed under the Apache License, Version 2.0
 *  https://www.apache.org/licenses/LICENSE-2.0
@@ -28,9 +28,9 @@ import javax.crypto.spec.SecretKeySpec
 import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
-@Field static final String DRIVER_NAME     = "RainBird LNK/LNK2 WiFi Module Controller"
+@Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 WiFi Module Controller"
 @Field static final String DRIVER_VERSION  = "0.1.0.0"
-@Field static final String DRIVER_MODIFIED = "2025.11.21"
+@Field static final String DRIVER_MODIFIED = "2025.11.22"
 @Field static final String PAD = "\u0016"
 @Field static final int BLOCK_SIZE = 16
 @Field static int delayMs=150
@@ -103,10 +103,10 @@ metadata {
     }
 
     preferences {
-        input("ipAddress","text",title:"RainBird Controller IP",required:true)
-        input("password","password",title:"RainBird Controller Password",required:true)
+        input("ipAddress","text",title:"Rain Bird Controller IP",required:true)
+        input("password","password",title:"Rain Bird Controller Password",required:true)
         input("zonePref","number",title:"Number of Zones", defaultValue:6,range:"1..16")
-        input("autoTimeSync","bool",title:"Automatically sync RainBird to Hubitat clock",defaultValue:true)
+        input("autoTimeSync","bool",title:"Automatically sync Rain Bird to Hubitat clock",defaultValue:true)
         input("logEnable","bool",title:"Enable Debug Logging",defaultValue:false)
         input("logEvents","bool",title:"Log All Events",defaultValue:false)
         input("wateringRefresh","bool",title:"Increase polling frequency during watering events",defaultValue:true)
