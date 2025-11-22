@@ -1,209 +1,137 @@
-# 🧾 Rain Bird LNK WiFi Module Controller — Changelog
+# 🌧️ Rain Bird LNK/LNK2 WiFi Module Controller — Changelog
 
 **Copyright © 2025 Marc Hedish**  
 Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
 ---
 
-## 📌 Version Summary
+## 📦 Version Summary
 
 | Series | Status | Key Focus |
-|---------|---------|------------|
-| **0.0.1.x** | Legacy | Initial direct HTTP control implementation |
-| **0.0.2.x** | Stable | Added encrypted transport and telemetry foundation |
-| **0.0.3.x** | Mature | Dynamic controller adaptation and full opcode coverage |
-| **0.0.4.x** | Reverted | Asynchronous command experiment rolled back |
+|---------|---------|-----------|
 | **0.0.5.x** | Refactor | Stability, pacing, and lifecycle optimization |
 | **0.0.6.x** | Stable | Deterministic time sync and drift correction |
-| **0.0.7.x** | Current | Deterministic schedule handling, legacy firmware support, and diagnostic clarity |
+| **0.0.7.x** | Resilience | Legacy firmware handling and deterministic control |
+| **0.0.8.x** | Hybrid | Firmware 2.9 compatibility, telemetry, and adaptive refresh |
+| **0.0.9.x** | Modern | Full firmware 3.x LNK2/ESP-ME support and unified logic |
+| **0.1.0.x** | Release Candidate | Hybrid/modern convergence verified under 2.9–3.2 |
 
 ---
 
 <details>
-<summary><strong>🧩 0.0.1.x — Initial Development</strong></summary>
+<summary><strong>0.0.5.x Series Summary</strong></summary>
 
-**Highlights**
-- First functional driver capable of starting/stopping zones directly via HTTP.
-- Per-zone runtime expiration and automatic shutdown.
-- Basic manual control through Hubitat device commands.
+- Major refactor focused on pacing, lifecycle, and network stability.  
+- Eliminated redundant telemetry and improved refresh flow with CRON-based scheduling.  
+- Introduced adaptive inter-attempt delay logic and retry backoff.  
+- Fixed 503 race condition and stabilized command serialization under firmware 2.9.  
+- Cleaned up state model by migrating to attribute-only telemetry.  
+- Result: stable refresh cycles and lower network latency under heavy polling.
 
 </details>
 
 ---
 
 <details>
-<summary><strong>🔐 0.0.2.x — Encrypted Transport and Telemetry Foundation</strong></summary>
+<summary><strong>0.0.6.x Series Summary</strong></summary>
 
-**Major Additions**
-- Implemented full **encrypted JSON-RPC transport** (Rain Bird LNK protocol).
-- Added **CombinedControllerStateRequest (opcode 0x4C)** parsing for controller telemetry.
-- Integrated `diagnoseControllerState()` command and self-test workflow.
-- Introduced `parseIfString()` abstraction for safe command-response handling.
-- Added retry logic, standardized logging, and improved exception handling.
-- Finalized **structured state management** and adaptive refresh scheduling.
+- Introduced **deterministic clock synchronization** between Hubitat and Rain Bird controller.  
+- Added deferred drift correction and epoch-normalized time handling.  
+- Simplified and unified DST detection under a single event-driven handler.  
+- Reduced sync thresholds from 30s to 5s for faster response to drift.  
+- Stable baseline for all time-sync logic in subsequent branches.
 
 </details>
 
 ---
 
 <details>
-<summary><strong>🧠 0.0.3.x — Intelligent Controller and Protocol Handling</strong></summary>
+<summary><strong>0.0.7.x Series Summary</strong></summary>
 
-**Core Improvements**
-- Complete refactor for Rain Bird LNK 2.x/3.x/4.x firmware compatibility.  
-- Introduced **dynamic protocol gating** — unsupported commands skipped automatically.
-- Added commands for:
-  - `getAvailableStations()`
-  - `getWaterBudget()`
-  - `getZoneSeasonalAdjustments()`
-  - `getRainSensorState()`
-  - `getControllerEventTimestamp()`
-  - `runProgram()`
-- Enhanced `refresh()` with full telemetry sync (time, date, delay, zones, sensor).
-- Added **automatic zone count detection** via hybrid opcode probe.
-- Fixed legacy variant parsing for rain delay (`36xxxx6B` vs `B6xxxx`).
-- Refined `sendRainbirdCommand()` with safe synchronous retry loop.
-- Unified attribute names (`activeStation` → `activeZone`).
-- Added numeric input validation and dynamic initialization of diagnostics.
-- Validated against Rain Bird LNK (firmware 2.9).
+- Comprehensive stability and reconciliation cycle for legacy firmware 2.9+.  
+- Hardened initialization, refresh, and backoff handling.  
+- Added **deterministic controllerState reconciliation**, resolving false “Manual Program X” persistence.  
+- Implemented transient locks to prevent overlapping command execution (503 guard).  
+- Introduced full program schedule retrieval (0x36, 0x38, 0x3A) for A–D.  
+- Standardized telemetry reporting and minimized redundant events.  
+- Foundation for hybrid opcode and legacy-mapping behavior.
 
 </details>
 
 ---
 
 <details>
-<summary><strong>⚙️ 0.0.4.x — Reverted Experimental Branch</strong></summary>
+<summary><strong>0.0.8.x Series Summary</strong></summary>
 
-**Notes**
-- Temporary test branch for asynchronous command execution.
-- Fully reverted due to Hubitat platform constraints and race instability.
+- Hybrid compatibility release for **firmware 2.9** controllers.  
+- Unified 1-based mask decoding for 0x3F/0x39/0x42 feedback.  
+- Added adaptive fast-polling during watering events (5s loop).  
+- Introduced **Switch** and **Valve** capabilities for dashboard parity.  
+- Added `advanceZone()` with firmware-aware opcode logic and zone normalization.  
+- Reworked `checkAndSyncClock()` for randomized hourly offsets.  
+- Improved CRON6/7 handling, scheduling consistency, and error resilience.  
+- Reduced logging noise and obfuscated password output.  
 
 </details>
 
 ---
 
-## 🚀 0.0.5.x — Modern Refactor and Stability Line  
-**Scope:** Lifecycle optimization, state cleanup, refresh scheduling, and pacing control.  
-**Status:** Stable Baseline.
+<details>
+<summary><strong>0.0.9.x Series Summary</strong></summary>
+
+- Transitioned to full support for modern **firmware 3.x (LNK2/ESP-ME)** controllers.  
+- Unified controller identity and firmware detection for hybrid + modern LNK modules.  
+- Integrated module diagnostics and firmware reporting via `testAllSupportedCommands()`.  
+- Refined opcode map and advanceZone logic for firmware 3.2+.  
+- Deprecated `stopZone()` in favor of `stopIrrigation()` to standardize control.  
+- Prepared for 0.1.x branch convergence and hybrid stability validation.
+
+</details>
 
 ---
 
-### **0.0.5.12**
-- Lifecycle and telemetry synchronization stabilized.
-- Eliminated redundant `zoneCount` re-emissions.
-- Improved `emitChangedEvent()` consistency.
+<details>
+<summary><strong>0.1.0.x Series Summary — Release Candidate</strong></summary>
 
-### **0.0.5.13**
-- Removed legacy `state.zones` cache.
-- Migrated all telemetry to attribute-only representation.
+- **Release Candidate 0.1.0.0** validated on firmware 2.9 and 3.2.  
+- Final hybrid/modern opcode alignment (`0x03`, `0x39`, `0x3F`, `0x42`).  
+- Deterministic refresh engine with adaptive pacing and CRON harmonization.  
+- Hourly time sync with drift diagnostics and DST detection.  
+- Adaptive fast-polling with automatic fallback to scheduled refresh.  
+- Encapsulation cleanup — helper methods made private, sensitive logs masked.  
+- Completed diagnostics and verified 1-based mask telemetry accuracy.  
+- RC marks stable transition to unified 0.1.x branch.
 
-### **0.0.5.14**
-- Removed unused `DEFAULT_STATE` structure.
-- Retained minimal dynamic diagnostics initialization.
-
-### **0.0.5.15**
-- Simplified `refresh()` CRON logic — minute-based scheduling.
-- Eliminated redundant syntax and optimized runtime calls.
-
-### **0.0.5.17**
-- **Resolved network race condition (503 errors)** under legacy firmware 2.9.
-- Restored serialized command execution with adaptive pacing.
-- Confirmed stable operation under stress conditions.
-
-### **0.0.5.18**
-- Refined `sendRainbirdCommand()` pacing and retry logic.
-- Added **125 ms inter-command delay** and **incremental 250 ms backoff per retry**.
-- Reduced maximum network backoff to **900 seconds**.
-- Cleaned up error logging and improved failure diagnostics.
-- Finalized command flow and synchronization for consistent reliability.
+</details>
 
 ---
 
-## ⏱️ 0.0.6.x — Deterministic Time Sync and Drift Correction  
-**Scope:** Time synchronization, clock drift normalization, and simplified resync logic.  
-**Status:** Stable and widely deployed.
+## 🌧️ Rain Bird LNK/LNK2 WiFi Module Controller  
+### 🏷️ Release Candidate 0.1.0.0 — November 21, 2025
+
+**Firmware Tested:** 2.9 / 3.2  
+**Hubitat:** C-7 / C-8 / C-8 Pro (2.3.9+)  
+**Driver File:** [`RainBird_v0.1.0.0.groovy`](/mnt/data/RainBird_v0.1.0.0.groovy)
 
 ---
 
-### **0.0.6.3**
-- Finalized deterministic clock synchronization.
-- Added deferred drift check to resolve event propagation race condition.
-
-### **0.0.6.4**
-- Integer-epoch drift normalization finalized.
-- Controller and hub clocks now maintain deterministic lockstep.
-
-### **0.0.6.5**
-- Unified parser format and finalized deterministic time handling.
-- Codebase cleanup and stylistic consolidation.
-
-### **0.0.6.6**
-- Simplified time sync logic.
-- Removed deferred mode and lowered sync threshold to 5s for responsive drift correction.
-
-### **0.0.6.7**
-- Simplified and accelerated drift correction.
-- Unified sync reporting and removed legacy mode logic.
-
-### **0.0.6.8**
-- Simplified drift logic further.
-- Unified DST detection and resync trigger under a single event-driven handler.
+### 🚀 Highlights
+- Final hybrid/modern opcode alignment (`0x03`, `0x39`, `0x3F`, `0x42`)  
+- Unified legacy + LNK2 identity and firmware detection  
+- Deterministic refresh engine and hourly clock drift sync  
+- Adaptive fast-polling during watering with graceful recovery  
+- Added Switch and Valve capabilities for dashboard integration  
+- Encapsulation and security cleanup: private helpers, masked logs  
 
 ---
 
-## 🧭 0.0.7.x — Deterministic Program Handling and Legacy Firmware Optimization  
-**Scope:** Schedule query stabilization, program context reliability, and log clarity.  
-**Status:** Stable (Production Ready)
+### ✅ Summary
+This **Release Candidate (RC 0.1.0.0)** finalizes compatibility between legacy (2.9) and modern (3.2) Rain Bird controllers.  
+All command, telemetry, and refresh systems are now stable under both firmware lines, marking readiness for transition to the **0.1.x stable branch**.
 
 ---
 
-### **0.0.7.22**
-- Corrected reference to `firmwareVersion` in `getProgramSchedule()` — switched from bare variable to `device.currentValue("firmwareVersion")`.
-- Eliminated misleading `"firmware null"` messages under legacy firmware (2.9).
-- Validated deterministic attribute resolution within Hubitat sandbox.
+### 📘 Credits
+Developed & Maintained by **Marc Hedish**  
+💧 Support ongoing development: [paypal.me/MHedish](https://paypal.me/MHedish)
 
-### **0.0.7.23**
-- Refined log and event model for `getProgramSchedule()`.
-- Removed redundant “Unsupported” event emissions for cleaner log output.
-- Consolidated unsupported response handling via single `programScheduleSupport=false` event.
-
-### **0.0.7.24**
-- Unified logging and event consistency across all `programSchedule` queries.
-- Finalized early-return handling for stubbed program responses.
-- Improved runtime determinism under older firmware without breaking newer hybrid opcode handling.
-
-### **0.0.7.25**
-- Implemented boolean-return refactor for `getProgramSchedule()` to eliminate asynchronous attribute race conditions.
-- Centralized final `programScheduleSupport` emission inside `getAllProgramSchedules()` for atomic state reporting.
-- Ensured no more false `true → false → true` event flip sequences under any firmware.
-
-### **0.0.7.26**
-- Fixed Groovy meta-scope masking issue causing `${prog}` interpolation loss.
-- Now logs per-program context (`Program A–D`) deterministically in all conditions.
-- Updated internal logging helpers for consistent string coercion and eager evaluation.
-- Verified full backward compatibility with firmware 2.9+ and hybrid 3.x/4.x modules.
-
----
-
-### **Summary of 0.0.7.x Line**
-- ✅ Deterministic, sandbox-safe program schedule handling  
-- ✅ Accurate per-program logging and diagnostic visibility  
-- ✅ Consistent firmware version reporting across all query paths  
-- ✅ Zero redundant events or race conditions  
-- ✅ Fully stable under legacy and LNK2 hardware
-
----
-
-**Current Stable Build:** `v0.0.7.26`  
-**Validated Firmware:** 2.9, 3.0, 3.2, and 4.0+  
-**Test Platforms:** Hubitat C-7 / C-8 / C-8 Pro (2.3.9+)
-
----
-
-## 💡 Credits
-
-Developed and maintained by **Marc Hedish**  
-If this driver enhances your automation setup, you can support its ongoing development:  
-👉 [paypal.me/MHedish](https://paypal.me/MHedish)
-
----
