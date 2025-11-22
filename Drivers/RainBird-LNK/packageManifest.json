@@ -1,5 +1,5 @@
 {
-  "packageName": "Rain Bird LNK/LNK2 WiFi Module Controller (RC)",
+  "packageName": "Rain Bird LNK/LNK2 WiFi Module Controller",
   "author": "Marc Hedish",
   "version": "0.1.0.0",
   "releaseNotes": "Release Candidate 0.1.0.0 — hybrid/modern firmware convergence (2.9 → 3.2), deterministic refresh, adaptive time sync, Switch/Valve support, and enhanced telemetry.",
