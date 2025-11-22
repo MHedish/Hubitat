@@ -127,12 +127,6 @@ https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBi
 
 | Attribute                | Type    | Values / Notes                                     |
 | ------------------------ | ------- | -------------------------------------------------- |
-| `lastEventTime`          | string  | Timestamp of last received event                   |
-| `rainSensorState`        | enum    | `bypassed`, `dry`, `wet`                           |
-| `switch`                 | enum    | `on`, `off`                                        |
-| `valve`                  | enum    | `open`, `closed`                                   |
-| `waterBudget`            | number  | Seasonal watering percentage                       |
-| `zoneAdjustments`        | string  | JSON string of per-zone runtime adjustments        |
 | `activeZone`             | number  | Currently active zone number                       |
 | `autoTimeSync`           | boolean | Whether auto time synchronization is enabled       |
 | `availableStations`      | string  | List of active zones/stations detected             |
@@ -144,15 +138,21 @@ https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBi
 | `driverStatus`           | string  | Current driver health or command response          |
 | `firmwareVersion`        | string  | Controller firmware revision                       |
 | `irrigationState`        | string  | `watering`, `idle`, or `off`                       |
+| `lastEventTime`          | string  | Timestamp of last received event                   |
 | `lastSync`               | string  | Timestamp of last successful time sync             |
 | `model`                  | string  | Controller model identifier                        |
 | `programScheduleSupport` | boolean | Indicates if controller supports program retrieval |
 | `rainDelay`              | number  | Current active rain delay days                     |
+| `rainSensorState`        | enum    | `bypassed`, `dry`, `wet`                           |
 | `remainingRuntime`       | number  | Seconds left in current watering cycle             |
 | `seasonalAdjust`         | number  | Active seasonal adjustment factor (%)              |
 | `serialNumber`           | string  | Controller serial number                           |
+| `switch`                 | enum    | `on`, `off`                                        |
+| `valve`                  | enum    | `open`, `closed`                                   |
+| `waterBudget`            | number  | Seasonal watering percentage                       |
 | `watering`               | boolean | Indicates irrigation is currently active           |
 | `wateringRefresh`        | boolean | Internal refresh flag during watering              |
+| `zoneAdjustments`        | string  | JSON string of per-zone runtime adjustments        |
 | `zoneCount`              | number  | Number of detected zones                           |
 
 ---
