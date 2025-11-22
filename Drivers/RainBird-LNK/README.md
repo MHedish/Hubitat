@@ -201,9 +201,8 @@ The refresh interval defines how often Hubitat polls the controller for status u
 	When set to manual, the **Automatically sync Rain Bird to Hubitat clock** preference will still keep the clock synchronized once an hour while not polling the controller for other status information.
 - The **Increase polling frequency during watering events** preference will automatically increase polling during a *watering* event to once every 5 seconds for near-realtime status and then revert to your previously set polling frequency when watering has been completed.
 	
-✅ Use shorter intervals during watering periods for near real-time zone feedback.
+  ✅ Use shorter intervals during watering periods for near real-time zone feedback.
 
-### 🧩 Best Practices
 - It's still best to allow the Rain Bird controller to manage automatic watering, but if you want to manage it within Hubitat, you can now use Hubitat’s **Rule Machine** or **WebCoRE** to automate watering windows, including the *water budget* attribute to reduce watering based on the forecasted weather.
 - Avoid scheduling overlapping zones to minimize command queue congestion.
 - When creating custom schedules, leave 3–5 seconds between zone transitions for pacing stability.
