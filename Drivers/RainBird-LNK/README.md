@@ -1,6 +1,6 @@
 # 🌧️ Rain Bird LNK/LNK2 WiFi Module Controller (Hubitat Driver)
 
-[![Version](https://img.shields.io/badge/version-0.1.0.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.0.1-blue.svg)](./CHANGELOG.md)
 [![Status](https://img.shields.io/badge/release-RC--STABLE-brightgreen.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
@@ -28,9 +28,9 @@ With advanced telemetry, adaptive pacing, and hourly drift correction, it’s de
 
 ---
 
-## 🌟 What’s New in v0.1.0.0 (Release Candidate)
+## 🌟 What’s New in v0.1.0.1 (Release Candidate)
 
-🧩 **Hybrid + Modern Firmware Convergence** — validated on firmware 2.9 and 3.2  
+🧩 **Hybrid + Modern Firmware Convergence** — validated on firmware 2.1, 2.9, and 3.2  
 💧 **Switch & Valve capabilities:** dashboard integration for on/off/open/close parity  
 🕒 **Time sync reliability:** hourly drift checks, DST detection, and random offset scheduling to reduce hub load  
 🔁 **Deterministic refresh engine:** resilient pacing and adaptive polling under watering conditions  
@@ -93,7 +93,7 @@ https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBi
 
 | Controller | WiFi Module | Firmware | Status | Notes |
 |-------------|--------------|-----------|---------|--------|
-| **ESP-TM2** | LNK / LNK2 | 2.5 – 3.0 | ✅ Stable | Tested on 2.9 |
+| **ESP-TM2** | LNK / LNK2 | 2.1 – 3.0 | ✅ Stable | Tested on 2.1 and 2.9 |
 | **ESP-Me** | LNK / LNK2 | 2.9 – 3.2 | ✅ Stable | Multi-zone hybrid support |
 | **ESP-Me3** | LNK2 | 4.0+ | ⚠️ Partial | Extended telemetry not yet implemented |
 | **ST8 / ST8i** | LNK | 2.5 – 3.0 | ⚠️ Limited | Basic zone control only |
