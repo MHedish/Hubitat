@@ -17,6 +17,7 @@
 *  0.0.8.x  –– Hybrid     –– Comprehensive firmware 2.9 compatibility cycle: refined opcode handling, adaptive fast-polling during watering, synchronized capability states, and stabilized clock synchronization logic.
 *  0.0.9.x  –– Modern     –– Transition cycle introducing full firmware 3.x (LNK2/ESP-ME) compatibility, unified identity detection, opcode refinements, and final hybrid/legacy convergence ahead of 0.1.x RC release.
 *  0.1.0.0  –– Release    –– Finalized hybrid and modern (≥3.x) controller compatibility; validated firmware 3.2 opcode handling, consolidated command surface, refined diagnostics and event logic, and completed stability verification for transition to 0.1.x stable branch.
+*  0.1.0.1  –– Corrected legacy firmware detection; updates for older ≤ 2.10 firmware - getAvailableStations(), parseCombinedControllerState(), and "watering" detection.
 */
 
 import groovy.transform.Field
@@ -29,8 +30,8 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "0.1.0.0"
-@Field static final String DRIVER_MODIFIED = "2025.11.22"
+@Field static final String DRIVER_VERSION  = "0.1.0.1"
+@Field static final String DRIVER_MODIFIED = "2025.11.24"
 @Field static final String PAD = "\u0016"
 @Field static final int BLOCK_SIZE = 16
 @Field static int delayMs=150
@@ -272,28 +273,23 @@ def stopIrrigation(){
 }
 
 private getAvailableStations(){
-    def pv=device.currentValue("firmwareVersion")
-    if(!pv){logDebug"getAvailableStations(): firmwareVersion not yet available; deferring request until identity is known.";return}
-    def pvNum=pv.toString().replaceAll("[^0-9.]","").toBigDecimal()
-    if(pvNum<3.0)logDebug"getAvailableStations(): Detected legacy firmware ${pvNum}, probing for hybrid opcode support..."
-    else logDebug"Requesting available stations (firmware=${pvNum})..."
-    try{
-        def r=parseIfString(sendRainbirdCommand("030000",2),"getAvailableStations")
-        def d=r?.result?.data
-        if(!d){logWarn"getAvailableStations: No valid response";return}
-        if(d.startsWith("83")){
-            def bitmask=d.substring(4,12);def maskInt=Integer.parseInt(bitmask,16)
-            def available=(1..bitmask.size()*4).findAll{i->(maskInt&(1<<(i-1)))!=0}.collect{idx->(idx>24&&idx<=31)?(idx-24):idx}
-            emitChangedEvent("availableStations",available.join(","),"Available stations: ${available.join(', ')}")
-            def actualCount=available.size();def currentAttr=device.currentValue("zoneCount")?.toInteger()?:0
-            if(actualCount&&actualCount!=currentAttr){
-                zoneCount=actualCount
-                emitChangedEvent("zoneCount",actualCount,"Zone count updated dynamically to ${actualCount} (controller)")
-                logDebug"zoneCount updated dynamically from controller data: ${actualCount}"
-            }
-            if(pvNum<3.0)logDebug"Hybrid opcode support detected on legacy firmware ${pvNum} (0x03 → 0x83 success)."
-        }else logWarn"getAvailableStations: Unexpected data (${d})"
-    }catch(e){logError"getAvailableStations() failed: ${e.message}"}
+	try{
+		logDebug"Requesting available stations (firmware=${device.currentValue('firmwareVersion')})..."
+		def r=parseIfString(sendRainbirdCommand("3A00",1),"getAvailableStations");def d=r?.result?.data
+		if(!d){logWarn"getAvailableStations(): No response";return}
+		if(d.startsWith("B2")){
+			def hex=d.substring(4)
+			if(isLegacyFirmware(2.11)&&hex?.toUpperCase()?.startsWith("FF")){
+				logInfo"getAvailableStations(): Legacy controller returned FF mask → assuming all zones available"
+				def zones=(1..getMaxZones()).toList().join(",")
+				emitChangedEvent("availableStations",zones,"Available stations: ${zones}");return
+			}
+			def bits=new BigInteger(hex,16).toString(2).padLeft(32,'0').reverse();def zones=[]
+			bits.eachWithIndex{b,i->if(b=='1')zones<<(i+1)}
+			emitChangedEvent("availableStations",zones.join(","),"Available stations: ${zones.join(', ')}")
+		}else if(d=="003A02"){logDebug"getAvailableStations(): Legacy ACK-only response (firmware ≤2.9)"
+		}else logWarn"getAvailableStations(): Unexpected data (${d})"
+	}catch(e){logError"getAvailableStations() failed: ${e.message}"}
 }
 
 private getWaterBudget(){
@@ -569,25 +565,27 @@ private scheduleRefresh(){
 /* =============================== Parsing Helpers =============================== */
 private verifyActiveZone(data=null,passive=false){
 	def fw=device.currentValue("firmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
-	def hybrid=(fw>=2.9&&fw<3.1);def watering=device.currentValue("watering")=="true";def zone=(device.currentValue("activeZone")?:0)as Integer
-	def raw=null;def mask=0
+	def hybrid=(fw>=2.9&&fw<3.1);def legacy=isLegacyFirmware(2.11);def watering=device.currentValue("watering")=="true";def zone=(device.currentValue("activeZone")?:0)as Integer;def raw=null;def mask=0
 	if(hybrid||getCommandSupport("3F")){
 		logDebug"verifyActiveZone(): firmware=${fw} (hybrid=${hybrid}); probing opcode 0x3F for BF response"
 		def s=parseIfString(sendRainbirdCommand("3F0000",2),"verifyActiveZone");def d=s?.result?.data;raw=d
 		if(d?.startsWith("BF")){
 			mask=Integer.parseInt(d.substring(4,6),16);def active=0;(1..8).each{i->if((mask&(1<<(i-1)))!=0)active=i}
 			if(!hybrid&&isLegacyFirmware(3.0)&&active>0)active++ // only bump for pre-2.9 legacy
-			zone=active;watering=zone>0
-			logDebug"verifyActiveZone(): decoded BF mask=${String.format('%02X',mask)} → zone=${zone}"
-		}else logWarn"verifyActiveZone(): Controller returned no valid BF header (data=${d})"
+			zone=active;watering=zone>0;logDebug"verifyActiveZone(): decoded BF mask=${String.format('%02X',mask)} → zone=${zone}"
+		}else if(legacy && d=="003F02"){
+			logInfo"verifyActiveZone(): Legacy firmware ≤2.10 returned minimal ACK (003F02); assuming idle."
+			watering=false;zone=0
+		}else{logWarn"verifyActiveZone(): Controller returned no valid BF header (data=${d})"}
 	}else if(getCommandSupport("4C")){
 		def r=parseIfString(sendRainbirdCommand("4C",1),"verifyActiveZone");if(r){parseCombinedControllerState(r);return}
 	}else logWarn"No compatible controller-state opcode supported; skipping zone status check."
 	def wasWatering=device.currentValue("watering")=="true"
 	if(watering){
-		emitChangedEvent("irrigationState","Watering");emitChangedEvent("watering",true);emitChangedEvent("activeZone",zone);emitChangedEvent("switch","on");emitChangedEvent("valve","open");logInfo"Controller reports watering (zone=${zone?:'unknown'})."
+		emitChangedEvent("irrigationState","Watering");emitChangedEvent("watering",true);emitChangedEvent("activeZone",zone);emitChangedEvent("switch","on");emitChangedEvent("valve","open")
+		logInfo"Controller reports watering (zone=${zone?:'unknown'})."
 		if(wateringRefresh&&!wasWatering)logInfo"Watering: Fast polling started (5s intervals)."
-		if(wateringRefresh){runIn(5,"verifyActiveZone");return}
+		if(wateringRefresh&&!passive){runIn(5,"verifyActiveZone");return}
 	}else{
 		emitChangedEvent("irrigationState","Idle");emitChangedEvent("watering",false);emitChangedEvent("activeZone",0);emitChangedEvent("switch","off");emitChangedEvent("valve","closed")
 		logDebug"verifyActiveZone(): No active watering detected (mask=${String.format('%02X',mask)})."
@@ -620,34 +618,35 @@ private parseDateResponse(resp){
     }catch(e){logWarn"parseDateResponse() failed: ${e.message}"}
 }
 
-private getControllerIdentity(){
-	try{
-		logDebug"Requesting controller identity (model/firmware/serial)..."
-		def r02=parseIfString(sendRainbirdCommand("02",1),"getControllerIdentity-Model")
-		def data02=extractHexData(r02);def modelID="Unknown";def fwareVersion="Unknown"
-		if(data02?.reverse()?.endsWith("28")){
-			modelID=data02.substring(2,6)
-			def fwareMaj=Integer.parseInt(data02.substring(6,8),16)
-			def fwareMin=Integer.parseInt(data02.substring(8,10),16)
-			fwareVersion="${fwareMaj}.${fwareMin}"
-			logDebug"Parsed 0x82 → modelID=${modelID}, legacy firmware=${fwareVersion}"
-		}else logWarn"ModelAndVersionRequest failed: ${data02}"
-		def r05=parseIfString(sendRainbirdCommand("05",1),"getControllerIdentity-Serial")
-		def data05=extractHexData(r05);def serial="Unavailable"
-		if(data05?.reverse()?.endsWith("58")){
-			serial=data05.substring(2)
-			logDebug"Parsed 0x85 → serial=${serial}"
-		}else logWarn"SerialNumberRequest failed: ${data05}"
-		def fwModern=parseFirmwareVersion(parseIfString(sendRainbirdCommand("03",1),"getControllerFirmware")?.result?.data)
-		if(fwModern && fwModern!=fwareVersion){
-			logInfo"Detected modern firmware ${fwModern} (replaces legacy ${fwareVersion})"
-			fwareVersion=fwModern
-		}
-		emitChangedEvent("model","${modelID}","Controller model: ${modelID}")
-		emitChangedEvent("serialNumber",serial,"Controller serial number: ${serial}")
-		emitChangedEvent("firmwareVersion",fwareVersion,"Firmware version: ${fwareVersion}")
-	}catch(e){logError"getControllerIdentity() failed: ${e.message}"}
+private getControllerIdentity() {
+    logDebug "Requesting controller identity (model/firmware/serial)..."
+    try {
+        def r02=parseIfString(sendRainbirdCommand("02",1),"getControllerIdentity-Model")
+        def data02=extractHexData(r02);def modelID="Unknown";def fwareVersion="Unknown"
+        if (data02?.startsWith("82")){
+            modelID=data02.substring(2,6)
+            def major=Integer.parseInt(data02.substring(6,8),16)
+            def minor=Integer.parseInt(data02.substring(8,10),16)
+            fwareVersion="${major}.${minor}"
+            logDebug "Parsed legacy 0x82 → modelID=${modelID}, firmware=${fwareVersion}"
+        } else if (data02?.startsWith("83")){
+            modelID=data02.substring(2,6)
+            def major=Integer.parseInt(data02.substring(4,6),16)
+            def minor=Integer.parseInt(data02.substring(6,8),16)
+            fwareVersion="${major}.${minor}"
+            logDebug"Parsed modern 0x83 → modelID=${modelID}, firmware=${fwareVersion}"
+        } else {
+            logWarn"ModelAndVersionRequest failed or unexpected: ${data02}"
+        }
+        emitChangedEvent("model","RainBird ${modelID}","Controller model: RainBird ${modelID}")
+        emitChangedEvent("firmwareVersion",fwareVersion,"Firmware version: ${fwareVersion}")
+        def r05=parseIfString(sendRainbirdCommand("05",1),"getControllerIdentity-Serial")
+        def data05=extractHexData(r05)
+        def serial=(data05?.startsWith("85"))?data05.substring(2):"Unavailable"
+        emitChangedEvent("serialNumber",serial,"Controller serial number: ${serial}")
+    } catch(e){logError "getControllerIdentity() failed: ${e.message}"}
 }
+
 
 private parseCombinedControllerState(resp,boolean summaryOnly=false){
     try{
@@ -676,7 +675,7 @@ private parseCombinedControllerState(resp,boolean summaryOnly=false){
             def delay=Integer.parseInt(hex[14..17],16)
             def sensor=Integer.parseInt(hex[18..19],16)
             def irrig=Integer.parseInt(hex[20..21],16)
-            def season=Integer.parseInt(hex[22..25],16)
+            def season=Integer.parseInt(hex[22..25],16);if(season==0xFFFF||season>300){season=100;logWarn"CombinedControllerState(CC): Invalid or reserved seasonal value (${season}); normalizing to 100%"}
             def remain=Integer.parseInt(hex[26..29],16)
             def zone=Integer.parseInt(hex[30..31],16)
             def irrigationText=(irrig==1?"Watering":irrig==0?"Idle":irrig==2?"Rain Delay":"Unknown (${irrig})")
