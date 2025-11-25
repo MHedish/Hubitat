@@ -93,7 +93,8 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 <details>
 <summary><strong>0.1.0.x Series Summary — Release Candidate</strong></summary>
 
-- **Release Candidate 0.1.0.0** validated on firmware 2.9 and 3.2.  
+- **Release Candidate 0.1.0.1** validated on firmware 2.1, 2.9, and 3.2.  
+- Updated to allow for legacy (2.1) firmware.
 - Final hybrid/modern opcode alignment (`0x03`, `0x39`, `0x3F`, `0x42`).  
 - Deterministic refresh engine with adaptive pacing and CRON harmonization.  
 - Hourly time sync with drift diagnostics and DST detection.  
@@ -107,7 +108,7 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 ---
 
 ## 🌧️ Rain Bird LNK/LNK2 WiFi Module Controller  
-### 🏷️ Release Candidate 0.1.0.0 — November 21, 2025
+### 🏷️ Release Candidate 0.1.0.1 — November 24, 2025
 
 **Firmware Tested:** 2.9 / 3.2  
 **Hubitat:** C-7 / C-8 / C-8 Pro (2.3.9+)  
@@ -126,7 +127,7 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 ---
 
 ### ✅ Summary
-This **Release Candidate (RC 0.1.0.0)** finalizes compatibility between legacy (2.9) and modern (3.2) Rain Bird controllers.  
+This **Release Candidate (RC 0.1.0.1)** finalizes compatibility between legacy (2.1/2.9) and modern (3.2) Rain Bird controllers.  
 All command, telemetry, and refresh systems are now stable under both firmware lines, marking readiness for transition to the **0.1.x stable branch**.
 
 ---
