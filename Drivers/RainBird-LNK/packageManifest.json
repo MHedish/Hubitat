@@ -2,7 +2,7 @@
   "packageName": "Rain Bird LNK/LNK2 WiFi Module Controller",
   "author": "Marc Hedish",
   "version": "0.1.0.1",
-  "releaseNotes": "Release Candidate 0.1.0.0 — hybrid/modern firmware convergence (2.1 → 2.9 → 3.2), deterministic refresh, adaptive time sync, Switch/Valve support, and enhanced telemetry.",
+  "releaseNotes": "Release Candidate 0.1.0.1 — hybrid/modern firmware convergence (2.1 → 2.9 → 3.2), deterministic refresh, adaptive time sync, Switch/Valve support, and enhanced telemetry.",
   "dateReleased": "2025-11-24",
   "minimumHEVersion": "2.3.6",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md",
