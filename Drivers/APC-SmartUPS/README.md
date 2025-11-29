@@ -1,6 +1,6 @@
 # ⚡ APC SmartUPS Status (Hubitat Driver)
 
-[![Version](https://img.shields.io/badge/version-0.3.6.25--RC-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.6.35--RC-blue.svg)](./CHANGELOG.md)
 [![Status](https://img.shields.io/badge/release-IN%20TEST-yellow.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
@@ -244,7 +244,7 @@ These values can be used in **dashboards**, **Rule Machine triggers**, **notific
 | **outputFrequency** | Hz | UPS output frequency. |
 | **outputVoltage** | VAC | Output voltage supplied to connected devices. |
 | **outputWattsPercent** | % | Current load as a percentage of UPS rated capacity. |
-| **runtimeMinutes**, **runtimeHours** | min / hr | Estimated remaining runtime at current load. |
+| **runTimeMinutes**, **runTimeHours** | min / hr | Estimated remaining runtime at current load. |
 | **temperature**, **temperatureF**, **temperatureC** | °F / °C | UPS internal temperature (dual representation for flexibility). |
 | **upsContact**, **upsLocation** | — | UPS contact and location information. |
 | **upsStatus** | — | Current UPS operating mode (Online, On Battery, On Bypass, etc.). |
@@ -266,6 +266,7 @@ This driver follows semantic-style versioning:
 
 | Version | Status | Description |
 |----------|----------|-------------|
+| 0.3.6.35 | RC | Corrected watchdog processes which were actually creating hung conditions. Now using stateless watchdog. Added adaptive CRON scheduling |
 | 0.3.6.25 | RC | Added transient watchdog recovery for Reconnoiter lockups; adaptive cron compatibility |
 | 0.3.6.15 | RC | Transient context fully implemented, sub-5s reconnoiters |
 | 0.3.x | Stable | Deterministic Telnet lifecycle, finalized cleanup model |
