@@ -58,3 +58,13 @@
 *  0.3.6.23  -- Restored original closeConnection() command routing logic with case-sensitive Reconnoiter handling; fixed incorrect UPSCommand fallback causing false “no E-code” warnings; retained Hubitat-safe string slicing and deterministic cleanup.
 *  0.3.6.24  -- Removed explicit Telnet capability declaration. Clarifies this driver is not a “Telnet device” — it’s a UPS telemetry driver that uses Telnet internally.
 *  0.3.6.25  -- Removed Configuration capability declaration and replaced it with Initialize; removed Configure() method.
+*  0.3.6.26  -- Housekeeping; code cleanup; added logWarn when preferences are not set.
+*  0.3.6.27  -- Reverted
+*  0.3.6.28  -- Reverted
+*  0.3.6.29  -- Clean disconnect recovery / Telnet finalization fix.
+*  0.3.6.30  -- Fixed double connectStatus() emit; Corrected runtime to appropriate camelCase.
+*  0.3.6.31  -- Restored clean session flow from v0.3.6.16; Unified teardown: telnetStatus() → closeConnection(); Stateless watchdog for hung sessions; Removed recursive finalization and redundant updates.
+*  0.3.6.32  -- Refined sendUPSCommand() watchdog logic: single deferral allowed, automatic recovery/reset on repeated busy state
+*  0.3.6.33  -- Refined finalizeSession() concurrency guard; added adaptive offset alignment in scheduleCheck() for better refresh synchronization.
+*  0.3.6.34  -- Added adaptive offset adjustment in scheduleCheck() to align refresh cycles within current hour when offset exceeds 2× interval; corrected ConnectState() debug logging to eliminate double event emission.
+*  0.3.6.35  -- Reverted ConnectState() so we don't lose all insight to telnet status.
