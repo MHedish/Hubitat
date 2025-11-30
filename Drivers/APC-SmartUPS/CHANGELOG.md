@@ -68,3 +68,4 @@
 *  0.3.6.33  -- Refined finalizeSession() concurrency guard; added adaptive offset alignment in scheduleCheck() for better refresh synchronization.
 *  0.3.6.34  -- Added adaptive offset adjustment in scheduleCheck() to align refresh cycles within current hour when offset exceeds 2× interval; corrected ConnectState() debug logging to eliminate double event emission.
 *  0.3.6.35  -- Reverted ConnectState() so we don't lose all insight to telnet status.
+*  0.3.6.36  -- Fixed updateConnectState() to no longer emit events twice; RCA -- Hubitat's asynchronous event queue delay before commit.
