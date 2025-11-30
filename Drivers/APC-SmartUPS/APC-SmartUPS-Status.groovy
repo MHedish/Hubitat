@@ -44,14 +44,15 @@
 *  0.3.6.33  -- Refined finalizeSession() concurrency guard; added adaptive offset alignment in scheduleCheck() for better refresh synchronization.
 *  0.3.6.34  -- Added adaptive offset adjustment in scheduleCheck() to align refresh cycles within current hour when offset exceeds 2× interval; corrected ConnectState() debug logging to eliminate double event emission.
 *  0.3.6.35  -- Reverted ConnectState() so we don't lose all insight to telnet status.
+*  0.3.6.36  -- Fixed updateConnectState() to no longer emit events twice; RCA -- Hubitat's asynchronous event queue delay before commit.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.3.6.35"
-@Field static final String DRIVER_MODIFIED = "2025.11.29"
+@Field static final String DRIVER_VERSION  = "0.3.6.36"
+@Field static final String DRIVER_MODIFIED = "2025.11.30"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
 /* ===============================
@@ -178,7 +179,7 @@ private logError(msg) {log.error"[${DRIVER_NAME}] $msg"}
 private void emitLastUpdate(){def s=getTransient("sessionStart");def ms=s?(now()-s):0;def sec=(ms/1000).toDouble().round(3);emitChangedEvent("lastUpdate",new Date().format("MM/dd/yyyy h:mm:ss a"),"Data Capture Run Time = ${sec}s");clearTransient("sessionStart")}
 private emitEvent(String name,def value,String desc=null,String unit=null){sendEvent(name:name,value:value,unit:unit,descriptionText:desc);if(logEvents)log.info"[${DRIVER_NAME}] ${desc? "${name}=${value} (${desc})":"${name}=${value}"}"}
 private emitChangedEvent(String n,def v,String d=null,String u=null){def o=device.currentValue(n);if(o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d);logInfo d?"${n}=${v} (${d})":"${n}=${v}"}else logDebug "No change for ${n} (still ${o})"}
-private updateConnectState(String newState){def old=device.currentValue("connectStatus");if(old!=newState)emitChangedEvent("connectStatus",newState)else logDebug"updateConnectState(): no change (${old} → ${newState})"}
+private updateConnectState(String newState){def old=device.currentValue("connectStatus");def last=getTransient("lastConnectState");if(old!=newState&&last!=newState){setTransient("lastConnectState",newState);emitChangedEvent("connectStatus",newState)}else{logDebug"updateConnectState(): no change (${old} → ${newState})"}}
 private updateCommandState(String newCmd){def old=state.lastCommand;state.lastCommand=newCmd;if(old!=newCmd)logDebug"lastCommand = ${newCmd}"}
 private def normalizeDateTime(String r){if(!r||r.trim()=="")return r;try{def m=r=~/^(\d{2})\/(\d{2})\/(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/;if(m.matches()){def(mm,dd,yy,hh,mi,ss)=m[0][1..6];def y=(yy as int)<80?2000+(yy as int):1900+(yy as int);def f="${mm}/${dd}/${y}"+(hh?" ${hh}:${mi}:${ss?:'00'}":"");def d=Date.parse(hh?"MM/dd/yyyy HH:mm:ss":"MM/dd/yyyy",f);return hh?d.format("MM/dd/yyyy h:mm:ss a",location.timeZone):d.format("MM/dd/yyyy",location.timeZone)};for(fmt in["MM/dd/yyyy HH:mm:ss","MM/dd/yyyy h:mm:ss a","MM/dd/yyyy","yyyy-MM-dd","MMM dd yyyy HH:mm:ss"])try{def d=Date.parse(fmt,r);return(fmt.contains("HH")||fmt.contains("h:mm:ss"))?d.format("MM/dd/yyyy h:mm:ss a",location.timeZone):d.format("MM/dd/yyyy",location.timeZone)}catch(e){} }catch(e){};return r}
 private void initTelnetBuffer(){def b=getTransient("telnetBuffer");if(b instanceof List&&b.size()){def t;try{def p=b[-(Math.min(3,b.size()))..-1]*.line.findAll{it}.join(" | ");t=p[-(Math.min(80,p.size()))..-1]}catch(e){t="unavailable (${e.message})"};logDebug"initTelnetBuffer(): clearing leftover buffer (${b.size()} lines, preview='${t}')"};setTransient("telnetBuffer",[]);setTransient("sessionStart",now());logDebug"initTelnetBuffer(): Session start at ${new Date(getTransient('sessionStart'))}"}
