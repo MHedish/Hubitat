@@ -4,7 +4,7 @@
   "version": "1.0.0.0",
   "minimumHEVersion": "2.3.0",
   "dateReleased": "2025-12-01",
-  "releaseNotes": "STABLE RELEASE — High-performance driver for APC Smart-UPS with Network Management Cards (NMC). Uses a deterministic Telnet lifecycle and transient in-memory context for sub-5-second telemetry without race conditions, stale state, or missed updates.\n1.0.0.0 - Official production release. Fully hardened Telnet session flow, adaptive scheduling, and self-healing watchdog recovery. Verified multi-day uptime, reboot resilience, and synchronized refresh cycles.\nIncludes final fixes for event emission duplication and improved session finalization logic.",
+  "releaseNotes": "STABLE RELEASE — High-performance driver for APC Smart-UPS with Network Management Cards (NMC). Uses a deterministic Telnet lifecycle and transient in-memory context for sub-5-second telemetry without race conditions, stale state, or missed updates.\n1.0.0.0 - Official production release. Fully hardened Telnet session flow, adaptive scheduling, and self-healing watchdog recovery. Verified multi-day uptime, reboot resilience, and synchronized refresh cycles.\n\nIncludes final fixes for event emission duplication and improved session finalization logic.",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/README.md",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/CHANGELOG.md",
   "tags": ["UPS","APC","Smart-UPS","Integrations","Monitoring","Hubitat","Tools & Utilities"],
