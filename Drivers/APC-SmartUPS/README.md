@@ -266,12 +266,10 @@ This driver follows semantic-style versioning:
 
 | Version | Status | Description |
 |----------|----------|-------------|
-| 0.3.6.36 | RC | Corrected watchdog processes which were actually creating hung conditions. Now using stateless watchdog. Added adaptive CRON scheduling |
-| 0.3.6.25 | RC | Added transient watchdog recovery for Reconnoiter lockups; adaptive cron compatibility |
-| 0.3.6.15 | RC | Transient context fully implemented, sub-5s reconnoiters |
-| 0.3.x | Stable | Deterministic Telnet lifecycle, finalized cleanup model |
-| 0.2.x | Legacy | State-based control, early session management |
-| 0.1.x | Prototype | Initial Hubitat SmartUPS driver |
+| 1.0.0.0 | Release  | Initial stable release; validated under sustained load and reboot recovery |
+| 0.3.x.x | Stable | Deterministic Telnet lifecycle, finalized cleanup model |
+| 0.2.x.x | Legacy | State-based control, early session management |
+| 0.1.x.x | Prototype | Initial Hubitat SmartUPS driver |
 
 See [`CHANGELOG.md`](CHANGELOG.md) for full release notes.
 
