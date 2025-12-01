@@ -8,51 +8,15 @@
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  0.3.6.0   -- Added intelligent post-command refresh scheduling after self-test, reboot, and power-cycle; ensures deterministic status capture via delayed refresh without disrupting session finalization.
-*  0.3.6.1   -- Restored safeTelnetConnect() from 0.3.5.16; removed deferred retry logic and isCommandSessionActive() dependency for deterministic connection handling under Hubitat Telnet lifecycle.
-*  0.3.6.2   -- Restored resetTransientState() after safeTelnetConnect() reintegration; removed residual retrySafeTelnetConnect() and isCommandSessionActive() artifacts; validated deterministic lifecycle and session finalization sequence.
-*  0.3.6.3   -- Introduced transientContext framework to replace temporary device data storage; refactored nmcStatusDesc and aboutSection to use in-memory transients for improved performance and cleaner metadata.
-*  0.3.6.4   -- Migrated sessionStart and telnetBuffer from persistent state to transientContext; eliminates redundant serialization, reduces I/O overhead, and maintains deterministic Telnet session performance.
-*  0.3.6.5   -- Expanded transientContext to replace state vars (upsBanner* & nmc*); reduced runtime <5s; retained whoami state for stability
-*  0.3.6.6   -- Final code cleanup before RC; cosmetic label changes
-*  0.3.6.7   -- Standardized all utility methods to condensed format; finalized transientContext integration; removed obsolete state usage for stateless ops; prep for RC release
-*  0.3.6.8   -- Corrected case sensitivity mismatch in handleUPSCommands() to align with camelCase command definitions.
-*  0.3.6.9   -- Removed extraneous attribute; code cleanup.
-*  0.3.6.10  -- Added low-battery monitoring and optional Hubitat auto-shutdown feature with new 'lowBattery' attribute and 'autoShutdownHub' preference.
-*  0.3.6.11  -- Integrated low-battery and hub auto-shutdown logic directly into handleBatteryData(); adds symmetrical recovery clearing when runtime rises above threshold; eliminates redundant runtime lookups; refines try{} encapsulation for reliability.
-*  0.3.6.12  -- Added configuration anomaly checks to initialize(); now emits warnings when check interval exceeds nominal runtime or when shutdown threshold is smaller than interval; ensures lowBattery baseline is initialized with calculated threshold; improved startup reliability and diagnostic transparency.
-*  0.3.6.13  -- Added UPS status gating to low-battery shutdown logic; Hubitat shutdown now triggers only when lowBattery=true and upsStatus is neither "Online" nor "Off". Finalized handleBatteryData() symmetry and optimized conditional flow for reliability.
-*  0.3.6.14  -- Restored correct parsing logic for “Battery State Of Charge”; reverted case mapping to "Battery State" with conditional match on p2/p3 to properly detect and update the battery attribute. Resolves lost battery reporting and restores full capability compliance after reinstall.
-*  0.3.6.15  -- Corrected type declaration for setOutletGroup.
-*  0.3.6.16  -- Corrected telnet methods to private.
-*  0.3.6.17  -- Various methods hardened against edge cases and added explicit typing. Modified updateConnectState() to deduplicate events within the same millisecond.
-*  0.3.6.18  -- Updated telnetStatus() to not emit state transition.
-*  0.3.6.19  -- Updated scheduleCheck() to allow for pre and post 2.3.9.x (Q3 2025) cron parsing.
-*  0.3.6.20  -- Added watchdog count to sendUPSCommand() to eliminate hung state during reconnoiter if telnet closes prematurely.
-*  0.3.6.21  -- Obfuscated password in debug log.
-*  0.3.6.22  -- Fixed takeRight() bug.
-*  0.3.6.23  -- Restored original closeConnection() command routing logic with case-sensitive Reconnoiter handling; fixed incorrect UPSCommand fallback causing false “no E-code” warnings; retained Hubitat-safe string slicing and deterministic cleanup.
-*  0.3.6.24  -- Removed explicit Telnet capability declaration. Clarifies this driver is not a “Telnet device” — it’s a UPS telemetry driver that uses Telnet internally.
-*  0.3.6.25  -- Removed Configuration capability declaration and replaced it with Initialize; removed Configure() method.
-*  0.3.6.26  -- Housekeeping; code cleanup; added logWarn when preferences are not set.
-*  0.3.6.27  -- Reverted
-*  0.3.6.28  -- Reverted
-*  0.3.6.29  -- Clean disconnect recovery / Telnet finalization fix.
-*  0.3.6.30  -- Fixed double connectStatus() emit; Corrected runtime to appropriate camelCase.
-*  0.3.6.31  -- Restored clean session flow from v0.3.6.16; Unified teardown: telnetStatus() → closeConnection(); Stateless watchdog for hung sessions; Removed recursive finalization and redundant updates.
-*  0.3.6.32  -- Refined sendUPSCommand() watchdog logic: single deferral allowed, automatic recovery/reset on repeated busy state
-*  0.3.6.33  -- Refined finalizeSession() concurrency guard; added adaptive offset alignment in scheduleCheck() for better refresh synchronization.
-*  0.3.6.34  -- Added adaptive offset adjustment in scheduleCheck() to align refresh cycles within current hour when offset exceeds 2× interval; corrected ConnectState() debug logging to eliminate double event emission.
-*  0.3.6.35  -- Reverted ConnectState() so we don't lose all insight to telnet status.
-*  0.3.6.36  -- Fixed updateConnectState() to no longer emit events twice; RCA -- Hubitat's asynchronous event queue delay before commit.
+*  1.0.0.0   -- Initial stable release; validated under sustained load and reboot recovery.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "0.3.6.36"
-@Field static final String DRIVER_MODIFIED = "2025.11.30"
+@Field static final String DRIVER_VERSION  = "1.0.0.0"
+@Field static final String DRIVER_MODIFIED = "2025.12.01"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
 /* ===============================
@@ -153,19 +117,20 @@ metadata {
    Preferences
    =============================== */
 preferences {
+    input("","hidden", title:"<a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/README.md#%EF%B8%8F-configuration-parameters' target='_blank'><b>Preferences</b> Quick Reference</a><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/README.md#-attribute-reference' target='_blank'><hr><b>Attribute</b> Quick Reference</a>")
     input("upsIP","text",title:"Smart UPS (APC only) IP Address",required:true)
     input("upsPort","integer",title:"Telnet Port",description:"Default 23",defaultValue:23,required:true)
     input("Username","text",title:"Username for Login",required:true,defaultValue:"")
     input("Password","password",title:"Password for Login",required:true,defaultValue:"")
-    input("useUpsNameForLabel","bool",title:"Use UPS name for Device Label",defaultValue:false)
+    input("useUpsNameForLabel","bool",title:"Use UPS name for Device Label",description:"Automatically update Hubitat device label to UPS-reported name.",defaultValue:false)
     input("tempUnits","enum",title:"Temperature Attribute Unit",options:["F","C"],defaultValue:"F")
-    input("runTime","number",title:"Check interval for UPS status (minutes, 1–59)",description:"Default 15",defaultValue:15,range:"1..59",required:true)
+    input("runTime","number",title:"Check interval for UPS status (minutes, 1–59)",description:"Default 5",defaultValue:5,range:"1..59",required:true)
     input("runOffset", "number",title:"Check Interval Offset (minutes past the hour, 0–59)",defaultValue:0,range: "0..59",required:true)
     input("runTimeOnBattery","number",title: "Check interval when on battery (minutes, 1–59)",defaultValue:2,range: "1..59",required:true)
-    input("autoShutdownHub","bool",title:"Shutdown Hubitat when UPS battery is low",defaultValue:true)
+    input("autoShutdownHub","bool",title:"Shutdown Hubitat when UPS battery is low",description:"",defaultValue:true)
     input("upsTZOffset","number",title:"UPS Time Zone Offset (minutes)",description:"Offset UPS-reported time from hub (-720 to +840). Default=0 for same TZ",defaultValue:0,range:"-720..840")
-    input("logEnable","bool",title:"Enable Debug Logging",defaultValue:false)
-    input("logEvents","bool",title:"Log All Events",defaultValue:false)
+    input("logEnable","bool",title:"Enable Debug Logging",description:"Auto-off after 30 minutes.",defaultValue:false)
+    input("logEvents","bool",title:"Log All Events",description:"",defaultValue:false)
 }
 
 /* ===============================
@@ -243,8 +208,7 @@ def disableUPSControl(){
         logInfo "UPS Control manually disabled via command";state.upsControlEnabled=false
         unschedule(autoDisableUPSControl)
         if(state?.controlDeviceName&&state.controlDeviceName!=""){
-            device.setLabel(state.controlDeviceName)
-            state.remove("controlDeviceName")
+            device.setLabel(state.controlDeviceName);state.remove("controlDeviceName")
         }
         updateUPSControlState(false)
     }catch(e){logDebug"disableUPSControl(): ${e.message}"}
@@ -254,8 +218,7 @@ def autoDisableUPSControl(){
     try{
         logInfo "UPS Control auto-disabled after timeout";state.upsControlEnabled=false
         if(state?.controlDeviceName&&state.controlDeviceName!=""){
-            device.setLabel(state.controlDeviceName)
-            state.remove("controlDeviceName")
+            device.setLabel(state.controlDeviceName);state.remove("controlDeviceName")
         }
         updateUPSControlState(false)
     }catch(e){logDebug "autoDisableUPSControl(): ${e.message}"}
