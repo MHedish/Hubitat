@@ -8,8 +8,6 @@
 **APC SmartUPS Status** is a high-performance Hubitat driver for APC Smart-UPS devices equipped with Network Management Cards (NMC).  
 It uses a **deterministic Telnet session model** to collect complete UPS telemetry in under five seconds while avoiding race conditions and connection timeouts common to continuous Telnet sessions.
 
-New in this release: **automatic Telnet watchdog recovery** prevents the rare locked *Reconnoiter* state without requiring manual intervention.
-
 Built on a **transient context architecture**, the driver eliminates unnecessary persistent state, improving efficiency and reliability.  
 Control functions such as **UPS power, reboot, calibration, and alarm testing** are safely gated behind an automatic 30-minute enable timeout to prevent unintended actions.
 
