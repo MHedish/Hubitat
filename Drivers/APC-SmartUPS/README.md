@@ -131,7 +131,7 @@ Each setting plays a specific role in how the driver connects to and interprets 
 | **Password for Login** | Password for the specified username. Stored securely by Hubitat. | — |
 | **Use UPS Name for Device Label** | When enabled, automatically updates the Hubitat **device label** to match the UPS-reported name. This helps distinguish multiple UPS units. *(Does not affect the device name or DNI.)* | `false` |
 | **Temperature Attribute Unit** | Choose the temperature unit displayed in attributes (`°F` or `°C`). | `F` |
-| **Check Interval for UPS Status (minutes, 1–59)** | The frequency (in minutes) at which the UPS is polled during normal operation. Recommended: 15. | 15 |
+| **Check Interval for UPS Status (minutes, 1–59)** | The frequency (in minutes) at which the UPS is polled during normal operation. Recommended: 5. | 5 |
 | **Check Interval Offset (minutes past the hour, 0–59)** | Offsets the polling schedule to distribute load across multiple UPS devices. Example: Setting this to `5` runs checks at `05, 20, 35, 50` past the hour. | 0 |
 | **Check Interval When On Battery (minutes, 1–59)** | When the UPS is running on battery, status is polled more frequently to improve responsiveness. Recommended: 2. | 2 |
 | **Shutdown Hubitat when UPS battery is low** | Automatically issue shutdown command to Hubitat hub when UPS battery is low. | `true` |
