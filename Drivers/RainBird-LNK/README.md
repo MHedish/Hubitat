@@ -13,7 +13,7 @@ Their [solution](https://wifi.rainbird.com/articles/rain-bird-underground-irriga
 
 All events and telemetry are fully **Rule Machine and WebCoRE compatible**, enabling precise automation and monitoring with minimal resource overhead.
 
-> See the [Changelog](../../changelog.md) for full release notes.
+> See the [Changelog](../changelog.md) for full release notes.
 
 ---
 
