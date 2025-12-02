@@ -1,5 +1,5 @@
 /*
-*  Irrigation ET Mangager
+*  Irrigation ET Manager
 *  Copyright 2025 Marc Hedish
 *  Licensed under the Apache License, Version 2.0
 *  https://www.apache.org/licenses/LICENSE-2.0
@@ -8,12 +8,14 @@
 *
 *  Changelog:
 *  0.4.0.x  –– Initial beta version. Added One Call 3.0 integration, Rain Bird & Rachio ET engines, min runtime safety clamp, simulation mode
+*  0.4.7.0  –– Move advance zone setting to expandable boxes.
+*  0.4.8.0  –– Various GUI improvements.
 */
 
 import groovy.transform.Field
 
 @Field static final String APP_NAME     = "Irrigation ET Manager"
-@Field static final String APP_VERSION  = "0.4.5.0"
+@Field static final String APP_VERSION  = "0.4.8.0"
 @Field static final String APP_MODIFIED = "2025-12-02"
 
 definition(
@@ -21,10 +23,11 @@ definition(
     namespace      : "mhedish",
     author         : "Marc Hedish",
     description    : "ET-based irrigation scheduling for Rain Bird / WiFi controllers / Valves",
-    category       : "Green Living",
-    iconUrl        : "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
-    iconX2Url      : "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
-    iconX3Url      : "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
+    importUrl      : "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/Irrigation-ET-Manager/Irrigation-ET-Manager.groovy",
+    category       : "",
+    iconUrl        : "",
+    iconX2Url      : "",
+    iconX3Url      : "",
     singleInstance : true
 )
 
@@ -35,8 +38,6 @@ private logDebug(msg){if(logEnable)log.debug"[${APP_NAME}] $msg"}
 private logInfo(msg){if(logEvents)log.info"[${APP_NAME}] $msg"}
 private logWarn(msg){log.warn"[${APP_NAME}] $msg"}
 private logError(msg){log.error"[${APP_NAME}] $msg"}
-private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)log.info"[${DRIVER_NAME}] ${d?"${n}=${v} (${d})":"${n}=${v}"}"}
-private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);logInfo d?"${n}=${v} (${d})":"${n}=${v}"}else logDebug"No change for ${n} (still ${o})"}
 
 /* ---------- PREFERENCES / UI ---------- */
 
@@ -47,15 +48,6 @@ preferences {
 def mainPage() {
     dynamicPage(name: "mainPage", title: "${APP_NAME}", install: true, uninstall: true) {
 
-        section("OpenWeather configuration") {
-            input "owmApiKey", "text",
-                  title: "OpenWeather One Call 3.0 API key",
-                  required: true
-
-            paragraph "Lat/Long will be taken from the hub location: " +
-                      "lat=${location?.latitude}, lon=${location?.longitude}"
-        }
-
         section("Controllers") {
             input "controllers", "capability.actuator",
                   title: "Irrigation controllers (Rain Bird, etc.)",
@@ -65,18 +57,135 @@ def mainPage() {
 
         section("Method & ET settings") {
             input "wateringMethod", "enum",
-                  title: "Watering method",
-                  options: [
-                      "rainbird" : "Rain Bird – ET budget per zone",
-                      "rachio"   : "Rachio – soil moisture per zone (tracks depletion)"
-                  ],
-                  defaultValue: "rainbird",
-                  required: true
+			      title: "Watering strategy",
+			      options: [
+			          "rainbird" : "Rain Bird style – seasonal % adjust per zone",
+			          "rachio"   : "Rachio style – soil moisture tracking per zone"
+			      ],
+			      defaultValue: "rainbird",
+			      required: true
 
             input "baselineEt0Inches", "decimal",
-                  title: "Baseline ET0 (in/day, Rain Bird method)",
-                  defaultValue: 0.18,
+			      title: "Typical summer water use (ET0, inches/day)",
+			      description: "Used only for the Rain Bird method. This is your 'normal hot/dry day' reference. " +
+			                   "Defaults to 0.18 in/day; adjust only if you know your local ET averages.",
+			      defaultValue: 0.18,
+			      required: true
+        }
+
+
+        if (controllers) {
+		    controllers.each { dev ->
+
+		        // Controller-level section for zone count only
+				section("Zones for ${dev.displayName}") {
+				    input "zoneCount_${dev.id}", "number",
+				          title: "Number of zones on ${dev.displayName}",
+				          defaultValue: (dev.currentValue("zoneCount") ?: 4),
+				          required: true
+
+				    input "copyZones_${dev.id}", "button",
+				          title: "Copy Zone 1 settings to all zones on ${dev.displayName}"
+				}
+
+		        Integer zCount = (settings["zoneCount_${dev.id}"] ?: 0) as Integer
+		        if (zCount > 0) {
+		            (1..zCount).each { Integer z ->
+
+				        if (z > 1) {section(""){paragraph "<hr style='border:0;border-top:1px solid #ddd; margin:8px 0;'/>"}}
+
+		                // --- BASIC SETTINGS FOR THIS ZONE (own section) ---
+		                section("Zone ${z} – basic settings") {
+		                    input "soil_${dev.id}_${z}", "enum",
+		                          title: "Soil type",
+		                          description: "Affects how much water the soil can hold. 'Loam' fits most lawns.",
+		                          options: [
+		                              "Sand", "Loamy Sand", "Sandy Loam", "Loam",
+		                              "Clay Loam", "Silty Clay", "Clay"
+		                          ],
+		                          defaultValue: "Loam"
+
+		                    input "plant_${dev.id}_${z}", "enum",
+		                          title: "Plant type",
+		                          description: "Used to estimate root depth and water use.",
+		                          options: [
+		                              "Cool Season Turf", "Warm Season Turf", "Shrubs",
+		                              "Trees", "Groundcover", "Annuals",
+		                              "Vegetables", "Native Low Water"
+		                          ],
+		                          defaultValue: "Cool Season Turf"
+
+		                    input "nozzle_${dev.id}_${z}", "enum",
+		                          title: "Nozzle / sprinkler type",
+		                          description: "Helps estimate inches/hour. 'Spray' for typical pop-up sprays.",
+		                          options: [
+		                              "Spray", "Rotor", "MP Rotator",
+		                              "Drip Emitter", "Drip Line", "Bubbler"
+		                          ],
+		                          defaultValue: "Spray",
+		                          required: false
+
+		                    input "baseMin_${dev.id}_${z}", "decimal",
+		                          title: "Base runtime at 100% (minutes)",
+		                          description: "Rain Bird style only: runtime when water budget is 100%.",
+		                          defaultValue: 10.0
+		                }
+
+		                // --- ADVANCED SETTINGS BOX FOR THIS ZONE (own section, hideable) ---
+		                section("Advanced tuning for zone ${z} (optional)", hideable: true, hidden: true) {
+		                    input "precip_${dev.id}_${z}", "decimal",
+		                          title: "Precipitation rate override (in/hr)",
+		                          description: "Override inches/hour for this zone. Leave blank to use defaults.",
+		                          required: false
+
+		                    input "root_${dev.id}_${z}", "decimal",
+		                          title: "Root depth override (inches)",
+		                          description: "Override estimated root depth. Deeper roots = bigger water 'bucket'.",
+		                          required: false
+
+		                    input "kc_${dev.id}_${z}", "decimal",
+		                          title: "Plant water use factor (Kc override)",
+		                          description: "Advanced: crop coefficient. Leave blank unless you know your Kc.",
+		                          required: false
+
+		                    input "mad_${dev.id}_${z}", "decimal",
+		                          title: "Allowed depletion (MAD override, 0–1)",
+		                          description: "Advanced, Rachio style only. 0.4 = 40% allowable soil dry-down.",
+		                          required: false
+
+	    					input "resetAdv_${dev.id}_${z}", "button",
+	    					title: "Reset advanced settings for zone ${z}"
+		                }
+		            }
+		        }
+		    }
+		}
+
+        section("OpenWeather configuration") {
+            input "owmApiKey", "text",
+                  title: "OpenWeather One Call 3.0 API key",
                   required: true
+
+            paragraph "Lat/Long will be taken from the hub location: " +
+                      "lat=${location?.latitude}, long=${location?.longitude}"
+
+		}
+
+        section("Last weather fetch (OpenWeather One Call 3.0)") {
+            String when   = state.lastWxFetch  ?: "never"
+            String status = state.lastWxOk    == true ? "OK" :
+                            state.lastWxOk    == false ? "ERROR" : "unknown"
+            String msg    = state.lastWxMessage ?: "n/a"
+            def sample    = state.lastWxSample ?: [:]
+
+            String sampleStr = "tMax=${sample.tMaxF ?: 'n/a'} °F, " +
+                               "tMin=${sample.tMinF ?: 'n/a'} °F, " +
+                               "rain=${sample.rainIn ?: 'n/a'} in"
+
+            paragraph "Last fetch: ${when}\nStatus: ${status}\nMessage: ${msg}\nSample: ${sampleStr}"
+
+	        input "btnTestWx", "button",
+                  title: "Test OpenWeather now"
         }
 
         section("Logging") {
@@ -93,95 +202,6 @@ def mainPage() {
 		          defaultValue: true
 		}
 
-        if (controllers) {
-            controllers.each { dev ->
-                section("Zones for ${dev.displayName}") {
-                    input "zoneCount_${dev.id}", "number",
-                          title: "Number of zones on ${dev.displayName}",
-                          defaultValue: (dev.currentValue("zoneCount") ?: 4),
-                          required: true
-
-                    Integer zCount = (settings["zoneCount_${dev.id}"] ?: 0) as Integer
-                    if (zCount > 0) {
-                        (1..zCount).each { Integer z ->
-                            paragraph "Zone ${z}"
-
-                            input "soil_${dev.id}_${z}", "enum",
-                                  title: "Zone ${z} soil type",
-                                  options: [
-                                      "Sand",
-                                      "Loamy Sand",
-                                      "Sandy Loam",
-                                      "Loam",
-                                      "Clay Loam",
-                                      "Silty Clay",
-                                      "Clay"
-                                  ],
-                                  defaultValue: "Loam"
-
-                            input "plant_${dev.id}_${z}", "enum",
-                                  title: "Zone ${z} plant type",
-                                  options: [
-                                      "Cool Season Turf",
-                                      "Warm Season Turf",
-                                      "Shrubs",
-                                      "Trees",
-                                      "Groundcover",
-                                      "Annuals",
-                                      "Vegetables",
-                                      "Native Low Water"
-                                  ],
-                                  defaultValue: "Cool Season Turf"
-
-                            input "nozzle_${dev.id}_${z}", "enum",
-                                  title: "Zone ${z} nozzle type",
-                                  options: [
-                                      "Spray",
-                                      "Rotor",
-                                      "MP Rotator",
-                                      "Drip Emitter",
-                                      "Drip Line",
-                                      "Bubbler"
-                                  ],
-                                  defaultValue: "Spray",
-                                  required: false
-
-                            input "baseMin_${dev.id}_${z}", "decimal",
-                                  title: "Zone ${z} base runtime (min, Rain Bird method)",
-                                  defaultValue: 10.0
-
-                            // Optional advanced overrides (used by ET engine if set)
-                            input "precip_${dev.id}_${z}", "decimal",
-                                  title: "Zone ${z} precip rate override (in/hr, optional)",
-                                  required: false
-
-                            input "root_${dev.id}_${z}", "decimal",
-                                  title: "Zone ${z} root depth override (in, optional)",
-                                  required: false
-
-                            input "kc_${dev.id}_${z}", "decimal",
-                                  title: "Zone ${z} Kc override (optional)",
-                                  required: false
-
-                            input "mad_${dev.id}_${z}", "decimal",
-                                  title: "Zone ${z} MAD override (0–1, optional)",
-                                  required: false
-                        }
-                    }
-                }
-            }
-        }
-
-        section("Logging") {
-            input "logEnable", "bool",
-                  title: "Enable debug logging",
-                  defaultValue: true
-
-            input "logEvents", "bool",
-                  title: "Enable info-level logging",
-                  defaultValue: true
-        }
-
 		section("Safety & runtime limits") {
 		    input "allowShortRuns", "bool",
 		          title: "Allow runtimes shorter than 30 seconds (0.5 min)",
@@ -189,23 +209,8 @@ def mainPage() {
 		}
 
         section("Debug / Tools") {
-            input "btnTestWx", "button",
-                  title: "Test OpenWeather now"
         }
 
-        section("Last weather fetch (OpenWeather One Call 3.0)") {
-            String when   = state.lastWxFetch  ?: "never"
-            String status = state.lastWxOk    == true ? "OK" :
-                            state.lastWxOk    == false ? "ERROR" : "unknown"
-            String msg    = state.lastWxMessage ?: "n/a"
-            def sample    = state.lastWxSample ?: [:]
-
-            String sampleStr = "tMax=${sample.tMaxF ?: 'n/a'} °F, " +
-                               "tMin=${sample.tMinF ?: 'n/a'} °F, " +
-                               "rain=${sample.rainIn ?: 'n/a'} in"
-
-            paragraph "Last fetch: ${when}\nStatus: ${status}\nMessage: ${msg}\nSample: ${sampleStr}"
-        }
 
         section("About") {
             paragraph appInfoString()
@@ -247,6 +252,22 @@ def appButtonHandler(String btn) {
     if (btn == "btnTestWx") {
         logInfo "Manual OpenWeather test requested via UI"
         testOpenWeatherNow()
+        return
+    }
+    if (btn.startsWith("copyZones_")) {
+        String devId = btn - "copyZones_"
+        copyZone1ToAll(devId)
+        return
+    }
+    if (btn.startsWith("resetAdv_")) {
+        // resetAdv_<devId>_<zone>
+        def parts = btn.split("_")
+        if (parts.size() == 3) {
+            String devId = parts[1]
+            Integer zone = parts[2] as Integer
+            resetAdvancedForZone(devId, zone)
+        }
+        return
     }
 }
 
@@ -259,6 +280,49 @@ private void testOpenWeatherNow() {
     }
 }
 
+private void copyZone1ToAll(String devId) {
+    Integer zCount = (settings["zoneCount_${devId}"] ?: 0) as Integer
+    if (zCount <= 1) {
+        logInfo "copyZone1ToAll(${devId}): nothing to copy (zCount=${zCount})"
+        return
+    }
+
+    // read zone 1 settings
+    def soil1   = settings["soil_${devId}_1"]
+    def plant1  = settings["plant_${devId}_1"]
+    def nozzle1 = settings["nozzle_${devId}_1"]
+    def base1   = settings["baseMin_${devId}_1"]
+
+    def precip1 = settings["precip_${devId}_1"]
+    def root1   = settings["root_${devId}_1"]
+    def kc1     = settings["kc_${devId}_1"]
+    def mad1    = settings["mad_${devId}_1"]
+
+    (2..zCount).each { Integer z ->
+        app.updateSetting("soil_${devId}_${z}",   [value: soil1,   type: "enum"])
+        app.updateSetting("plant_${devId}_${z}",  [value: plant1,  type: "enum"])
+        app.updateSetting("nozzle_${devId}_${z}", [value: nozzle1, type: "enum"])
+        app.updateSetting("baseMin_${devId}_${z}",[value: base1,   type: "decimal"])
+
+        app.updateSetting("precip_${devId}_${z}", [value: precip1, type: "decimal"])
+        app.updateSetting("root_${devId}_${z}",   [value: root1,   type: "decimal"])
+        app.updateSetting("kc_${devId}_${z}",     [value: kc1,     type: "decimal"])
+        app.updateSetting("mad_${devId}_${z}",    [value: mad1,    type: "decimal"])
+    }
+
+    logInfo "Copied Zone 1 settings to all ${zCount} zones for controller ${devId}"
+}
+
+private void resetAdvancedForZone(String devId, Integer zone) {
+    String z = zone as String
+
+    app.updateSetting("precip_${devId}_${z}", [value: null, type: "decimal"])
+    app.updateSetting("root_${devId}_${z}",   [value: null, type: "decimal"])
+    app.updateSetting("kc_${devId}_${z}",     [value: null, type: "decimal"])
+    app.updateSetting("mad_${devId}_${z}",    [value: null, type: "decimal"])
+
+    logInfo "Reset advanced overrides for controller ${devId}, zone ${zone}"
+}
 
 /* ---------- OPENWEATHER 3.0 FETCH + CACHE ---------- */
 
