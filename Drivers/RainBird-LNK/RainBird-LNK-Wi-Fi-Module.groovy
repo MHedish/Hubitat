@@ -18,6 +18,8 @@
 *  0.0.9.x  –– Modern     –– Transition cycle introducing full firmware 3.x (LNK2/ESP-ME) compatibility, unified identity detection, opcode refinements, and final hybrid/legacy convergence ahead of 0.1.x RC release.
 *  0.1.0.0  –– Release    –– Finalized hybrid and modern (≥3.x) controller compatibility; validated firmware 3.2 opcode handling, consolidated command surface, refined diagnostics and event logic, and completed stability verification for transition to 0.1.x stable branch.
 *  0.1.0.1  –– Corrected legacy firmware detection; updates for older ≤ 2.10 firmware - getAvailableStations(), parseCombinedControllerState(), and "watering" detection.
+*  0.1.1.0  –– Added links to GitHub README.md and Attribute documentation.
+*  0.1.2.0  –– Updated getRainSensorState() to reflect "unknown" when on legacy (≤3.0) firmware.
 */
 
 import groovy.transform.Field
@@ -30,8 +32,8 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "0.1.0.1"
-@Field static final String DRIVER_MODIFIED = "2025.11.24"
+@Field static final String DRIVER_VERSION  = "0.1.2.0"
+@Field static final String DRIVER_MODIFIED = "2025.12.02"
 @Field static final String PAD = "\u0016"
 @Field static final int BLOCK_SIZE = 16
 @Field static int delayMs=150
@@ -104,14 +106,15 @@ metadata {
     }
 
     preferences {
+        input("","hidden", title:"<a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#%EF%B8%8F-rain-bird-lnklnk2-wifi-module-controller-hubitat-driver' target='_blank'><b>Readme</b></a><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#-exposed-attributes' target='_blank'><hr><b>Attribute</b> Quick Reference</a>")
         input("ipAddress","text",title:"Rain Bird Controller IP",required:true)
         input("password","password",title:"Rain Bird Controller Password",required:true)
         input("zonePref","number",title:"Number of Zones", defaultValue:6,range:"1..16")
-        input("autoTimeSync","bool",title:"Automatically sync Rain Bird to Hubitat clock",defaultValue:true)
-        input("logEnable","bool",title:"Enable Debug Logging",defaultValue:false)
+        input("autoTimeSync","bool",title:"Automatically sync Rain Bird to Hubitat clock",description:"Corrects any drift greater than ±5 seconds.<br>Automatically adjusts controller clock for DST.",defaultValue:true)
+        input("logEnable","bool",title:"Enable Debug Logging",description:"Auto-off after 30 minutes.",defaultValue:false)
         input("logEvents","bool",title:"Log All Events",defaultValue:false)
-        input("wateringRefresh","bool",title:"Increase polling frequency during watering events",defaultValue:true)
-        input name:"refreshInterval", type:"enum", title:"Refresh Interval",defaultValue:"5",
+        input("wateringRefresh","bool",title:"Increase polling frequency during watering events",description:"Sets refresh to every 5 seconds during a watering event.",defaultValue:true)
+        input name:"refreshInterval", type:"enum", title:"Refresh Interval",description:"Select from the list.",defaultValue:"5",
 		    options:[
 		        "0":"Manual","1":"Every minute","2":"Every 2 minutes","3":"Every 3 minutes",
 		        "4":"Every 4 minutes","5":"Every 5 minutes","10":"Every 10 minutes","15":"Every 15 minutes",
@@ -328,17 +331,15 @@ private getZoneSeasonalAdjustments(){
 }
 
 private getRainSensorState(){
-    logDebug"Requesting rain sensor state..."
-    try{
-        def r=parseIfString(sendRainbirdCommand("3E",1),"getRainSensorState")
-        def d=r?.result?.data
-        if(!d){logWarn"getRainSensorState: No valid response";return}
-        if(d.startsWith("BE")){
-            def s=Integer.parseInt(d.substring(2,4),16)
-            def stateStr=(s==0)?"dry":(s==1?"wet":"bypassed")
-            emitChangedEvent("rainSensorState",stateStr,"Rain sensor state: ${stateStr}")
-        }else logWarn"getRainSensorState: Unexpected data (${d})"
-    }catch(e){logError"getRainSensorState() failed: ${e.message}"}
+	logDebug"Requesting rain sensor state..."
+	try{
+		def r=parseIfString(sendRainbirdCommand("3E",1),"getRainSensorState");def d=r?.result?.data;def fw=device.currentValue("firmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
+		if(!d){logWarn"getRainSensorState(): No valid response";return}
+		if(d.startsWith("BE")){if(isLegacyFirmware(3.0)){logDebug"getRainSensorState(): Firmware ${fw} does not expose bypass control; marking state as unknown.";emitChangedEvent("rainSensorState","unknown","Rain sensor (no bypass support): unknown");return}
+			def s=Integer.parseInt(d.substring(2,4),16);def stateStr=(s==0)?"dry":(s==1?"wet":"bypassed");emitChangedEvent("rainSensorState",stateStr,"Rain sensor state: ${stateStr}");return
+		}
+		logWarn"getRainSensorState(): Unexpected data (${d})"
+	}catch(e){logError"getRainSensorState() failed: ${e.message}"}
 }
 
 private getControllerEventTimestamp(){
