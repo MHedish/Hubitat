@@ -112,7 +112,7 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 
 **Firmware Tested:** 2.9 / 3.2  
 **Hubitat:** C-7 / C-8 / C-8 Pro (2.3.9+)  
-**Driver File:** [`RainBird_v0.1.2.0.groovy`](/mnt/data/RainBird_v0.1.2.0.groovy)
+**Driver File:** [`RainBird_v0.1.2.0.groovy`](https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Module.groovy)
 
 ---
 
