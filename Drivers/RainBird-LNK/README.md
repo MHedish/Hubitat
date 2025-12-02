@@ -1,6 +1,6 @@
 # 🌧️ Rain Bird LNK/LNK2 WiFi Module Controller (Hubitat Driver)
 
-[![Version](https://img.shields.io/badge/version-0.1.0.1-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.2.0-blue.svg)](./CHANGELOG.md)
 [![Status](https://img.shields.io/badge/release-RC--STABLE-brightgreen.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
@@ -28,7 +28,7 @@ With advanced telemetry, adaptive pacing, and hourly drift correction, it’s de
 
 ---
 
-## 🌟 What’s New in v0.1.0.1 (Release Candidate)
+## 🌟 What’s New in v0.1.2.0 (Release Candidate)
 
 🧩 **Hybrid + Modern Firmware Convergence** — validated on firmware 2.1, 2.9, and 3.2  
 💧 **Switch & Valve capabilities:** dashboard integration for on/off/open/close parity  
@@ -145,7 +145,7 @@ https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBi
 | `model`                  | string  | Controller model identifier                        |
 | `programScheduleSupport` | boolean | Indicates if controller supports program retrieval |
 | `rainDelay`              | number  | Current active rain delay days                     |
-| `rainSensorState`        | enum    | `bypassed`, `dry`, `wet`                           |
+| `rainSensorState`        | enum    | `unknown`, `bypassed`, `dry`, `wet`                |
 | `remainingRuntime`       | number  | Seconds left in current watering cycle             |
 | `seasonalAdjust`         | number  | Active seasonal adjustment factor (%)              |
 | `serialNumber`           | string  | Controller serial number                           |
