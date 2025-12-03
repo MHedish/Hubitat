@@ -4,7 +4,7 @@
 
 ## Overview
 
-**Irrigation ET Manager** brings professional-grade ET (Evapotranspiration) scheduling to Hubitat.
+**WET-IT** brings professional-grade ET (Evapotranspiration) scheduling to Hubitat.
 It computes daily irrigation needs for each zone based on **real weather**, **soil type**, **plant type**, **nozzle type**, and optional advanced parameters.
 
 You can choose between:
@@ -98,7 +98,7 @@ When depletion exceeds MAD, the app waters enough to refill the zone’s soil �
 * Subscribe to **One Call API 3.0** (free tier OK)
 * Copy your API key
 
-### 2. Install the Irrigation ET Manager App in Hubitat
+### 2. Install the WET-IT App in Hubitat
 
 * Add the app through your Apps Code
 * Click **Done** -> then re-open it for full configuration
@@ -164,7 +164,7 @@ The app automatically caches results for 24 hrs.
 * The app adjusts it based on weather
 * Output is always between **5–200%**
 
-### **Rachio Style (Soil Moisture Model)**
+### **Orbit/Rachio Style (Soil Moisture Model)**
 
 * More precise
 * Tracks soil moisture daily
