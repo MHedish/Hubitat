@@ -1,6 +1,6 @@
-# 🌱 **Irrigation ET Manager**
+# 🌱 **Weather-Enhanced Time-based Irrigation Tuning (WET-IT)**
 
-*A Hubitat App for Weather-Based Smart Irrigation Using Rain Bird or Rachio-Style Logic*
+*A Hubitat App for Weather-Based Smart Irrigation Using Rain Bird, or Orbit/Rachio-Style Logic*
 
 ## Overview
 
@@ -10,7 +10,7 @@ It computes daily irrigation needs for each zone based on **real weather**, **so
 You can choose between:
 
 * **Rain Bird Style** — computes a *Seasonal Adjust %* each day and multiplies your base runtime
-* **Rachio Style** — models soil moisture directly using a water-bucket approach
+* **Orbit/Rachio Style** — models soil moisture directly using a water-bucket approach
 
 The app integrates with your existing **Rain Bird LNK/LNK2 controller driver** (or future controllers) by issuing commands such as `runZone(zone, minutes)` and `stopIrrigation()`.
 
