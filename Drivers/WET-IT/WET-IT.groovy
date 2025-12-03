@@ -16,14 +16,14 @@ import groovy.transform.Field
 
 @Field static final String APP_NAME     = "WET-IT"
 @Field static final String APP_VERSION  = "0.4.8.1"
-@Field static final String APP_MODIFIED = "2025-12-02"
+@Field static final String APP_MODIFIED = "2025-12-03"
 
 definition(
     name           : "WET-IT",
     namespace      : "mhedish",
     author         : "Marc Hedish",
     description    : "ET-based irrigation scheduling for Rain Bird / Rachio / Orbit / WiFi controllers / Valves",
-    importUrl      : "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/Irrigation-ET-Manager/Irrigation-ET-Manager.groovy",
+    importUrl      : "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/WET-IT/WET-IT.groovy",
     category       : "",
     iconUrl        : "",
     iconX2Url      : "",
