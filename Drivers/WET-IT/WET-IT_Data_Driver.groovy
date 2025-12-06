@@ -9,38 +9,48 @@
 *  Changelog:
 *  0.4.10.1 –– Inital implementation.
 *  0.4.10.2 –– childEmitEvent() and childEmitChangedEvent(); added versioning.
+*  0.4.10.3 –– Implemented autoDisableDebug logging.
+*  0.4.10.3 –– Updated driver description.
+*  0.4.10.3 –– Added wxSource and wxTimestamp attributes.
+*  0.4.12.0 –– Refactor to remove runtime minutes.
+*  0.4.12.0 –– Move to hybrid.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "0.4.10.2"
-@Field static final String DRIVER_MODIFIED = "2025-12-04"
+@Field static final String DRIVER_VERSION  = "0.5.0.0"
+@Field static final String DRIVER_MODIFIED = "2025-12-05"
 
 metadata {
     definition(
 		name: "WET-IT Data",
 		namespace: "MHedish",
 		author: "Marc Hedish",
-		description: "Receives and displays ET summary data from the WET-IT app. Provides attributes for automations, dashboards, and external integrations.",
+		description: "Receives and displays evapotranspiration (ET) and seasonal-adjust data from the WET-IT app. Implements industry scheduling concepts as used by Rain Bird, Rain Master (Toro), Rachio, and Orbit controllers for educational and interoperability purposes. No proprietary code or assets are used.",
 		importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/WET-IT/WET-IT_Data_Driver.groovy"
 	) {
         capability "Sensor"
         capability "Refresh"
+        capability "Polling"
 
+        attribute "appInfo","string"
+        attribute "driverInfo","string"
         attribute "etSummary","string"
         attribute "etTimestamp","string"
         attribute "summaryText","string"
-        attribute "appInfo","string"
-        attribute "driverInfo","string"
+        attribute "wxSource","string"
+		attribute "wxTimestamp","string"
 
         command "clearData"
         command "parseEtSummary"
+        command "disableDebugLoggingNow"
+
     }
 
     preferences{
-        input "logEnable","bool",title:"Enable debug logging",defaultValue:true
-        input "logEvents","bool",title:"Enable info logging",defaultValue:true
+	    input("logEnable","bool",title:"Enable Debug Logging",description:"Auto-off after 30 minutes.",defaultValue:false)
+	    input("logEvents","bool",title:"Log All Events",description:"",defaultValue:false)
     }
 }
 
@@ -58,15 +68,24 @@ def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.upda
 /* =============================== Lifecycle =============================== */
 def installed(){logInfo"Installed: ${driverInfoString()}";clearData();initialize()}
 def updated(){logInfo"Updated: ${driverInfoString()}";initialize()}
-def initialize(){emitEvent("driverInfo", driverInfoString())}
+def initialize(){emitEvent("driverInfo", driverInfoString());unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)}
 def refresh(){logInfo"Manual refresh: ET summary=${device.currentValue("etSummary")}, timestamp=${device.currentValue("etTimestamp")}"}
 
 /* ============================= Core Commands ============================= */
-def clearData(){
-    emitChangedEvent("etSummary","")
-    emitChangedEvent("etTimestamp","")
-    emitChangedEvent("summaryText","")
-    logInfo"Cleared ET data"
+def clearData() {["etSummary","etTimestamp","summaryText"].each{emitChangedEvent(it,"")};logInfo "Cleared ET data"}
+def poll(){refresh()}
+def updateZoneAttributes(Integer zCount){
+    try{
+        (1..zCount).each{
+            if(!device.hasAttribute("zone${it}Et"))device.addAttribute("zone${it}Et","number")
+            if(!device.hasAttribute("zone${it}Seasonal"))device.addAttribute("zone${it}Seasonal","number")
+        }
+        (zCount+1..24).each{
+            if(device.hasAttribute("zone${it}Et"))device.deleteCurrentState("zone${it}Et")
+            if(device.hasAttribute("zone${it}Seasonal"))device.deleteCurrentState("zone${it}Seasonal")
+        }
+        logInfo"Updated zone attributes: 1..${zCount}"
+    }catch(e){logError"updateZoneAttributes(): ${e.message}"}
 }
 
 /* ========================== ET Summary Handling ========================== */
@@ -76,9 +95,8 @@ def parseEtSummary(String json){
         def map=new groovy.json.JsonSlurper().parseText(json)
         def parts=[]
         map.each{k,v->
-            BigDecimal rt=(v.runtimeMinutes?:0)as BigDecimal
             BigDecimal pct=(v.budgetPct?:0)as BigDecimal
-            parts<<"${k}:${rt}min(${pct}%)"
+            parts<<"${k}: (${pct}%)"
         }
         String text=parts.join(", ")
         emitChangedEvent("summaryText",text)
