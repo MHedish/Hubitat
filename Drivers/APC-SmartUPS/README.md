@@ -245,7 +245,7 @@ These values can be used in **dashboards**, **Rule Machine triggers**, **notific
 | **runTimeMinutes**, **runTimeHours** | min / hr | Estimated remaining runtime at current load. |
 | **temperature**, **temperatureF**, **temperatureC** | °F / °C | UPS internal temperature (dual representation for flexibility). |
 | **upsContact**, **upsLocation** | — | UPS contact and location information. |
-| **upsStatus** | — | Current UPS operating mode (Online, On Battery, On Bypass, etc.). |
+| **upsStatus** | — | Current UPS operating mode (Online, Off, OnBattery, Discharged). |
 
 ---
 
