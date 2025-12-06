@@ -1,9 +1,9 @@
 {
   "packageName": "Rain Bird LNK/LNK2 WiFi Module Controller",
   "author": "Marc Hedish",
-  "version": "0.1.2.0",
-  "releaseNotes": "Release Candidate 0.1.2.0 — hybrid/modern firmware convergence (2.1 → 2.9 → 3.2), deterministic refresh, adaptive time sync, Switch/Valve support, and enhanced telemetry.\n\n0.1.1.0 – Added links to GitHub README.md and Attribute documentation.\n0.1.2.0 – Updated getRainSensorState() to reflect 'unknown' when on legacy (≤3.0) firmware.",
-  "dateReleased": "2025-12-02",
+  "version": "0.1.2.1",
+  "releaseNotes": "Release Candidate 0.1.2.1 — hybrid/modern firmware convergence (2.1 → 2.9 → 3.2), deterministic refresh, adaptive time sync, Switch/Valve support, and enhanced telemetry.\n\n0.1.1.0 – Added links to GitHub README.md and Attribute documentation.\n0.1.2.0 – Updated getRainSensorState() to reflect 'unknown' when on legacy (≤3.0) firmware.\n0.1.2.1 – Updated documentation tile.",
+  "dateReleased": "2025-12-06",
   "minimumHEVersion": "2.3.6",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/CHANGELOG.md",
@@ -16,7 +16,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Module.groovy",
       "required": true,
-      "version": "0.1.2.0"
+      "version": "0.1.2.1"
     }
   ]
 }
