@@ -4,53 +4,61 @@
 *  Licensed under the Apache License, Version 2.0
 *  https://www.apache.org/licenses/LICENSE-2.0
 *
-*  Child driver for WET-IT app.  Displays and publishes ET summary and timestamp events.
+*  Child driver for WET-IT app.  Displays and publishes hybrid ET + Seasonal summary data.
 *
 *  Changelog:
-*  0.4.10.1 –– Inital implementation.
-*  0.4.10.2 –– childEmitEvent() and childEmitChangedEvent(); added versioning.
-*  0.4.10.3 –– Implemented autoDisableDebug logging.
-*  0.4.10.3 –– Updated driver description.
-*  0.4.10.3 –– Added wxSource and wxTimestamp attributes.
+*  0.4.10.x –– Initial implementation and refinements.
 *  0.4.12.0 –– Refactor to remove runtime minutes.
-*  0.4.12.0 –– Move to hybrid.
+*  0.5.0.0  –– Move to hybrid.
+*  0.5.0.1  –– Dynamic zone search, verifyAttributes().
+*  0.5.1.0  –– Rename ET attributes to summary*, add JSON + timestamp alignment.
+*  0.5.1.1  –– Corrected verifyAttributes() - device.addAttribute()
+*  0.5.1.2  –– Clamped maximum zone count to 48; Added MAX_ZONES static declaration; exposed initialize().
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "0.5.0.0"
-@Field static final String DRIVER_MODIFIED = "2025-12-05"
+@Field static final String DRIVER_VERSION  = "0.5.1.2"
+@Field static final String DRIVER_MODIFIED = "2025-12-06"
+@Field static final int MAX_ZONES = 48
 
 metadata {
     definition(
-		name: "WET-IT Data",
-		namespace: "MHedish",
-		author: "Marc Hedish",
-		description: "Receives and displays evapotranspiration (ET) and seasonal-adjust data from the WET-IT app. Implements industry scheduling concepts as used by Rain Bird, Rain Master (Toro), Rachio, and Orbit controllers for educational and interoperability purposes. No proprietary code or assets are used.",
-		importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/WET-IT/WET-IT_Data_Driver.groovy"
-	) {
+        name: "WET-IT Data",
+        namespace: "MHedish",
+        author: "Marc Hedish",
+        description: "Receives and displays hybrid evapotranspiration (ET) and seasonal-adjust data from the WET-IT app.",
+        importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/WET-IT_Data_Driver.groovy"
+    ) {
         capability "Sensor"
         capability "Refresh"
-        capability "Polling"
 
         attribute "appInfo","string"
         attribute "driverInfo","string"
-        attribute "etSummary","string"
-        attribute "etTimestamp","string"
         attribute "summaryText","string"
+        attribute "summaryJson","string"
+        attribute "summaryTimestamp","string"
         attribute "wxSource","string"
-		attribute "wxTimestamp","string"
+        attribute "wxTimestamp","string"
 
+        // Static predeclare up to MAX_ZONES
+        (1..MAX_ZONES).each{
+            attribute "zone${it}Et","number"
+            attribute "zone${it}Seasonal","number"
+        }
+
+        command "initialize"
         command "clearData"
-        command "parseEtSummary"
+        command "parseSummary"
         command "disableDebugLoggingNow"
-
+        command "verifyAttributes",["number"]
     }
 
     preferences{
-	    input("logEnable","bool",title:"Enable Debug Logging",description:"Auto-off after 30 minutes.",defaultValue:false)
-	    input("logEvents","bool",title:"Log All Events",description:"",defaultValue:false)
+        input("","hidden", title:"<a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#%EF%B8%8F-rain-bird-lnklnk2-wifi-module-controller-hubitat-driver' target='_blank'><b>Readme</b></a><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#-exposed-attributes' target='_blank'><hr><b>Attribute</b> Quick Reference</a>")
+        input("logEnable","bool",title:"Enable Debug Logging",description:"Auto-off after 30 minutes.",defaultValue:false)
+        input("logEvents","bool",title:"Log All Events",description:"",defaultValue:false)
     }
 }
 
@@ -66,41 +74,51 @@ def autoDisableDebugLogging(){try{unschedule(autoDisableDebugLogging);device.upd
 def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo"Debug logging disabled (manual)"}catch(e){logDebug"disableDebugLoggingNow(): ${e.message}"}}
 
 /* =============================== Lifecycle =============================== */
-def installed(){logInfo"Installed: ${driverInfoString()}";clearData();initialize()}
+def installed(){logInfo"Installed: ${driverInfoString()}";initialize()}
 def updated(){logInfo"Updated: ${driverInfoString()}";initialize()}
-def initialize(){emitEvent("driverInfo", driverInfoString());unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)}
-def refresh(){logInfo"Manual refresh: ET summary=${device.currentValue("etSummary")}, timestamp=${device.currentValue("etTimestamp")}"}
+def initialize(){emitEvent("driverInfo",driverInfoString());unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)}
+def refresh(){logInfo"Manual refresh: summary=${device.currentValue("summaryText")}, timestamp=${device.currentValue("summaryTimestamp")}"}
 
 /* ============================= Core Commands ============================= */
-def clearData() {["etSummary","etTimestamp","summaryText"].each{emitChangedEvent(it,"")};logInfo "Cleared ET data"}
-def poll(){refresh()}
-def updateZoneAttributes(Integer zCount){
+def clearData(){["summaryText","summaryJson","summaryTimestamp","wxSource","wxTimestamp"].each{emitChangedEvent(it,"")};(1..MAX_ZONES).each{["Et","Seasonal"].each{suffix->device.deleteCurrentState("zone${it}${suffix}")}};logInfo"Cleared all summary and zone data"}
+def updateZoneAttributes(Number zCount){
+    zCount = zCount?.toInteger() ?: 0
     try{
-        (1..zCount).each{
-            if(!device.hasAttribute("zone${it}Et"))device.addAttribute("zone${it}Et","number")
-            if(!device.hasAttribute("zone${it}Seasonal"))device.addAttribute("zone${it}Seasonal","number")
+        // Clear unused zones (hidden in GUI)
+        (zCount+1..MAX_ZONES).each{
+            ["Et","Seasonal"].each{ suffix ->
+                def n="zone${it}${suffix}"
+                if(device.currentValue(n)!=null){
+                    try{device.deleteCurrentState(n);logDebug"Cleared stale ${n}"}
+                    catch(ex){logWarn"updateZoneAttributes(): cleanup ${n} failed (${ex.message})"}
+                }
+            }
         }
-        (zCount+1..24).each{
-            if(device.hasAttribute("zone${it}Et"))device.deleteCurrentState("zone${it}Et")
-            if(device.hasAttribute("zone${it}Seasonal"))device.deleteCurrentState("zone${it}Seasonal")
-        }
-        logInfo"Updated zone attributes: 1..${zCount}"
+        logInfo"Updated zone attributes: 1..${zCount} active, cleared ${(MAX_ZONES-zCount)}"
     }catch(e){logError"updateZoneAttributes(): ${e.message}"}
 }
 
-/* ========================== ET Summary Handling ========================== */
-def parseEtSummary(String json){
-    if(!json){emitChangedEvent("summaryText","No ET data");return}
+def verifyAttributes(Number zCount=0){
+    zCount=zCount?.toInteger()?:0
     try{
-        def map=new groovy.json.JsonSlurper().parseText(json)
-        def parts=[]
-        map.each{k,v->
-            BigDecimal pct=(v.budgetPct?:0)as BigDecimal
-            parts<<"${k}: (${pct}%)"
+        def expected=["appInfo","driverInfo","summaryText","summaryJson","summaryTimestamp","wxSource","wxTimestamp"]
+        expected.each{if(!device.hasAttribute(it)){logWarn"verifyAttributes(): attribute ${it} missing in metadata (will self-create on next event)"}}
+        if(zCount>0){
+            (1..zCount).each{
+				if(!device.hasAttribute("zone${it}Et"))logWarn"verifyAttributes(): attribute zone${it}Et missing (will self-create on next event)"
+                if(!device.hasAttribute("zone${it}Seasonal"))logWarn"verifyAttributes(): attribute zone${it}Seasonal missing (will self-create on next event)"
+            }
         }
-        String text=parts.join(", ")
-        emitChangedEvent("summaryText",text)
-    }catch(e){
-        logError"parseEtSummary(): ${e.message}"
-    }
+        logInfo"verifyAttributes(): completed (core+${zCount} zones verified)"
+    }catch(e){logError"verifyAttributes(): ${e.message}"}
+}
+
+/* ========================== Hybrid Summary Handling ========================== */
+def parseSummary(String json){
+    if(!json){emitChangedEvent("summaryText","No data");emitChangedEvent("summaryJson","{}");return}
+    try{
+        def map=new groovy.json.JsonSlurper().parseText(json);def parts=[]
+        map.each{k,v->parts<<"${k}: (ET:${v.etBudgetPct?:0}%, Seasonal:${v.seasonalBudgetPct?:0}%)"}
+        emitChangedEvent("summaryText",parts.join(", "));emitChangedEvent("summaryJson",json)
+    }catch(e){logError"parseSummary(): ${e.message}"}
 }
