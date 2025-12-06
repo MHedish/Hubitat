@@ -9,14 +9,15 @@
 *
 *  Changelog:
 *  1.0.0.0   -- Initial stable release; validated under sustained load and reboot recovery.
+*  1.0.1.0   -- Updated Preferences documentation tile.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.0.0"
-@Field static final String DRIVER_MODIFIED = "2025.12.01"
+@Field static final String DRIVER_VERSION  = "1.0.1.0"
+@Field static final String DRIVER_MODIFIED = "2025.12.06"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
 /* ===============================
@@ -117,7 +118,7 @@ metadata {
    Preferences
    =============================== */
 preferences {
-    input("","hidden", title:"<a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/README.md#%EF%B8%8F-configuration-parameters' target='_blank'><b>Preferences</b> Quick Reference</a><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/README.md#-attribute-reference' target='_blank'><hr><b>Attribute</b> Quick Reference</a>")
+    input("", "hidden", title: driverDocBlock())
     input("upsIP","text",title:"Smart UPS (APC only) IP Address",required:true)
     input("upsPort","integer",title:"Telnet Port",description:"Default 23",defaultValue:23,required:true)
     input("Username","text",title:"Username for Login",required:true,defaultValue:"")
@@ -137,6 +138,7 @@ preferences {
    Utilities
    =============================== */
 private String driverInfoString() {return "${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"}
+private driverDocBlock(){return"<div style='text-align:center;'><b>⚡${DRIVER_NAME} v${DRIVER_VERSION}</b> (${DRIVER_MODIFIED})<br><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/README.md#%EF%B8%8F-configuration-parameters' target='_blank'><b>⚙️ Configuration Parameters</b></a><br><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/README.md#-attribute-reference' target='_blank'><b>📊 Attribute Reference Guide</b></a><hr></div>"}
 private logDebug(msg) {if(logEnable) log.debug "[${DRIVER_NAME}] $msg"}
 private logInfo(msg)  {if(logEvents) log.info  "[${DRIVER_NAME}] $msg"}
 private logWarn(msg)  {log.warn "[${DRIVER_NAME}] $msg"}
