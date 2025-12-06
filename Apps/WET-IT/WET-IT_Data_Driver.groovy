@@ -14,7 +14,7 @@
 *  0.5.1.0  –– Rename ET attributes to summary*, add JSON + timestamp alignment.
 *  0.5.1.1  –– Corrected verifyAttributes() - device.addAttribute()
 *  0.5.1.2  –– Clamped maximum zone count to 48; Added MAX_ZONES static declaration; exposed initialize().
-*  0.5.1.3  –– Added Preferences page link to documentation.
+*  0.5.1.3  –– Added Preferences page link to documentation; removed commands verifyAttributes & parseSummary.
 */
 
 import groovy.transform.Field
@@ -50,10 +50,7 @@ metadata {
         }
 
         command "initialize"
-        command "clearData"
-        command "parseSummary"
         command "disableDebugLoggingNow"
-        command "verifyAttributes",["number"]
     }
 
     preferences{
@@ -82,11 +79,10 @@ def initialize(){emitEvent("driverInfo",driverInfoString());unschedule(autoDisab
 def refresh(){logInfo"Manual refresh: summary=${device.currentValue("summaryText")}, timestamp=${device.currentValue("summaryTimestamp")}"}
 
 /* ============================= Core Commands ============================= */
-def clearData(){["summaryText","summaryJson","summaryTimestamp","wxSource","wxTimestamp"].each{emitChangedEvent(it,"")};(1..MAX_ZONES).each{["Et","Seasonal"].each{suffix->device.deleteCurrentState("zone${it}${suffix}")}};logInfo"Cleared all summary and zone data"}
-def updateZoneAttributes(Number zCount){
+private void clearData(){["summaryText","summaryJson","summaryTimestamp","wxSource","wxTimestamp"].each{emitChangedEvent(it,"")};(1..MAX_ZONES).each{["Et","Seasonal"].each{suffix->device.deleteCurrentState("zone${it}${suffix}")}};logInfo"Cleared all summary and zone data"}
+private updateZoneAttributes(Number zCount){
     zCount = zCount?.toInteger() ?: 0
     try{
-        // Clear unused zones (hidden in GUI)
         (zCount+1..MAX_ZONES).each{
             ["Et","Seasonal"].each{ suffix ->
                 def n="zone${it}${suffix}"
@@ -100,7 +96,7 @@ def updateZoneAttributes(Number zCount){
     }catch(e){logError"updateZoneAttributes(): ${e.message}"}
 }
 
-def verifyAttributes(Number zCount=0){
+private verifyAttributes(Number zCount=0){
     zCount=zCount?.toInteger()?:0
     try{
         def expected=["appInfo","driverInfo","summaryText","summaryJson","summaryTimestamp","wxSource","wxTimestamp"]
@@ -116,7 +112,7 @@ def verifyAttributes(Number zCount=0){
 }
 
 /* ========================== Hybrid Summary Handling ========================== */
-def parseSummary(String json){
+private parseSummary(String json){
     if(!json){emitChangedEvent("summaryText","No data");emitChangedEvent("summaryJson","{}");return}
     try{
         def map=new groovy.json.JsonSlurper().parseText(json);def parts=[]
