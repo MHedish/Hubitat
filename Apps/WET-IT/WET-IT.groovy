@@ -35,22 +35,26 @@
 *  0.4.11.10 –– Finally
 *  0.4.11.11 –– Finalize test methods for all three data sources.
 *  0.4.12.0  –– Refactor to remove runtime minutes.
-*  0.5.0.0   –– Remove the “Method” selector completely; First “Hybrid Mode”.
+*  0.5.0.0   –– Removed the “Method” selector completely; First “Hybrid Mode”.
+*  0.5.1.0   –– Added missing unschedule(autoDisableDebugLogging) in initialize(); added verifyAttributes() call to child devices in initialize.
+*  0.5.1.1   –– Removed input "allowShortRuns" artifact
+*  0.5.1.2   –– Added MAX_ZONES; restored childEmitEvent() and childEmitChangedEvent().
 */
 
 import groovy.transform.Field
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.5.0.0"
+@Field static final String APP_VERSION="0.5.1.2"
 @Field static final String APP_MODIFIED="2025-12-06"
 @Field static def cachedChild = null
+@Field static final int MAX_ZONES = 48
 
 definition(
     name:"WET-IT",
     namespace:"MHedish",
     author:"Marc Hedish",
     description:"Provides evapotranspiration (ET) and seasonal-adjust scheduling data for Hubitat-connected irrigation systems. Models logic used by Rain Bird, Rachio, Orbit, and Rain Master (Toro) controllers.",
-    importUrl:"https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/WET-IT/WET-IT.groovy",
+    importUrl:"https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/WET-IT.groovy",
     category:"",
     iconUrl:"",
     iconX2Url:"",
@@ -64,37 +68,13 @@ private logDebug(msg){if(logEnable)log.debug"[${APP_NAME}] $msg"}
 private logInfo(msg){if(logEvents)log.info"[${APP_NAME}] $msg"}
 private logWarn(msg){log.warn"[${APP_NAME}] $msg"}
 private logError(msg){log.error"[${APP_NAME}] $msg"}
-private def getDataChild(){cachedChild?:(cachedChild=ensureDataDevice())}
-private autoDisableDebugLogging(){
-    try {
-        unschedule(autoDisableDebugLogging);app?.updateSetting("logEnable", [value:"false", type:"bool"]);logInfo "Debug logging disabled (auto)"
-    } catch(e) {logDebug "autoDisableDebugLogging(): ${e.message}"}
-}
-
-private disableDebugLoggingNow(){
-    try {
-        unschedule(autoDisableDebugLogging);app?.updateSetting("logEnable", [value:"false", type:"bool"]);logInfo "Debug logging disabled (manual)"
-    } catch(e) {logDebug "disableDebugLoggingNow(): ${e.message}"}
-}
-
-private childEmitEvent(dev,String n,def v,String d=null,String u=null,boolean f=false){
-    if(!dev?.respondsTo("sendEvent")){logError"childEmitEvent(): invalid device reference for ${n}";return}
-    try{
-        dev.sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f)
-        if(logEvents)log.info"[${APP_NAME}] ${d?"${n}=${v} (${d})":"${n}=${v}"}"
-    }catch(e){logError"childEmitEvent(): failed to emit ${n} (${e.message})"}
-}
-
-private childEmitChangedEvent(dev,String n,def v,String d=null,String u=null,boolean f=false){
-    if(!dev?.respondsTo("sendEvent")){logError"childEmitChangedEvent(): invalid device reference for ${n}";return}
-    try{
-        def o=dev.currentValue(n)
-        if(f||o?.toString()!=v?.toString()){
-            dev.sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true)
-            if(logEvents)log.info"[${APP_NAME}] ${d?"${n}=${v} (${d})":"${n}=${v}"}"
-        }else logDebug"childEmitChangedEvent(): no change for ${n} (still ${o})"
-    }catch(e){logError"childEmitChangedEvent(): failed to emit ${n} (${e.message})"}
-}
+private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)log.info"[${app.label}] ${d?"${n}=${v} (${d})":"${n}=${v}"}"}
+private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=app.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)log.info"[${app.label}] ${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
+private childEmitEvent(dev,n,v,d=null,u=null,boolean f=false){try{if(dev)dev.sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)log.info"[${app.label}] ${d?"${n}=${v} (${d})":"${n}=${v}"}"}catch(e){logWarn"childEmitEvent(): ${e.message}"}}
+private childEmitChangedEvent(dev,n,v,d=null,u=null,boolean f=false){try{if(!dev)return;def o=dev.currentValue(n);if(f||o?.toString()!=v?.toString()){dev.sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)log.info"[${app.label}] ${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}catch(e){logWarn"childEmitChangedEvent(): ${e.message}"}}
+private def getDataChild(){if(cachedChild&&getChildDevice(cachedChild.deviceNetworkId))return cachedChild;cachedChild=ensureDataDevice()}
+def autoDisableDebugLogging(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "Debug logging disabled (auto)"}catch(e){logDebug "autoDisableDebugLogging(): ${e.message}"}}
+def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "Debug logging disabled (manual)"}catch(e){logDebug "disableDebugLoggingNow(): ${e.message}"}}
 
 /* ---------- Preferences & Main Page ---------- */
 preferences{page(name:"mainPage")}
@@ -118,9 +98,9 @@ def mainPage(){
             }else{paragraph "Baseline ET₀ automatically estimated at <b>${estimateBaselineEt0(location.latitude)} in/day</b> for your location."}
             paragraph "WET-IT now computes both <b>evapotranspiration (ET)</b> and <b>seasonal-adjustment</b> percentages for each irrigation zone. Results are published to the WET-IT Data device for use by compatible controllers and automations."
         }
-        section("Irrigation Zones"){ buildZoneMenu() }
-        section("Weather Data Sources"){ buildWeatherSection() }
-        section("Logging & Diagnostics"){ buildLoggingSection() }
+        section("Irrigation Zones"){buildZoneMenu()}
+        section("Weather Data Sources"){buildWeatherSection()}
+        section("Logging & Diagnostics"){buildLoggingSection()}
         section("System Information"){
             buildAboutSection()
             paragraph "Hub Location: lat=${location.latitude}, lon=${location.longitude}"
@@ -132,8 +112,8 @@ def mainPage(){
 private buildZoneMenu(){
     Integer zCount=(settings.zoneCount?:4)as Integer
     section("Zones"){
-        input "zoneCount","number",title:"Number of zones (1–24)",
-            defaultValue:zCount,required:true,range:"1..24",submitOnChange:true
+        input "zoneCount","number",title:"Number of zones (1–${MAX_ZONES})",
+            defaultValue:zCount,required:true,range:"1..MAX_ZONES",submitOnChange:true
         input "copyZones","button",title:"Copy Zone 1 to all"
     }
     (1..zCount).each{Integer z->
@@ -201,11 +181,12 @@ private buildWeatherSection(){
 
 private buildLoggingSection(){
     input "btnRunEtNow","button",title:"Run ET Calculations Now"
+	input "btnVerifySystem","button",title:"Verify System Integrity",submitOnChange:true
+    input "btnVerifyChild","button",title:"Verify Data Child",submitOnChange:true
     input "btnDisableDebug","button",title:"Disable Debug Logging Now"
     input "logEnable","bool",title:"Enable Debug Logging",defaultValue:false
     paragraph "Auto-off after 30 minutes when debug logging is enabled."
     input "logEvents","bool",title:"Log All Events",defaultValue:false
-    input "allowShortRuns","bool",title:"Allow runs <30s",defaultValue:false
 }
 
 private buildAboutSection(){
@@ -220,6 +201,8 @@ def appButtonHandler(String btn){
     if(btn.startsWith("resetAdv_")){Integer z=(btn-"resetAdv_")as Integer;resetAdvancedForZone(z);return}
     if(btn=="btnDisableDebug"){disableDebugLoggingNow();return}
     if(btn=="btnRunEtNow"){logInfo"Manual ET run requested";runDailyEt();return}
+    if(btn=="btnVerifyChild"){verifyDataChild();return}
+    if(btn=="btnVerifySystem"){verifySystem();return}
 	if(btn=="btnTestWx"){
 	    logInfo"Manual weather API test requested"
 	    BigDecimal lat=(location?.latitude?:0G).setScale(1,BigDecimal.ROUND_HALF_UP)
@@ -284,14 +267,15 @@ private void resetAdvancedForZone(Integer z){
 /* ---------- Lifecycle ---------- */
 def installed(){logInfo "Installed: ${appInfoString()}";initialize()}
 def updated(){logInfo "Updated: ${appInfoString()}";initialize()}
-def initialize(){if(logEnable)runIn(1800,autoDisableDebugLogging);def child=ensureDataDevice()
+def initialize(){unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging);def child=ensureDataDevice()
     if(child){
         Integer z=(settings.zoneCount?:4)as Integer
         if(child.hasCommand("updateZoneAttributes"))try{child.updateZoneAttributes(z)}catch(e){logWarn"init: zone attr sync failed (${e.message})"}
+        if(child.hasCommand("verifyAttributes"))try{child.verifyAttributes(settings.zoneCount ?: 4)}catch(e){logWarn"verifyAttributes(): failed (${e.message})"}
         childEmitChangedEvent(child,"wxSource","Not yet fetched","Initial weather source state");childEmitEvent(child,"appInfo",appInfoString(),"App version published",null,true)
     }else logWarn"init: no data device; skipping attr sync"
     if(!owmApiKey&&!tomApiKey&&weatherSource!="noaa")logWarn"Not fully configured; no API key or valid source"
-    runIn(5,"runDailyEt");scheduleDailyEt();logInfo"Scheduling ET calculations daily at 00:10"
+    runIn(15,"runDailyEt");scheduleDailyEt();logInfo"Scheduling ET calculations daily at 00:10"
 }
 
 private scheduleDailyEt(){
@@ -307,27 +291,39 @@ private scheduleDailyEt(){
 def ensureDataDevice(){
     def dni="wetit_data_${app.id}";def child=getChildDevice(dni)
     if(!child){
-        cachedChild = null // invalidate the cache
         try{
-            child = addChildDevice("mhedish","WET-IT Data",dni,[label:"WET-IT Data",isComponent:true]);logInfo"Created virtual data device: ${child.displayName}"
-        }catch(e){
-            logError"ensureDataDevice(): failed to create child device (${e.message})"
-        }
+            child=addChildDevice("mhedish","WET-IT Data",dni,[label:"WET-IT Data",isComponent:true])
+            logInfo"Created virtual data device: ${child.displayName}"
+        }catch(e){logError"ensureDataDevice(): failed to create child device (${e.message})";return null}
     }
-    return child
+    cachedChild=child;return child
 }
+
+def verifyDataChild(){
+    def dni="wetit_data_${app.id}";def reg=getChildDevice(dni)
+    if(!reg){logWarn"verifyDataChild(): ❌ No child device found (DNI=${dni})";return false}
+    if(!cachedChild){cachedChild=reg;logWarn"verifyDataChild(): ⚠️ Cache was empty; now repointed to ${reg.displayName}";return true}
+    if(cachedChild.deviceNetworkId!=reg.deviceNetworkId){
+        logWarn"verifyDataChild(): ⚠️ Cache mismatch (cached=${cachedChild.deviceNetworkId}, found=${reg.deviceNetworkId}); cache reset"
+        cachedChild=reg;return true}
+    logInfo"verifyDataChild(): ✅ Child device verified (${reg.displayName}, DNI=${reg.deviceNetworkId})";return true
+}
+
+def verifySystem(){
+    logInfo"Running full system verification...";boolean ok=true;def verified=verifyDataChild()
+    if(!verified){logWarn"verifySystem(): ❌ Data child missing or invalid";ok=false}
+    else{def child=getDataChild();Integer z=(settings.zoneCount?:4)as Integer
+        if(child?.hasCommand("verifyAttributes")){
+            try{
+                child.verifyAttributes(z);logInfo"verifySystem(): ✅ Attributes verified for ${z} zones"
+            }catch(e){logWarn"verifySystem(): ⚠️ verifyAttributes() failed (${e.message})";ok=false}
+        }else{logWarn"verifySystem(): ⚠️ verifyAttributes() not implemented in driver";ok=false}
+    }
+    logInfo ok?"verifySystem(): ✅ System check passed" : "verifySystem(): ❌ Issues detected";return ok
+}
+
 
 /* ---------- Weather & ET Engine ---------- */
-private publishEtSummary(Map zoneResults){
-    def c=getDataChild();if(!c)return
-    def json=groovy.json.JsonOutput.toJson(zoneResults)
-    childEmitEvent(getDataChild(),"etSummary",json,"ET summary published",null,true)
-    childEmitChangedEvent(getDataChild(),"etTimestamp",new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone),"ET timestamp updated")
-    if(c.hasCommand("parseEtSummary"))c.parseEtSummary(json)
-    childEmitChangedEvent(getDataChild(),"wxSource",(settings.weatherSource?.toUpperCase() ?: "UNKNOWN"),"Weather data provider updated")
-    logDebug"Published ET summary to ${c.displayName}"
-}
-
 private Map fetchWeather(boolean force=false){
     String src=settings.weatherSource?:'openweather'
     Map wx=null
@@ -443,6 +439,7 @@ private runDailyEt(){
     if(!owmApiKey&&!tomApiKey&&(settings.weatherSource!="noaa"&&settings.weatherSource!="auto")){
         logWarn"runDailyEt(): No valid API key or source configured; aborting";return
     }
+    if(!verifyDataChild()){logWarn"runDailyEt(): cannot continue, child invalid";return}
     Map wx=fetchWeather(false);if(!wx){logWarn"runDailyEt(): No weather data";return}
     Map sun=getSunriseAndSunset();Date sr=sun?.sunrise;Date ss=sun?.sunset
     Long dayLen=(sr&&ss)?((ss.time-sr.time)/1000L):null
@@ -459,22 +456,20 @@ private runDailyEt(){
     Map etResults=etComputeZoneBudgets(env,zoneList,"et")
     Map seasonalResults=etComputeZoneBudgets(env,zoneList,"seasonal")
     Map hybridResults=[:];zoneList.each{z->def id=z.id;hybridResults[id]=[etBudgetPct:etResults[id]?.budgetPct?:0,seasonalBudgetPct:seasonalResults[id]?.budgetPct?:0]}
-    publishEtSummaryHybrid(hybridResults)
+    publishSummary(hybridResults)
 }
 
 /* ---------- Event Publishing ---------- */
-private publishEtSummaryHybrid(Map results){
-    def child=getDataChild();if(!child)return
+private publishSummary(Map results){
+    def c=getDataChild();if(!c)return
     String ts=new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone)
     String summary=results.collect{k,v->"${k}=(ET:${v.etBudgetPct}%,Seasonal:${v.seasonalBudgetPct}%)"}.join(", ")
-    childEmitEvent(child,"etSummary",summary,"Hybrid ET+Seasonal summary",null,true)
-    childEmitChangedEvent(child,"etTimestamp",ts,"ET timestamp updated")
-    results.each{k,v->
-        def n=k.replaceAll("^zone","")
-        childEmitEvent(child,"zone${n}Et",v.etBudgetPct.toString(),"ET% for Zone ${n}")
-        childEmitEvent(child,"zone${n}Seasonal",v.seasonalBudgetPct.toString(),"Seasonal% for Zone ${n}")
-    }
-    logInfo"Published hybrid ET+Seasonal data for ${results.size()} zones"
+    String json=groovy.json.JsonOutput.toJson(results)
+    childEmitEvent(c,"summaryText",summary,"Hybrid ET+Seasonal summary",null,true)
+    childEmitEvent(c,"summaryJson",json,"Hybrid ET+Seasonal JSON summary",null,true)
+    childEmitEvent(c,"summaryTimestamp",ts,"Summary timestamp updated")
+    if(c.hasCommand("parseSummary"))c.parseSummary(json)
+    logInfo"Published hybrid summary data for ${results.size()} zones"
 }
 
 private BigDecimal getPrevDepletion(String key){state.depletion=state.depletion?:[:];return(state.depletion[key]?:0G)as BigDecimal}
