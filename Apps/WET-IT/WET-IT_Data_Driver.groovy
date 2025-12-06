@@ -14,12 +14,13 @@
 *  0.5.1.0  –– Rename ET attributes to summary*, add JSON + timestamp alignment.
 *  0.5.1.1  –– Corrected verifyAttributes() - device.addAttribute()
 *  0.5.1.2  –– Clamped maximum zone count to 48; Added MAX_ZONES static declaration; exposed initialize().
+*  0.5.1.3  –– Added Preferences page link to documentation.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "0.5.1.2"
+@Field static final String DRIVER_VERSION  = "0.5.1.3"
 @Field static final String DRIVER_MODIFIED = "2025-12-06"
 @Field static final int MAX_ZONES = 48
 
@@ -56,7 +57,7 @@ metadata {
     }
 
     preferences{
-        input("","hidden", title:"<a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#%EF%B8%8F-rain-bird-lnklnk2-wifi-module-controller-hubitat-driver' target='_blank'><b>Readme</b></a><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#-exposed-attributes' target='_blank'><hr><b>Attribute</b> Quick Reference</a>")
+        input("", "hidden", title: driverDocBlock())
         input("logEnable","bool",title:"Enable Debug Logging",description:"Auto-off after 30 minutes.",defaultValue:false)
         input("logEvents","bool",title:"Log All Events",description:"",defaultValue:false)
     }
@@ -64,6 +65,7 @@ metadata {
 
 /* =============================== Logging & Utilities =============================== */
 private driverInfoString(){return"${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"}
+private driverDocBlock(){return"<div style='text-align:center;'><b>🌱 ${DRIVER_NAME} v${DRIVER_VERSION}</b> (${DRIVER_MODIFIED})<br><a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/README.md' target='_blank'><b>📘 Documentation</b></a><br><a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/README.md' target='_blank'><b>🔍 Quick Reference Guide</b></a><hr></div>"}
 private logDebug(msg){if(logEnable)log.debug"[${DRIVER_NAME}] $msg"}
 private logInfo(msg){if(logEvents)log.info"[${DRIVER_NAME}] $msg"}
 private logWarn(msg){log.warn"[${DRIVER_NAME}] $msg"}
