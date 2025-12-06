@@ -20,6 +20,7 @@
 *  0.1.0.1  –– Corrected legacy firmware detection; updates for older ≤ 2.10 firmware - getAvailableStations(), parseCombinedControllerState(), and "watering" detection.
 *  0.1.1.0  –– Added links to GitHub README.md and Attribute documentation.
 *  0.1.2.0  –– Updated getRainSensorState() to reflect "unknown" when on legacy (≤3.0) firmware.
+*  0.1.2.1  –– Updated Preferences documentation tile.
 */
 
 import groovy.transform.Field
@@ -32,8 +33,8 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "0.1.2.0"
-@Field static final String DRIVER_MODIFIED = "2025.12.02"
+@Field static final String DRIVER_VERSION  = "0.1.2.1"
+@Field static final String DRIVER_MODIFIED = "2025.12.06"
 @Field static final String PAD = "\u0016"
 @Field static final int BLOCK_SIZE = 16
 @Field static int delayMs=150
@@ -106,7 +107,7 @@ metadata {
     }
 
     preferences {
-        input("","hidden", title:"<a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#%EF%B8%8F-rain-bird-lnklnk2-wifi-module-controller-hubitat-driver' target='_blank'><b>Readme</b></a><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#-exposed-attributes' target='_blank'><hr><b>Attribute</b> Quick Reference</a>")
+        input("", "hidden", title: driverDocBlock())
         input("ipAddress","text",title:"Rain Bird Controller IP",required:true)
         input("password","password",title:"Rain Bird Controller Password",required:true)
         input("zonePref","number",title:"Number of Zones", defaultValue:6,range:"1..16")
@@ -126,6 +127,7 @@ metadata {
 
 /* =============================== Logging & Utilities =============================== */
 private driverInfoString(){return"${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"}
+private driverDocBlock(){return"<div style='text-align:center;'><b>🌱 ${DRIVER_NAME} v${DRIVER_VERSION}</b> (${DRIVER_MODIFIED})<br><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#%EF%B8%8F-rain-bird-lnklnk2-wifi-module-controller-hubitat-driver' target='_blank'><b>📘 Readme</b></a><br><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#-exposed-attributes' target='_blank'><b>🔍 Quick Reference Guide</b></a><hr></div>"}
 private logDebug(msg){if(logEnable)log.debug"[${DRIVER_NAME}] $msg"}
 private logInfo(msg){if(logEvents)log.info"[${DRIVER_NAME}] $msg"}
 private logWarn(msg){log.warn"[${DRIVER_NAME}] $msg"}
