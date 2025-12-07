@@ -15,13 +15,14 @@
 *  0.5.1.1  –– Corrected verifyAttributes() - device.addAttribute()
 *  0.5.1.2  –– Clamped maximum zone count to 48; Added MAX_ZONES static declaration; exposed initialize().
 *  0.5.1.3  –– Added Preferences page link to documentation; removed commands verifyAttributes & parseSummary.
+*  0.5.1.4  –– Added freeze/frost warnings; added attributes: freezeAlert, freezeLowTemp.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "0.5.1.3"
-@Field static final String DRIVER_MODIFIED = "2025-12-06"
+@Field static final String DRIVER_VERSION  = "0.5.1.4"
+@Field static final String DRIVER_MODIFIED = "2025-12-07"
 @Field static final int MAX_ZONES = 48
 
 metadata {
@@ -37,8 +38,10 @@ metadata {
 
         attribute "appInfo","string"
         attribute "driverInfo","string"
-        attribute "summaryText","string"
+		attribute "freezeAlert","bool"
+		attribute "freezeLowTemp","number"
         attribute "summaryJson","string"
+        attribute "summaryText","string"
         attribute "summaryTimestamp","string"
         attribute "wxSource","string"
         attribute "wxTimestamp","string"
