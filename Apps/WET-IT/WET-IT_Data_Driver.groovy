@@ -16,12 +16,17 @@
 *  0.5.1.2  –– Clamped maximum zone count to 48; Added MAX_ZONES static declaration; exposed initialize().
 *  0.5.1.3  –– Added Preferences page link to documentation; removed commands verifyAttributes & parseSummary.
 *  0.5.1.4  –– Added freeze/frost warnings; added attributes: freezeAlert, freezeLowTemp.
+*  0.5.1.5  –– Corrected emitEvent and emitChangedEvent to use logInfo instead of log.info
+*  0.5.1.6  –– Added parentEmitEvent() and parentEmitChangedEvent() to accept map from app and proxy to emitEvent() and emitChangedEvent()
+*  0.5.1.7  –– Resorted to exposing emitEvent and emitChangedEvent
+*  0.5.1.8  –– Wrapped emitEvent() and emitChangedEvent() to prevent log errors.
+*  0.5.1.9  –– Refactored to substitute emitEvent() and emitChangedEvent() values rather than try/catch.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "0.5.1.4"
+@Field static final String DRIVER_VERSION  = "0.5.1.9"
 @Field static final String DRIVER_MODIFIED = "2025-12-07"
 @Field static final int MAX_ZONES = 48
 
@@ -45,17 +50,16 @@ metadata {
         attribute "summaryTimestamp","string"
         attribute "wxSource","string"
         attribute "wxTimestamp","string"
-
         // Static predeclare up to MAX_ZONES
         (1..MAX_ZONES).each{
             attribute "zone${it}Et","number"
             attribute "zone${it}Seasonal","number"
         }
-
         command "initialize"
         command "disableDebugLoggingNow"
+        command "emitEvent",[[name:"This isn't the button you're looking for.",description:"Move Along."]]
+		command "emitChangedEvent",[[name:"This isn't the button you're looking for.",description:"Move Along."]]
     }
-
     preferences{
         input("", "hidden", title: driverDocBlock())
         input("logEnable","bool",title:"Enable Debug Logging",description:"Auto-off after 30 minutes.",defaultValue:false)
@@ -70,8 +74,8 @@ private logDebug(msg){if(logEnable)log.debug"[${DRIVER_NAME}] $msg"}
 private logInfo(msg){if(logEvents)log.info"[${DRIVER_NAME}] $msg"}
 private logWarn(msg){log.warn"[${DRIVER_NAME}] $msg"}
 private logError(msg){log.error"[${DRIVER_NAME}] $msg"}
-private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)log.info"[${DRIVER_NAME}] ${d?"${n}=${v} (${d})":"${n}=${v}"}"}
-private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);logInfo d?"${n}=${v} (${d})":"${n}=${v}"}else logDebug"No change for ${n} (still ${o})"}
+private emitEvent(String n=null,def v=null,String d=null,String u=null,boolean f=false){if(!n){n="emitEvent";v="This isn't the button you're looking for.";d="For internal app communication.";u=null;f=false};sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
+private emitChangedEvent(String n=null,def v=null,String d=null,String u=null,boolean f=false){if(!n){n="emitChangedEvent";v="This isn't the button you're looking for.";d="For internal app communication.";u=null;f=false};def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 def autoDisableDebugLogging(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo"Debug logging disabled (auto)"}catch(e){logDebug"autoDisableDebugLogging(): ${e.message}"}}
 def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo"Debug logging disabled (manual)"}catch(e){logDebug"disableDebugLoggingNow(): ${e.message}"}}
 
