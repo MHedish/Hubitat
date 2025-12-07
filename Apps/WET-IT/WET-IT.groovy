@@ -39,13 +39,22 @@
 *  0.5.1.0   –– Added missing unschedule(autoDisableDebugLogging) in initialize(); added verifyAttributes() call to child devices in initialize.
 *  0.5.1.1   –– Removed input "allowShortRuns" artifact
 *  0.5.1.2   –– Added MAX_ZONES; restored childEmitEvent() and childEmitChangedEvent().
+*  0.5.1.3   –– Corrected autoDisableDebugLogging() and disableDebugLoggingNow().
+*  0.5.1.4   –– Added feedback to [Verify Data Child] and [Verify System] in UI.
+*  0.5.1.5   –– Updated verifySystem()
+*  0.5.1.6   –– Refactored initialize() to introduce self-healing.
+*  0.5.1.7   –– Added freeze/frost warnings.
+*  0.5.2.0   –– Recognized not everyone measures in degrees Freedom; added Fahrenheit/Celsius selection and appropriate output updates.
+*  0.5.2.1   –– Fixed freeze warning.
+*  0.5.2.2   –– Corrected "unit" in publishSummary(); only emits unit where apropriate; corrected wxSource=Not yet fetched in initialize().
+*  0.5.2.3   –– Added user preference for freeze warning threshold.
 */
 
 import groovy.transform.Field
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.5.1.2"
-@Field static final String APP_MODIFIED="2025-12-06"
+@Field static final String APP_VERSION="0.5.2.3"
+@Field static final String APP_MODIFIED="2025-12-07"
 @Field static def cachedChild = null
 @Field static final int MAX_ZONES = 48
 
@@ -64,7 +73,7 @@ definition(
 
 /* ----------Logging Methods ---------- */
 private appInfoString(){return "${APP_NAME} v${APP_VERSION} (${APP_MODIFIED})"}
-private logDebug(msg){if(logEnable)log.debug"[${APP_NAME}] $msg"}
+private logDebug(msg){if(atomicState.logEnable)log.debug"[${APP_NAME}] $msg"}
 private logInfo(msg){if(logEvents)log.info"[${APP_NAME}] $msg"}
 private logWarn(msg){log.warn"[${APP_NAME}] $msg"}
 private logError(msg){log.error"[${APP_NAME}] $msg"}
@@ -73,13 +82,12 @@ private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=fa
 private childEmitEvent(dev,n,v,d=null,u=null,boolean f=false){try{if(dev)dev.sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)log.info"[${app.label}] ${d?"${n}=${v} (${d})":"${n}=${v}"}"}catch(e){logWarn"childEmitEvent(): ${e.message}"}}
 private childEmitChangedEvent(dev,n,v,d=null,u=null,boolean f=false){try{if(!dev)return;def o=dev.currentValue(n);if(f||o?.toString()!=v?.toString()){dev.sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)log.info"[${app.label}] ${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}catch(e){logWarn"childEmitChangedEvent(): ${e.message}"}}
 private def getDataChild(){if(cachedChild&&getChildDevice(cachedChild.deviceNetworkId))return cachedChild;cachedChild=ensureDataDevice()}
-def autoDisableDebugLogging(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "Debug logging disabled (auto)"}catch(e){logDebug "autoDisableDebugLogging(): ${e.message}"}}
-def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "Debug logging disabled (manual)"}catch(e){logDebug "disableDebugLoggingNow(): ${e.message}"}}
-
+private autoDisableDebugLogging(){try{unschedule("autoDisableDebugLogging");atomicState.logEnable=false;app.updateSetting("logEnable",[type:"bool",value:false]);logInfo"Debug logging disabled (auto)"}catch(e){logDebug"autoDisableDebugLogging(): ${e.message}"}}
+def disableDebugLoggingNow(){try{unschedule("autoDisableDebugLogging");atomicState.logEnable=false;app.updateSetting("logEnable",[type:"bool",value:false]);logInfo"Debug logging disabled (manual)"}catch(e){logDebug"disableDebugLoggingNow(): ${e.message}"}}
 /* ---------- Preferences & Main Page ---------- */
 preferences{page(name:"mainPage")}
 def mainPage(){
-    dynamicPage(name:"mainPage",title:APP_NAME,install:true,uninstall:true){
+    dynamicPage(name:"mainPage",title:"🌱 Weather-Enhanced Time-based Irrigation Tuning (WET-IT)",install:true,uninstall:true){
         section("") {
             paragraph "<b>${APP_NAME}</b> v${APP_VERSION} (${APP_MODIFIED})"
             def child=getDataChild()
@@ -112,14 +120,12 @@ def mainPage(){
 private buildZoneMenu(){
     Integer zCount=(settings.zoneCount?:4)as Integer
     section("Zones"){
-        input "zoneCount","number",title:"Number of zones (1–${MAX_ZONES})",
-            defaultValue:zCount,required:true,range:"1..MAX_ZONES",submitOnChange:true
+        input "zoneCount","number",title:"Number of zones (1–${MAX_ZONES})",defaultValue:zCount,required:true,range:"1..MAX_ZONES",submitOnChange:true
         input "copyZones","button",title:"Copy Zone 1 to all"
     }
     (1..zCount).each{Integer z->
         section("Zone ${z} – Irrigation Profile"){
-            buildZoneSection(z)
-            buildAdvancedZoneSection(z)
+            buildZoneSection(z);buildAdvancedZoneSection(z)
         }
     }
 }
@@ -167,23 +173,27 @@ private buildWeatherSection(){
         paragraph "Daily weather data is retrieved from your selected provider and used to compute reference ET₀ values for your chosen watering model."
         input "weatherSource","enum",title:"Weather Data Source",options:[
             "openweather":"OpenWeather 3.0 (Global, API key required)",
-            "noaa":"NOAA NWS (U.S. only, no key)",
+            "noaa":"NOAA NWS (U.S. only, API key not required)",
             "tomorrow":"Tomorrow.io (Global, API key required)",
             "auto":"Auto (try all available sources with valid keys)"
         ],defaultValue:"openweather",required:true,submitOnChange:true
         if(weatherSource in ["openweather","auto"])input"owmApiKey","text",title:"OpenWeather API Key",description:"Used for OpenWeather 3.0 (and Auto mode if available)",required:(weatherSource=="openweather")
         if(weatherSource in ["tomorrow","auto"])input"tomApiKey","text",title:"Tomorrow.io API Key",description:"Used for Tomorrow.io (and Auto mode if available)",required:(weatherSource=="tomorrow")
         input "btnTestWx","button",title:"Test Weather Now",submitOnChange:true
-        if(atomicState.tempApiMsg)
-        	paragraph "<b>Last API Test:</b> ${atomicState.tempApiMsg}";atomicState.remove("tempApiMsg")
+        if(atomicState.tempApiMsg) paragraph "<b>Last API Test:</b> ${atomicState.tempApiMsg}";atomicState.remove("tempApiMsg")
     }
 }
 
 private buildLoggingSection(){
+	input "tempUnits","enum",title:"Temperature Units",options:["F","C"],defaultValue:"F",submitOnChange:true
+	def unit=(settings.tempUnits?:"F") as String;def options=(unit=="C")?(0..10).collect{sprintf("%.1f",it*0.5)}:(33..41).collect{"${it}"};def defVal=(unit=="C")?"1.5":"35"
+	if(!settings.freezeThreshold||!options.contains(settings.freezeThreshold.toString()))app.updateSetting("freezeThreshold",[value:defVal,type:"enum"])
+	input "freezeThreshold","enum",title:"Freeze Warning Threshold (°${unit})",options:options,defaultValue:defVal,description:"Select the temperature below which freeze/frost alerts trigger",width:4,submitOnChange:true
     input "btnRunEtNow","button",title:"Run ET Calculations Now"
-	input "btnVerifySystem","button",title:"Verify System Integrity",submitOnChange:true
+    input "btnVerifySystem","button",title:"Verify System Integrity",submitOnChange:true
     input "btnVerifyChild","button",title:"Verify Data Child",submitOnChange:true
-    input "btnDisableDebug","button",title:"Disable Debug Logging Now"
+    if(atomicState.tempDiagMsg){paragraph "<b>Diagnostics:</b> ${atomicState.tempDiagMsg}";atomicState.remove("tempDiagMsg")}
+    input "btnDisableDebug","button",title:"Disable Debug Logging Now",submitOnChange:true
     input "logEnable","bool",title:"Enable Debug Logging",defaultValue:false
     paragraph "Auto-off after 30 minutes when debug logging is enabled."
     input "logEvents","bool",title:"Log All Events",defaultValue:false
@@ -200,9 +210,9 @@ def appButtonHandler(String btn){
     if(btn=="copyZones"){copyZone1ToAll();return}
     if(btn.startsWith("resetAdv_")){Integer z=(btn-"resetAdv_")as Integer;resetAdvancedForZone(z);return}
     if(btn=="btnDisableDebug"){disableDebugLoggingNow();return}
-    if(btn=="btnRunEtNow"){logInfo"Manual ET run requested";runDailyEt();return}
-    if(btn=="btnVerifyChild"){verifyDataChild();return}
-    if(btn=="btnVerifySystem"){verifySystem();return}
+    if(btn=="btnRunEtNow"){runDailyEt();def msg=getDataChild()?.currentValue("summaryText")?:'⚠️ No ET summary available';logInfo"ET run completed: ${msg}";app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
+	if(btn=="btnVerifyChild"){def ok=verifyDataChild();def msg=ok?"✅ Data child verified successfully.":"⚠️ Data child verification failed. Check logs.";logInfo msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
+	if(btn=="btnVerifySystem"){def ok=verifySystem();def msg=ok?"✅ System verification passed.":"⚠️ System verification failed. See logs for details.";logInfo msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
 	if(btn=="btnTestWx"){
 	    logInfo"Manual weather API test requested"
 	    BigDecimal lat=(location?.latitude?:0G).setScale(1,BigDecimal.ROUND_HALF_UP)
@@ -266,15 +276,18 @@ private void resetAdvancedForZone(Integer z){
 
 /* ---------- Lifecycle ---------- */
 def installed(){logInfo "Installed: ${appInfoString()}";initialize()}
-def updated(){logInfo "Updated: ${appInfoString()}";initialize()}
-def initialize(){unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging);def child=ensureDataDevice()
-    if(child){
-        Integer z=(settings.zoneCount?:4)as Integer
-        if(child.hasCommand("updateZoneAttributes"))try{child.updateZoneAttributes(z)}catch(e){logWarn"init: zone attr sync failed (${e.message})"}
-        if(child.hasCommand("verifyAttributes"))try{child.verifyAttributes(settings.zoneCount ?: 4)}catch(e){logWarn"verifyAttributes(): failed (${e.message})"}
-        childEmitChangedEvent(child,"wxSource","Not yet fetched","Initial weather source state");childEmitEvent(child,"appInfo",appInfoString(),"App version published",null,true)
-    }else logWarn"init: no data device; skipping attr sync"
-    if(!owmApiKey&&!tomApiKey&&weatherSource!="noaa")logWarn"Not fully configured; no API key or valid source"
+def updated(){logInfo "Updated: ${appInfoString()}";atomicState.logEnable=settings.logEnable?:false;initialize()}
+def initialize(){logInfo "Initializing: ${appInfoString()}";unschedule("autoDisableDebugLogging");if(atomicState.logEnable)runIn(1800,"autoDisableDebugLogging")
+    if(!verifyDataChild()){logWarn"initialize(): ❌ Cannot continue; data child missing or invalid";return}
+    def child=getDataChild();Integer z=(settings.zoneCount?:4)as Integer
+    try{
+        if(child.hasCommand("updateZoneAttributes")){child.updateZoneAttributes(z);logInfo"✅ Verified/updated zone attributes (${z} zones)"}
+        if(!child.currentValue("wxSource"))childEmitChangedEvent(child,"wxSource","Not yet fetched","Initial weather source state")
+        childEmitEvent(child,"appInfo",appInfoString(),"App version published",null,true)
+        if(!verifySystem())logWarn"⚠️ System verification reported issues"
+        else logInfo"✅ System verification clean"
+    }catch(e){logWarn"⚠️ Zone/verification stage failed (${e.message})"}
+    if(!owmApiKey&&!tomApiKey&&weatherSource!="noaa")logWarn"⚠️ Not fully configured; no valid API key or weather source"
     runIn(15,"runDailyEt");scheduleDailyEt();logInfo"Scheduling ET calculations daily at 00:10"
 }
 
@@ -310,104 +323,138 @@ def verifyDataChild(){
 }
 
 def verifySystem(){
-    logInfo"Running full system verification...";boolean ok=true;def verified=verifyDataChild()
-    if(!verified){logWarn"verifySystem(): ❌ Data child missing or invalid";ok=false}
-    else{def child=getDataChild();Integer z=(settings.zoneCount?:4)as Integer
-        if(child?.hasCommand("verifyAttributes")){
-            try{
-                child.verifyAttributes(z);logInfo"verifySystem(): ✅ Attributes verified for ${z} zones"
-            }catch(e){logWarn"verifySystem(): ⚠️ verifyAttributes() failed (${e.message})";ok=false}
-        }else{logWarn"verifySystem(): ⚠️ verifyAttributes() not implemented in driver";ok=false}
+    logInfo"Running full system verification..."
+    def verified=verifyDataChild();if(!verified){logWarn"verifySystem(): ❌ Data child missing or invalid";return false}
+    def child=getDataChild();Integer z=(settings.zoneCount?:4)as Integer;def issues=[]
+    ["summaryText","summaryJson","wxSource","wxTimestamp","driverInfo","appInfo"].each{
+        if(!child.hasAttribute(it))issues<<"missing ${it}"
     }
-    logInfo ok?"verifySystem(): ✅ System check passed" : "verifySystem(): ❌ Issues detected";return ok
+    (1..z).each{
+        if(!child.hasAttribute("zone${it}Et"))issues<<"missing zone${it}Et"
+        if(!child.hasAttribute("zone${it}Seasonal"))issues<<"missing zone${it}Seasonal"
+    }
+    def wx=child.currentValue("wxSource")?:'UNKNOWN'
+    if(wx in ['UNKNOWN','Not yet fetched',''])issues<<"invalid weather source (${wx})"
+    if(issues){
+        issues.each{logWarn"verifySystem(): ⚠️ ${it}"}
+        logInfo"verifySystem(): ❌ Issues detected"
+        return false
+    }
+    logInfo"verifySystem(): ✅ Attributes verified for ${z} zones"
+    logInfo"verifySystem(): ✅ System check passed"
+    return true
 }
-
 
 /* ---------- Weather & ET Engine ---------- */
 private Map fetchWeather(boolean force=false){
-    String src=settings.weatherSource?:'openweather'
+    String src=(settings.weatherSource?:'openweather').toLowerCase()
+    String unit=(settings.tempUnits?:'F')
     Map wx=null
     switch(src){
         case 'openweather': wx=fetchWeatherOwm(force);if(wx)wx<<[source:"OpenWeather 3.0"];break
         case 'noaa': wx=fetchWeatherNoaa(force);if(wx)wx<<[source:"NOAA NWS"];break
         case 'tomorrow': wx=fetchWeatherTomorrow(force);if(wx)wx<<[source:"Tomorrow.io"];break
         case 'auto': wx=fetchWeatherOwm(force)?:fetchWeatherTomorrow(force)?:fetchWeatherNoaa(force);if(wx)wx<<[source:"Auto (fallback)"];break
-        default: logWarn"Unknown weather source '${src}', defaulting to OpenWeather";wx=fetchWeatherOwm(force);if(wx)wx<<[source:"OpenWeather 3.0"]
+        default: logWarn"fetchWeather(): Unknown weather source '${src}', defaulting to OpenWeather"
+                 wx=fetchWeatherOwm(force);if(wx)wx<<[source:"OpenWeather 3.0"]
     }
     if(getDataChild()&&wx?.source){
-        childEmitChangedEvent(getDataChild(),"wxSource",wx.source,"Weather provider updated")
-        childEmitChangedEvent(getDataChild(),"wxTimestamp",new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone),"Weather timestamp updated")
+        def c=getDataChild()
+        childEmitChangedEvent(c,"wxSource",wx.source,"Weather provider updated")
+        childEmitChangedEvent(c,"wxTimestamp",new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone),"Weather timestamp updated")
     }
-    return wx ?: [:]
+    if(wx) state.lastWeather=wx;return wx?:[:]
 }
 
 private Map fetchWeatherOwm(boolean force=false){
     if(!owmApiKey){logWarn"fetchWeatherOwm(): Missing API key";return null}
-    BigDecimal lat=location?.latitude?:0G;BigDecimal lon=location?.longitude?:0G
-    def p=[uri:"https://api.openweathermap.org/data/3.0/onecall",query:[lat:lat,lon:lon,exclude:"minutely,hourly,alerts",units:"imperial",appid:owmApiKey]]
+    String unit=(settings.tempUnits?:'F')
+    BigDecimal lat=location?.latitude?:0G,lon=location?.longitude?:0G
+    def p=[uri:"https://api.openweathermap.org/data/3.0/onecall",
+        query:[lat:lat,lon:lon,exclude:"minutely,hourly,alerts",units:"imperial",appid:owmApiKey]]
     try{
-        def r=[:];httpGet(p){resp->
+        def r=[:]
+        httpGet(p){resp->
             if(resp.status!=200||!resp.data){logWarn"fetchWeatherOwm(): HTTP ${resp.status}, invalid data";return}
             def d=resp.data.daily?.getAt(0);if(!d){logWarn"fetchWeatherOwm(): Missing daily[0]";return}
             BigDecimal tMaxF=(d.temp?.max?:0)as BigDecimal,tMinF=(d.temp?.min?:tMaxF)as BigDecimal
+            BigDecimal tMax=convTemp(tMaxF,'F',unit),tMin=convTemp(tMinF,'F',unit)
             BigDecimal rainMm=(d.rain?:0)as BigDecimal,rainIn=etMmToIn(rainMm)
-            r=[tMaxF:tMaxF,tMinF:tMinF,rainIn:rainIn]
-            childEmitChangedEvent(getDataChild(),"wxSource","OpenWeather 3.0","OpenWeather 3.0: tMaxF=${tMaxF}, tMinF=${tMinF}, rainIn=${rainIn}")
-        };return r
+            r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,unit:unit]
+            childEmitChangedEvent(getDataChild(),"wxSource","OpenWeather 3.0","OpenWeather 3.0: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rainIn=${rainIn}")
+            };return r
     }catch(e){logError"fetchWeatherOwm(): ${e.message}";return null}
 }
 
 private Map fetchWeatherNoaa(boolean force=false){
-    BigDecimal lat=location?.latitude?:0G, lon=location?.longitude?:0G
+    String unit=(settings.tempUnits?:'F')
+    BigDecimal lat=location?.latitude?:0G,lon=location?.longitude?:0G
     String url="https://api.weather.gov/points/${lat},${lon}"
     try{
         def gridUrl=null
         httpGet([uri:url,headers:["User-Agent":"Hubitat-WET-IT","Accept":"application/geo+json","Accept-Encoding":"identity"]]){r->
-            def data
-            if(r?.data instanceof Map) data=r.data
-            else if(r?.data?.respondsTo("read")) data=new groovy.json.JsonSlurper().parse(r.data)
+            def data;if(r?.data instanceof Map)data=r.data
+            else if(r?.data?.respondsTo("read"))data=new groovy.json.JsonSlurper().parse(r.data)
             else data=new groovy.json.JsonSlurper().parseText(r?.data?.toString()?:'{}')
-            def p=data?.properties
-            if(!p && data?."@graph") p=data."@graph"?.find{it?.properties}?.properties
-            gridUrl=p?.forecastGridData ?: (
-                p?.cwa && p?.gridX && p?.gridY ?
-                "https://api.weather.gov/gridpoints/${p.cwa}/${p.gridX},${p.gridY}" : null)
-            logDebug "fetchWeatherNoaa(): gridUrl=${gridUrl ?: 'none'}"
+            def p=data?.properties;if(!p&&data?."@graph")p=data."@graph"?.find{it?.properties}?.properties
+            gridUrl=p?.forecastGridData?:((p?.cwa&&p?.gridX&&p?.gridY)?"https://api.weather.gov/gridpoints/${p.cwa}/${p.gridX},${p.gridY}":null)
+            logDebug"fetchWeatherNoaa(): gridUrl=${gridUrl?:'none'}"
         }
-        if(!gridUrl){logWarn "fetchWeatherNoaa(): Grid URL not found for ${lat},${lon}"; return null}
-        def result=[:]
-        httpGet([uri:gridUrl,headers:["User-Agent":"Hubitat-WET-IT","Accept":"application/geo+json","Accept-Encoding":"identity"]]){r->
-            def data
-            if(r?.data instanceof Map) data=r.data
-            else if(r?.data?.respondsTo("read")) data=new groovy.json.JsonSlurper().parse(r.data)
-            else data=new groovy.json.JsonSlurper().parseText(r?.data?.toString()?:'{}')
-            def p=data?.properties
-            if(!p){ logWarn "fetchWeatherNoaa(): Missing properties block"; return }
-			BigDecimal tMaxF=(((p.maxTemperature?.values?.getAt(0)?.value?:0)*9/5)+32).setScale(2,BigDecimal.ROUND_HALF_UP)
-			BigDecimal tMinF=(((p.minTemperature?.values?.getAt(0)?.value?:tMaxF)*9/5)+32).setScale(2,BigDecimal.ROUND_HALF_UP)
+        if(!gridUrl){logWarn"fetchWeatherNoaa(): Grid URL not found for ${lat},${lon}";return null}
+        def r=[:]
+        httpGet([uri:gridUrl,headers:["User-Agent":"Hubitat-WET-IT","Accept":"application/geo+json","Accept-Encoding":"identity"]]){r2->
+            def data;if(r2?.data instanceof Map)data=r2.data
+            else if(r2?.data?.respondsTo("read"))data=new groovy.json.JsonSlurper().parse(r2.data)
+            else data=new groovy.json.JsonSlurper().parseText(r2?.data?.toString()?:'{}')
+            def p=data?.properties;if(!p){logWarn"fetchWeatherNoaa(): Missing properties block";return}
+            BigDecimal tMaxC=(p.maxTemperature?.values?.getAt(0)?.value?:0)as BigDecimal
+            BigDecimal tMinC=(p.minTemperature?.values?.getAt(0)?.value?:tMaxC)as BigDecimal
+            BigDecimal tMaxF=convTemp(tMaxC,'C','F'),tMinF=convTemp(tMinC,'C','F')
+            BigDecimal tMax=convTemp(tMaxC,'C',unit),tMin=convTemp(tMinC,'C',unit)
             BigDecimal rainMm=(p.quantitativePrecipitation?.values?.getAt(0)?.value?:0)
             BigDecimal rainIn=etMmToIn(rainMm)
-            result=[tMaxF:tMaxF,tMinF:tMinF,rainIn:rainIn]
-            childEmitChangedEvent(getDataChild(),"wxSource","NOAA NWS","NOAA NWS: tMaxF=${tMaxF}, tMinF=${tMinF}, rainIn=${rainIn}")
-        }
-        return result
-    }catch(e){ logError "fetchWeatherNoaa(): ${e.message}"; return null }
+            r=[tMaxC:tMaxC,tMinC:tMinC,tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,unit:unit]
+            childEmitChangedEvent(getDataChild(),"wxSource","NOAA NWS","NOAA NWS: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rainIn=${rainIn}")
+        };return r
+    }catch(e){logError"fetchWeatherNoaa(): ${e.message}";return null}
 }
 
 private Map fetchWeatherTomorrow(boolean force=false){
     if(!tomApiKey){logWarn"fetchWeatherTomorrow(): Missing API key";return null}
+    String unit=(settings.tempUnits?:'F')
     BigDecimal lat=location?.latitude?:0G,lon=location?.longitude?:0G
-    def p=[uri:"https://api.tomorrow.io/v4/weather/forecast",query:[location:"${lat},${lon}",apikey:tomApiKey,units:"imperial",timesteps:"1d"],headers:["User-Agent":"Hubitat-WET-IT"]]
+    def p=[uri:"https://api.tomorrow.io/v4/weather/forecast",
+        query:[location:"${lat},${lon}",apikey:tomApiKey,units:"imperial",timesteps:"1d"],
+        headers:["User-Agent":"Hubitat-WET-IT"]]
     try{
-        httpGet(p){r->
-            if(r?.status!=200||!r?.data){logWarn"fetchWeatherTomorrow(): HTTP ${r?.status}, invalid data";return}
-            def d=r.data?.timelines?.daily?.getAt(0)?.values;if(!d){logWarn"fetchWeatherTomorrow(): No daily data";return}
+        def r=[:]
+        httpGet(p){resp->
+            if(resp?.status!=200||!resp?.data){logWarn"fetchWeatherTomorrow(): HTTP ${resp?.status}, invalid data";return}
+            def d=resp.data?.timelines?.daily?.getAt(0)?.values;if(!d){logWarn"fetchWeatherTomorrow(): No daily data";return}
             BigDecimal tMaxF=(d.temperatureMax?:0)as BigDecimal,tMinF=(d.temperatureMin?:tMaxF)as BigDecimal
+            BigDecimal tMax=convTemp(tMaxF,'F',unit),tMin=convTemp(tMinF,'F',unit)
             BigDecimal rainMm=(d.precipitationSum?:0)as BigDecimal,rainIn=etMmToIn(rainMm)
-            childEmitChangedEvent(getDataChild(),"wxSource","Tomorrow.io","Tomorrow.io: tMaxF=${tMaxF}, tMinF=${tMinF}, rainIn=${rainIn}")
-            return[tMaxF:tMaxF,tMinF:tMinF,rainIn:rainIn]
-        }
+            r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,unit:unit]
+            childEmitChangedEvent(getDataChild(),"wxSource","Tomorrow.io","Tomorrow.io: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rainIn=${rainIn}")
+        };return r
     }catch(e){logError"fetchWeatherTomorrow(): ${e.message}";return null}
+}
+
+private Map detectFreezeAlert(Map wx){
+    String unit=(settings.tempUnits?:'F');String alertText="None";boolean alert=false
+    BigDecimal tLow=(wx?.tMin?:wx?.tMinF?:wx?.tempMin?:wx?.forecastLow?:999)as BigDecimal
+    BigDecimal tLowU=convTemp(tLow,unit=='C'?'C':'F',unit)
+    def alerts=[]
+    if(wx?.alerts)alerts+=wx.alerts*.event
+    if(wx?.events)alerts+=wx.events*.event_type
+    if(wx?.features)alerts+=wx.features*.properties*.event
+    def a=(alerts.flatten().unique().find{it=~/(?i)(freeze|frost|cold)/})
+    if(a){alertText=a;alert=true}
+    else{
+        BigDecimal threshold=(settings.freezeThreshold?:(unit=='C'?1.7:35)) as BigDecimal
+        if(tLowU<threshold){alert=true;alertText=alertText="Low ${tLow.setScale(1, BigDecimal.ROUND_HALF_UP)}°${unit} (threshold <${threshold}°${unit})"}
+    }
+    return [freezeAlert:alert,freezeAlertText:alertText,freezeLowTemp:tLowU,unit:unit]
 }
 
 private BigDecimal estimateBaselineEt0(BigDecimal lat){
@@ -467,9 +514,20 @@ private publishSummary(Map results){
     String json=groovy.json.JsonOutput.toJson(results)
     childEmitEvent(c,"summaryText",summary,"Hybrid ET+Seasonal summary",null,true)
     childEmitEvent(c,"summaryJson",json,"Hybrid ET+Seasonal JSON summary",null,true)
-    childEmitEvent(c,"summaryTimestamp",ts,"Summary timestamp updated")
+    childEmitEvent(c,"summaryTimestamp",ts,"Summary timestamp updated",null)
     if(c.hasCommand("parseSummary"))c.parseSummary(json)
-    logInfo"Published hybrid summary data for ${results.size()} zones"
+    def freeze=detectFreezeAlert(state.lastWeather?:[:])
+    String u=state.lastWeather?.unit?:settings.tempUnits?:'F'
+    String desc=freeze.freezeAlert?"Freeze/Frost detected (${freeze.freezeAlertText})":"No freeze or frost risk"
+    childEmitChangedEvent(c,"freezeAlert",freeze.freezeAlert,desc)
+    if(freeze.freezeLowTemp!=null)childEmitEvent(c,"freezeLowTemp",freeze.freezeLowTemp,"Forecast daily low (${u=='C'?'°C':'°F'})",u)
+    logInfo"Published hybrid summary data for ${results.size()} zones (unit=${u})"
+}
+
+private BigDecimal convTemp(BigDecimal val, String from='F', String to=(settings.tempUnits?:'F')){
+    if(!val)return 0
+    if(from==to)return val.setScale(2,BigDecimal.ROUND_HALF_UP)
+    return (to=='C')?((val-32)*5/9).setScale(2,BigDecimal.ROUND_HALF_UP):((val*9/5)+32).setScale(2,BigDecimal.ROUND_HALF_UP)
 }
 
 private BigDecimal getPrevDepletion(String key){state.depletion=state.depletion?:[:];return(state.depletion[key]?:0G)as BigDecimal}
