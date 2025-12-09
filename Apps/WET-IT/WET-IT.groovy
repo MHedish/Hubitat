@@ -65,16 +65,18 @@
 *  0.5.5.0   –– Added per zone Soil Moisture Tracking (Rachio / Hydrawise/ Orbit style).
 *  0.5.5.1   –– Moved ET tracking diagnostics; completed ET JSON output.
 *  0.5.5.2   –– Renamed btnResetSoil to btnResetAllSoil to eliminate collision; updated private resetSoilForZone() and resetAllSoilMemory() to handle long and integer.
+*  0.5.5.3   –– Created cachedZoneCount and normalized throughout.
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.5.5.2"
+@Field static final String APP_VERSION="0.5.5.3"
 @Field static final String APP_MODIFIED="2025-12-09"
-@Field static def cachedChild=null
 @Field static final int MAX_ZONES=48
+@Field static def cachedChild=null
+@Field static Integer cachedZoneCount=null
 
 definition(
     name:"WET-IT",
@@ -104,8 +106,6 @@ private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){se
 private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=app.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 private childEmitEvent(dev,n,v,d=null,u=null,boolean f=false){try{if(dev)dev.emitEvent(n,v,d,u,f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}catch(e){logWarn"childEmitEvent(): ${e.message}"}}
 private childEmitChangedEvent(dev,n,v,d=null,u=null,boolean f=false){try{if(dev)dev.emitChangedEvent(n,v,d,u,f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}catch(e){logWarn"childEmitChangedEvent(): ${e.message}"}}
-// private def getDataChild(){if(cachedChild&&getChildDevice(cachedChild.deviceNetworkId))return cachedChild;cachedChild=ensureDataDevice()}
-//private getDataChild(){def dni="wetit_data_${app.id}";def dev=getChildDevice(dni);if(!dev)dev=ensureDataDevice();return dev}
 private getDataChild(boolean fresh=false){def dni="wetit_data_${app.id}";if(fresh||!cachedChild||!getChildDevice(dni))cachedChild=ensureDataDevice();return cachedChild}
 private autoDisableDebugLogging(){try{unschedule("autoDisableDebugLogging");atomicState.logEnable=false;app.updateSetting("logEnable",[type:"bool",value:false]);logInfo"Debug logging disabled (auto)"}catch(e){logDebug"autoDisableDebugLogging(): ${e.message}"}}
 def disableDebugLoggingNow(){try{unschedule("autoDisableDebugLogging");atomicState.logEnable=false;app.updateSetting("logEnable",[type:"bool",value:false]);logInfo"Debug logging disabled (manual)"}catch(e){logDebug"disableDebugLoggingNow(): ${e.message}"}}
@@ -113,7 +113,8 @@ def disableDebugLoggingNow(){try{unschedule("autoDisableDebugLogging");atomicSta
 /* ---------- Preferences & Main Page ---------- */
 preferences{page(name:"mainPage")}
 def mainPage() {
-    dynamicPage(name: "mainPage", title: "🌱 ${APP_NAME} Configuration", install: true, uninstall: true) {
+	getZoneCountCached(true)
+    dynamicPage(name:"mainPage",title: "🌱 ${APP_NAME} Configuration",install:true,uninstall:true){
         /* ==========================================================
          * 1️ Header / App Info
          * ========================================================== */
@@ -153,9 +154,8 @@ def mainPage() {
 			    description:"Persist daily soil depletion for each zone (requires Hubitat storage).",
 			    defaultValue:false,submitOnChange:true
 		    if(settings.useSoilMemory){
-			    def zCount=settings.zoneCount?:0
-			    paragraph "<b>Soil Memory Active:</b> Tracking ${zCount} zones."
-			    (1..zCount).each{z->
+			    paragraph "<b>Soil Memory Active:</b> Tracking ${cachedZoneCount} zones."
+			    (1..cachedZoneCount).each{z->
 			        def key="zoneDepletion_zone${z}";def tsKey="zoneDepletionTs_zone${z}"
 			        if(!atomicState.containsKey(key))atomicState[key]=0G
 			        BigDecimal d=(atomicState[key]?:0G)as BigDecimal
@@ -244,7 +244,7 @@ def summaryForZone(z){
 
 def buildZoneDirectory(){
     section("🌱 Zone Setup"){
-        input "zoneCount","number",title:"Number of Zones (1–${MAX_ZONES})",defaultValue:(settings.zoneCount ?: 4),range:"1..${MAX_ZONES}",required:true,submitOnChange:true
+        input "zoneCount","number",title:"Number of Zones (1–${MAX_ZONES})",defaultValue:cachedZoneCount,range:"1..${MAX_ZONES}",required:true,submitOnChange:true
         if(zoneCount){
             paragraph "<b>Configured Zones:</b> Click below to configure."
             (1..zoneCount).each{z->href page:"zonePage",params:[zone:z],title:"Zone ${z}",description:summaryForZone(z),state:"complete"}
@@ -325,11 +325,10 @@ def appButtonHandler(String btn){
 }
 
 private void copyZone1ToAll(){
-    Integer zCount=(settings.zoneCount?:1)as Integer
-    if(zCount<=1){logInfo"copyZone1ToAll(): nothing to copy";return}
+    if(cachedZoneCount<=1){logInfo"copyZone1ToAll(): nothing to copy";return}
     def soil1=settings["soil_1"];def plant1=settings["plant_1"];def nozzle1=settings["nozzle_1"];def base1=settings["baseMin_1"]
     def precip1=settings["precip_1"];def root1=settings["root_1"];def kc1=settings["kc_1"];def mad1=settings["mad_1"]
-    (2..zCount).each{Integer z->
+    (2..cachedZoneCount).each{Integer z->
         app.updateSetting("soil_${z}",[value:soil1,type:"enum"])
         app.updateSetting("plant_${z}",[value:plant1,type:"enum"])
         app.updateSetting("nozzle_${z}",[value:nozzle1,type:"enum"])
@@ -339,7 +338,7 @@ private void copyZone1ToAll(){
         app.updateSetting("kc_${z}",[value:kc1,type:"decimal"])
         app.updateSetting("mad_${z}",[value:mad1,type:"decimal"])
     }
-    logInfo"Copied Zone 1 settings to all ${zCount} zones"
+    logInfo"Copied Zone 1 settings to all ${cachedZoneCount} zones"
 }
 
 private void resetAdvancedForZone(Integer z){
@@ -351,16 +350,16 @@ private void resetAdvancedForZone(Integer z){
 }
 
 private void resetSoilForZone(def z){Integer zone=z as Integer;def key="zoneDepletion_zone${zone}";def tsKey="zoneDepletionTs_zone${zone}";atomicState.remove(key);atomicState.remove(tsKey);logInfo"resetSoilForZone(): Cleared soil memory for Zone ${zone}"}
-private void resetAllSoilMemory(){def zCount=(settings.zoneCount?:0)as Integer;(1..zCount).each{z->resetSoilForZone(z)};logInfo"resetAllSoilMemory(): Cleared all zone depletion records"}
+private void resetAllSoilMemory(){(1..cachedZoneCount).each{z->resetSoilForZone(z)};logInfo"resetAllSoilMemory(): Cleared all zone depletion records"}
 
 /* ---------- Lifecycle ---------- */
 def installed(){logInfo "Installed: ${appInfoString()}";initialize()}
 def updated(){logInfo "Updated: ${appInfoString()}";atomicState.logEnable=settings.logEnable?:false;initialize()}
 def initialize(){logInfo "Initializing: ${appInfoString()}";unschedule("autoDisableDebugLogging");if(atomicState.logEnable)runIn(1800,"autoDisableDebugLogging")
     if(!verifyDataChild()){logWarn"initialize(): ❌ Cannot continue; data child missing or invalid";return}
-    def child=getDataChild();Integer z=(settings.zoneCount?:4)as Integer
+    def child=getDataChild()
     try{
-        if(child.hasCommand("updateZoneAttributes")){child.updateZoneAttributes(z);logInfo"✅ Verified/updated zone attributes (${z} zones)"}
+        if(child.hasCommand("updateZoneAttributes")){child.updateZoneAttributes(cachedZoneCount);logInfo"✅ Verified/updated zone attributes (${z} zones)"}
         if(!child.currentValue("wxSource"))childEmitChangedEvent(child,"wxSource","Not yet fetched","Initial weather source state")
         childEmitEvent(child,"appInfo",appInfoString(),"App version published",null,true)
         if(!verifySystem())logWarn"⚠️ System verification reported issues"
@@ -381,9 +380,9 @@ private scheduleWeatherUpdates(){
 }
 
 private Map getSoilMemorySummary(){
-    def zCount=settings.zoneCount?:0;if(!zCount)return [:]
+    if(!cachedZoneCount)return [:]
     Map sm=[:]
-    (1..zCount).each{
+    (1..cachedZoneCount).each{
 		z->def d=(atomicState."zoneDepletion_zone${z}"?:0G);def ts=(atomicState."zoneDepletionTs_zone${z}"?:'—');sm["zone${z}"]=[depletion:d,updated:ts]
     }
     return sm
@@ -410,14 +409,16 @@ def verifyDataChild(){
     logInfo"verifyDataChild(): ✅ Child device verified (${reg.displayName}, DNI=${reg.deviceNetworkId})";return true
 }
 
+private Integer getZoneCountCached(boolean refresh=false){if(refresh||cachedZoneCount==null)cachedZoneCount=(settings.zoneCount?:4)as Integer;return cachedZoneCount}
+
 def verifySystem(){
     logInfo"Running full system verification..."
     def verified=verifyDataChild();if(!verified){logWarn"verifySystem(): ❌ Data child missing or invalid";return false}
-    def child=getDataChild();Integer z=(settings.zoneCount?:4)as Integer;def issues=[]
+    def child=getDataChild();def issues=[]
     ["summaryText","summaryJson","wxSource","wxTimestamp","driverInfo","appInfo"].each{
         if(!child.hasAttribute(it))issues<<"missing ${it}"
     }
-    (1..z).each{
+    (1..cachedZoneCount).each{
 	    if(!child.hasAttribute("zone${it}Et"))issues<<"missing zone${it}Et"
 	    if(!child.hasAttribute("zone${it}Seasonal"))issues<<"missing zone${it}Seasonal"
 	    atomicState."zoneDepletion_zone${it}" = (atomicState."zoneDepletion_zone${it}" ?: 0G)
@@ -430,9 +431,7 @@ def verifySystem(){
         logInfo"verifySystem(): ❌ Issues detected"
         return false
     }
-    logInfo"verifySystem(): ✅ Attributes verified for ${z} zones"
-    logInfo"verifySystem(): ✅ System check passed"
-    return true
+    logInfo"verifySystem(): ✅ Attributes verified for ${z} zones";logInfo"verifySystem(): ✅ System check passed";return true
 }
 
 /* ---------- Weather & ET Engine ---------- */
@@ -583,8 +582,8 @@ private runWeatherUpdate(){
     BigDecimal lat=location.latitude;int jDay=Calendar.getInstance(location.timeZone).get(Calendar.DAY_OF_YEAR)
     BigDecimal baseline=(settings.baselineEt0Inches?:0.18)as BigDecimal
     Map env=[tMaxF:wx.tMaxF,tMinF:wx.tMinF,rainIn:wx.rainIn,latDeg:lat,julianDay:jDay,dayLengthSec:dayLen,baselineEt0:baseline]
-    Integer zCount=(settings.zoneCount?:4)as Integer;logInfo"Running hybrid ET+Seasonal model for ${zCount} zones"
-    List<Map> zoneList=(1..zCount).collect{Integer z->[id:"zone${z}",soil:settings["soil_${z}"]?:"Loam",plantType:settings["plant_${z}"]?:"Cool Season Turf",
+    logInfo"Running hybrid ET+Seasonal model for ${cachedZoneCount} zones"
+    List<Map> zoneList=(1..cachedZoneCount).collect{Integer z->[id:"zone${z}",soil:settings["soil_${z}"]?:"Loam",plantType:settings["plant_${z}"]?:"Cool Season Turf",
 	    nozzleType:settings["nozzle_${z}"]?:"Spray",prevDepletion:getPrevDepletion("zone${z}"),
 	    precipRateInHr:(settings["precip_${z}"]in[null,"null",""])?null:(settings["precip_${z}"] as BigDecimal),
 	    rootDepthIn:(settings["root_${z}"]in[null,"null",""])?null:(settings["root_${z}"] as BigDecimal),
