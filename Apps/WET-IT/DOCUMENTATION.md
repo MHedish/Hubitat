@@ -79,6 +79,7 @@ If *Use NOAA as Backup* = true, WET-IT automatically retries NOAA when other API
 | `summaryTimestamp` | string | Time of last calculation |
 | `summaryText` | string | Human-readable summary |
 | `summaryJson` | string | Full JSON object with zone data |
+| `soilMemoryJson` | string | JSON summary of per-zone soil depletion and last-update timestamps |
 | `zone#Et` | number | ET-based budget % for zone # |
 | `zone#Seasonal` | number | Seasonal budget % for zone # |
 
