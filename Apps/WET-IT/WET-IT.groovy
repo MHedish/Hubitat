@@ -64,8 +64,7 @@
 *  0.5.4.3   –– updated getDataChild()
 *  0.5.5.0   –– Added per zone Soil Moisture Tracking (Rachio / Hydrawise/ Orbit style).
 *  0.5.5.1   –– Moved ET tracking diagnostics; completed ET JSON output.
-*  0.5.5.2   –– Renamed btnResetSoil to btnResetAllSoil to eliminate collision.
-
+*  0.5.5.2   –– Renamed btnResetSoil to btnResetAllSoil to eliminate collision; updated private resetSoilForZone() and resetAllSoilMemory() to handle long and integer.
 */
 
 import groovy.transform.Field
@@ -351,13 +350,8 @@ private void resetAdvancedForZone(Integer z){
     logInfo"Reset advanced overrides for zone ${z}"
 }
 
-private void resetSoilForZone(Integer z){
-    def key="zoneDepletion_zone${z}";def tsKey="zoneDepletionTs_zone${z}";atomicState.remove(key);atomicState.remove(tsKey);logInfo"resetSoilForZone(): Cleared soil memory for Zone ${z}"
-}
-
-private void resetAllSoilMemory(){
-    def zCount=settings.zoneCount?:0;(1..zCount).each{z->resetSoilForZone(z)};logInfo"resetAllSoilMemory(): Cleared all zone depletion records"
-}
+private void resetSoilForZone(def z){Integer zone=z as Integer;def key="zoneDepletion_zone${zone}";def tsKey="zoneDepletionTs_zone${zone}";atomicState.remove(key);atomicState.remove(tsKey);logInfo"resetSoilForZone(): Cleared soil memory for Zone ${zone}"}
+private void resetAllSoilMemory(){def zCount=(settings.zoneCount?:0)as Integer;(1..zCount).each{z->resetSoilForZone(z)};logInfo"resetAllSoilMemory(): Cleared all zone depletion records"}
 
 /* ---------- Lifecycle ---------- */
 def installed(){logInfo "Installed: ${appInfoString()}";initialize()}
