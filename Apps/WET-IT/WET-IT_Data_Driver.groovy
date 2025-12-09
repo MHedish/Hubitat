@@ -21,13 +21,17 @@
 *  0.5.1.7  –– Resorted to exposing emitEvent and emitChangedEvent
 *  0.5.1.8  –– Wrapped emitEvent() and emitChangedEvent() to prevent log errors.
 *  0.5.1.9  –– Refactored to substitute emitEvent() and emitChangedEvent() values rather than try/catch.
+*  0.5.3.0  –– Version bumped for UI revisions.
+*  0.5.3.1  –– Updated driverDocBlock().
+*  0.5.5.0  –– Added attribute "soilMemoryJson"; renumbered to match parent minor version.
+*  0.5.5.1  –– Updated driverDocBlock() to correct URLs
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "0.5.1.9"
-@Field static final String DRIVER_MODIFIED = "2025-12-07"
+@Field static final String DRIVER_VERSION  = "0.5.5.1"
+@Field static final String DRIVER_MODIFIED = "2025-12-09"
 @Field static final int MAX_ZONES = 48
 
 metadata {
@@ -45,6 +49,7 @@ metadata {
         attribute "driverInfo","string"
 		attribute "freezeAlert","bool"
 		attribute "freezeLowTemp","number"
+		attribute "soilMemoryJson","string"
         attribute "summaryJson","string"
         attribute "summaryText","string"
         attribute "summaryTimestamp","string"
@@ -69,7 +74,7 @@ metadata {
 
 /* =============================== Logging & Utilities =============================== */
 private driverInfoString(){return"${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"}
-private driverDocBlock(){return"<div style='text-align:center;'><b>🌱 ${DRIVER_NAME} v${DRIVER_VERSION}</b> (${DRIVER_MODIFIED})<br><a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/README.md' target='_blank'><b>📘 Documentation</b></a><br><a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/README.md' target='_blank'><b>🔍 Quick Reference Guide</b></a><hr></div>"}
+private driverDocBlock(){return"<div style='text-align:center;line-height:1.6;margin:10px 0;'><b>🌿 ${DRIVER_NAME}</b><br>Version <b>${DRIVER_VERSION}</b> &nbsp;|&nbsp; Updated ${DRIVER_MODIFIED}<br><a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md' target='_blank'>📘 Documentation</a> &nbsp;•&nbsp;<a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/README.md#-attribute-reference' target='_blank'>📊 Attribute Reference Guide</a><hr style='margin-top:6px;'></div>"}
 private logDebug(msg){if(logEnable)log.debug"[${DRIVER_NAME}] $msg"}
 private logInfo(msg){if(logEvents)log.info"[${DRIVER_NAME}] $msg"}
 private logWarn(msg){log.warn"[${DRIVER_NAME}] $msg"}
