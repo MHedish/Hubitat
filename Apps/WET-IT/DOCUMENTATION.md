@@ -26,9 +26,9 @@ Further reading:
 Weather API → ET₀ Computation → Zone Model → Driver Attributes → Automations (RM/WC/NR)
 ```
 
-* WET-IT App — performs calculations  
-* WET-IT Data Driver — exposes results as attributes  
-* External automation (Rule Machine, webCoRE, Node-RED) reads those attributes to drive irrigation logic.
+* **WET-IT App** — performs calculations  
+* **WET-IT Data Driver** — exposes results as attributes  
+* **External automations** (Rule Machine, webCoRE, Node-RED) read those attributes to drive irrigation logic.
 
 ---
 
@@ -113,6 +113,25 @@ access `msg.payload.zones.zone1.etBudgetPct`.
 
 ---
 
+## ❄️ Freeze Protection Logic
+
+WET-IT continuously monitors outdoor temperatures using the same weather data source selected for ET and rainfall.  
+If conditions fall below your configured **Freeze Warning Threshold**, the app automatically sets the following attributes in the data driver:
+
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `freezeAlert` | bool | `true` when temperature ≤ your selected threshold |
+| `freezeLowTemp` | number | The user-defined freeze threshold (°F or °C) |
+
+You can view and adjust this threshold under **Weather Configuration (Advanced)** in the app.
+
+This allows automations (Rule Machine, webCoRE, or Node-RED) to:
+* Skip irrigation events when `freezeAlert` is `true`
+* Trigger notifications or alerts for potential frost
+* Delay irrigation until conditions are safe
+
+---
+
 ## 🧪 Diagnostics & Developer Notes
 
 | Button | Purpose |
@@ -133,9 +152,7 @@ access `msg.payload.zones.zone1.etBudgetPct`.
 
 ## 🔮 Future Enhancements
 
-* Extended weather metrics (humidity, wind speed)  
-* Enhanced graphing / reporting in driver tiles  
-* HPM metadata manifest  
+* Full HPM manifest and release channel integration  
 
 ---
 
