@@ -146,7 +146,7 @@ This allows automations (Rule Machine, webCoRE, or Node-RED) to:
 * `emitEvent()` and `emitChangedEvent()` handle updates cleanly.  
 * `atomicState` stores transient diagnostic data.  
 * Compact one-line style → efficient, self-documenting Groovy.  
-* Easily extended to > 12 zones or additional APIs.
+* Easily extends from 1 to 48 zones.
 
 ---
 
