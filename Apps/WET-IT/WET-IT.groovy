@@ -64,13 +64,15 @@
 *  0.5.4.3   –– updated getDataChild()
 *  0.5.5.0   –– Added per zone Soil Moisture Tracking (Rachio / Hydrawise/ Orbit style).
 *  0.5.5.1   –– Moved ET tracking diagnostics; completed ET JSON output.
+*  0.5.5.2   –– Renamed btnResetSoil to btnResetAllSoil to eliminate collision.
+
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.5.5.1"
+@Field static final String APP_VERSION="0.5.5.2"
 @Field static final String APP_MODIFIED="2025-12-09"
 @Field static def cachedChild=null
 @Field static final int MAX_ZONES=48
@@ -163,7 +165,7 @@ def mainPage() {
 			        paragraph "Zone ${z}:${warn}<br>Current depletion = ${String.format('%.3f',d)} in.<br><i>Last updated:</i> ${ts}"
 			        input "btnResetSoil_${z}","button",title:"🔄 Reset Zone ${z}"
 			    }
-			    input "btnResetSoil","button",title:"♻️ Reset All Soil Memory"
+			    input "btnResetAllSoil","button",title:"♻️ Reset All Soil Memory"
 				}else paragraph "Soil moisture tracking is <b>disabled</b>."
 		}
 
@@ -283,7 +285,7 @@ def appButtonHandler(String btn){
 	if(btn=="btnCancelCopy"){app.updateSetting("copyConfirm",[value:false,type:"bool"]);atomicState.tempDiagMsg="❎ Copy operation canceled."}
 	if(btn.startsWith("btnResetSoil_")){Integer z=(btn-"btnResetSoil_")as Integer;resetSoilForZone(z);return}
 	if(btn.startsWith("resetAdv_")){Integer z=(btn-"resetAdv_")as Integer;resetAdvancedForZone(z);return}
-	if(btn=="btnResetSoil"){resetAllSoilMemory();return}
+	if(btn=="btnResetAllSoil"){resetAllSoilMemory();return}
     if(btn=="btnDisableDebug"){disableDebugLoggingNow();return}
     if(btn=="btnRunWeatherUpdate"){runWeatherUpdate();def msg=getDataChild(true)?.currentValue("summaryText")?:'⚠️ No ET summary available';logInfo"ET run completed: ${msg}";app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
 	if(btn=="btnVerifyChild"){def ok=verifyDataChild();def msg=ok?"✅ Data child verified successfully.":"⚠️ Data child verification failed. Check logs.";logInfo msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
