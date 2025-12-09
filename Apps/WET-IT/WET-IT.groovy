@@ -48,15 +48,32 @@
 *  0.5.2.1   –– Fixed freeze warning.
 *  0.5.2.2   –– Corrected "unit" in publishSummary(); only emits unit where apropriate; corrected wxSource=Not yet fetched in initialize().
 *  0.5.2.3   –– Added user preference for freeze warning threshold.
+*  0.5.2.4   –– Corrected the four event emitters; refactored childEmitEvent() and childEmitChangeEvent() to pass event data to handlers within the device: def parentEmitEvent() and parentEmitChangedEvent(Map evt).
+*  0.5.2.5   –– Changed childEmitEvent and childEmitChangedEvent to call correspoding in child driver.
+*  0.5.2.6   –– Pull default tempUnit from hub: location.temperatureScale
+*  0.5.2.7   –– renamed runDailyEt() to runWeatherUpdate(); modified schedule to run every 4 hours instead of once a day at 00:10.
+*  0.5.2.8   –– Fixed btnRunWeatherUpdate naming.
+*  0.5.3.0   –– Version bumped for UI revisions.
+*  0.5.3.1   –– Initial UI/UX redesign; Removed "auto" provider option in place of using NOAA as a backup provider.
+*  0.5.3.2   –– Restored missing temp unit and logging inputs.
+*  0.5.3.3   –– Separated advanced WX options; reverte runWeatherUpdate() method to pre-UI rewrite.
+*  0.5.3.4   –– Separated logging and diag sections of UI.
+*  0.5.4.0   –– Dynamic Zones pages fixed.
+*  0.5.4.1   –– Finished add/colapse zones.
+*  0.5.4.2   –– Refactored List<Map> zoneList to handle null values from new zones.
+*  0.5.4.3   –– updated getDataChild()
+*  0.5.5.0   –– Added per zone Soil Moisture Tracking (Rachio / Hydrawise/ Orbit style).
+*  0.5.5.1   –– Moved ET tracking diagnostics; completed ET JSON output.
 */
 
 import groovy.transform.Field
+import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.5.2.3"
-@Field static final String APP_MODIFIED="2025-12-07"
-@Field static def cachedChild = null
-@Field static final int MAX_ZONES = 48
+@Field static final String APP_VERSION="0.5.5.1"
+@Field static final String APP_MODIFIED="2025-12-09"
+@Field static def cachedChild=null
+@Field static final int MAX_ZONES=48
 
 definition(
     name:"WET-IT",
@@ -71,146 +88,204 @@ definition(
     singleInstance:true
 )
 
+preferences {
+    page(name:"mainPage")
+    page(name:"zonePage")
+}
+
 /* ----------Logging Methods ---------- */
 private appInfoString(){return "${APP_NAME} v${APP_VERSION} (${APP_MODIFIED})"}
 private logDebug(msg){if(atomicState.logEnable)log.debug"[${APP_NAME}] $msg"}
 private logInfo(msg){if(logEvents)log.info"[${APP_NAME}] $msg"}
 private logWarn(msg){log.warn"[${APP_NAME}] $msg"}
 private logError(msg){log.error"[${APP_NAME}] $msg"}
-private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)log.info"[${app.label}] ${d?"${n}=${v} (${d})":"${n}=${v}"}"}
-private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=app.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)log.info"[${app.label}] ${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
-private childEmitEvent(dev,n,v,d=null,u=null,boolean f=false){try{if(dev)dev.sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)log.info"[${app.label}] ${d?"${n}=${v} (${d})":"${n}=${v}"}"}catch(e){logWarn"childEmitEvent(): ${e.message}"}}
-private childEmitChangedEvent(dev,n,v,d=null,u=null,boolean f=false){try{if(!dev)return;def o=dev.currentValue(n);if(f||o?.toString()!=v?.toString()){dev.sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)log.info"[${app.label}] ${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}catch(e){logWarn"childEmitChangedEvent(): ${e.message}"}}
-private def getDataChild(){if(cachedChild&&getChildDevice(cachedChild.deviceNetworkId))return cachedChild;cachedChild=ensureDataDevice()}
+private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
+private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=app.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
+private childEmitEvent(dev,n,v,d=null,u=null,boolean f=false){try{if(dev)dev.emitEvent(n,v,d,u,f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}catch(e){logWarn"childEmitEvent(): ${e.message}"}}
+private childEmitChangedEvent(dev,n,v,d=null,u=null,boolean f=false){try{if(dev)dev.emitChangedEvent(n,v,d,u,f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}catch(e){logWarn"childEmitChangedEvent(): ${e.message}"}}
+// private def getDataChild(){if(cachedChild&&getChildDevice(cachedChild.deviceNetworkId))return cachedChild;cachedChild=ensureDataDevice()}
+//private getDataChild(){def dni="wetit_data_${app.id}";def dev=getChildDevice(dni);if(!dev)dev=ensureDataDevice();return dev}
+private getDataChild(boolean fresh=false){def dni="wetit_data_${app.id}";if(fresh||!cachedChild||!getChildDevice(dni))cachedChild=ensureDataDevice();return cachedChild}
 private autoDisableDebugLogging(){try{unschedule("autoDisableDebugLogging");atomicState.logEnable=false;app.updateSetting("logEnable",[type:"bool",value:false]);logInfo"Debug logging disabled (auto)"}catch(e){logDebug"autoDisableDebugLogging(): ${e.message}"}}
 def disableDebugLoggingNow(){try{unschedule("autoDisableDebugLogging");atomicState.logEnable=false;app.updateSetting("logEnable",[type:"bool",value:false]);logInfo"Debug logging disabled (manual)"}catch(e){logDebug"disableDebugLoggingNow(): ${e.message}"}}
+
 /* ---------- Preferences & Main Page ---------- */
 preferences{page(name:"mainPage")}
-def mainPage(){
-    dynamicPage(name:"mainPage",title:"🌱 Weather-Enhanced Time-based Irrigation Tuning (WET-IT)",install:true,uninstall:true){
-        section("") {
+def mainPage() {
+    dynamicPage(name: "mainPage", title: "🌱 ${APP_NAME} Configuration", install: true, uninstall: true) {
+        /* ==========================================================
+         * 1️ Header / App Info
+         * ========================================================== */
+        section("<b>App Information</b>") {
             paragraph "<b>${APP_NAME}</b> v${APP_VERSION} (${APP_MODIFIED})"
-            def child=getDataChild()
-            paragraph "Connected Device: <span style='color:${child?'green':'red'}'>${child?.displayName ?: 'Not created yet'}</span>"
+            paragraph "<a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/README.md' target='_blank'>📘 View Documentation</a>"
         }
-        section("Evapotranspiration & Seasonal Settings"){
-            input"showAdvancedEt","bool",
-                title:"Manually override baseline ET₀ (advanced users)",
-                description:"Enable to enter a custom baseline instead of using the automatic estimation.",
-                defaultValue:false,submitOnChange:true
-            if(showAdvancedEt){
-                input "baselineEt0Inches","decimal",
-                    title:"Manual ET₀ Baseline (in/day)",
-                    defaultValue:estimateBaselineEt0(location.latitude),
-                    description:"Default derived from your latitude (${location.latitude}). Adjust only if necessary."
-            }else{paragraph "Baseline ET₀ automatically estimated at <b>${estimateBaselineEt0(location.latitude)} in/day</b> for your location."}
-            paragraph "WET-IT now computes both <b>evapotranspiration (ET)</b> and <b>seasonal-adjustment</b> percentages for each irrigation zone. Results are published to the WET-IT Data device for use by compatible controllers and automations."
+
+        /* ==========================================================
+         * 2️ System Overview / Requirements
+         * ========================================================== */
+        section("🧭 System Overview & Requirements") {
+            paragraph "This app automates irrigation scheduling using hybrid evapotranspiration (ET) and seasonal adjustments."
         }
-        section("Irrigation Zones"){buildZoneMenu()}
-        section("Weather Data Sources"){buildWeatherSection()}
-        section("Logging & Diagnostics"){buildLoggingSection()}
-        section("System Information"){
-            buildAboutSection()
-            paragraph "Hub Location: lat=${location.latitude}, lon=${location.longitude}"
-            paragraph "Implements industry-standard watering logic compatible with Rain Bird, Rain Master (Toro), Rachio, and Orbit controllers."
+
+        /* ==========================================================
+         * 3️ Zone Setup (ABC-style navigation)
+         * ========================================================== */
+        buildZoneDirectory()
+
+        /* ==========================================================
+         * 4️ Evapotranspiration & Seasonal Settings
+         * ========================================================== */
+        section("🍂 Evapotranspiration & Seasonal Settings (Advanced)", hideable:true, hidden:true){
+		    paragraph "Adjust these values only if you wish to override automatically estimated baseline ET₀ (reference evapotranspiration) values."
+		    input"baselineEt0Inches","decimal",
+		        title:"Baseline ET₀ (in/day)",
+		        description:"Typical daily evapotranspiration for your region during summer.",
+		        range:"0.0..1.0"
+		    input"adjustSeasonalFactor","decimal",
+		        title:"Seasonal Adjustment Factor",
+		        description:"Scale seasonal variation. Default: 1.00 = no adjustment.",
+		        defaultValue:1.00,
+		        range:"0.0..2.0"
+		    input "useSoilMemory","bool",
+			    title:"Enable Soil Moisture Tracking (Rachio / Hydrawise/ Orbit style)",
+			    description:"Persist daily soil depletion for each zone (requires Hubitat storage).",
+			    defaultValue:false,submitOnChange:true
+		    if(settings.useSoilMemory){
+			    def zCount=settings.zoneCount?:0
+			    paragraph "<b>Soil Memory Active:</b> Tracking ${zCount} zones."
+			    (1..zCount).each{z->
+			        def key="zoneDepletion_zone${z}";def tsKey="zoneDepletionTs_zone${z}"
+			        if(!atomicState.containsKey(key))atomicState[key]=0G
+			        BigDecimal d=(atomicState[key]?:0G)as BigDecimal
+			        String ts=atomicState[tsKey]?:'—'
+			        String warn=(ts=='—')?" ⚠️":" "
+			        paragraph "Zone ${z}:${warn}<br>Current depletion = ${String.format('%.3f',d)} in.<br><i>Last updated:</i> ${ts}"
+			        input "btnResetSoil_${z}","button",title:"🔄 Reset Zone ${z}"
+			    }
+			    input "btnResetSoil","button",title:"♻️ Reset All Soil Memory"
+				}else paragraph "Soil moisture tracking is <b>disabled</b>."
+		}
+
+        /* ==========================================================
+         * 5️ Weather Configuration
+         * ========================================================== */
+        section("🌦️ Weather Configuration"){
+		    input"weatherSource","enum",title:"Select Weather Source",
+		        options:["openweather":"OpenWeather (API Key Required)",
+		                 "tomorrow":"Tomorrow.io (API Key Required)",
+		                 "noaa":"NOAA (No API Key Required)"],
+		        defaultValue:"openweather",required:true,submitOnChange:true
+
+		    if(settings.weatherSource=="openweather"){
+		        input"owmApiKey","text",title:"OpenWeather API Key",required:true
+		        input"useNoaaBackup","bool",title:"Use NOAA NWS as backup if OpenWeather unavailable",defaultValue:true
+		    }
+		    if(settings.weatherSource=="tomorrow"){
+		        input"tioApiKey","text",title:"Tomorrow.io API Key",required:true
+		        input"useNoaaBackup","bool",title:"Use NOAA NWS as backup if Tomorrow.io unavailable",defaultValue:true
+		    }
+
+		    input"btnTestWx","button",title:"🌤️ Test Weather Now",
+		        description:"Verifies connectivity for the selected weather source."
+		    paragraph"<b>Note:</b> OpenWeather and Tomorrow.io each require their own API key. NOAA does not and can serve as a backup source when enabled."
+			if(atomicState.tempApiMsg) paragraph "<b>Last API Test:</b> ${atomicState.tempApiMsg}";atomicState.remove("tempApiMsg")
+        }
+		section("🌦️ Weather Configuration (Advanced)", hideable:true, hidden:true){
+			input "tempUnits","enum",title:"Temperature Units",options:["F","C"],defaultValue:location.temperatureScale,submitOnChange:true
+			def unit=(settings.tempUnits?:"F")as String;def options=(unit=="C")?(0..10).collect{sprintf("%.1f",it*0.5)}:(33..41).collect{"${it}"};def defVal=(unit=="C")?"1.5":"35"
+		    if(!settings.freezeThreshold||!options.contains(settings.freezeThreshold.toString()))
+	        app.updateSetting("freezeThreshold",[value:defVal,type:"enum"])
+		    input "freezeThreshold","enum",title:"Freeze Warning Threshold (°${unit})",options:options,defaultValue:defVal,description:"Select the temperature below which freeze/frost alerts trigger",submitOnChange:true
+		}
+
+        /* ==========================================================
+         * 6️ Logging Tools & Diagnostics
+         * ========================================================== */
+        section("📈️ Logging Tools"){
+            paragraph "Utilities for testing, verification, and logging management."
+		    input "logEvents","bool",title:"Log All Events",defaultValue:false
+		    input "logEnable","bool",title:"Enable Debug Logging",defaultValue:false
+		    paragraph "Auto-off after 30 minutes when debug logging is enabled."
+            input "btnDisableDebug","button",title: "🧹 Disable Debug Logging Now"
+            paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"
+		}
+        section("⚙️ System Diagnostics"){
+            input "btnVerifySystem","button",title: "✅ Verify System Integrity"
+            input "btnVerifyChild","button",title: "🔍 Verify Data Child Device"
+            input "btnRunWeatherUpdate","button",title: "💧 Run ET Calculations Now"
+			if(atomicState.tempDiagMsg)paragraph "<b>Last Diagnostic:</b> ${atomicState.tempDiagMsg}";atomicState.tempDiagMsg="&nbsp;"
+            paragraph "Hub Location: ${location.name?:'Unknown'} (${location.latitude}, ${location.longitude})"
+			paragraph "Ensure hub time zone and location are correct for accurate ET calculations."
+        }
+        /* ==========================================================
+         * 7️ About / Version Info (Footer)
+         * ========================================================== */
+        section("") {
+            paragraph "<hr><div style='text-align:center; font-size:90%;'><b>${APP_NAME}</b> v${APP_VERSION} (${APP_MODIFIED})<br>© 2025 Marc Hedish – Licensed under Apache 2.0<br><a href='https://github.com/MHedish/Hubitat' target='_blank'>GitHub Repository</a></div>"
         }
     }
 }
 
-private buildZoneMenu(){
-    Integer zCount=(settings.zoneCount?:4)as Integer
-    section("Zones"){
-        input "zoneCount","number",title:"Number of zones (1–${MAX_ZONES})",defaultValue:zCount,required:true,range:"1..MAX_ZONES",submitOnChange:true
-        input "copyZones","button",title:"Copy Zone 1 to all"
+/* ==========================================================
+ *  ZONE PAGE FRAMEWORK
+ * ========================================================== */
+
+/* --- OPTION LISTS --- */
+def soilOptions(){["Sand","Loamy Sand","Sandy Loam","Loam","Clay Loam","Silty Clay","Clay"]}
+def plantOptions(){["Cool Season Turf","Warm Season Turf","Shrubs","Trees","Groundcover","Annuals","Vegetables","Native Low Water"]}
+def nozzleOptions(){["Spray","Rotor","MP Rotator","Drip Emitter","Drip Line","Bubbler"]}
+
+/* --- ZONE SUMMARY BUILDER --- */
+def summaryForZone(z){
+    def soil=settings["soil_${z}"]?:"Loam";def plant=settings["plant_${z}"]?:"Cool Season Turf";def noz=settings["nozzle_${z}"]?:"Spray";return "Soil: ${soil}, Plant: ${plant}, Nozzle: ${noz}"
+}
+
+def buildZoneDirectory(){
+    section("🌱 Zone Setup"){
+        input "zoneCount","number",title:"Number of Zones (1–${MAX_ZONES})",defaultValue:(settings.zoneCount ?: 4),range:"1..${MAX_ZONES}",required:true,submitOnChange:true
+        if(zoneCount){
+            paragraph "<b>Configured Zones:</b> Click below to configure."
+            (1..zoneCount).each{z->href page:"zonePage",params:[zone:z],title:"Zone ${z}",description:summaryForZone(z),state:"complete"}
+        }
+        if(zoneCount&&zoneCount>1){
+			def btnTitle=settings.copyConfirm?"⚠️ Confirm Copy (Cannot be Undone)":"📋 Copy Zone 1 Settings → All Zones"
+			input "btnCopyZones","button",title:btnTitle
+			if(settings.copyConfirm){
+				input "btnCancelCopy","button",title:"❌ Cancel"
+				paragraph "<b>Note</b>: <i>This will overwrite all zone parameters—including custom advanced overrides (precip, Kc, MAD, etc.)—with Zone 1 values.</i>"
+			}
+		}
     }
-    (1..zCount).each{Integer z->
-        section("Zone ${z} – Irrigation Profile"){
-            buildZoneSection(z);buildAdvancedZoneSection(z)
+}
+
+def zonePage(params){
+	Integer z=(params?.zone?:1) as Integer;state.activeZone=z
+    dynamicPage(name:"zonePage",title:"Zone ${z} Configuration",install:false,uninstall:false){
+        section("Basic Settings"){
+            input "soil_${z}","enum",title:"Soil Type",options:soilOptions(),defaultValue:"Loam",description:"Determines water holding capacity."
+            input "plant_${z}","enum",title:"Plant Type",options:plantOptions(),defaultValue:"Cool Season Turf",description:"Sets crop coefficient (Kc)."
+            input "nozzle_${z}","enum",title:"Irrigation Method",options:nozzleOptions(), defaultValue:"Spray",description:"Determines precipitation rate."
+        }
+        section("Advanced Parameters",hideable:true,hidden:true){
+            input "precip_${z}","decimal",title:"Precipitation Rate Override (in/hr)",description:"Overrides default based on irrigation method."
+            input "root_${z}","decimal",title:"Root Depth (in)",description:"Default derived from plant type."
+            input "kc_${z}","decimal",title:"Crop Coefficient (Kc)",description:"Adjusts ET sensitivity."
+            input "mad_${z}","decimal",title:"Allowed Depletion (0–1)",description:"Fraction of available water before irrigation is recommended."
+            input "resetAdv_${z}","button",title:"Reset Advanced Settings"
         }
     }
-}
-
-private buildZoneSection(z){
-    input "soil_${z}","enum",
-        title:"Soil Type",
-        options:["Sand","Loamy Sand","Sandy Loam","Loam","Clay Loam","Silty Clay","Clay"],
-        defaultValue:"Loam",
-        description:"Determines water holding capacity and infiltration rate."
-
-    input "plant_${z}","enum",
-        title:"Plant Type",
-        options:["Cool Season Turf","Warm Season Turf","Shrubs","Trees","Groundcover","Annuals","Vegetables","Native Low Water"],
-        defaultValue:"Cool Season Turf",
-        description:"Used to estimate crop coefficient (Kc) for ET and seasonal adjustments."
-
-    input "nozzle_${z}","enum",
-        title:"Irrigation Method",
-        options:["Spray","Rotor","MP Rotator","Drip Emitter","Drip Line","Bubbler"],
-        defaultValue:"Spray",
-        description:"Used for precipitation rate and distribution efficiency."
-}
-
-private buildAdvancedZoneSection(z){
-    section("Advanced Zone ${z} Parameters",hideable:true,hidden:true){
-        input "precip_${z}","decimal",
-            title:"Precipitation Rate Override (in/hr)",
-            description:"Override default based on irrigation type."
-        input "root_${z}","decimal",
-            title:"Root Depth Override (in)",
-            description:"Default derived from plant type."
-        input "kc_${z}","decimal",
-            title:"Crop Coefficient (Kc)",
-            description:"Adjust ET sensitivity; default from plant type."
-        input "mad_${z}","decimal",
-            title:"Allowed Depletion (0–1)",
-            description:"Fraction of available water before irrigation is recommended."
-        input "resetAdv_${z}","button",title:"Reset Advanced Settings"
-    }
-}
-
-private buildWeatherSection(){
-    section("Weather Configuration"){
-        paragraph "Daily weather data is retrieved from your selected provider and used to compute reference ET₀ values for your chosen watering model."
-        input "weatherSource","enum",title:"Weather Data Source",options:[
-            "openweather":"OpenWeather 3.0 (Global, API key required)",
-            "noaa":"NOAA NWS (U.S. only, API key not required)",
-            "tomorrow":"Tomorrow.io (Global, API key required)",
-            "auto":"Auto (try all available sources with valid keys)"
-        ],defaultValue:"openweather",required:true,submitOnChange:true
-        if(weatherSource in ["openweather","auto"])input"owmApiKey","text",title:"OpenWeather API Key",description:"Used for OpenWeather 3.0 (and Auto mode if available)",required:(weatherSource=="openweather")
-        if(weatherSource in ["tomorrow","auto"])input"tomApiKey","text",title:"Tomorrow.io API Key",description:"Used for Tomorrow.io (and Auto mode if available)",required:(weatherSource=="tomorrow")
-        input "btnTestWx","button",title:"Test Weather Now",submitOnChange:true
-        if(atomicState.tempApiMsg) paragraph "<b>Last API Test:</b> ${atomicState.tempApiMsg}";atomicState.remove("tempApiMsg")
-    }
-}
-
-private buildLoggingSection(){
-	input "tempUnits","enum",title:"Temperature Units",options:["F","C"],defaultValue:"F",submitOnChange:true
-	def unit=(settings.tempUnits?:"F") as String;def options=(unit=="C")?(0..10).collect{sprintf("%.1f",it*0.5)}:(33..41).collect{"${it}"};def defVal=(unit=="C")?"1.5":"35"
-	if(!settings.freezeThreshold||!options.contains(settings.freezeThreshold.toString()))app.updateSetting("freezeThreshold",[value:defVal,type:"enum"])
-	input "freezeThreshold","enum",title:"Freeze Warning Threshold (°${unit})",options:options,defaultValue:defVal,description:"Select the temperature below which freeze/frost alerts trigger",width:4,submitOnChange:true
-    input "btnRunEtNow","button",title:"Run ET Calculations Now"
-    input "btnVerifySystem","button",title:"Verify System Integrity",submitOnChange:true
-    input "btnVerifyChild","button",title:"Verify Data Child",submitOnChange:true
-    if(atomicState.tempDiagMsg){paragraph "<b>Diagnostics:</b> ${atomicState.tempDiagMsg}";atomicState.remove("tempDiagMsg")}
-    input "btnDisableDebug","button",title:"Disable Debug Logging Now",submitOnChange:true
-    input "logEnable","bool",title:"Enable Debug Logging",defaultValue:false
-    paragraph "Auto-off after 30 minutes when debug logging is enabled."
-    input "logEvents","bool",title:"Log All Events",defaultValue:false
-}
-
-private buildAboutSection(){
-    paragraph appInfoString()
-    paragraph "WET-IT provides professional-grade evapotranspiration (ET) and seasonal-adjust scheduling for Hubitat-connected irrigation systems."
-    paragraph "Implements concepts found in controllers from Rain Bird, Rain Master (Toro), Rachio, and Orbit for educational and interoperability purposes. No proprietary code or assets are used."
 }
 
 /* ---------- Button Handler Block ---------- */
 def appButtonHandler(String btn){
-    if(btn=="copyZones"){copyZone1ToAll();return}
-    if(btn.startsWith("resetAdv_")){Integer z=(btn-"resetAdv_")as Integer;resetAdvancedForZone(z);return}
+	if(btn=="btnCopyZones"){if(!settings.copyConfirm){app.updateSetting("copyConfirm",[value:true,type:"bool"]);atomicState.tempDiagMsg="⚠️ Press again to confirm copy, or cancel below.";return};app.updateSetting("copyConfirm",[value:false,type:"bool"]);copyZone1ToAll();atomicState.tempDiagMsg="✅ Zone 1 settings copied to all zones."}
+	if(btn=="btnCancelCopy"){app.updateSetting("copyConfirm",[value:false,type:"bool"]);atomicState.tempDiagMsg="❎ Copy operation canceled."}
+	if(btn.startsWith("btnResetSoil_")){Integer z=(btn-"btnResetSoil_")as Integer;resetSoilForZone(z);return}
+	if(btn.startsWith("resetAdv_")){Integer z=(btn-"resetAdv_")as Integer;resetAdvancedForZone(z);return}
+	if(btn=="btnResetSoil"){resetAllSoilMemory();return}
     if(btn=="btnDisableDebug"){disableDebugLoggingNow();return}
-    if(btn=="btnRunEtNow"){runDailyEt();def msg=getDataChild()?.currentValue("summaryText")?:'⚠️ No ET summary available';logInfo"ET run completed: ${msg}";app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
+    if(btn=="btnRunWeatherUpdate"){runWeatherUpdate();def msg=getDataChild(true)?.currentValue("summaryText")?:'⚠️ No ET summary available';logInfo"ET run completed: ${msg}";app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
 	if(btn=="btnVerifyChild"){def ok=verifyDataChild();def msg=ok?"✅ Data child verified successfully.":"⚠️ Data child verification failed. Check logs.";logInfo msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
 	if(btn=="btnVerifySystem"){def ok=verifySystem();def msg=ok?"✅ System verification passed.":"⚠️ System verification failed. See logs for details.";logInfo msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
 	if(btn=="btnTestWx"){
@@ -274,6 +349,14 @@ private void resetAdvancedForZone(Integer z){
     logInfo"Reset advanced overrides for zone ${z}"
 }
 
+private void resetSoilForZone(Integer z){
+    def key="zoneDepletion_zone${z}";def tsKey="zoneDepletionTs_zone${z}";atomicState.remove(key);atomicState.remove(tsKey);logInfo"resetSoilForZone(): Cleared soil memory for Zone ${z}"
+}
+
+private void resetAllSoilMemory(){
+    def zCount=settings.zoneCount?:0;(1..zCount).each{z->resetSoilForZone(z)};logInfo"resetAllSoilMemory(): Cleared all zone depletion records"
+}
+
 /* ---------- Lifecycle ---------- */
 def installed(){logInfo "Installed: ${appInfoString()}";initialize()}
 def updated(){logInfo "Updated: ${appInfoString()}";atomicState.logEnable=settings.logEnable?:false;initialize()}
@@ -288,17 +371,26 @@ def initialize(){logInfo "Initializing: ${appInfoString()}";unschedule("autoDisa
         else logInfo"✅ System verification clean"
     }catch(e){logWarn"⚠️ Zone/verification stage failed (${e.message})"}
     if(!owmApiKey&&!tomApiKey&&weatherSource!="noaa")logWarn"⚠️ Not fully configured; no valid API key or weather source"
-    runIn(15,"runDailyEt");scheduleDailyEt();logInfo"Scheduling ET calculations daily at 00:10"
+    runIn(15,"runWeatherUpdate");scheduleWeatherUpdates();logInfo "Weather/ET updates scheduled every 4 hours at :15 past the hour"
 }
 
-private scheduleDailyEt(){
-    unschedule("runDailyEt");def cron7="0 10 0 ? * * *";def cron6="0 10 0 * * ?";def used=null
-    try{schedule(cron7,"runDailyEt");used=cron7}
+private scheduleWeatherUpdates(){
+    unschedule("runWeatherUpdate");def cron7="0 15 0/4 ? * * *";def cron6="0 15 0/4 * * ?";def used=null
+    try{schedule(cron7,"runWeatherUpdate");used=cron7}
     catch(ex7){
-        try{schedule(cron6,"runDailyEt");used=cron6}catch(ex6){logError"scheduleDailyEt(): failed to schedule (${ex6.message})"}
+        try{schedule(cron6,"runWeatherUpdate");used=cron6}catch(ex6){logError"scheduleWeatherUpdates(): failed to schedule (${ex6.message})"}
     }
-    if(used)logInfo"Daily ET scheduled (00:10) using CRON '${used}'"
+    if(used)logInfo "Weather updates scheduled every 4 hours (00:15,04:15,08:15,12:15,16:15,20:15) using CRON '${used}'"
     else logWarn"No compatible CRON format accepted; verify Hubitat version."
+}
+
+private Map getSoilMemorySummary(){
+    def zCount=settings.zoneCount?:0;if(!zCount)return [:]
+    Map sm=[:]
+    (1..zCount).each{
+		z->def d=(atomicState."zoneDepletion_zone${z}"?:0G);def ts=(atomicState."zoneDepletionTs_zone${z}"?:'—');sm["zone${z}"]=[depletion:d,updated:ts]
+    }
+    return sm
 }
 
 def ensureDataDevice(){
@@ -330,9 +422,11 @@ def verifySystem(){
         if(!child.hasAttribute(it))issues<<"missing ${it}"
     }
     (1..z).each{
-        if(!child.hasAttribute("zone${it}Et"))issues<<"missing zone${it}Et"
-        if(!child.hasAttribute("zone${it}Seasonal"))issues<<"missing zone${it}Seasonal"
-    }
+	    if(!child.hasAttribute("zone${it}Et"))issues<<"missing zone${it}Et"
+	    if(!child.hasAttribute("zone${it}Seasonal"))issues<<"missing zone${it}Seasonal"
+	    atomicState."zoneDepletion_zone${it}" = (atomicState."zoneDepletion_zone${it}" ?: 0G)
+	    atomicState."zoneDepletionTs_zone${it}" = (atomicState."zoneDepletionTs_zone${it}" ?: "—")
+	}
     def wx=child.currentValue("wxSource")?:'UNKNOWN'
     if(wx in ['UNKNOWN','Not yet fetched',''])issues<<"invalid weather source (${wx})"
     if(issues){
@@ -482,12 +576,12 @@ private BigDecimal estimateBaselineEt0(BigDecimal lat){
     return result
 }
 
-private runDailyEt(){
+private runWeatherUpdate(){
     if(!owmApiKey&&!tomApiKey&&(settings.weatherSource!="noaa"&&settings.weatherSource!="auto")){
-        logWarn"runDailyEt(): No valid API key or source configured; aborting";return
+        logWarn"runWeatherUpdate(): No valid API key or source configured; aborting";return
     }
-    if(!verifyDataChild()){logWarn"runDailyEt(): cannot continue, child invalid";return}
-    Map wx=fetchWeather(false);if(!wx){logWarn"runDailyEt(): No weather data";return}
+    if(!verifyDataChild()){logWarn"runWeatherUpdate(): cannot continue, child invalid";return}
+    Map wx=fetchWeather(false);if(!wx){logWarn"runWeatherUpdate(): No weather data";return}
     Map sun=getSunriseAndSunset();Date sr=sun?.sunrise;Date ss=sun?.sunset
     Long dayLen=(sr&&ss)?((ss.time-sr.time)/1000L):null
     BigDecimal lat=location.latitude;int jDay=Calendar.getInstance(location.timeZone).get(Calendar.DAY_OF_YEAR)
@@ -495,11 +589,11 @@ private runDailyEt(){
     Map env=[tMaxF:wx.tMaxF,tMinF:wx.tMinF,rainIn:wx.rainIn,latDeg:lat,julianDay:jDay,dayLengthSec:dayLen,baselineEt0:baseline]
     Integer zCount=(settings.zoneCount?:4)as Integer;logInfo"Running hybrid ET+Seasonal model for ${zCount} zones"
     List<Map> zoneList=(1..zCount).collect{Integer z->[id:"zone${z}",soil:settings["soil_${z}"]?:"Loam",plantType:settings["plant_${z}"]?:"Cool Season Turf",
-        nozzleType:settings["nozzle_${z}"]?:"Spray",prevDepletion:getPrevDepletion("zone${z}"),
-        precipRateInHr:settings["precip_${z}"]?(settings["precip_${z}"]as BigDecimal):null,
-        rootDepthIn:settings["root_${z}"]?(settings["root_${z}"]as BigDecimal):null,
-        kc:settings["kc_${z}"]?(settings["kc_${z}"]as BigDecimal):null,
-        mad:settings["mad_${z}"]?(settings["mad_${z}"]as BigDecimal):null]}
+	    nozzleType:settings["nozzle_${z}"]?:"Spray",prevDepletion:getPrevDepletion("zone${z}"),
+	    precipRateInHr:(settings["precip_${z}"]in[null,"null",""])?null:(settings["precip_${z}"] as BigDecimal),
+	    rootDepthIn:(settings["root_${z}"]in[null,"null",""])?null:(settings["root_${z}"] as BigDecimal),
+	    kc:(settings["kc_${z}"]in[null,"null",""])?null:(settings["kc_${z}"] as BigDecimal),
+	    mad:(settings["mad_${z}"]in[null,"null",""])?null:(settings["mad_${z}"] as BigDecimal)]}
     Map etResults=etComputeZoneBudgets(env,zoneList,"et")
     Map seasonalResults=etComputeZoneBudgets(env,zoneList,"seasonal")
     Map hybridResults=[:];zoneList.each{z->def id=z.id;hybridResults[id]=[etBudgetPct:etResults[id]?.budgetPct?:0,seasonalBudgetPct:seasonalResults[id]?.budgetPct?:0]}
@@ -510,11 +604,12 @@ private runDailyEt(){
 private publishSummary(Map results){
     def c=getDataChild();if(!c)return
     String ts=new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone)
-    String summary=results.collect{k,v->"${k}=(ET:${v.etBudgetPct}%,Seasonal:${v.seasonalBudgetPct}%)"}.join(", ")
+    String summary=results.collect{k,v->"${k}=(ET:${v.etBudgetPct}%, Seasonal:${v.seasonalBudgetPct}%)"}.join(", ")
     String json=groovy.json.JsonOutput.toJson(results)
     childEmitEvent(c,"summaryText",summary,"Hybrid ET+Seasonal summary",null,true)
     childEmitEvent(c,"summaryJson",json,"Hybrid ET+Seasonal JSON summary",null,true)
-    childEmitEvent(c,"summaryTimestamp",ts,"Summary timestamp updated",null)
+    childEmitEvent(c,"summaryTimestamp",ts,"Summary timestamp updated",null,true)
+    childEmitEvent(c,"soilMemoryJson",JsonOutput.toJson(getSoilMemorySummary()),"Per-zone ET JSON data",null,true)
     if(c.hasCommand("parseSummary"))c.parseSummary(json)
     def freeze=detectFreezeAlert(state.lastWeather?:[:])
     String u=state.lastWeather?.unit?:settings.tempUnits?:'F'
@@ -535,18 +630,34 @@ private BigDecimal getPrevDepletion(String key){state.depletion=state.depletion?
 private void setNewDepletion(String key,BigDecimal value){state.depletion=state.depletion?:[:];if(value!=null)state.depletion[key]=value}
 
 Map etComputeZoneBudgets(Map env,List<Map> zones,String method){
-    BigDecimal tMaxF=(env.tMaxF?:0G)as BigDecimal;BigDecimal tMinF=(env.tMinF?:tMaxF)as BigDecimal;BigDecimal rainIn=(env.rainIn?:0G)as BigDecimal;BigDecimal latDeg=(env.latDeg?:0G)as BigDecimal;int jDay=(env.julianDay?:1)as int;Long dayLen=env.dayLengthSec as Long;BigDecimal baseEt0=(env.baselineEt0?:0.18G)as BigDecimal
-    BigDecimal et0In=etCalcEt0Hargreaves(tMaxF,tMinF,latDeg,jDay,dayLen);Map result=[:]
+    BigDecimal tMaxF=(env.tMaxF?:0G)as BigDecimal;BigDecimal tMinF=(env.tMinF?:tMaxF)as BigDecimal
+    BigDecimal rainIn=(env.rainIn?:0G)as BigDecimal;BigDecimal latDeg=(env.latDeg?:0G)as BigDecimal
+    int jDay=(env.julianDay?:1)as int;Long dayLen=env.dayLengthSec as Long
+    BigDecimal baseEt0=(env.baselineEt0?:0.18G)as BigDecimal
+    BigDecimal et0In=etCalcEt0Hargreaves(tMaxF,tMinF,latDeg,jDay,dayLen)
+    Map result=[:]
     zones?.each{Map zCfg->
-        def zId=zCfg.id;if(zId==null)return
+        def zId=zCfg.id;if(!zId)return
         String soil=(zCfg.soil?:"Loam")as String;String plantType=(zCfg.plantType?:"Cool Season Turf")as String
-        BigDecimal awc=etAwcForSoil(soil);BigDecimal rootD=(zCfg.rootDepthIn?:etRootDepthForPlant(plantType))as BigDecimal;BigDecimal kc=(zCfg.kc?:etKcForPlant(plantType))as BigDecimal;BigDecimal mad=(zCfg.mad?:etMadForPlant(plantType))as BigDecimal
-        String nozzleType=(zCfg.nozzleType?:null)as String;BigDecimal prInHr=zCfg.precipRateInHr?(zCfg.precipRateInHr as BigDecimal):etPrecipRateFor(plantType,nozzleType)
+        BigDecimal awc=etAwcForSoil(soil);BigDecimal rootD=(zCfg.rootDepthIn?:etRootDepthForPlant(plantType))as BigDecimal
+        BigDecimal kc=(zCfg.kc?:etKcForPlant(plantType))as BigDecimal;BigDecimal mad=(zCfg.mad?:etMadForPlant(plantType))as BigDecimal
+        String nozzleType=(zCfg.nozzleType?:null)as String
+        BigDecimal prInHr=zCfg.precipRateInHr?(zCfg.precipRateInHr as BigDecimal):etPrecipRateFor(plantType,nozzleType)
         Map zoneCfg=[rootDepthIn:rootD,awcInPerIn:awc,mad:mad,kc:kc,precipRateInPerHr:prInHr]
         BigDecimal budgetPct;BigDecimal newDepletion
-        if(method=="et"){BigDecimal prevD=(zCfg.prevDepletion?:0G)as BigDecimal;newDepletion=etCalcNewDepletion(prevD,et0In,rainIn,0G,zoneCfg);boolean shouldWater=etShouldIrrigate(newDepletion,zoneCfg);budgetPct=etCalcBudgetFromDepletion(newDepletion,zoneCfg)}
-        else{budgetPct=etCalcSeasonalBudget(et0In,rainIn,baseEt0,5G,200G);newDepletion=null}
-        result[zId.toString()]=[budgetPct:budgetPct.setScale(0,BigDecimal.ROUND_HALF_UP),newDepletion:newDepletion]}
+        if(method=="et"){
+            BigDecimal prevD=(settings.useSoilMemory?(atomicState."zoneDepletion_${zId}"?:0G):(zCfg.prevDepletion?:0G))as BigDecimal
+            newDepletion=etCalcNewDepletion(prevD,et0In,rainIn,0G,zoneCfg)
+            boolean shouldWater=etShouldIrrigate(newDepletion,zoneCfg)
+            budgetPct=etCalcBudgetFromDepletion(newDepletion,zoneCfg)
+            if(settings.useSoilMemory){
+                def key="zoneDepletion_${zId}";def tsKey="zoneDepletionTs_${zId}"
+                atomicState[key]=newDepletion
+                atomicState[tsKey]=new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone)
+            }
+        }else{budgetPct=etCalcSeasonalBudget(et0In,rainIn,baseEt0,5G,200G);newDepletion=null}
+        result[zId.toString()]=[budgetPct:budgetPct.setScale(0,BigDecimal.ROUND_HALF_UP),newDepletion:newDepletion]
+    }
     result
 }
 
