@@ -75,7 +75,7 @@ Use **🌤 Test Weather Now** to validate connectivity.
 
 ---
 
-## 📊 Attribute Reference (Summary)
+## 📊 Attribute Reference
 
 | Attribute | Type | Description |
 |:--|:--|:--|
