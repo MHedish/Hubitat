@@ -1,5 +1,13 @@
-# 📘 WET-IT Full Documentation v0.5.5.0  
+# 📘 WET-IT Full Documentation v0.5.6.0  
 *Comprehensive Technical & Integration Reference*
+
+WET-IT brings local-first, Rachio-style intelligence to any irrigation controller.
+It runs professional evapotranspiration (ET) and soil-moisture modeling entirely inside your Hubitat hub — no cloud connection required.
+You can choose between:
+
+Simple Weather-Based Adjustment – daily runtime tuning based on real-time weather, or
+
+Smart Soil Moisture Tracking – full Rachio-style water balance that remembers your soil’s moisture over time.
 
 ---
 
@@ -146,12 +154,14 @@ This allows automations (Rule Machine, webCoRE, or Node-RED) to:
 * `emitEvent()` and `emitChangedEvent()` handle updates cleanly.  
 * `atomicState` stores transient diagnostic data.  
 * Compact one-line style → efficient, self-documenting Groovy.  
-* Easily extends from 1 to 48 zones.
+* Easily extended to > 12 zones or additional APIs.
 
 ---
 
 ## 🔮 Future Enhancements
 
+* Additional weather metrics (humidity, wind speed, solar radiation)  
+* Graphical driver dashboards and historical ET trend charting  
 * Full HPM manifest and release channel integration  
 
 ---
