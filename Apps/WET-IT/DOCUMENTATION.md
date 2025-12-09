@@ -1,13 +1,12 @@
 # 📘 WET-IT Full Documentation v0.5.6.0  
 *Comprehensive Technical & Integration Reference*
 
-WET-IT brings local-first, Rachio-style intelligence to any irrigation controller.
+WET-IT brings local-first, Rachio/Hydrawise/Orbit/-style intelligence to any irrigation controller.
 It runs professional evapotranspiration (ET) and soil-moisture modeling entirely inside your Hubitat hub — no cloud connection required.
 You can choose between:
 
-Simple Weather-Based Adjustment – daily runtime tuning based on real-time weather, or
-
-Smart Soil Moisture Tracking – full Rachio-style water balance that remembers your soil’s moisture over time.
+* Simple Weather-Based Adjustment – daily runtime tuning based on real-time weather, or 
+* Smart Soil Moisture Tracking – full Rachio-style water balance that remembers your soil’s moisture over time.
 
 ---
 
