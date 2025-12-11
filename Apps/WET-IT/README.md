@@ -46,7 +46,7 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 
 ### Option 2 – Hubitat Package Manager (Recommended)
 
-When published, add the repository manifest, then install via  
+[When published, add the repository manifest, then install via  ]
 **Irrigation / Weather → WET-IT**
 
 ---
