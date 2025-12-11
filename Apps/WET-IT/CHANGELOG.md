@@ -30,7 +30,6 @@
 ---
 
 ## 🌾 0.5.4.x — Dynamic Zones
-- Added ABC-style per-zone configuration pages.
 - Enabled full zone cloning (Copy Zone 1 → All).
 - Improved default handling for new zones.
 - Enhanced soil/plant/nozzle summaries for each zone.
