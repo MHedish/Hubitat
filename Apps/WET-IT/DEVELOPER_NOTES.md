@@ -103,16 +103,5 @@ Acts as a display and data bridge:
 
 ---
 
-## 🚀 Roadmap (v0.6.x+)
-
-| Focus | Enhancement |
-|:--|:--|
-| Forecast caching | Avoid redundant API calls |
-| Hourly ET granularity | Improve ET₀ precision |
-| State export | JSON backup of atomicState |
-| Trend analytics | Graph historical ET + depletion |
-
----
-
 > “Model the soil, not the schedule.”  
 > — Design principle of WET-IT
