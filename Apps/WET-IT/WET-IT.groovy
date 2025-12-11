@@ -7,74 +7,14 @@
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  0.4.0.x   –– Initial beta version. Added One Call 3.0 integration, Rain Bird & Rachio ET engines, min runtime safety clamp, simulation mode
-*  0.4.7.0   –– Move advance zone setting to expandable boxes.
-*  0.4.8.0   –– Various GUI improvements.
-*  0.4.9.1   –– Code refactoring.
-*  0.4.9.2   –– Updated CRON schduling to be CRON7/CRON6-aware.
-*  0.4.9.2   –– Added child device and associated event publishing.
-*  0.4.10.0  –– Removed 'controller' ability/reference to 'zone'; all controller activity will be within Rule Machine/WebCoRE.
-*  0.4.10.1  –– Zone Menu cleanup.
-*  0.4.10.2  –– Connected child device to app; various code improvements.
-*  0.4.10.3  –– Implemented cross-code versioning.
-*  0.4.10.4  –– childEmitEvent() and childEmitChangedEvent()
-*  0.4.10.5  –– fixed initalize() logDebug message.
-*  0.4.10.6  –– Implemented autoDisableDebug logging.
-*  0.4.10.7  –– UI improvements.
-*  0.4.10.8  –– Added deterministic Baseline ET₀.
-*  0.4.11.0  –– Refactored to use "seasonal" and "et"
-*  0.4.11.1  –– Added secondary and tertiary data providers - NOAA and tomorrow.io
-*  0.4.11.2  –– Code clean up.
-*  0.4.11.3  –– Fixed advanced ET₀ settings UI; fixed WX method naming; fixed WX source UI; relocated lat/long data to "System Info"/
-*  0.4.11.4  –– Corrected childEmitEvent() calls; updated fetchWeather().
-*  0.4.11.5  –– updated childEmitEvent() and childEmitChangedEvent() based on 0.4.11.4
-*  0.4.11.6  –– Moved to static def for cachedChild; updated methods to use getDataChild().
-*  0.4.11.7  –– Fixed all wx providers.
-*  0.4.11.8  –– Reverted
-*  0.4.11.9  –– Reverted
-*  0.4.11.10 –– Finally
-*  0.4.11.11 –– Finalize test methods for all three data sources.
-*  0.4.12.0  –– Refactor to remove runtime minutes.
-*  0.5.0.0   –– Removed the “Method” selector completely; First “Hybrid Mode”.
-*  0.5.1.0   –– Added missing unschedule(autoDisableDebugLogging) in initialize(); added verifyAttributes() call to child devices in initialize.
-*  0.5.1.1   –– Removed input "allowShortRuns" artifact
-*  0.5.1.2   –– Added MAX_ZONES; restored childEmitEvent() and childEmitChangedEvent().
-*  0.5.1.3   –– Corrected autoDisableDebugLogging() and disableDebugLoggingNow().
-*  0.5.1.4   –– Added feedback to [Verify Data Child] and [Verify System] in UI.
-*  0.5.1.5   –– Updated verifySystem()
-*  0.5.1.6   –– Refactored initialize() to introduce self-healing.
-*  0.5.1.7   –– Added freeze/frost warnings.
-*  0.5.2.0   –– Recognized not everyone measures in degrees Freedom; added Fahrenheit/Celsius selection and appropriate output updates.
-*  0.5.2.1   –– Fixed freeze warning.
-*  0.5.2.2   –– Corrected "unit" in publishSummary(); only emits unit where apropriate; corrected wxSource=Not yet fetched in initialize().
-*  0.5.2.3   –– Added user preference for freeze warning threshold.
-*  0.5.2.4   –– Corrected the four event emitters; refactored childEmitEvent() and childEmitChangeEvent() to pass event data to handlers within the device: def parentEmitEvent() and parentEmitChangedEvent(Map evt).
-*  0.5.2.5   –– Changed childEmitEvent and childEmitChangedEvent to call correspoding in child driver.
-*  0.5.2.6   –– Pull default tempUnit from hub: location.temperatureScale
-*  0.5.2.7   –– renamed runDailyEt() to runWeatherUpdate(); modified schedule to run every 4 hours instead of once a day at 00:10.
-*  0.5.2.8   –– Fixed btnRunWeatherUpdate naming.
-*  0.5.3.0   –– Version bumped for UI revisions.
-*  0.5.3.1   –– Initial UI/UX redesign; Removed "auto" provider option in place of using NOAA as a backup provider.
-*  0.5.3.2   –– Restored missing temp unit and logging inputs.
-*  0.5.3.3   –– Separated advanced WX options; reverte runWeatherUpdate() method to pre-UI rewrite.
-*  0.5.3.4   –– Separated logging and diag sections of UI.
-*  0.5.4.0   –– Dynamic Zones pages fixed.
-*  0.5.4.1   –– Finished add/colapse zones.
-*  0.5.4.2   –– Refactored List<Map> zoneList to handle null values from new zones.
-*  0.5.4.3   –– updated getDataChild()
-*  0.5.5.0   –– Added per zone Soil Moisture Tracking (Rachio / Hydrawise/ Orbit style).
-*  0.5.5.1   –– Moved ET tracking diagnostics; completed ET JSON output.
-*  0.5.5.2   –– Renamed btnResetSoil to btnResetAllSoil to eliminate collision; updated private resetSoilForZone() and resetAllSoilMemory() to handle long and integer.
-*  0.5.5.3   –– Created cachedZoneCount and normalized throughout.
-*  0.5.5.4   –– Reverted
+*  0.4.x.x   –– Foundation
+*  0.5.0.x   –– Hybrid Model Migration
+*  0.5.3.x   –– UI/UX Redesign
+*  0.5.4.x   –– Dynamic Zones
 *  0.5.5.5   –– Created cachedZoneCount and normalized throughout.
-*  0.5.6.0   –– Moved zone management to child page UI model.
-*  0.5.6.1   –– Added feedback loop for ET zone completion from child.
-*  0.5.6.2   –– Updated zone refresh from child to match current methods/values; updated resetSoilForZone() to track timestamp of update; localized ts in adjustSoilDepletion().
-*  0.5.6.3   –– Fixed resetAllSoilMemory() to correct MissingMethodException
-*  0.5.6.4   –– Reverted
-*  0.5.6.5   –– Reverted
-*  0.5.6.7   –– Removed numerous artifacts (e.g. "auto" wx selection, "tioApiKey" vs "tomApiKey")
+*  0.5.5.x   –– Soil Memory Framework
+*  0.5.6.x   –– ET Feedback Loop
+*  0.5.7.x   –– Final Stabilization
 *  0.5.7.0   –– Known Good
 *  0.5.7.1   –– Restored bi-directional communication.
 *  0.5.7.2   –– Updated markZoneWatered and markAllZonesWatered; tested successfully.
