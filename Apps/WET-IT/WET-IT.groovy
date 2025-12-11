@@ -83,13 +83,14 @@
 *  0.5.7.5   –– Added meterological season and approx astrlogical season.
 *  0.5.7.6   –– Changed etComputeZoneBudgets() to accomodate multiple calcs per day.
 *  0.5.7.7   –– Added wxChecked to track forecast poll time separately from wxTimestamp (forecast origin); enhanced diagnostics panel with elapsed-time indicator and hub location marker. Full cycle verified stable.
+*  0.5.7.8   –– Enhanced runWeatherUpdate() initialization to self-heal zone cache dynamically (no persistent state). Handles reboots, GC resets, and dynamic zone changes added via child or automation.
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.5.7.7"
+@Field static final String APP_VERSION="0.5.7.8"
 @Field static final String APP_MODIFIED="2025-12-11"
 @Field static final int MAX_ZONES=48
 @Field static def cachedChild=null
@@ -646,19 +647,27 @@ private runWeatherUpdate(){
         logWarn"runWeatherUpdate(): No valid API key or source configured; aborting";return
     }
     if(!verifyDataChild()){logWarn"runWeatherUpdate(): cannot continue, child invalid";return}
+    Integer zoneCount=(cachedZoneCount ?: settings?.zoneCount ?: 0) as Integer
+    if(zoneCount<=0||zoneCount>48){
+        logWarn"runWeatherUpdate(): Invalid zone count (${zoneCount}); attempting dynamic recovery via verifySystem()"
+        verifySystem();zoneCount=(cachedZoneCount?:settings?.zoneCount?:0) as Integer
+        if(zoneCount<=0||zoneCount>48){logError"runWeatherUpdate(): Recovery failed — no valid zones (${zoneCount}); aborting ET update";return}
+        else logInfo"runWeatherUpdate(): Recovery succeeded — found ${zoneCount} active zone(s)"
+    }
+    cachedZoneCount=zoneCount
     Map wx=fetchWeather(false);if(!wx){logWarn"runWeatherUpdate(): No weather data";return}
     Map sun=getSunriseAndSunset();Date sr=sun?.sunrise;Date ss=sun?.sunset
     Long dayLen=(sr&&ss)?((ss.time-sr.time)/1000L):null
     BigDecimal lat=location.latitude;int jDay=Calendar.getInstance(location.timeZone).get(Calendar.DAY_OF_YEAR)
     BigDecimal baseline=(settings.baselineEt0Inches?:0.18)as BigDecimal
     Map env=[tMaxF:wx.tMaxF,tMinF:wx.tMinF,rainIn:wx.rainIn,latDeg:lat,julianDay:jDay,dayLengthSec:dayLen,baselineEt0:baseline]
-    logInfo"Running hybrid ET+Seasonal model for ${cachedZoneCount} zones"
-    List<Map> zoneList=(1..cachedZoneCount).collect{Integer z->[id:"zone${z}",soil:settings["soil_${z}"]?:"Loam",plantType:settings["plant_${z}"]?:"Cool Season Turf",
-	    nozzleType:settings["nozzle_${z}"]?:"Spray",prevDepletion:getPrevDepletion("zone${z}"),
-	    precipRateInHr:(settings["precip_${z}"]in[null,"null",""])?null:(settings["precip_${z}"] as BigDecimal),
-	    rootDepthIn:(settings["root_${z}"]in[null,"null",""])?null:(settings["root_${z}"] as BigDecimal),
-	    kc:(settings["kc_${z}"]in[null,"null",""])?null:(settings["kc_${z}"] as BigDecimal),
-	    mad:(settings["mad_${z}"]in[null,"null",""])?null:(settings["mad_${z}"] as BigDecimal)]}
+    logInfo"Running hybrid ET+Seasonal model for ${zoneCount} zones"
+    List<Map> zoneList=(1..zoneCount).collect{Integer z->[id:"zone${z}",soil:settings["soil_${z}"]?:"Loam",plantType:settings["plant_${z}"]?:"Cool Season Turf",
+        nozzleType:settings["nozzle_${z}"]?:"Spray",prevDepletion:getPrevDepletion("zone${z}"),
+        precipRateInHr:(settings["precip_${z}"]in[null,"null",""])?null:(settings["precip_${z}"] as BigDecimal),
+        rootDepthIn:(settings["root_${z}"]in[null,"null",""])?null:(settings["root_${z}"] as BigDecimal),
+        kc:(settings["kc_${z}"]in[null,"null",""])?null:(settings["kc_${z}"] as BigDecimal),
+        mad:(settings["mad_${z}"]in[null,"null",""])?null:(settings["mad_${z}"] as BigDecimal)]}
     Map etResults=etComputeZoneBudgets(env,zoneList,"et")
     Map seasonalResults=etComputeZoneBudgets(env,zoneList,"seasonal")
     Map hybridResults=[:];zoneList.each{z->def id=z.id;hybridResults[id]=[etBudgetPct:etResults[id]?.budgetPct?:0,seasonalBudgetPct:seasonalResults[id]?.budgetPct?:0]}
