@@ -25,13 +25,21 @@
 *  0.5.3.1  –– Updated driverDocBlock().
 *  0.5.5.0  –– Added attribute "soilMemoryJson"; renumbered to match parent minor version.
 *  0.5.5.1  –– Updated driverDocBlock() to correct URLs
+*  0.5.6.0  –– Added ET feedback methods.
+*  0.5.6.1  –– Reverted
+*  0.5.6.2  –– Corrected clearing zone < 100% watered.
+*  0.5.7.0  –– Known Good
+*  0.5.7.1  –– markZoneWatered and markAllZonesWatered tested complete.
+*  0.5.7.2  –– Updated refresh() to call parent.publishSummary()
+*  0.5.7.3  –– Changed regresh() to call parent.runWeatherUpdate(true).
+*  0.5.7.4  –– Added wxChecked attribute to track forecast poll time separately from wxTimestamp (forecast origin).
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "0.5.5.1"
-@Field static final String DRIVER_MODIFIED = "2025-12-09"
+@Field static final String DRIVER_VERSION  = "0.5.7.4"
+@Field static final String DRIVER_MODIFIED = "2025-12-11"
 @Field static final int MAX_ZONES = 48
 
 metadata {
@@ -55,18 +63,25 @@ metadata {
         attribute "summaryTimestamp","string"
         attribute "wxSource","string"
         attribute "wxTimestamp","string"
+        attribute "wxChecked","string"
         // Static predeclare up to MAX_ZONES
         (1..MAX_ZONES).each{
             attribute "zone${it}Et","number"
             attribute "zone${it}Seasonal","number"
         }
+
         command "initialize"
         command "disableDebugLoggingNow"
         command "emitEvent",[[name:"This isn't the button you're looking for.",description:"Move Along."]]
 		command "emitChangedEvent",[[name:"This isn't the button you're looking for.",description:"Move Along."]]
+		command "markAllZonesWatered",[[name:"Mark All Zones Watered",description:"Clears all ET data for all zones."]]
+		command "markZoneWatered",[
+				[name:"Mark Zone Watered",description:"Clears ET data for this specific zone.",type:"NUMBER",required:true],
+		        [name:"Percentage",description:"(1-100)",type:"NUMBER",constraints:[1..100],required:false]
+				]
     }
     preferences{
-        input("", "hidden", title: driverDocBlock())
+        input("","hidden",title: driverDocBlock())
         input("logEnable","bool",title:"Enable Debug Logging",description:"Auto-off after 30 minutes.",defaultValue:false)
         input("logEvents","bool",title:"Log All Events",description:"",defaultValue:false)
     }
@@ -88,12 +103,12 @@ def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.upda
 def installed(){logInfo"Installed: ${driverInfoString()}";initialize()}
 def updated(){logInfo"Updated: ${driverInfoString()}";initialize()}
 def initialize(){emitEvent("driverInfo",driverInfoString());unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)}
-def refresh(){logInfo"Manual refresh: summary=${device.currentValue("summaryText")}, timestamp=${device.currentValue("summaryTimestamp")}"}
+def refresh(){parent.runWeatherUpdate();logInfo"Manual refresh: summary=${device.currentValue("summaryText")}, timestamp=${device.currentValue("summaryTimestamp")}"}
 
 /* ============================= Core Commands ============================= */
 private void clearData(){["summaryText","summaryJson","summaryTimestamp","wxSource","wxTimestamp"].each{emitChangedEvent(it,"")};(1..MAX_ZONES).each{["Et","Seasonal"].each{suffix->device.deleteCurrentState("zone${it}${suffix}")}};logInfo"Cleared all summary and zone data"}
 private updateZoneAttributes(Number zCount){
-    zCount = zCount?.toInteger() ?: 0
+    zCount=zCount?.toInteger()?:0
     try{
         (zCount+1..MAX_ZONES).each{
             ["Et","Seasonal"].each{ suffix ->
@@ -123,7 +138,6 @@ private verifyAttributes(Number zCount=0){
     }catch(e){logError"verifyAttributes(): ${e.message}"}
 }
 
-/* ========================== Hybrid Summary Handling ========================== */
 private parseSummary(String json){
     if(!json){emitChangedEvent("summaryText","No data");emitChangedEvent("summaryJson","{}");return}
     try{
@@ -131,4 +145,20 @@ private parseSummary(String json){
         map.each{k,v->parts<<"${k}: (ET:${v.etBudgetPct?:0}%, Seasonal:${v.seasonalBudgetPct?:0}%)"}
         emitChangedEvent("summaryText",parts.join(", "));emitChangedEvent("summaryJson",json)
     }catch(e){logError"parseSummary(): ${e.message}"}
+}
+
+def markZoneWatered(zone,pct=100){
+    try{
+        zone=(zone?:0)as Integer;pct=(pct?:100).toInteger()
+        BigDecimal frac=(pct/100.0).setScale(3,BigDecimal.ROUND_HALF_UP)
+        logDebug"markZoneWatered(): zone ${zone} replenished ${pct}% (${frac})"
+        parent.zoneWateredHandler([value:"${zone}:${frac}"])
+    }catch(e){logWarn"markZoneWatered(): invalid params '${zone}','${pct}' (${e})"}
+}
+
+def markAllZonesWatered(){
+    try{
+        logDebug"markAllZonesWatered(): all zones watering complete"
+        parent.zoneWateredHandler([value:"all"])
+    }catch(e){logWarn"markAllZonesWatered(): ${e}"}
 }
