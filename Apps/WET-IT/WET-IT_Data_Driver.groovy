@@ -33,13 +33,14 @@
 *  0.5.7.2  –– Updated refresh() to call parent.publishSummary()
 *  0.5.7.3  –– Changed regresh() to call parent.runWeatherUpdate(true).
 *  0.5.7.4  –– Added wxChecked attribute to track forecast poll time separately from wxTimestamp (forecast origin).
+*  0.5.7.5  –– Fixed null in input("docBlock","hidden",title: driverDocBlock()) to prevent SQL error.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "0.5.7.4"
-@Field static final String DRIVER_MODIFIED = "2025-12-11"
+@Field static final String DRIVER_VERSION  = "0.5.7.5"
+@Field static final String DRIVER_MODIFIED = "2025-12-12"
 @Field static final int MAX_ZONES = 48
 
 metadata {
@@ -81,7 +82,7 @@ metadata {
 				]
     }
     preferences{
-        input("","hidden",title: driverDocBlock())
+        input("docBlock","hidden",title: driverDocBlock())
         input("logEnable","bool",title:"Enable Debug Logging",description:"Auto-off after 30 minutes.",defaultValue:false)
         input("logEvents","bool",title:"Log All Events",description:"",defaultValue:false)
     }
