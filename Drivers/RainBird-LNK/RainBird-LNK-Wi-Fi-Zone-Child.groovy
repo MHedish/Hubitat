@@ -1,5 +1,5 @@
 /*
-*  Rain Bird LNK WiFi Zone Child Driver
+*  Rain Bird LNK/LNK2 WiFi Zone Child Driver
 *  Copyright 2025 Marc Hedish
 *  Licensed under the Apache License, Version 2.0
 *  https://www.apache.org/licenses/LICENSE-2.0
@@ -19,7 +19,7 @@ metadata{
         name: DRIVER_NAME,
         namespace: "MHedish",
         author: "Marc Hedish",
-        importUrl: ""
+        importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Zone-Child.groovy"
     ){
 		capability "Switch"
 		capability "Valve"
