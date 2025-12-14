@@ -26,9 +26,16 @@ metadata{
 		capability "Switch"
 		capability "Valve"
 
-        command "runFor", [[name:"duration", type:"NUMBER", description:"Run this zone for the specified number of minutes"]]
+        command "runZone",[[name:"Zone Number ",type:"NUMBER"],[name:"Duration (minutes) ", type:"NUMBER"]]
+
+	    preferences {
+	        input("docBlock", "hidden", title: driverDocBlock())
+		}
     }
 }
+
+private driverInfoString(){return"${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"}
+private driverDocBlock(){return"<div style='text-align:center;line-height:1.6;margin:10px 0;'><b>🌱 ${DRIVER_NAME}</b><br>Version <b>${DRIVER_VERSION}</b> &nbsp;|&nbsp; Updated ${DRIVER_MODIFIED}<br><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#%EF%B8%8F-rain-bird-lnklnk2-wifi-module-controller-hubitat-driver' target='_blank'><b>📘 Readme</b><hr style='margin-top:6px;'></div>"}
 
 def on(){
     parent.runChild(device.deviceNetworkId, null)
@@ -45,7 +52,7 @@ def off(){
 def open(){on()}
 def close(){off()}
 
-def runFor(duration) {
+def runZone(duration) {
     parent.runChild(device.deviceNetworkId, duration)
     sendEvent(name:"switch", value:"on")
     sendEvent(name:"valve",  value:"open")
