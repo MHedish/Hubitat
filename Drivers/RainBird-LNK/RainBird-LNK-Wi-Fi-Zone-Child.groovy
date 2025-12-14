@@ -10,6 +10,8 @@
 *  0.1.3.0  –– Initial Device
 */
 
+import groovy.transform.Field
+
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 Zone Child"
 @Field static final String DRIVER_VERSION  = "0.1.3.0"
 @Field static final String DRIVER_MODIFIED = "2025.12.14"
