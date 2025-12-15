@@ -318,21 +318,24 @@ private getAvailableStations(){
 def createZoneChildren(){
     try{
         logInfo"Manually creating zone child devices..."
-        def zones=device.currentValue("availableStations")?.tokenize(',')*.toInteger()
+        def zones=device.currentValue("zoneCount")
         if(!zones||zones.isEmpty()){
             logWarn"createZoneChildren(): No available stations found; using fallback from zoneCount (${device.currentValue("zoneCount")})"
-            zones=(1..(device.currentValue("zoneCount")?:6)).toList()
+            zones=(1..(zones?:6)).toList()
         }
-        def expected=zones.collect{"${device.deviceNetworkId}-zone${it}"}
-        def existingChildren=getChildDevices()
-        def existingDNIs=existingChildren*.deviceNetworkId
         zones.each{zoneNum->
             def dni="${device.deviceNetworkId}-zone${zoneNum}"
             if(!getChildDevice(dni)){
-			    def label="${device.displayName} Zone ${zoneNum}"
-			    addChildDevice("MHedish","Rain Bird LNK/LNK2 Zone Child",dni,[name:label,label:label,isComponent:true])
-			    logInfo"Created Rain Bird Zone Child: ${label}"
-			}else{logDebug"createZoneChildren(): Child already exists for ${dni}"}
+                def label="${device.displayName} Zone ${zoneNum}"
+                try{
+                    addChildDevice("MHedish","Rain Bird LNK/LNK2 Zone Child",dni,[name:label,label:label,isComponent:true])
+                    logInfo"Created Rain Bird Zone Child: ${label}"
+                }catch(ex){
+                    logWarn"createZoneChildren(): Unable to create child device '${label}' — ensure the 'Rain Bird LNK/LNK2 Zone Child' driver is installed (${ex.message})"
+                }
+            }else{
+                logDebug"createZoneChildren(): Child already exists for ${dni}"
+            }
         }
         logInfo"Zone child device creation complete (${zones.size()} zones)"
     }catch(e){logError"createZoneChildren() failed: ${e.message}"}
