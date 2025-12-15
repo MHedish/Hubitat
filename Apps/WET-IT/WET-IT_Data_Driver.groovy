@@ -7,40 +7,14 @@
 *  Child driver for WET-IT app.  Displays and publishes hybrid ET + Seasonal summary data.
 *
 *  Changelog:
-*  0.4.10.x –– Initial implementation and refinements.
-*  0.4.12.0 –– Refactor to remove runtime minutes.
-*  0.5.0.0  –– Move to hybrid.
-*  0.5.0.1  –– Dynamic zone search, verifyAttributes().
-*  0.5.1.0  –– Rename ET attributes to summary*, add JSON + timestamp alignment.
-*  0.5.1.1  –– Corrected verifyAttributes() - device.addAttribute()
-*  0.5.1.2  –– Clamped maximum zone count to 48; Added MAX_ZONES static declaration; exposed initialize().
-*  0.5.1.3  –– Added Preferences page link to documentation; removed commands verifyAttributes & parseSummary.
-*  0.5.1.4  –– Added freeze/frost warnings; added attributes: freezeAlert, freezeLowTemp.
-*  0.5.1.5  –– Corrected emitEvent and emitChangedEvent to use logInfo instead of log.info
-*  0.5.1.6  –– Added parentEmitEvent() and parentEmitChangedEvent() to accept map from app and proxy to emitEvent() and emitChangedEvent()
-*  0.5.1.7  –– Resorted to exposing emitEvent and emitChangedEvent
-*  0.5.1.8  –– Wrapped emitEvent() and emitChangedEvent() to prevent log errors.
-*  0.5.1.9  –– Refactored to substitute emitEvent() and emitChangedEvent() values rather than try/catch.
-*  0.5.3.0  –– Version bumped for UI revisions.
-*  0.5.3.1  –– Updated driverDocBlock().
-*  0.5.5.0  –– Added attribute "soilMemoryJson"; renumbered to match parent minor version.
-*  0.5.5.1  –– Updated driverDocBlock() to correct URLs
-*  0.5.6.0  –– Added ET feedback methods.
-*  0.5.6.1  –– Reverted
-*  0.5.6.2  –– Corrected clearing zone < 100% watered.
-*  0.5.7.0  –– Known Good
-*  0.5.7.1  –– markZoneWatered and markAllZonesWatered tested complete.
-*  0.5.7.2  –– Updated refresh() to call parent.publishSummary()
-*  0.5.7.3  –– Changed regresh() to call parent.runWeatherUpdate(true).
-*  0.5.7.4  –– Added wxChecked attribute to track forecast poll time separately from wxTimestamp (forecast origin).
-*  0.5.7.5  –– Fixed null in input("docBlock","hidden",title: driverDocBlock()) to prevent SQL error.
+*  0.6.0.0  –– Initial Beta Release
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "0.5.7.5"
-@Field static final String DRIVER_MODIFIED = "2025-12-12"
+@Field static final String DRIVER_VERSION  = "0.6.0.0"
+@Field static final String DRIVER_MODIFIED = "2025-12-15"
 @Field static final int MAX_ZONES = 48
 
 metadata {
@@ -90,7 +64,7 @@ metadata {
 
 /* =============================== Logging & Utilities =============================== */
 private driverInfoString(){return"${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"}
-private driverDocBlock(){return"<div style='text-align:center;line-height:1.6;margin:10px 0;'><b>🌿 ${DRIVER_NAME}</b><br>Version <b>${DRIVER_VERSION}</b> &nbsp;|&nbsp; Updated ${DRIVER_MODIFIED}<br><a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md' target='_blank'>📘 Documentation</a> &nbsp;•&nbsp;<a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/README.md#-attribute-reference' target='_blank'>📊 Attribute Reference Guide</a><hr style='margin-top:6px;'></div>"}
+private driverDocBlock(){return"<div style='text-align:center;line-height:1.6;margin:10px 0;'><b>🌱 ${DRIVER_NAME}</b><br>Version <b>${DRIVER_VERSION}</b> &nbsp;|&nbsp; Updated ${DRIVER_MODIFIED}<br><a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md' target='_blank'>📘 Documentation</a> &nbsp;•&nbsp;<a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/README.md#-attribute-reference' target='_blank'>📊 Attribute Reference Guide</a><hr style='margin-top:6px;'></div>"}
 private logDebug(msg){if(logEnable)log.debug"[${DRIVER_NAME}] $msg"}
 private logInfo(msg){if(logEvents)log.info"[${DRIVER_NAME}] $msg"}
 private logWarn(msg){log.warn"[${DRIVER_NAME}] $msg"}
