@@ -1,5 +1,5 @@
-# 🌿 WET-IT Full Documentation v0.5.7.7  
-*Comprehensive Technical & Integration Reference (App v0.5.7.7 / Driver v0.5.7.4)*
+# 🌿 WET-IT Full Documentation v0.6.0.0  
+*Comprehensive Technical & Integration Reference (App v0.6.0.0 / Driver v0.6.0.0)*
 
 WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.  
 It brings Rachio/Hydrawise-style intelligence entirely offline — no cloud, no lag, just physics-driven irrigation.
@@ -28,6 +28,114 @@ Further reading:
 
 ---
 
+## 🌅 Sunrise/Sunset Scheduling for Legacy Controllers
+
+Many legacy irrigation controllers only support **fixed clock-time scheduling**, such as 6:00 AM, which cannot adapt to seasonal daylight changes.  
+WET-IT provides **dynamic water budgets** that, when paired with Hubitat’s built-in **sunrise/sunset events**, allow these systems to act intelligently.
+
+### 🧠 Why Sunrise Irrigation Matters
+
+Extensive agricultural and horticultural research shows that **pre-dawn or sunrise irrigation** provides the optimal balance of water efficiency and plant health:
+
+- 💧 **Lowest evaporative loss** – cooler air, higher humidity, and lower wind speeds mean more water reaches the soil.  
+- 🌿 **Better plant physiology** – plants absorb moisture as sunlight resumes photosynthesis.  
+- 🚫 **Reduced fungal risk** – watering too late in the evening leaves foliage wet overnight.  
+- 🌤 **Stable water pressure** – municipal demand is lowest before dawn.
+
+Numerous sources support this recommendation, including the **University of California Cooperative Extension**, **Texas A&M AgriLife**, and **EPA WaterSense** guidelines.
+
+> 🌞 *“Sunrise irrigation aligns watering with nature’s rhythm — plants drink when the day begins, not when the day ends.”*
+
+---
+
+## 🧩 Sunrise/Sunset Automation Templates
+
+WET-IT does not directly schedule watering; instead, it supplies real-time **ET budgets** and **timestamps** that can be combined with sunrise/sunset logic in Rule Machine, webCoRE, or Node-RED.
+
+### 🌅 Rule Machine Example (Dynamic Sunrise Trigger)
+
+**Trigger:** `Time occurs at Sunrise + 0 minutes`  
+**Action Sequence:**
+```groovy
+Set Variable wetitSummary = %device:WET-IT Data:summaryJson%
+Parse JSON wetitSummary into json
+For each zone:
+    runtime = baseMinutes * (json.zones.zone1.etBudgetPct / 100)
+    If freezeAlert == false:
+        Send command to controller: setZoneRuntime(zone1, runtime)
+```
+Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
+
+---
+
+### 💧 webCoRE Example
+
+```groovy
+define
+  device wetit = [WET-IT Data]
+  device controller = [MyLegacyController]
+  integer baseMins = 15
+end define
+
+every day at $sunrise do
+  def json = parseJson(wetit.currentValue("summaryJson"))
+  def pct = json.zones.zone1.etBudgetPct as integer
+  if (wetit.currentValue("freezeAlert") == "false" && pct > 0) {
+      def runtime = (baseMins * pct / 100).round()
+      controller.setRuntime(zone1, runtime)
+      sendPush("Irrigation started at sunrise for Zone1 (${pct}%)")
+  } else {
+      sendPush("Irrigation skipped: freeze or zero ET demand.")
+  }
+end every
+```
+
+---
+
+### ⚙️ Node-RED Flow
+
+**Nodes:**  
+- Inject Node → Type: `sunrise` (daily trigger)  
+- Hubitat Device Node → `WET-IT Data`  
+- JSON Node → Parse `summaryJson`  
+- Function Node:  
+  ```javascript
+  let pct = msg.payload.zones.zone1.etBudgetPct;
+  let base = 15;
+  msg.payload = { zone: 1, runtime: base * pct / 100 };
+  return msg;
+  ```
+- HTTP or MQTT Node → Send runtime to controller
+
+**Optional Enhancements:**
+- Add `freezeAlert` check
+- Append runtime log to InfluxDB or file output
+
+---
+
+### 📊 Benefits of Sunrise Scheduling
+
+| Benefit | Reason |
+|:--|:--|
+| 🌞 Lower Evaporation | Cool, calm morning air preserves applied water |
+| 🌿 Healthier Plants | Matches photosynthetic uptake cycles |
+| ❄️ Freeze Avoidance | Integrates temperature guardrails |
+| 💧 Efficiency | Adapts runtime to ET and rain conditions |
+
+---
+
+### 🪴 Summary Flow Example
+
+1. 02:00 → WET-IT updates weather (`wxChecked`, `wxTimestamp`)  
+2. Sunrise → Rule Machine/webCoRE trigger runs irrigation  
+3. Runtime scaled by ET percentage (`etBudgetPct`)  
+4. Controller marks completion → WET-IT resets soil depletion  
+5. Next sunrise → Model recalculates and repeats
+
+> ⚡ *“Legacy controllers gain adaptive intelligence when sunrise becomes the clock.”*
+
+---
+
 ## ⚙️ System Architecture
 
 ```
@@ -44,9 +152,10 @@ Weather API 🌤 → ET₀ Calculation 🌡 → Soil Model 🌾 → Driver Attri
 
 | Source | Key | Notes |
 |:--|:--:|:--|
-| **OpenWeather 3.0** | ✅ | Hourly and forecast-based ET₀ |
-| **Tomorrow.io** | ✅ | High-resolution meteorological model |
-| **NOAA NWS** | ❌ | Built-in fallback |
+| **[OpenWeather 3.0](https://openweathermap.org/api/one-call-3)** | ✅ | Hourly and forecast-based ET₀ |
+| **[Tomorrow.io](https://docs.tomorrow.io/reference/welcome)** | ✅ | High-resolution meteorological model |
+| **[NOAA NWS](https://www.weather.gov/documentation/services-web-api)** | ❌ | Built-in fallback |
+
 
 ✅ Use **“Test Weather Now”** to validate configuration.  
 If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API calls fail.
@@ -189,3 +298,4 @@ Automations can safely:
 ---
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
+
