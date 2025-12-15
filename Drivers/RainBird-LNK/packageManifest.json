@@ -23,7 +23,7 @@
       "name": "Rain Bird LNK/LNK2 Zone Child",
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Zone-Child.groovy",
-      "required": false,
+      "required": true,
       "version": "0.1.3.2"
     }
   ]
