@@ -8,13 +8,15 @@
 *
 *  Changelog:
 *  0.1.3.0  –– Initial Device
+*  0.1.3.1  –– Added duration to RunZone()
+*  0.1.3.2  –– Added switch & valve attributes
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 Zone Child"
-@Field static final String DRIVER_VERSION  = "0.1.3.0"
-@Field static final String DRIVER_MODIFIED = "2025.12.14"
+@Field static final String DRIVER_VERSION  = "0.1.3.2"
+@Field static final String DRIVER_MODIFIED = "2025.12.15"
 
 metadata{
     definition(
@@ -26,7 +28,10 @@ metadata{
 		capability "Switch"
 		capability "Valve"
 
-        command "runZone",[[name:"Zone Number ",type:"NUMBER"],[name:"Duration (minutes) ", type:"NUMBER"]]
+		attribute "switch", "string"
+		attribute "valve", "string"
+
+        command "runZone",[[name:"Duration (minutes) ",type:"NUMBER"]]
 
 	    preferences {
 	        input("docBlock", "hidden", title: driverDocBlock())
