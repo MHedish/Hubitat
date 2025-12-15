@@ -1,5 +1,5 @@
 # 🧠 WET-IT Developer Notes  
-**App v0.5.7.7 / Driver v0.5.7.4 — December 2025**  
+**App v0.6.0.0 / Driver v0.6.0.0 — December 2025**  
 
 Technical quick reference for developers maintaining or extending WET-IT.
 
