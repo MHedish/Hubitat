@@ -21,6 +21,10 @@
 *  0.1.1.0  –– Added links to GitHub README.md and Attribute documentation.
 *  0.1.2.0  –– Updated getRainSensorState() to reflect "unknown" when on legacy (≤3.0) firmware.
 *  0.1.2.1  –– Updated Preferences documentation tile.
+*  0.1.2.2  –– Updated Preferences documentation tile.
+*  0.1.3.0  –– Added automatic zone child device creation (autoCreateZoneChildren) and per-zone control binding.
+*  0.1.3.1  –– Added explicit child driver.
+*  0.1.3.2  –– Updated getAvailableStations() to accomodate legacy 2.9 firmware; Added manual, self-healing child device creation command.
 */
 
 import groovy.transform.Field
@@ -33,8 +37,8 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "0.1.2.1"
-@Field static final String DRIVER_MODIFIED = "2025.12.06"
+@Field static final String DRIVER_VERSION  = "0.1.3.2"
+@Field static final String DRIVER_MODIFIED = "2025.12.15"
 @Field static final String PAD = "\u0016"
 @Field static final int BLOCK_SIZE = 16
 @Field static int delayMs=150
@@ -104,10 +108,11 @@ metadata {
 		command "off", [[name: "Turn Irrigation Off",description: "Stops all irrigation activity (same as Stop Irrigation)"]]
 		command "open", [[name: "Open Valve",description: "Starts watering using Program A (same as Run Program 'A')"]]
 		command "close", [[name: "Close",description: "Stops watering and closes the valve (same as Stop Irrigation)"]]
+		command "createZoneChildren", [[name: "Create Zone Devices",description: "Creates individual child devices (Switch + Valve) for each irrigation zone based on available stations"]]
     }
 
     preferences {
-        input("", "hidden", title: driverDocBlock())
+        input("docBlock", "hidden", title: driverDocBlock())
         input("ipAddress","text",title:"Rain Bird Controller IP",required:true)
         input("password","password",title:"Rain Bird Controller Password",required:true)
         input("zonePref","number",title:"Number of Zones", defaultValue:6,range:"1..16")
@@ -127,7 +132,7 @@ metadata {
 
 /* =============================== Logging & Utilities =============================== */
 private driverInfoString(){return"${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"}
-private driverDocBlock(){return"<div style='text-align:center;'><b>🌱 ${DRIVER_NAME} v${DRIVER_VERSION}</b> (${DRIVER_MODIFIED})<br><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#%EF%B8%8F-rain-bird-lnklnk2-wifi-module-controller-hubitat-driver' target='_blank'><b>📘 Readme</b></a><br><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#-exposed-attributes' target='_blank'><b>🔍 Quick Reference Guide</b></a><hr></div>"}
+private driverDocBlock(){return"<div style='text-align:center;line-height:1.6;margin:10px 0;'><b>🌱 ${DRIVER_NAME}</b><br>Version <b>${DRIVER_VERSION}</b> &nbsp;|&nbsp; Updated ${DRIVER_MODIFIED}<br><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#%EF%B8%8F-rain-bird-lnklnk2-wifi-module-controller-hubitat-driver' target='_blank'><b>📘 Readme</b></a> &nbsp;•&nbsp;<a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#-exposed-attributes' target='_blank'><b>📊 Attribute Reference Guide</b></a><hr style='margin-top:6px;'></div>"}
 private logDebug(msg){if(logEnable)log.debug"[${DRIVER_NAME}] $msg"}
 private logInfo(msg){if(logEvents)log.info"[${DRIVER_NAME}] $msg"}
 private logWarn(msg){log.warn"[${DRIVER_NAME}] $msg"}
@@ -279,22 +284,87 @@ def stopIrrigation(){
 
 private getAvailableStations(){
 	try{
-		logDebug"Requesting available stations (firmware=${device.currentValue('firmwareVersion')})..."
-		def r=parseIfString(sendRainbirdCommand("3A00",1),"getAvailableStations");def d=r?.result?.data
+		def fw=device.currentValue("firmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
+		logDebug"Requesting available stations (fw=${fw})..."
+		def legacy=isLegacyFirmware(3.0);def cmd=legacy?"030000":"3A00"
+		def r=parseIfString(sendRainbirdCommand(cmd,legacy?2:1),"getAvailableStations")
+		def d=r?.result?.data
 		if(!d){logWarn"getAvailableStations(): No response";return}
-		if(d.startsWith("B2")){
-			def hex=d.substring(4)
-			if(isLegacyFirmware(2.11)&&hex?.toUpperCase()?.startsWith("FF")){
-				logInfo"getAvailableStations(): Legacy controller returned FF mask → assuming all zones available"
-				def zones=(1..getMaxZones()).toList().join(",")
-				emitChangedEvent("availableStations",zones,"Available stations: ${zones}");return
-			}
-			def bits=new BigInteger(hex,16).toString(2).padLeft(32,'0').reverse();def zones=[]
-			bits.eachWithIndex{b,i->if(b=='1')zones<<(i+1)}
+		def zones=[]
+		if(d.startsWith("83")){
+			def bitmask=d.substring(4,12);def maskInt=Integer.parseInt(bitmask,16)
+			zones=(1..bitmask.size()*4).findAll{i->(maskInt&(1<<(i-1)))!=0}.collect{idx->(idx>24&&idx<=31)?(idx-24):idx}
 			emitChangedEvent("availableStations",zones.join(","),"Available stations: ${zones.join(', ')}")
-		}else if(d=="003A02"){logDebug"getAvailableStations(): Legacy ACK-only response (firmware ≤2.9)"
+			def actualCount=zones.size();def currentAttr=device.currentValue("zoneCount")?.toInteger()?:0
+			if(actualCount&&actualCount!=currentAttr){
+				zoneCount=actualCount
+				emitChangedEvent("zoneCount",actualCount,"Zone count updated dynamically to ${actualCount} (controller)")
+				logDebug"zoneCount updated dynamically from controller data: ${actualCount}"
+			}
+		}else if(d.startsWith("B2")){
+			def hex=d.substring(4)
+			if(isLegacyFirmware(2.11)&&hex.toUpperCase().startsWith("FF")){zones=(1..8).toList()
+			}else{def bits=new BigInteger(hex,16).toString(2).padLeft(32,'0').reverse();bits.eachWithIndex{b,i->if(b=='1')zones<<(i+1)}}
+			emitChangedEvent("availableStations",zones.join(","),"Available stations: ${zones.join(', ')}")
+		}else if(d=="003A02"&&legacy){
+			logDebug"getAvailableStations(): 3A returned ACK; retrying with 03..."
+			def f=parseIfString(sendRainbirdCommand("030000",2),"getAvailableStations-fallback")?.result?.data
+			if(f?.startsWith("83")){def m=Integer.parseInt(f.substring(4,12),16);zones=(1..8).findAll{i->(m&(1<<(i-1)))!=0};emitChangedEvent("availableStations",zones.join(","),"Available stations: ${zones.join(', ')}")}
 		}else logWarn"getAvailableStations(): Unexpected data (${d})"
+		return zones
 	}catch(e){logError"getAvailableStations() failed: ${e.message}"}
+}
+
+def createZoneChildren(){
+    try{
+        logInfo"Manually creating zone child devices..."
+        def zones=device.currentValue("availableStations")?.tokenize(',')*.toInteger()
+        if(!zones||zones.isEmpty()){
+            logWarn"createZoneChildren(): No available stations found; using fallback from zoneCount (${device.currentValue("zoneCount")})"
+            zones=(1..(device.currentValue("zoneCount")?:6)).toList()
+        }
+        def expected=zones.collect{"${device.deviceNetworkId}-zone${it}"}
+        def existingChildren=getChildDevices()
+        def existingDNIs=existingChildren*.deviceNetworkId
+        zones.each{zoneNum->
+            def dni="${device.deviceNetworkId}-zone${zoneNum}"
+            if(!getChildDevice(dni)){
+			    def label="${device.displayName} Zone ${zoneNum}"
+			    addChildDevice("MHedish","Rain Bird LNK/LNK2 Zone Child",dni,[name:label,label:label,isComponent:true])
+			    logInfo"Created Rain Bird Zone Child: ${label}"
+			}else{logDebug"createZoneChildren(): Child already exists for ${dni}"}
+        }
+        logInfo"Zone child device creation complete (${zones.size()} zones)"
+    }catch(e){logError"createZoneChildren() failed: ${e.message}"}
+}
+
+private runChild(String dni, Object duration){
+    try{
+        def zone=(dni=~/zone(\d+)/)[0][1].toInteger()
+        def dur=(duration!=null)?duration.toInteger():null
+        runZone(zone,dur)
+    }catch(e){logError"runChild() failed: ${e.message}"}
+}
+
+private stopChild(String dni){
+    try{
+        stopIrrigation()
+    }catch(e){logError"stopChild() failed: ${e.message}"}
+}
+
+private updateChildZoneStates(activeZone=0,watering=false){
+    try{
+        getChildDevices().each{child->
+            def zone=(child.deviceNetworkId =~ /zone(\d+)/)[0][1].toInteger()
+            if(watering&&zone==activeZone){
+                child.sendEvent(name:"switch",value:"on")
+                child.sendEvent(name:"valve",value:"open")
+            }else{
+                child.sendEvent(name:"switch",value:"off")
+                child.sendEvent(name:"valve",value:"closed")
+            }
+        }
+    }catch(e){logError"updateChildZoneStates() failed: ${e.message}"}
 }
 
 private getWaterBudget(){
@@ -594,6 +664,7 @@ private verifyActiveZone(data=null,passive=false){
 		logDebug"verifyActiveZone(): No active watering detected (mask=${String.format('%02X',mask)})."
 		if(wateringRefresh&&wasWatering)logInfo"Watering: Fast polling ended; reverting to scheduled refresh."
 	}
+	updateChildZoneStates(zone, watering)
 	runInMillis(isLegacyFirmware(2.9)?2000:1000,"refresh")
 }
 
