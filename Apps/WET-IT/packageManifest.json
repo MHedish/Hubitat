@@ -1,0 +1,39 @@
+{
+  "packageName": "WET-IT",
+  "author": "Marc Hedish",
+  "version": "0.6.0",
+  "minimumHEVersion": "2.3.6",
+  "dateReleased": "2025-12-15",
+  "releaseNotes": "v0.6.0 — Initial Beta Release.",
+  "license": "Apache-2.0",
+  "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md",
+  "communityLink": "https://community.hubitat.com/t/release-wet-it-local-et-irrigation",
+  "description": "Local-first evapotranspiration (ET) and soil-moisture modeling app for Hubitat. Provides professional-grade irrigation intelligence similar to Rachio, Orbit, and Hydrawise, running entirely on-hub.",
+  "category": ["Utility","Control","Convenience"],
+  "tags": ["Irrigation", "Weather", "Temperature & Humidity", "Valves", "Water"],
+  "apps": [
+    {
+      "id": "wetit_app",
+      "name": "WET-IT",
+      "namespace": "MHedish",
+      "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/WET-IT.groovy",
+      "required": true,
+      "oauth": false,
+      "primary": true
+    }
+  ],
+  "drivers": [
+    {
+      "id": "wetit_data",
+      "name": "WET-IT Data",
+      "namespace": "MHedish",
+      "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/WET-IT_Data_Driver.groovy",
+      "required": true
+    }
+  ],
+  "files": [
+    "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/README.md",
+    "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/CHANGELOG.md",
+    "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/DOCUMENTATION.md"
+  ]
+}
