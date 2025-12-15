@@ -30,7 +30,7 @@ With advanced telemetry, adaptive pacing, and hourly drift correction, it’s de
 
 ## 🌟 What’s New in v0.1.3.2
 
-💧 **Manual Zone Device Creation** — automatic zone creation replaced with a self-healing manual command `Create Zone Children`  
+💧 **Manual Zone Device Creation** — automatic zone creation replaced with a self-healing manual command `createZoneChildren`  
 🔗 **Zone Child Driver** — new companion driver *Rain Bird LNK/LNK2 Zone Child* (Switch + Valve) provides per-zone control  
 ⚙️ **Resilient Hubitat Integration** — gracefully handles missing child driver (warns user instead of erroring)  
 🧩 **Parent/Child Binding** — full support for on/off/open/close and `runZone(duration)` actions at the zone level  
@@ -87,9 +87,9 @@ Creates individual child devices (Switch + Valve) for each zone based on the cur
    - *Rain Bird LNK/LNK2 Zone Child – Zone 2*
    - etc.
 
-You can safely run this command multiple times — existing zones are skipped, and any deleted zones are automatically re-created.
+The command is exposed in the Commands menu so you can create the child devices directly in the Hubitat UI.
 
-You can also run the command directly from the Commands screen.
+You can safely run this command multiple times — existing zones are skipped, and any deleted zones are automatically re-created.
 
 > ⚠️ If the **Rain Bird LNK/LNK2 Zone Child** driver is not installed, you will see a warning in the logs instead of an error.
 
@@ -112,7 +112,96 @@ You can also run the command directly from the Commands screen.
 
 ## 📊 Exposed Attributes
 
-*(same as before)*
+| Attribute                | Type    | Values / Notes                                     |
+| ------------------------ | ------- | -------------------------------------------------- |
+| `activeZone`             | number  | Currently active zone number                       |
+| `autoTimeSync`           | boolean | Whether auto time synchronization is enabled       |
+| `availableStations`      | string  | List of active zones/stations detected             |
+| `clockDrift`             | number  | Time drift between hub and controller (seconds)    |
+| `controllerDate`         | string  | Controller-reported date                           |
+| `controllerTime`         | string  | Controller-reported time                           |
+| `delaySetting`           | number  | Rain delay duration (days)                         |
+| `driverInfo`             | string  | Driver metadata including version and mode         |
+| `driverStatus`           | string  | Current driver health or command response          |
+| `firmwareVersion`        | string  | Controller firmware revision                       |
+| `irrigationState`        | string  | `watering`, `idle`, or `off`                       |
+| `lastEventTime`          | string  | Timestamp of last received event                   |
+| `lastSync`               | string  | Timestamp of last successful time sync             |
+| `model`                  | string  | Controller model identifier                        |
+| `programScheduleSupport` | boolean | Indicates if controller supports program retrieval |
+| `rainDelay`              | number  | Current active rain delay days                     |
+| `rainSensorState`        | enum    | `unknown`, `bypassed`, `dry`, `wet`                |
+| `remainingRuntime`       | number  | Seconds left in current watering cycle             |
+| `seasonalAdjust`         | number  | Active seasonal adjustment factor (%)              |
+| `serialNumber`           | string  | Controller serial number                           |
+| `switch`                 | enum    | `on`, `off`                                        |
+| `valve`                  | enum    | `open`, `closed`                                   |
+| `waterBudget`            | number  | Seasonal watering percentage                       |
+| `watering`               | boolean | Indicates irrigation is currently active           |
+| `wateringRefresh`        | boolean | Internal refresh flag during watering              |
+| `zoneAdjustments`        | string  | JSON string of per-zone runtime adjustments        |
+| `zoneCount`              | number  | Number of detected zones                           |
+
+---
+
+## 🧪 Diagnostics
+
+**Command:** `testAllSupportedCommands()`  
+Tests controller for all supported opcodes and emits results to `driverStatus`.  
+Also reports firmware and module diagnostics (LNK / LNK2).
+
+---
+
+## ⚠️ Troubleshooting & Common Issues
+
+| Symptom | Possible Cause | Recommended Action |
+|----------|----------------|--------------------|
+| **503 Service Unavailable** | Controller is processing or rate-limited | Allow 2–3 seconds; driver auto-retries with adaptive pacing |
+| **Clock drift** | Controller RTC inaccuracy | Enable **Auto Time Sync** (default) to maintain accuracy |
+| **Controller unresponsive** | DHCP renewal or IP conflict | Reserve static IP for controller in router settings |
+| **Zone list empty** | First refresh incomplete or older firmware | Click **Refresh**, wait 15 seconds, then recheck `zoneCount` |
+| **Rain delay stuck** | Controller cache sync | Run **Refresh** or **Stop Irrigation**, then retry command |
+| **Sluggish updates** | Poll interval too long | Lower **Refresh Interval** to 5 minutes during active watering season |
+| **Repeated log noise** | Debug mode active | Debug logging turns off automatically after 30 minutes |
+
+> 💡 **Tip:** For the most reliable operation, use a reserved DHCP IP and enable automatic time sync.
+
+---
+
+## 🧭 Best Practices
+
+### 🕒 Time Synchronization
+Rain Bird controllers **lack NTP or any remote clock-set capability**, causing significant drift over time. The driver’s **Auto Time Sync** function compensates for this limitation by:
+- Automatically comparing controller time to Hubitat every hour.
+- Correcting any drift greater than ±5 seconds.
+- Adjusting for DST changes and randomizing sync intervals to prevent network bursts.
+
+✅ **Recommended:** Keep Auto Time Sync enabled at all times. This ensures that program start times and watering schedules remain accurate — even after power loss.
+
+### 🌤️ Refresh Interval Tuning
+The refresh interval defines how often Hubitat polls the controller for status updates.
+- **Active Season:** 2-minute refresh (recommended for zone monitoring and dashboards)
+- **Normal Operation:** 5–15 minutes to balance performance and network traffic
+- **Winterized / Off-Season:** 60–480 minutes or *manual* refresh mode
+
+When set to manual, the **Automatically sync Rain Bird to Hubitat clock** preference will still keep the clock synchronized once an hour while not polling the controller for other status information.
+
+- The **Increase polling frequency during watering events** preference will automatically increase polling during a *watering* event to once every 5 seconds for near-realtime status and then revert to your previously set polling frequency when watering has been completed.
+
+✅ Use shorter intervals during watering periods for near real-time zone feedback.
+
+It's still best to allow the Rain Bird controller to manage automatic watering, but if you want to manage it within Hubitat, you can now use Hubitat’s **Rule Machine** or **WebCoRE** to automate watering windows, including the *water budget* attribute to reduce watering based on the forecasted weather.
+
+Avoid scheduling overlapping zones to minimize command queue congestion.
+When creating custom schedules, leave 3–5 seconds between zone transitions for pacing stability.
+You can create a routine to update *refreshInterval* to one minute just before your scheduled watering event and then monitor/record the program status via Hubitat.  Set an event for *watering==false* and then reset the refreshInterval to either 15 minutes or manual.
+
+### 🖧 Network Stability
+- Reserve a **static IP** for your Rain Bird controller in your router.
+- Ensure Wi-Fi signal to the LNK/LNK2 module is at least −65 dBm or better.
+- Avoid placing the module near metal enclosures or irrigation boxes with poor reception.
+
+> 🌿 *Following these best practices ensures precise irrigation scheduling, minimal drift, and consistent LAN reliability — even on controllers without native NTP or cloud sync capabilities.*
 
 ---
 
