@@ -6,7 +6,7 @@
 ![Version](https://img.shields.io/badge/Version-0.6.0.0-green)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
-**App Version:** 0.6.0.0  
+**App Version:** 0.6.0.1  
 **Driver Version:** 0.6.0.0  
 **Release Date:** 2025-12-15  
 **Author:** Marc Hedish  
