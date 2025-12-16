@@ -64,8 +64,8 @@
 
 ---
 
-## 🌈 0.6.0.x — Final Stabilization (Production Release)
-**App v0.6.0.0 / Driver v0.6.0.0 — Released 2025-12-15**
+## 🌈 0.6.0.x — Final Stabilization (Release)
+**App v0.6.0.1 / Driver v0.6.0.0 — Released 2025-12-15**
 
 > **WET-IT — precision irrigation through weather intelligence and Hubitat automation.**
 <!--stackedit_data:
