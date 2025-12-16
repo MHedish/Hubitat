@@ -9,13 +9,14 @@
 *  Changelog:
 *  0.6.0.0   –– Initial Beta Release
 *  0.6.0.1   –– Normalized wxTimestamp handling across NOAA, OWM, and Tomorrow.io providers (consistent local time, correct forecast reference)
+*  0.6.1.0   –– Refactored child event logging.
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.6.0.1"
+@Field static final String APP_VERSION="0.6.1.0"
 @Field static final String APP_MODIFIED="2025-12-16"
 @Field static final int MAX_ZONES=48
 @Field static def cachedChild=null
@@ -51,8 +52,8 @@ private logWarn(msg){log.warn"[${APP_NAME}] $msg"}
 private logError(msg){log.error"[${APP_NAME}] $msg"}
 private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
 private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=app.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
-private childEmitEvent(dev,n,v,d=null,u=null,boolean f=false){try{if(dev)dev.emitEvent(n,v,d,u,f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}catch(e){logWarn"childEmitEvent(): ${e.message}"}}
-private childEmitChangedEvent(dev,n,v,d=null,u=null,boolean f=false){try{if(dev)dev.emitChangedEvent(n,v,d,u,f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}catch(e){logWarn"childEmitChangedEvent(): ${e.message}"}}
+private childEmitEvent(dev,n,v,d=null,u=null,boolean f=false){try{dev.emitEvent(n,v,d,u,f)}catch(e){logWarn"childEmitEvent(): ${e.message}"}}
+private childEmitChangedEvent(dev,n,v,d=null,u=null,boolean f=false){try{dev.emitChangedEvent(n,v,d,u,f)}catch(e){logWarn"childEmitChangedEvent(): ${e.message}"}}
 private getDataChild(boolean fresh=false){def dni="wetit_data_${app.id}";if(fresh||!cachedChild||!getChildDevice(dni))cachedChild=ensureDataDevice();return cachedChild}
 private autoDisableDebugLogging(){try{unschedule("autoDisableDebugLogging");atomicState.logEnable=false;app.updateSetting("logEnable",[type:"bool",value:false]);logInfo"Debug logging disabled (auto)"}catch(e){logDebug"autoDisableDebugLogging(): ${e.message}"}}
 def disableDebugLoggingNow(){try{unschedule("autoDisableDebugLogging");atomicState.logEnable=false;app.updateSetting("logEnable",[type:"bool",value:false]);logInfo"Debug logging disabled (manual)"}catch(e){logDebug"disableDebugLoggingNow(): ${e.message}"}}
@@ -644,21 +645,22 @@ private Map getCurrentSeasons(BigDecimal lat){
 }
 
 /* ---------- Event Publishing ---------- */
-private publishSummary(Map results){
+private publishSummary(Map results) {
     def c=getDataChild();if(!c)return
     String ts=new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone)
     String summary=results.collect{k,v->"${k}=(ET:${v.etBudgetPct}%, Seasonal:${v.seasonalBudgetPct}%)"}.join(", ")
-    String json=groovy.json.JsonOutput.toJson(results)
+    String json=JsonOutput.toJson(results)
     childEmitEvent(c,"summaryText",summary,"Hybrid ET+Seasonal summary",null,true)
     childEmitEvent(c,"summaryJson",json,"Hybrid ET+Seasonal JSON summary",null,true)
     childEmitEvent(c,"summaryTimestamp",ts,"Summary timestamp updated",null,true)
     childEmitEvent(c,"soilMemoryJson",JsonOutput.toJson(getSoilMemorySummary()),"Per-zone ET JSON data",null,true)
-    if(c.hasCommand("parseSummary"))c.parseSummary(json)
+    if(c.respondsTo("parseSummary"))c.parseSummary(json)
     def freeze=detectFreezeAlert(state.lastWeather?:[:])
     String u=state.lastWeather?.unit?:settings.tempUnits?:'F'
     String desc=freeze.freezeAlert?"Freeze/Frost detected (${freeze.freezeAlertText})":"No freeze or frost risk"
     childEmitChangedEvent(c,"freezeAlert",freeze.freezeAlert,desc)
     if(freeze.freezeLowTemp!=null)childEmitEvent(c,"freezeLowTemp",freeze.freezeLowTemp,"Forecast daily low (${u=='C'?'°C':'°F'})",u)
+    logInfo "publishSummary(): summary + freeze data published (${results.size()} zones)"
 }
 
 private BigDecimal convTemp(BigDecimal val, String from='F', String to=(settings.tempUnits?:'F')){
