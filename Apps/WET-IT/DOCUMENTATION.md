@@ -64,12 +64,14 @@ For each zone:
     runtime = baseMinutes * (json.zones.zone1.etBudgetPct / 100)
     If freezeAlert == false:
         Send command to controller: setZoneRuntime(zone1, runtime)
+        Wait until irrigation completes
+wetit.markZoneWatered(zone1)
 ```
 Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 
 ---
 
-### 💧 webCoRE Example
+### 💧 WebCoRE Example
 
 ```groovy
 define
@@ -263,7 +265,7 @@ wetit.markZoneWatered(zone1)
 
 ---
 
-### 💧 webCoRE Example
+### 💧 WebCoRE Example
 
 ```groovy
 define
@@ -352,6 +354,6 @@ Automations can safely:
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTMwNjUyMzU0LDkzMTA3MzE0MSwtODU2NT
+eyJoaXN0b3J5IjpbMjg2MzI2MDE3LDkzMTA3MzE0MSwtODU2NT
 UwN119
 -->
