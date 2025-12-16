@@ -173,11 +173,16 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 
 ---
 
+## 👥 Contributors
+
+**Author:** Marc Hedish (@MHedish)  
+**Documentation:** ChatGPT (OpenAI)  
+**Platform:** [Hubitat Elevation](https://hubitat.com)
+
 ## 🔍 Learn More
 
 - [Full Developer Notes](./DEVELOPER_NOTES.md)  
-- [Changelog](./CHANGELOG.md)  
-- [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+- [Changelog](./CHANGELOG.md)
 
 ---
 
