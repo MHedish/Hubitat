@@ -173,8 +173,6 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 
 ---
 
----
-
 ## 🔍 Learn More
 
 - [Full Developer Notes](./DEVELOPER_NOTES.md)  
@@ -185,5 +183,5 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 
 > © 2025 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTYwNTM5NzUwNSwyMTE5ODU4MjIzXX0=
+eyJoaXN0b3J5IjpbLTIwNzM3MzI2NTQsMjExOTg1ODIyM119
 -->
