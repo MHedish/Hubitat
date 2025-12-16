@@ -10,14 +10,16 @@
 *  Changelog:
 *  1.0.0.0   -- Initial stable release; validated under sustained load and reboot recovery.
 *  1.0.1.0   -- Updated Preferences documentation tile.
+*  1.0.1.1   -- Enhanced handleUPSStatus() to properly normalize multi-token NMC strings (e.g., “Online, Smart Trim”) via improved regex boundaries and partial-match detection.
+*  1.0.1.2   -- Added nextBatteryReplacement attribute; captures and normalizes NMC "Next Battery Replacement Date" from battery status telemetry.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.1.0"
-@Field static final String DRIVER_MODIFIED = "2025.12.06"
+@Field static final String DRIVER_VERSION  = "1.0.1.2"
+@Field static final String DRIVER_MODIFIED = "2025.12.16"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
 /* ===============================
@@ -58,6 +60,7 @@ metadata {
         attribute "lowBattery","boolean"
         attribute "manufactureDate","string"
         attribute "model","string"
+		attribute "nextBatteryReplacement","string"
         attribute "nextCheckMinutes","number"
         attribute "nmcApplicationDate","string"
         attribute "nmcApplicationName","string"
@@ -404,10 +407,10 @@ private finalizeSession(String origin){
 private handleUPSStatus(def pair){
     if(pair.size()<4||pair[0]!="Status"||pair[1]!="of"||pair[2]!="UPS:")return
     def raw=(pair[3..Math.min(4,pair.size()-1)]).join(" "),status=raw?.replaceAll(",","")?.trim()
-    if(status==~/(?i)on[-\s]?line/)status="Online"
-    else if(status==~/(?i)on\s*battery/)status="OnBattery"
+    if(status=~/(?i)\bon[-\s]?line\b/)status="Online"
+    else if(status=~/(?i)\bon\s*battery\b/)status="OnBattery"
     else if(status.equalsIgnoreCase("Discharged"))status="Discharged"
-    else if(status==~/(?i)off\s*no/)status="Off"
+    else if(status=~/(?i)\boff\s*no\b/)status="Off"
     emitChangedEvent("upsStatus",status,"UPS Status = ${status}")
     def rT=runTime.toInteger(),rTB=runTimeOnBattery.toInteger(),rO=runOffset.toInteger()
     switch(status){
@@ -435,18 +438,17 @@ private handleBatteryData(def pair){
     pair=pair.collect{it?.replaceAll(",","")}
     def(p0,p1,p2,p3,p4,p5)=(pair+[null,null,null,null,null,null])
     switch("$p0 $p1"){
-        case"Battery Voltage:":emitChangedEvent("batteryVoltage", p2, "Battery Voltage = ${p2} ${p3}", p3);break
+        case"Battery Voltage:":emitChangedEvent("batteryVoltage",p2,"Battery Voltage = ${p2} ${p3}",p3);break
         case"Battery State":if(p2=="Of"&&p3=="Charge:"){int pct=p4.toDouble().toInteger();emitChangedEvent("battery",pct,"UPS Battery Percentage = $pct ${p5}","%")};break
-        case "Runtime Remaining:":def s=pair.join(" ");def m=s=~ /Runtime Remaining:\s*(?:(\d+)\s*(?:hr|hrs))?\s*(?:(\d+)\s*(?:min|mins))?/;int h=0,mn=0;if(m.find()){h=m[0][1]?.toInteger()?:0;mn=m[0][2]?.toInteger()?:0};def f=String.format("%02d:%02d",h,mn);emitChangedEvent("runTimeHours",h,"UPS Run Time Remaining = ${f}","h");emitChangedEvent("runTimeMinutes",mn,"UPS Run Time Remaining = ${f}","min");logInfo "UPS Run Time Remaining = ${f}"
-            try {def remMins=(h*60)+mn;def threshold=(settings.runTimeOnBattery?:2)*2;def prevLow=(device.currentValue("lowBattery")as Boolean)?:false;def isLow=remMins<=threshold
-                if(isLow != prevLow){emitChangedEvent("lowBattery", isLow, "UPS low battery state changed to ${isLow}")
-                    if(isLow) {logWarn"Battery below ${threshold} minutes (${remMins} min remaining)"
-                        if((settings.autoShutdownHub?:false)&&!state.hubShutdownIssued) {
-						    if(!(upsStatus in ["Online","Off"])){logWarn"Initiating Hubitat shutdown...";sendHubShutdown();state.hubShutdownIssued=true}
-                        } else if(state.hubShutdownIssued){logDebug "Hub shutdown already issued; skipping repeat trigger"}
-                    }else{logInfo "Battery run time recovered above ${threshold} minutes (${remMins} remaining)";state.remove("hubShutdownIssued")}
+        case"Runtime Remaining:":def s=pair.join(" ");def m=s=~/Runtime Remaining:\s*(?:(\d+)\s*(?:hr|hrs))?\s*(?:(\d+)\s*(?:min|mins))?/;int h=0,mn=0;if(m.find()){h=m[0][1]?.toInteger()?:0;mn=m[0][2]?.toInteger()?:0};def f=String.format("%02d:%02d",h,mn);emitChangedEvent("runTimeHours",h,"UPS Run Time Remaining = ${f}","h");emitChangedEvent("runTimeMinutes",mn,"UPS Run Time Remaining = ${f}","min");logInfo"UPS Run Time Remaining = ${f}"
+            try{def remMins=(h*60)+mn;def threshold=(settings.runTimeOnBattery?:2)*2;def prevLow=(device.currentValue("lowBattery")as Boolean)?:false;def isLow=remMins<=threshold
+                if(isLow!=prevLow){emitChangedEvent("lowBattery",isLow,"UPS low battery state changed to ${isLow}")
+                    if(isLow){logWarn"Battery below ${threshold} minutes (${remMins} min remaining)"
+                        if((settings.autoShutdownHub?:false)&&!state.hubShutdownIssued){if(!(upsStatus in["Online","Off"])){logWarn"Initiating Hubitat shutdown...";sendHubShutdown();state.hubShutdownIssued=true}}else if(state.hubShutdownIssued)logDebug"Hub shutdown already issued; skipping repeat trigger"
+                    }else{logInfo"Battery run time recovered above ${threshold} minutes (${remMins} remaining)";state.remove("hubShutdownIssued")}
                 }
-            } catch (e) {logWarn"handleBatteryData(): low-battery evaluation error (${e.message})"};break
+            }catch(e){logWarn"handleBatteryData(): low-battery evaluation error (${e.message})"};break
+        case"Next Battery":if(p1=="Replacement"&&p2=="Date:"){def nd=p3?normalizeDate(p3):"Unknown";emitChangedEvent("nextBatteryReplacement",nd,"UPS Next Battery Replacement Date = ${nd}")};break
         default:if((p0 in["Internal","Battery"])&&p1=="Temperature:"){emitChangedEvent("temperatureC",p2,"UPS Temperature = ${p2}°${p3}","°C");emitChangedEvent("temperatureF",p4,"UPS Temperature = ${p4}°${p5}","°F");if(tempUnits=="F")emitChangedEvent("temperature",p4,"UPS Temperature = ${p4}°${p5} / ${p2}°${p3}","°F")else emitChangedEvent("temperature",p2,"UPS Temperature = ${p2}°${p3} / ${p4}°${p5}","°C")};break
     }
 }
