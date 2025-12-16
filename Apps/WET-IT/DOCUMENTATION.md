@@ -285,7 +285,6 @@ Automations can safely:
 ## 📈 Precision & Rounding
 
 - All numeric operations use **BigDecimal** for exact precision.  
-- Rounding mode: `HALF_UP` (replaces legacy `BigDecimal.ROUND_HALF_UP`).  
 - All ET values are scaled to 3 decimals for display.
 
 ---
