@@ -173,28 +173,6 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 
 ---
 
-## ⏱️ Timestamp Model
-
-| Attribute | Description |
-|:--|:--|
-| `wxTimestamp` | Forecast origin timestamp |
-| `wxChecked` | Poll/check timestamp (added v0.5.7.7) |
-| `summaryTimestamp` | Last ET summary generation |
-| `zoneDepletionTs_x` | Per-zone update time |
-
----
-
-## 📊 Attribute Reference
-
-| Attribute | Type | Description |
-|:--|:--|:--|
-| `summaryText` | string | Compact ET + Seasonal summary |
-| `summaryJson` | string | JSON summary of all zones |
-| `wxSource` | string | Last weather provider |
-| `freezeAlert` | bool | True when freeze risk detected |
-| `freezeLowTemp` | number | Forecast low temperature |
-| `soilMemoryJson` | string | Serialized zone depletion map |
-
 ---
 
 ## 🔍 Learn More
@@ -207,5 +185,5 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 
 > © 2025 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEwMzk0MzE1MDQsMjExOTg1ODIyM119
+eyJoaXN0b3J5IjpbMTYwNTM5NzUwNSwyMTE5ODU4MjIzXX0=
 -->
