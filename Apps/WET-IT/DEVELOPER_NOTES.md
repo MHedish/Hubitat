@@ -105,3 +105,6 @@ Acts as a display and data bridge:
 
 > “Model the soil, not the schedule.”  
 > — Design principle of WET-IT
+<!--stackedit_data:
+eyJoaXN0b3J5IjpbLTIwMDg0NTc0NzldfQ==
+-->
