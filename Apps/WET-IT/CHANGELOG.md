@@ -52,7 +52,7 @@
 
 ---
 
-## 🌈 0.5.7.x — Final Stabilization (Production Release)
+## 🌈 0.5.7.x — Final Stabilization
 **App v0.5.7.7 / Driver v0.5.7.4 — Released 2025-12-11**
 
 - Added `wxChecked` attribute to separate poll/check from forecast origin time.  
@@ -63,5 +63,8 @@
 - Final code review, sandbox compliance check, and documentation refresh.
 
 ---
+
+## 🌈 0.6.0.x — Final Stabilization (Production Release)
+**App v0.6.0.0 / Driver v0.6.0.0 — Released 2025-12-15**
 
 > **WET-IT — precision irrigation through weather intelligence and Hubitat automation.**
