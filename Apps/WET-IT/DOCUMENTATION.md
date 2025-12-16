@@ -210,42 +210,101 @@ If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API c
 
 ---
 
-### 🧾 Example `summaryJson`
+## 💧 Marking Zones as Watered – Resetting the ET Cycle
 
-```json
-{
-  "timestamp": "2025-12-11T06:00:00Z",
-  "wxSource": "OpenWeather",
-  "et0": 0.21,
-  "rainIn": 0.00,
-  "zones": {
-    "zone1": { "etBudgetPct": 88, "seasonalBudgetPct": 94 },
-    "zone2": { "etBudgetPct": 75, "seasonalBudgetPct": 82 }
-  }
-}
+WET-IT’s evapotranspiration (ET) model calculates how much water each zone *loses* since its **last watering event**.  
+To keep this cycle accurate, you must call one of the following methods **whenever irrigation completes**:
+
+- `markZoneWatered(zoneNumber)` → resets the ET baseline for a single zone  
+- `markAllZonesWatered()` → resets ET for every zone at once
+
+If these methods aren’t called, WET-IT assumes the zone hasn’t been watered, causing ET accumulation to continue indefinitely — which leads to inflated depletion and longer runtimes later.
+
+### 🕒 Conceptual Flow
+
 ```
+┌─────────────┐    ┌──────────────┐    ┌───────────────┐    ┌────────────────┐
+│  Weather 🌦 │──▶│  ET Update 🌡 │──▶│  Irrigation 💧 │──▶│ markZoneWatered │
+└─────────────┘    └──────────────┘    └───────────────┘    └────────────────┘
+       ▲                                                   │
+       │<─────────── WET-IT calculates ET since last mark ─┘
+```
+
+### 📘 Best Practice
+
+- Always trigger `markZoneWatered()` or `markAllZonesWatered()` **at the end of each watering cycle**.  
+- In most setups, this can be done from the same automation that controls the irrigation controller.  
+- If your controller manages zones individually, use per-zone marking (`markZoneWatered(zone1)`, etc.).  
+- For older single-relay controllers or manual triggers, call `markAllZonesWatered()` once the session ends.
+
+### 🧠 Why It Matters
+
+ET calculations are **time-based**, not daily resets. WET-IT determines soil depletion by measuring how long it’s been since watering — making accurate resets essential for realistic modeling.
 
 ---
 
-### ⚙️ Automation Examples
+## 🌅 Sunrise/Sunset Automation Template Example (With ET Reset)
 
-**Rule Machine**
-1. Create a **String Variable** `wetitJson`
-2. Set variable = `device.summaryJson`
-3. Use JSON parsing to extract `zone1.etBudgetPct`
+WET-IT provides dynamic water budgets and timing logic that you can tie to sunrise or sunset triggers.  
+Below are examples that include **ET reset events** at the end of irrigation cycles.
 
-**webCoRE**
+### 🌅 Rule Machine Example
+
 ```groovy
-def data = parseJson(device.summaryJson)
-if (data.zones.zone1.etBudgetPct < 60) {
-   // Adjust irrigation runtime here
-}
+Set Variable wetitSummary = %device:WET-IT Data:summaryJson%
+Parse JSON wetitSummary into json
+For each zone:
+    runtime = baseMinutes * (json.zones.zone1.etBudgetPct / 100)
+    If freezeAlert == false:
+        Send command to controller: setZoneRuntime(zone1, runtime)
+Wait until irrigation completes
+wetit.markZoneWatered(zone1)
 ```
 
-**Node-RED**
-Use a **JSON Node** on `summaryJson` → Access `msg.payload.zones.zone1.etBudgetPct`
+---
+
+### 💧 webCoRE Example
+
+```groovy
+define
+  device wetit = [WET-IT Data]
+  device controller = [MyLegacyController]
+  integer baseMins = 15
+end define
+
+every day at $sunrise do
+  def json = parseJson(wetit.currentValue("summaryJson"))
+  def pct = json.zones.zone1.etBudgetPct as integer
+  if (wetit.currentValue("freezeAlert") == "false" && pct > 0) {
+      def runtime = (baseMins * pct / 100).round()
+      controller.setRuntime(zone1, runtime)
+      wait(runtime * 60 * 1000)
+      wetit.markZoneWatered(1)
+      sendPush("Zone1 watering complete — ET reset.")
+  } else {
+      sendPush("Irrigation skipped: freeze or zero ET demand.")
+  }
+end every
+```
 
 ---
+
+### ⚙️ Node-RED Example
+
+**Nodes:**  
+- Inject Node → `sunrise` (daily trigger)  
+- Hubitat Device Node → `WET-IT Data`  
+- JSON Node → Parse `summaryJson`  
+- Function Node:  
+  ```javascript
+  let pct = msg.payload.zones.zone1.etBudgetPct;
+  let base = 15;
+  let runtime = base * pct / 100;
+  msg.payload = { zone: 1, runtime: runtime };
+  return msg;
+  ```
+- Delay Node → Wait for runtime duration  
+- Hubitat Command Node → `markZoneWatered(1)`  
 
 ## 🧊 Freeze Protection Logic
 
@@ -282,26 +341,17 @@ Automations can safely:
 
 ---
 
-## 📈 Precision & Rounding
-
-- All numeric operations use **BigDecimal** for exact precision.  
-- All ET values are scaled to 3 decimals for display.
-
----
-
 ## 🧭 Related Documentation
 
  - [README.md](./README.md) — Overview and Installation  
  - [CHANGELOG.md](./CHANGELOG.md) — Version History  
- - [DEVELOPER_NOTES.md](./DEVELOPER_NOTES.md) — Archi
- - List item
-
-tecture and ET Logic
+ - [DEVELOPER_NOTES.md](./DEVELOPER_NOTES.md) — Architecture and ET Logic
 
 ---
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbOTMxMDczMTQxLC04NTY1NTA3XX0=
+eyJoaXN0b3J5IjpbMTMwNjUyMzU0LDkzMTA3MzE0MSwtODU2NT
+UwN119
 -->
