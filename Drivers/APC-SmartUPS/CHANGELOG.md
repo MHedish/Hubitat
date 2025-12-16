@@ -32,3 +32,6 @@
 - Hardened recovery and cleanup logic ensuring self-healing operation under all Telnet lifecycle edge cases.  
 - Final event emission and scheduling synchronization tested and confirmed stable.  
 - Marked as the **reference release** for future incremental feature builds.  
+### 🚀 1.0.1.2 — Production Updates
+- 1.0.1.1 Enhanced handleUPSStatus() to properly normalize multi-token NMC strings (e.g., “Online, Smart Trim”) via improved regex boundaries and partial-match detection.
+- 1.0.1.2 Added nextBatteryReplacement attribute; captures and normalizes NMC "Next Battery Replacement Date" from battery status telemetry.
