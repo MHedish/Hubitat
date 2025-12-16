@@ -86,7 +86,9 @@ every day at $sunrise do
   if (wetit.currentValue("freezeAlert") == "false" && pct > 0) {
       def runtime = (baseMins * pct / 100).round()
       controller.setRuntime(zone1, runtime)
-      sendPush("Irrigation started at sunrise for Zone1 (${pct}%)")
+      wait(runtime * 60 * 1000)
+      wetit.markZoneWatered(1)
+      sendPush("Zone1 watering complete — ET reset.")
   } else {
       sendPush("Irrigation skipped: freeze or zero ET demand.")
   }
@@ -95,23 +97,26 @@ end every
 
 ---
 
-### ⚙️ Node-RED Flow
+
+### ⚙️ Node-RED Example
 
 **Nodes:**  
-- Inject Node → Type: `sunrise` (daily trigger)  
+- Inject Node → `sunrise` (daily trigger)  
 - Hubitat Device Node → `WET-IT Data`  
 - JSON Node → Parse `summaryJson`  
 - Function Node:  
   ```javascript
   let pct = msg.payload.zones.zone1.etBudgetPct;
   let base = 15;
-  msg.payload = { zone: 1, runtime: base * pct / 100 };
+  let runtime = base * pct / 100;
+  msg.payload = { zone: 1, runtime: runtime };
   return msg;
   ```
-- HTTP or MQTT Node → Send runtime to controller
+- Delay Node → Wait for runtime duration  
+- Hubitat Command Node → `markZoneWatered(1)`  
 
 **Optional Enhancements:**
-- Add `freezeAlert` check
+- Add `freezeAlert` check  
 - Append runtime log to InfluxDB or file output
 
 ---
@@ -354,6 +359,6 @@ Automations can safely:
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjg2MzI2MDE3LDkzMTA3MzE0MSwtODU2NT
-UwN119
+eyJoaXN0b3J5IjpbMTc3MjQxNzkzOSw5MzEwNzMxNDEsLTg1Nj
+U1MDddfQ==
 -->
