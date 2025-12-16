@@ -9,12 +9,13 @@
 *  Changelog:
 *  0.6.0.0  –– Initial Beta Release
 *  0.6.0.1  –– Moved Attribute Reference link to DOCUMENTATION.md
+*  0.6.1.0  –– Refactored child event logging; removed extraneous commands
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "0.6.0.1"
+@Field static final String DRIVER_VERSION  = "0.6.1.0"
 @Field static final String DRIVER_MODIFIED = "2025-12-16"
 @Field static final int MAX_ZONES = 48
 
@@ -48,8 +49,6 @@ metadata {
 
         command "initialize"
         command "disableDebugLoggingNow"
-        command "emitEvent",[[name:"This isn't the button you're looking for.",description:"Move Along."]]
-		command "emitChangedEvent",[[name:"This isn't the button you're looking for.",description:"Move Along."]]
 		command "markAllZonesWatered",[[name:"Mark All Zones Watered",description:"Clears all ET data for all zones."]]
 		command "markZoneWatered",[
 				[name:"Mark Zone Watered",description:"Clears ET data for this specific zone.",type:"NUMBER",required:true],
