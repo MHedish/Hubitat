@@ -1,6 +1,6 @@
 # ⚡ APC SmartUPS Status (Hubitat Driver)
 
-[![Version](https://img.shields.io/badge/version-1.0.1.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.1.2-blue.svg)](./CHANGELOG.md)
 [![Status](https://img.shields.io/badge/release-STABLE-success.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
@@ -239,6 +239,7 @@ These values can be used in **dashboards**, **Rule Machine triggers**, **notific
 | **nmcModel**, **nmcSerialNumber**, **nmcHardwareRevision**, **nmcApplicationVersion**, **nmcOSVersion**, **nmcBootMonitorVersion** | — | NMC identity and firmware details. |
 | **nmcStatus** | — | NMC health summary (OS, Network, Application). |
 | **nmcUptime**, **upsUptime** | — | Time since last restart for the NMC or UPS. |
+| **nextBatteryReplacement** | — | NMC recommended replacement date. |
 | **outputFrequency** | Hz | UPS output frequency. |
 | **outputVoltage** | VAC | Output voltage supplied to connected devices. |
 | **outputWattsPercent** | % | Current load as a percentage of UPS rated capacity. |
