@@ -17,6 +17,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/WET-IT.groovy",
       "required": true,
+      "version": "0.6.1.0",
       "oauth": false,
       "primary": true
     }
@@ -27,7 +28,8 @@
       "name": "WET-IT Data",
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/WET-IT_Data_Driver.groovy",
-      "required": true
+      "required": true,
+      "version": "0.6.1.0"
     }
   ]
 }
