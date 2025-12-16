@@ -8,14 +8,15 @@
 *
 *  Changelog:
 *  0.6.0.0   –– Initial Beta Release
+*  0.6.0.1   –– Normalized wxTimestamp handling across NOAA, OWM, and Tomorrow.io providers (consistent local time, correct forecast reference)
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.6.0.0"
-@Field static final String APP_MODIFIED="2025-12-15"
+@Field static final String APP_VERSION="0.6.0.1"
+@Field static final String APP_MODIFIED="2025-12-16"
 @Field static final int MAX_ZONES=48
 @Field static def cachedChild=null
 @Field static Integer cachedZoneCount=null
@@ -509,8 +510,8 @@ private Map fetchWeatherOwm(boolean force=false){
         httpGet(p){resp->
             if(resp.status!=200||!resp.data){logWarn"fetchWeatherOwm(): HTTP ${resp.status}, invalid data";return}
             def d=resp.data.daily?.getAt(0);if(!d){logWarn"fetchWeatherOwm(): Missing daily[0]";return}
-            def ts=(d.dt?:0L)*1000L
-            def providerTs=new Date(ts).format("yyyy-MM-dd HH:mm:ss",location.timeZone)
+            def tsField=d.dt?:resp.data.current?.dt
+            def providerTs=(tsField?(new Date(tsField*1000L)).format("yyyy-MM-dd HH:mm:ss",location.timeZone):null)
             BigDecimal tMaxF=(d.temp?.max?:0)as BigDecimal,tMinF=(d.temp?.min?:tMaxF)as BigDecimal
             BigDecimal tMax=convTemp(tMaxF,'F',unit),tMin=convTemp(tMinF,'F',unit)
             BigDecimal rainMm=(d.rain?:0)as BigDecimal,rainIn=etMmToIn(rainMm)
@@ -541,7 +542,7 @@ private Map fetchWeatherNoaa(boolean force=false){
             else if(r2?.data?.respondsTo("read"))data=new groovy.json.JsonSlurper().parse(r2.data)
             else data=new groovy.json.JsonSlurper().parseText(r2?.data?.toString()?:'{}')
             def p=data?.properties;if(!p){logWarn"fetchWeatherNoaa(): Missing properties block";return}
-            def gen=p.generatedAt
+            def gen=p.generatedAt?:p.updateTime
             def providerTs=gen?Date.parse("yyyy-MM-dd'T'HH:mm:ssXXX",gen).format("yyyy-MM-dd HH:mm:ss",location.timeZone):null
             BigDecimal tMaxC=(p.maxTemperature?.values?.getAt(0)?.value?:0)as BigDecimal
             BigDecimal tMinC=(p.minTemperature?.values?.getAt(0)?.value?:tMaxC)as BigDecimal
@@ -568,8 +569,8 @@ private Map fetchWeatherTomorrow(boolean force=false){
             if(resp?.status!=200||!resp?.data){logWarn"fetchWeatherTomorrow(): HTTP ${resp?.status}, invalid data";return}
             def dNode=resp.data?.timelines?.daily?.getAt(0)
             def v=dNode?.values;if(!v){logWarn"fetchWeatherTomorrow(): No daily data";return}
-            def ts=dNode?.time
-            def providerTs=ts?Date.parse("yyyy-MM-dd'T'HH:mm:ss'Z'",ts).format("yyyy-MM-dd HH:mm:ss",location.timeZone):null
+            def ts=dNode?.time?:resp.data?.timelines?.daily?.getAt(0)?.startTime
+            def providerTs=ts?Date.parse("yyyy-MM-dd'T'HH:mm:ssX",ts).format("yyyy-MM-dd HH:mm:ss",location.timeZone):null
             BigDecimal tMaxF=(v.temperatureMax?:0)as BigDecimal,tMinF=(v.temperatureMin?:tMaxF)as BigDecimal
             BigDecimal tMax=convTemp(tMaxF,'F',unit),tMin=convTemp(tMinF,'F',unit)
             BigDecimal rainMm=(v.precipitationSum?:0)as BigDecimal,rainIn=etMmToIn(rainMm)
