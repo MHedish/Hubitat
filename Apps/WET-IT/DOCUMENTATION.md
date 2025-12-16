@@ -291,14 +291,17 @@ Automations can safely:
 
 ## 🧭 Related Documentation
 
-- [README.md](./README.md) — Overview and Installation  
-- [CHANGELOG.md](./CHANGELOG.md) — Version History  
-- [DEVELOPER_NOTES.md](./DEVELOPER_NOTES.md) — Architecture and ET Logic
+ - [README.md](./README.md) — Overview and Installation  
+ - [CHANGELOG.md](./CHANGELOG.md) — Version History  
+ - [DEVELOPER_NOTES.md](./DEVELOPER_NOTES.md) — Archi
+ - List item
+
+tecture and ET Logic
 
 ---
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTg1NjU1MDddfQ==
+eyJoaXN0b3J5IjpbOTMxMDczMTQxLC04NTY1NTA3XX0=
 -->
