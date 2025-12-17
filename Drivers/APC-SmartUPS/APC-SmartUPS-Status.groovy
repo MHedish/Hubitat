@@ -12,14 +12,15 @@
 *  1.0.1.0   -- Updated Preferences documentation tile.
 *  1.0.1.1   -- Enhanced handleUPSStatus() to properly normalize multi-token NMC strings (e.g., “Online, Smart Trim”) via improved regex boundaries and partial-match detection.
 *  1.0.1.2   -- Added nextBatteryReplacement attribute; captures and normalizes NMC "Next Battery Replacement Date" from battery status telemetry.
+*  1.0.1.3   -- Added wiringFault attribute detection in handleUPSStatus(); automatically emits true/false based on "Site Wiring Fault" presence in UPS status line.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.1.2"
-@Field static final String DRIVER_MODIFIED = "2025.12.16"
+@Field static final String DRIVER_VERSION  = "1.0.1.3"
+@Field static final String DRIVER_MODIFIED = "2025.12.17"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
 /* ===============================
@@ -97,6 +98,7 @@ metadata {
         attribute "upsLocation","string"
         attribute "upsStatus","string"
         attribute "upsUptime","string"
+        attribute "wiringFault","string"
 
         command "refresh"
         command "disableDebugLoggingNow"
@@ -121,7 +123,7 @@ metadata {
    Preferences
    =============================== */
 preferences {
-    input("", "hidden", title: driverDocBlock())
+    input("docBlock", "hidden", title: driverDocBlock())
     input("upsIP","text",title:"Smart UPS (APC only) IP Address",required:true)
     input("upsPort","integer",title:"Telnet Port",description:"Default 23",defaultValue:23,required:true)
     input("Username","text",title:"Username for Login",required:true,defaultValue:"")
@@ -147,8 +149,8 @@ private logInfo(msg)  {if(logEvents) log.info  "[${DRIVER_NAME}] $msg"}
 private logWarn(msg)  {log.warn "[${DRIVER_NAME}] $msg"}
 private logError(msg) {log.error"[${DRIVER_NAME}] $msg"}
 private void emitLastUpdate(){def s=getTransient("sessionStart");def ms=s?(now()-s):0;def sec=(ms/1000).toDouble().round(3);emitChangedEvent("lastUpdate",new Date().format("MM/dd/yyyy h:mm:ss a"),"Data Capture Run Time = ${sec}s");clearTransient("sessionStart")}
-private emitEvent(String name,def value,String desc=null,String unit=null){sendEvent(name:name,value:value,unit:unit,descriptionText:desc);if(logEvents)log.info"[${DRIVER_NAME}] ${desc? "${name}=${value} (${desc})":"${name}=${value}"}"}
-private emitChangedEvent(String n,def v,String d=null,String u=null){def o=device.currentValue(n);if(o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d);logInfo d?"${n}=${v} (${d})":"${n}=${v}"}else logDebug "No change for ${n} (still ${o})"}
+private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
+private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=app.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 private updateConnectState(String newState){def old=device.currentValue("connectStatus");def last=getTransient("lastConnectState");if(old!=newState&&last!=newState){setTransient("lastConnectState",newState);emitChangedEvent("connectStatus",newState)}else{logDebug"updateConnectState(): no change (${old} → ${newState})"}}
 private updateCommandState(String newCmd){def old=state.lastCommand;state.lastCommand=newCmd;if(old!=newCmd)logDebug"lastCommand = ${newCmd}"}
 private def normalizeDateTime(String r){if(!r||r.trim()=="")return r;try{def m=r=~/^(\d{2})\/(\d{2})\/(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/;if(m.matches()){def(mm,dd,yy,hh,mi,ss)=m[0][1..6];def y=(yy as int)<80?2000+(yy as int):1900+(yy as int);def f="${mm}/${dd}/${y}"+(hh?" ${hh}:${mi}:${ss?:'00'}":"");def d=Date.parse(hh?"MM/dd/yyyy HH:mm:ss":"MM/dd/yyyy",f);return hh?d.format("MM/dd/yyyy h:mm:ss a",location.timeZone):d.format("MM/dd/yyyy",location.timeZone)};for(fmt in["MM/dd/yyyy HH:mm:ss","MM/dd/yyyy h:mm:ss a","MM/dd/yyyy","yyyy-MM-dd","MMM dd yyyy HH:mm:ss"])try{def d=Date.parse(fmt,r);return(fmt.contains("HH")||fmt.contains("h:mm:ss"))?d.format("MM/dd/yyyy h:mm:ss a",location.timeZone):d.format("MM/dd/yyyy",location.timeZone)}catch(e){} }catch(e){};return r}
@@ -407,11 +409,13 @@ private finalizeSession(String origin){
 private handleUPSStatus(def pair){
     if(pair.size()<4||pair[0]!="Status"||pair[1]!="of"||pair[2]!="UPS:")return
     def raw=(pair[3..Math.min(4,pair.size()-1)]).join(" "),status=raw?.replaceAll(",","")?.trim()
+    def wiringFault=(status=~/(?i).*wiring\s*fault.*/)
     if(status=~/(?i)\bon[-\s]?line\b/)status="Online"
     else if(status=~/(?i)\bon\s*battery\b/)status="OnBattery"
     else if(status.equalsIgnoreCase("Discharged"))status="Discharged"
     else if(status=~/(?i)\boff\s*no\b/)status="Off"
     emitChangedEvent("upsStatus",status,"UPS Status = ${status}")
+    emitChangedEvent("wiringFault",wiringFault,"UPS Site Wiring Fault ${wiringFault?'detected':'cleared'}")
     def rT=runTime.toInteger(),rTB=runTimeOnBattery.toInteger(),rO=runOffset.toInteger()
     switch(status){
         case"OnBattery":if(rT!=rTB&&device.currentValue("checkInterval")!=rTB)scheduleCheck(rTB,rO);break
