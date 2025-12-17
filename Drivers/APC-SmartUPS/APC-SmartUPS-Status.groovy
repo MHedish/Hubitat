@@ -12,15 +12,14 @@
 *  1.0.1.0   -- Updated Preferences documentation tile.
 *  1.0.1.1   -- Enhanced handleUPSStatus() to properly normalize multi-token NMC strings (e.g., “Online, Smart Trim”) via improved regex boundaries and partial-match detection.
 *  1.0.1.2   -- Added nextBatteryReplacement attribute; captures and normalizes NMC "Next Battery Replacement Date" from battery status telemetry.
-*  1.0.1.3   -- Added wiringFault attribute detection in handleUPSStatus(); automatically emits true/false based on "Site Wiring Fault" presence in UPS status line.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.1.3"
-@Field static final String DRIVER_MODIFIED = "2025.12.17"
+@Field static final String DRIVER_VERSION  = "1.0.1.2"
+@Field static final String DRIVER_MODIFIED = "2025.12.16"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
 /* ===============================
@@ -98,7 +97,6 @@ metadata {
         attribute "upsLocation","string"
         attribute "upsStatus","string"
         attribute "upsUptime","string"
-        attribute "wiringFault","string"
 
         command "refresh"
         command "disableDebugLoggingNow"
@@ -409,13 +407,11 @@ private finalizeSession(String origin){
 private handleUPSStatus(def pair){
     if(pair.size()<4||pair[0]!="Status"||pair[1]!="of"||pair[2]!="UPS:")return
     def raw=(pair[3..Math.min(4,pair.size()-1)]).join(" "),status=raw?.replaceAll(",","")?.trim()
-    def wiringFault=(status=~/(?i).*wiring\s*fault.*/)
     if(status=~/(?i)\bon[-\s]?line\b/)status="Online"
     else if(status=~/(?i)\bon\s*battery\b/)status="OnBattery"
     else if(status.equalsIgnoreCase("Discharged"))status="Discharged"
     else if(status=~/(?i)\boff\s*no\b/)status="Off"
     emitChangedEvent("upsStatus",status,"UPS Status = ${status}")
-    emitChangedEvent("wiringFault",wiringFault,"UPS Site Wiring Fault ${wiringFault?'detected':'cleared'}")
     def rT=runTime.toInteger(),rTB=runTimeOnBattery.toInteger(),rO=runOffset.toInteger()
     switch(status){
         case"OnBattery":if(rT!=rTB&&device.currentValue("checkInterval")!=rTB)scheduleCheck(rTB,rO);break
