@@ -1,6 +1,6 @@
 # 🌧️ Rain Bird LNK/LNK2 WiFi Module Controller (Hubitat Driver)
 
-[![Version](https://img.shields.io/badge/version-0.1.3.2-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.3.3-blue.svg)](./CHANGELOG.md)
 [![Status](https://img.shields.io/badge/release-RC--STABLE-brightgreen.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
@@ -28,7 +28,7 @@ With advanced telemetry, adaptive pacing, and hourly drift correction, it’s de
 
 ---
 
-## 🌟 What’s New in v0.1.3.2
+## 🌟 What’s New in v0.1.3.3
 
 💧 **Manual Zone Device Creation** — automatic zone creation replaced with a self-healing manual command `createZoneChildren`  
 🔗 **Zone Child Driver** — new companion driver *Rain Bird LNK/LNK2 Zone Child* (Switch + Valve) provides per-zone control  
