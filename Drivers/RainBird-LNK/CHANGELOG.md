@@ -14,7 +14,7 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 | **0.0.7.x** | Resilience | Legacy firmware handling and deterministic control |
 | **0.0.8.x** | Hybrid | Firmware 2.9 compatibility, telemetry, and adaptive refresh |
 | **0.0.9.x** | Modern | Full firmware 3.x LNK2/ESP-ME support and unified logic |
-| **0.1.2.x** | Release Candidate | Hybrid/modern convergence verified under 2.9–3.2 |
+| **0.1.3.x** | Release Candidate | Hybrid/modern convergence verified under 2.9–3.2 |
 
 ---
 
@@ -127,7 +127,7 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 ---
 
 ### ✅ Summary
-This **Release Candidate (RC 0.1.2.0)** finalizes compatibility between legacy (2.1/2.9) and modern (3.2) Rain Bird controllers.  
+This **Release Candidate (RC 0.1.3.0)** finalizes compatibility between legacy (2.1/2.9) and modern (3.2) Rain Bird controllers.  
 All command, telemetry, and refresh systems are now stable under both firmware lines, marking readiness for transition to the **0.1.x stable branch**.
 
 ---
