@@ -10,14 +10,15 @@
 *  0.6.0.0   –– Initial Beta Release
 *  0.6.0.1   –– Normalized wxTimestamp handling across NOAA, OWM, and Tomorrow.io providers (consistent local time, correct forecast reference)
 *  0.6.1.0   –– Refactored child event logging.
+*  0.6.2.0   –– Added wxLocation attribute - Forecast location (NOAA) via fetchWxLocation()
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.6.1.0"
-@Field static final String APP_MODIFIED="2025-12-16"
+@Field static final String APP_VERSION="0.6.2.0"
+@Field static final String APP_MODIFIED="2025-12-17"
 @Field static final int MAX_ZONES=48
 @Field static def cachedChild=null
 @Field static Integer cachedZoneCount=null
@@ -142,7 +143,7 @@ def mainPage() {
             input "btnVerifySystem","button",title: "✅ Verify System Integrity"
             input "btnRunWeatherUpdate","button",title: "💧 Run Weather/ET Updates Now"
 			if(atomicState.tempDiagMsg)paragraph "<b>Last Diagnostic:</b> ${atomicState.tempDiagMsg}";atomicState.tempDiagMsg="&nbsp;"
-			def c=getDataChild();paragraph "🌦️ Weather timestamps → Forecast (${c?.currentValue('wxSource')?:'n/a'}): ${c?.currentValue('wxTimestamp')?:'n/a'}, Checked: ${c?.currentValue('wxChecked')?:'n/a'}"
+			def c=getDataChild(true);def loc=c?.currentValue('wxLocation');paragraph "🌦️ ${loc?loc+' ':''}Weather → Forecast (${c?.currentValue('wxSource')?:'n/a'}): ${c?.currentValue('wxTimestamp')?:'n/a'}, Checked: ${c?.currentValue('wxChecked')?:'n/a'}"
 			def s=getCurrentSeasons(location.latitude);paragraph "🍃 Current Seasons → Astronomical: <b>${s.currentSeasonA}</b>, Meteorological: <b>${s.currentSeasonM}</b>"
             paragraph "📍 Hub Location: ${location.name?:'Unknown'} (${location.latitude}, ${location.longitude})"
 			paragraph "<i>Ensure hub time zone and location are correct for accurate ET calculations.</i>"
@@ -354,7 +355,7 @@ private void resetAllSoilMemory(){
 
 /* ---------- Lifecycle ---------- */
 def installed(){logInfo "Installed: ${appInfoString()}";runIn(2,"bootstrap")}
-def updated(){logInfo "Updated: ${appInfoString()}";atomicState.logEnable=settings.logEnable?:false;initialize()}
+def updated(){logInfo "Updated: ${appInfoString()}";atomicState.logEnable=settings.logEnable?:false;fetchWxLocation();initialize()}
 def initialize(){logInfo "Initializing: ${appInfoString()}";unschedule("autoDisableDebugLogging");if(atomicState.logEnable)runIn(1800,"autoDisableDebugLogging")
     if(!verifyDataChild()){logWarn"initialize(): ❌ Cannot continue; data child missing or invalid";return}
     def child=getDataChild()
@@ -366,7 +367,7 @@ def initialize(){logInfo "Initializing: ${appInfoString()}";unschedule("autoDisa
         else logInfo"✅ System verification clean"
     }catch(e){logWarn"⚠️ Zone/verification stage failed (${e.message})"}
     if(!owmApiKey&&!tioApiKey&&weatherSource!="noaa")logWarn"⚠️ Not fully configured; no valid API key or weather source"
-    runIn(5,"runWeatherUpdate");scheduleWeatherUpdates();logInfo "Weather/ET updates scheduled every 4 hours at :15 past the hour"
+    runIn(5,"runWeatherUpdate");scheduleWeatherUpdates()
 }
 
 private bootstrap(){
@@ -378,6 +379,7 @@ private bootstrap(){
     Map wx=fetchWeather(true);if(!wx){runIn(300,"bootstrap");return}
     logInfo"Forecast provider verified — verifying system integrity..."
     logInfo"Initializing system — retrieving first ${src.toUpperCase()} forecast..."
+	fetchWxLocation()
 	runWeatherUpdate()
 	def msg=getDataChild(true)?.currentValue("summaryText")?:'⚠️ No ET summary available'
 	logInfo"ET run completed: ${msg}"
@@ -436,7 +438,7 @@ def verifySystem(){
     logInfo"Running full system verification..."
     def verified=verifyDataChild();if(!verified){logWarn"verifySystem(): ❌ Data child missing or invalid";return false}
     def child=getDataChild();def issues=[]
-    ["summaryText","summaryJson","wxSource","wxTimestamp","driverInfo","appInfo"].each{
+    ["summaryText","summaryJson","wxLocation","wxSource","wxTimestamp","driverInfo","appInfo"].each{
         if(!child.hasAttribute(it))issues<<"missing ${it}"
     }
     (1..cachedZoneCount).each{
@@ -642,6 +644,32 @@ private Map getCurrentSeasons(BigDecimal lat){
         if(meteo=="Winter")meteo="Summer";else if(meteo=="Spring")meteo="Fall";else if(meteo=="Summer")meteo="Winter";else if(meteo=="Fall")meteo="Spring"
     }
     return[currentSeasonA:astro,currentSeasonM:meteo]
+}
+
+private void fetchWxLocation(){
+    try{
+        def url="https://api.weather.gov/points/${location.latitude},${location.longitude}"
+        httpGet([uri:url,headers:["User-Agent":"Hubitat-WET-IT","Accept":"application/geo+json","Accept-Encoding":"identity"]]){resp->
+            def data;if(resp?.data instanceof Map)data=resp.data
+            else if(resp?.data?.respondsTo("read"))data=new groovy.json.JsonSlurper().parse(resp.data)
+            else data=new groovy.json.JsonSlurper().parseText(resp?.data?.toString()?:'{}')
+            def p=data?.properties;if(!p&&data?."@graph")p=data."@graph"?.find{it?.properties}?.properties
+            if(!p)return
+            def wx=p?.gridId?:p?.cwa?:'';def rd=p?.radarStation?:''
+            def r=p?.relativeLocation?.properties;def c=r?.city;def s=r?.state
+            def t
+            if(c&&s){
+                if(wx&&rd)t="${c}, ${s} (${wx}/${rd})"
+                else if(wx)t="${c}, ${s} (${wx})"
+                else if(rd)t="${c}, ${s} (${rd})"
+                else t="${c}, ${s}"
+            }else if(wx&&rd)t="${wx}/${rd}"
+            else if(wx)t="${wx}"
+            else if(rd)t="${rd}"
+            else t=''
+            atomicState.wxLocation=t;childEmitChangedEvent(getDataChild(),"wxLocation",t,"Weather forecast location")
+        }
+    }catch(e){logDebug"fetchWxLocation(): ${e.message}"}
 }
 
 /* ---------- Event Publishing ---------- */
