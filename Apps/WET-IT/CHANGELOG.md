@@ -52,7 +52,7 @@
 
 ---
 
-## 🌈 0.5.7.x — Final Stabilization
+## 🌈 0.5. — Final Stabilization
 **App v0.5.7.7 / Driver v0.5.7.4 — Released 2025-12-11**
 
 - Added `wxChecked` attribute to separate poll/check from forecast origin time.  
@@ -64,10 +64,13 @@
 
 ---
 
-## 🌈 0.6.1.0 — Final Stabilization (Release)
+## 🌈 0.6.1.00.x — Final Stabilization (Release)
 **App v0.6.1.0 / Driver v0.6.1.0 — Released 2025-12-16**
+## *  0.6.0.1   –– Normalized wxTimestamp handling across NOAA, OWM, and Tomorrow.io providers (consistent local time, correct forecast reference)
+-  0.6.1.0   –– Refactored child event logging.
+  0.6.2.0   –– Added wxLocation attribute - Forecast location (NOAA) via fetchWxLocation()
 
 > **WET-IT — precision irrigation through weather intelligence and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTg0NzAzNzgwM119
+eyJoaXN0b3J5IjpbMTY0NTgzMDUyNywxODQ3MDM3ODAzXX0=
 -->
