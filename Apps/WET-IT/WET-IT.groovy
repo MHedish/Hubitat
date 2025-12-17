@@ -63,14 +63,16 @@ def disableDebugLoggingNow(){try{unschedule("autoDisableDebugLogging");atomicSta
 preferences{page(name:"mainPage")}
 def mainPage() {
 	getZoneCountCached(true)
-    dynamicPage(name:"mainPage",title: "🌱 ${APP_NAME} Configuration",install:true,uninstall:true){
+    dynamicPage(name:"mainPage",install:true,uninstall:true){
         /* ==========================================================
          * 1️ Header / App Info
          * ========================================================== */
-        section("<b>App Information</b>") {
-            paragraph "<b>${APP_NAME}</b> v${APP_VERSION} (${APP_MODIFIED})"
-            paragraph "<a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md' target='_blank'>📘 View Documentation</a>"
-            paragraph "WET-IT brings local-first, Rachio/Hydrawise/Orbit/-style intelligence to any irrigation controller.<br>It runs professional evapotranspiration (ET) and soil-moisture modeling inside your Hubitat hub."
+        section("") {
+        paragraph "<div style='text-align:center;'><img src='https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT/Logo.png' width='180'></div>"
+        paragraph "<div style='text-align:center;'>Weather-Enhanced Time-based Irrigation Tuning (WET-IT)</div>"
+        paragraph "<div style='text-align:center;'>WET-IT brings <i>local-first, Rachio/Hydrawise/Orbit-style intelligence</i> to any irrigation controller — running professional evapotranspiration (ET) and soil-moisture modeling directly inside your Hubitat hub.</div>"
+        paragraph "<a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md' target='_blank'>📘 View Documentation</a>"
+        paragraph "<small>v${APP_VERSION} (${APP_MODIFIED})</small>"
         }
         /* ==========================================================
          * 2️ Zone Setup (ABC-style navigation)
