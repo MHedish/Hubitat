@@ -35,3 +35,4 @@
 ### 🚀 1.0.1.x — Production Updates
 - 1.0.1.1 Enhanced handleUPSStatus() to properly normalize multi-token NMC strings (e.g., “Online, Smart Trim”) via improved regex boundaries and partial-match detection.
 - 1.0.1.2 Added nextBatteryReplacement attribute; captures and normalizes NMC "Next Battery Replacement Date" from battery status telemetry.
+- 10.01.3 Added wiringFault attribute detection in handleUPSStatus(); automatically emits true/false based on "Site Wiring Fault" presence in UPS status line. 
