@@ -1,6 +1,6 @@
 # 🌿 Weather-Enhanced Time-based Irrigation Tuning (WET-IT)
 ## Full Documentation
-*Comprehensive Technical & Integration Reference (App v0.6.0.1 / Driver v0.6.0.1)*
+*Comprehensive Technical & Integration Reference (App v0.6.2.0 / Driver v0.6.2.0)*
 
 WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.  
 It brings Rachio/Hydrawise-style intelligence entirely offline — no cloud, no lag, just physics-driven irrigation.
@@ -360,7 +360,7 @@ Automations can safely:
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTQ5MzYwNTgxNSwtNzgxNzAyMTI3LC0xMz
-czNzQyMzUwLDE3NzI0MTc5MzksOTMxMDczMTQxLC04NTY1NTA3
-XX0=
+eyJoaXN0b3J5IjpbLTExMTc3MzQ3OTEsLTc4MTcwMjEyNywtMT
+M3Mzc0MjM1MCwxNzcyNDE3OTM5LDkzMTA3MzE0MSwtODU2NTUw
+N119
 -->
