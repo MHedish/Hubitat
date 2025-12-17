@@ -1,9 +1,9 @@
 {
   "packageName": "Rain Bird LNK/LNK2 WiFi Module Controller",
   "author": "Marc Hedish",
-  "version": "0.1.3.2",
-  "releaseNotes": "Added manual child device creation command and explicit child driver (Rain Bird LNK/LNK2 Zone Child). This release establishes automatic child management with a self-healing, user-initiated process for improved reliability.\n\n0.1.3.1 – Added duration parameter support to RunZone().\n0.1.3.0 – Introduced zone child device creation framework.\n0.1.2.x – Legacy updates, telemetry improvements, and documentation enhancements.",
-  "dateReleased": "2025-12-15",
+  "version": "0.1.3.3",
+  "releaseNotes": "Added manual child device creation command and explicit child driver (Rain Bird LNK/LNK2 Zone Child). This release establishes automatic child management with a self-healing, user-initiated process for improved reliability.\n\n0.1.3.1 – Added duration parameter support to RunZone().\n0.1.3.0 – Introduced zone child device creation framework.\n0.1.3.2 – Legacy updates, telemetry improvements, and documentation enhancements.\n0.1.3.3 - Fixed child device creation.",
+  "dateReleased": "2025-12-17",
   "minimumHEVersion": "2.3.6",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/CHANGELOG.md",
@@ -16,7 +16,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Module.groovy",
       "required": true,
-      "version": "0.1.3.2"
+      "version": "0.1.3.3"
     },
     {
       "id": "rainbird-lnk-wifi-zone-child",
@@ -24,7 +24,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Zone-Child.groovy",
       "required": true,
-      "version": "0.1.3.2"
+      "version": "0.1.3.3"
     }
   ]
 }
