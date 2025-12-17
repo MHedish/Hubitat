@@ -10,13 +10,15 @@
 *  0.1.3.0  –– Initial Device
 *  0.1.3.1  –– Added duration to RunZone()
 *  0.1.3.2  –– Added switch & valve attributes
+*  0.1.3.3  –– Modernized emitEvent and emitChangedEvent; Fixed child device creation.
 */
 
 import groovy.transform.Field
 
+
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 Zone Child"
-@Field static final String DRIVER_VERSION  = "0.1.3.2"
-@Field static final String DRIVER_MODIFIED = "2025.12.15"
+@Field static final String DRIVER_VERSION  = "0.1.3.3"
+@Field static final String DRIVER_MODIFIED = "2025.12.17"
 
 metadata{
     definition(
@@ -41,24 +43,26 @@ metadata{
 
 private driverInfoString(){return"${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"}
 private driverDocBlock(){return"<div style='text-align:center;line-height:1.6;margin:10px 0;'><b>🌱 ${DRIVER_NAME}</b><br>Version <b>${DRIVER_VERSION}</b> &nbsp;|&nbsp; Updated ${DRIVER_MODIFIED}<br><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md#%EF%B8%8F-rain-bird-lnklnk2-wifi-module-controller-hubitat-driver' target='_blank'><b>📘 Readme</b><hr style='margin-top:6px;'></div>"}
+private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
+private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 
 def on(){
-    parent.runChild(device.deviceNetworkId, null)
-    sendEvent(name:"switch", value:"on")
-    sendEvent(name:"valve",  value:"open")
+    parent.runChild(device.deviceNetworkId,null)
+    emitEvent("switch","on")
+    emitEvent("valve","open")
 }
 
 def off(){
     parent.stopChild(device.deviceNetworkId)
-    sendEvent(name:"switch", value:"off")
-    sendEvent(name:"valve",  value:"closed")
+    emitEvent("switch","off")
+    emitEvent("valve","closed")
 }
 
 def open(){on()}
 def close(){off()}
 
 def runZone(duration) {
-    parent.runChild(device.deviceNetworkId, duration)
-    sendEvent(name:"switch", value:"on")
-    sendEvent(name:"valve",  value:"open")
+    parent.runChild(device.deviceNetworkId,duration)
+    emitEvent("switch","on","Duration: ${duration} minutes")
+    emitEvent("valve","open","Duration: ${duration} minutes")
 }
