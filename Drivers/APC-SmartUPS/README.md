@@ -247,6 +247,7 @@ These values can be used in **dashboards**, **Rule Machine triggers**, **notific
 | **temperature**, **temperatureF**, **temperatureC** | °F / °C | UPS internal temperature (dual representation for flexibility). |
 | **upsContact**, **upsLocation** | — | UPS contact and location information. |
 | **upsStatus** | — | Current UPS operating mode (Online, Off, OnBattery, Discharged). |
+| **wiringFault** | — | Overloaded neutral wire (>5 Volts AC measured between Neutral and Ground); Reversed polarity; Missing ground wire. |
 
 ---
 
