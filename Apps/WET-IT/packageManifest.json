@@ -1,10 +1,10 @@
 {
   "packageName": "WET-IT",
   "author": "Marc Hedish",
-  "version": "0.6.1.0",
+  "version": "0.6.2.0",
   "minimumHEVersion": "2.3.6",
-  "dateReleased": "2025-12-16",
-  "releaseNotes": "v0.6.1.0 — Normalized wxTimestamp handling across NOAA, OWM, and Tomorrow.io providers.\nv0.6.1.0 — Refactored child event logging; removed extraneous commands",
+  "dateReleased": "2025-12-17",
+  "releaseNotes": "v0.6.0.1 — Normalized wxTimestamp handling across NOAA, OWM, and Tomorrow.io providers.\nv0.6.1.0 — Refactored child event logging; removed extraneous commands.\n0v0.6.2.0 — Added wxLocation attribute.",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md",
   "description": "Local-first evapotranspiration (ET) and soil-moisture modeling app for Hubitat. Provides professional-grade irrigation intelligence similar to Rachio, Orbit, and Hydrawise, running entirely on-hub.",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/CHANGELOG.md",
@@ -17,7 +17,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/WET-IT.groovy",
       "required": true,
-      "version": "0.6.1.0",
+      "version": "0.6.2.0",
       "oauth": false,
       "primary": true
     }
@@ -29,7 +29,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/WET-IT_Data_Driver.groovy",
       "required": true,
-      "version": "0.6.1.0"
+      "version": "0.6.2.0"
     }
   ]
 }
