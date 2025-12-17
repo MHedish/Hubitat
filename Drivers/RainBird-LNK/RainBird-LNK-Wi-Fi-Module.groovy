@@ -25,6 +25,7 @@
 *  0.1.3.0  –– Added automatic zone child device creation (autoCreateZoneChildren) and per-zone control binding.
 *  0.1.3.1  –– Added explicit child driver.
 *  0.1.3.2  –– Updated getAvailableStations() to accomodate legacy 2.9 firmware; Added manual, self-healing child device creation command.
+*  0.1.3.3  –– Corrected emitEvent() and emitChangedEvent()
 */
 
 import groovy.transform.Field
@@ -37,8 +38,8 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "0.1.3.2"
-@Field static final String DRIVER_MODIFIED = "2025.12.15"
+@Field static final String DRIVER_VERSION  = "0.1.3.3"
+@Field static final String DRIVER_MODIFIED = "2025.12.17"
 @Field static final String PAD = "\u0016"
 @Field static final int BLOCK_SIZE = 16
 @Field static int delayMs=150
@@ -137,8 +138,8 @@ private logDebug(msg){if(logEnable)log.debug"[${DRIVER_NAME}] $msg"}
 private logInfo(msg){if(logEvents)log.info"[${DRIVER_NAME}] $msg"}
 private logWarn(msg){log.warn"[${DRIVER_NAME}] $msg"}
 private logError(msg){log.error"[${DRIVER_NAME}] $msg"}
-private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)log.info"[${DRIVER_NAME}] ${d?"${n}=${v} (${d})":"${n}=${v}"}"}
-private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);logInfo d?"${n}=${v} (${d})":"${n}=${v}"}else logDebug"No change for ${n} (still ${o})"}
+private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
+private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 private parseIfString(o,c="response"){(o instanceof String)?(new groovy.json.JsonSlurper().parseText(o)):o}
 private extractHexData(resp){def p=parseIfString(resp);return p?.result?.data?:null}
 def autoDisableDebugLogging(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo"Debug logging disabled (auto)"}catch(e){logDebug"autoDisableDebugLogging(): ${e.message}"}}
@@ -318,24 +319,17 @@ private getAvailableStations(){
 def createZoneChildren(){
     try{
         logInfo"Manually creating zone child devices..."
-        def zones=device.currentValue("zoneCount")
-        if(!zones||zones.isEmpty()){
-            logWarn"createZoneChildren(): No available stations found; using fallback from zoneCount (${device.currentValue("zoneCount")})"
-            zones=(1..(zones?:6)).toList()
-        }
+        def zoneCount=device.currentValue("zoneCount")?.toInteger()?:6
+        def zones=(1..zoneCount).toList()
         zones.each{zoneNum->
-            def dni="${device.deviceNetworkId}-zone${zoneNum}"
+            def dni = "${device.deviceNetworkId}-zone${zoneNum}"
             if(!getChildDevice(dni)){
-                def label="${device.displayName} Zone ${zoneNum}"
+                def label = "${device.displayName} Zone ${zoneNum}"
                 try{
                     addChildDevice("MHedish","Rain Bird LNK/LNK2 Zone Child",dni,[name:label,label:label,isComponent:true])
                     logInfo"Created Rain Bird Zone Child: ${label}"
-                }catch(ex){
-                    logWarn"createZoneChildren(): Unable to create child device '${label}' — ensure the 'Rain Bird LNK/LNK2 Zone Child' driver is installed (${ex.message})"
-                }
-            }else{
-                logDebug"createZoneChildren(): Child already exists for ${dni}"
-            }
+                }catch(ex){logWarn"createZoneChildren(): Unable to create child device '${label}' — ensure the 'Rain Bird LNK/LNK2 Zone Child' driver is installed (${ex.message})"}
+            }else{logDebug"createZoneChildren(): Child already exists for ${dni}"}
         }
         logInfo"Zone child device creation complete (${zones.size()} zones)"
     }catch(e){logError"createZoneChildren() failed: ${e.message}"}
