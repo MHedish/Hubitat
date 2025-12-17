@@ -206,6 +206,7 @@ If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API c
 | `wxSource` | string | Active weather provider |
 | `wxTimestamp` | string | Forecast origin time |
 | `wxChecked` | string | Forecast poll/check time |
+| `wxLocation` | string | City/State/Office/Radar |
 | `summaryTimestamp` | string | Last hybrid ET calculation |
 | `summaryText` | string | Human-readable ET summary |
 | `summaryJson` | string | JSON summary for all zones |
@@ -359,6 +360,7 @@ Automations can safely:
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTc4MTcwMjEyNywtMTM3Mzc0MjM1MCwxNz
-cyNDE3OTM5LDkzMTA3MzE0MSwtODU2NTUwN119
+eyJoaXN0b3J5IjpbLTEzMTEzOTQ3OTUsLTc4MTcwMjEyNywtMT
+M3Mzc0MjM1MCwxNzcyNDE3OTM5LDkzMTA3MzE0MSwtODU2NTUw
+N119
 -->
