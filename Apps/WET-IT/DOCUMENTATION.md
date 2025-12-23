@@ -73,27 +73,11 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 
 ### 💧 WebCoRE Example
 
-```groovy
-define
-  device wetit = [WET-IT Data]
-  device controller = [MyLegacyController]
-  integer baseMins = 15
-end define
+- Sets baseline time (in minutes) for each zone.
+- Schedules M/W/F at Sunrise during the summer months.
+- Sets 30 second minimum for a zone to water.
 
-every day at $sunrise do
-  def json = parseJson(wetit.currentValue("summaryJson"))
-  def pct = json.zones.zone1.etBudgetPct as integer
-  if (wetit.currentValue("freezeAlert") == "false" && pct > 0) {
-      def runtime = (baseMins * pct / 100).round()
-      controller.setRuntime(zone1, runtime)
-      wait(runtime * 60 * 1000)
-      wetit.markZoneWatered(1)
-      sendPush("Zone1 watering complete — ET reset.")
-  } else {
-      sendPush("Irrigation skipped: freeze or zero ET demand.")
-  }
-end every
-```
+![Piston Example](https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/images/WebCoRE.png)
 
 ---
 
