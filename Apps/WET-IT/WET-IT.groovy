@@ -73,7 +73,7 @@ def mainPage() {
          * 1️ Header / App Info
          * ========================================================== */
         section("") {
-        paragraph "<div style='text-align:center;'><img src='https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT/Logo.png' width='180'></div>"
+        paragraph "<div style='text-align:center;'><img src='https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT/images/Logo.png' width='180'></div>"
         paragraph "<div style='text-align:center;'>Weather-Enhanced Time-based Irrigation Tuning (WET-IT)</div>"
         paragraph "<div style='text-align:center;'>WET-IT brings <i>local-first, Rachio/Hydrawise/Orbit-style intelligence</i> to any irrigation controller — running professional evapotranspiration (ET) and soil-moisture modeling directly inside your Hubitat hub.</div>"
         paragraph "<a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md' target='_blank'>📘 View Documentation</a>"
