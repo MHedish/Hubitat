@@ -11,13 +11,18 @@
 *  0.6.0.1  –– Moved Attribute Reference link to DOCUMENTATION.md
 *  0.6.1.0  –– Refactored child event logging; removed extraneous commands
 *  0.6.2.0  –– Added wxLocation attribute - Forecast location (NOAA).
+*  0.6.3.0  –– Refactored JSON output.
+*  0.6.3.1  –– Refined parseSummary() to keep numeric order when summarizing.
+*  0.6.3.2  –– Updated parseSummary() to support new unified summaryJson format with meta and zone array.
+*  0.6.4.0  –– Updated parseSummary() to use friendly zone names.
+*  0.6.4.1  –– Deleted parseSummary() stub. It was never in use.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "0.6.2.0"
-@Field static final String DRIVER_MODIFIED = "2025-12-17"
+@Field static final String DRIVER_VERSION  = "0.6.4.1"
+@Field static final String DRIVER_MODIFIED = "2025-12-23"
 @Field static final int MAX_ZONES = 48
 
 metadata {
@@ -35,7 +40,6 @@ metadata {
         attribute "driverInfo","string"
 		attribute "freezeAlert","bool"
 		attribute "freezeLowTemp","number"
-		attribute "soilMemoryJson","string"
         attribute "summaryJson","string"
         attribute "summaryText","string"
         attribute "summaryTimestamp","string"
@@ -83,7 +87,6 @@ def initialize(){emitEvent("driverInfo",driverInfoString());unschedule(autoDisab
 def refresh(){parent.runWeatherUpdate();logInfo"Manual refresh: summary=${device.currentValue("summaryText")}, timestamp=${device.currentValue("summaryTimestamp")}"}
 
 /* ============================= Core Commands ============================= */
-private void clearData(){["summaryText","summaryJson","summaryTimestamp","wxSource","wxTimestamp","wxLocation"].each{emitChangedEvent(it,"")};(1..MAX_ZONES).each{["Et","Seasonal"].each{suffix->device.deleteCurrentState("zone${it}${suffix}")}};logInfo"Cleared all summary and zone data"}
 private updateZoneAttributes(Number zCount){
     zCount=zCount?.toInteger()?:0
     try{
@@ -98,15 +101,6 @@ private updateZoneAttributes(Number zCount){
         }
         logInfo"Updated zone attributes: 1..${zCount} active, cleared ${(MAX_ZONES-zCount)}"
     }catch(e){logError"updateZoneAttributes(): ${e.message}"}
-}
-
-private parseSummary(String json){
-    if(!json){emitChangedEvent("summaryText","No data");emitChangedEvent("summaryJson","{}");return}
-    try{
-        def map=new groovy.json.JsonSlurper().parseText(json);def parts=[]
-        map.each{k,v->parts<<"${k}: (ET:${v.etBudgetPct?:0}%, Seasonal:${v.seasonalBudgetPct?:0}%)"}
-        emitChangedEvent("summaryText",parts.join(", "));emitChangedEvent("summaryJson",json)
-    }catch(e){logError"parseSummary(): ${e.message}"}
 }
 
 def markZoneWatered(zone,pct=100){
