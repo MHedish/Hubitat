@@ -273,27 +273,7 @@ wetit.markZoneWatered(zone1)
 
 ### 💧 WebCoRE Example
 
-```groovy
-define
-  device wetit = [WET-IT Data]
-  device controller = [MyLegacyController]
-  integer baseMins = 15
-end define
-
-every day at $sunrise do
-  def json = parseJson(wetit.currentValue("summaryJson"))
-  def pct = json.zones.zone1.etBudgetPct as integer
-  if (wetit.currentValue("freezeAlert") == "false" && pct > 0) {
-      def runtime = (baseMins * pct / 100).round()
-      controller.setRuntime(zone1, runtime)
-      wait(runtime * 60 * 1000)
-      wetit.markZoneWatered(1)
-      sendPush("Zone1 watering complete — ET reset.")
-  } else {
-      sendPush("Irrigation skipped: freeze or zero ET demand.")
-  }
-end every
-```
+![Piston](https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/images/WebCoRE.png)
 
 ---
 
@@ -360,7 +340,7 @@ Automations can safely:
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTExMTM2NzUwNzMsLTExMTc3MzQ3OTEsLT
-c4MTcwMjEyNywtMTM3Mzc0MjM1MCwxNzcyNDE3OTM5LDkzMTA3
-MzE0MSwtODU2NTUwN119
+eyJoaXN0b3J5IjpbMTg4Mjc2NzIyMSwtMTExNzczNDc5MSwtNz
+gxNzAyMTI3LC0xMzczNzQyMzUwLDE3NzI0MTc5MzksOTMxMDcz
+MTQxLC04NTY1NTA3XX0=
 -->
