@@ -11,14 +11,19 @@
 *  0.6.0.1   –– Normalized wxTimestamp handling across NOAA, OWM, and Tomorrow.io providers (consistent local time, correct forecast reference)
 *  0.6.1.0   –– Refactored child event logging.
 *  0.6.2.0   –– Added wxLocation attribute - Forecast location (NOAA) via fetchWxLocation()
+*  0.6.3.0   –– Refactored JSON output.
+*  0.6.3.1   –– Separated id and zone in JSON.
+*  0.6.3.2   –– Reworked summaryJson structure: added metadata block and per-zone array with ET, Seasonal, and Soil data.
+*  0.6.4.0   –– Added per-zone naming via zonePage(); user-defined names now populate the “zone” field in unified summaryJson.
+*  0.6.4.1   –– Updated publishSummary() to use zone friendly name in summary text.
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.6.2.0"
-@Field static final String APP_MODIFIED="2025-12-17"
+@Field static final String APP_VERSION="0.6.4.1"
+@Field static final String APP_MODIFIED="2025-12-23"
 @Field static final int MAX_ZONES=48
 @Field static def cachedChild=null
 @Field static Integer cachedZoneCount=null
@@ -198,6 +203,7 @@ def zonePage(params){
 	Integer z=(params?.zone?:1) as Integer;state.activeZone=z
     dynamicPage(name:"zonePage",title:"Zone ${z} Configuration",install:false,uninstall:false){
         section("Basic Settings"){
+			input "name_${z}","text",title:"Zone Name",description:"Friendly name for this zone (optional)."
             input "soil_${z}","enum",title:"Soil Type",options:soilOptions(),defaultValue:"Loam",description:"Determines water holding capacity."
             input "plant_${z}","enum",title:"Plant Type",options:plantOptions(),defaultValue:"Cool Season Turf",description:"Sets crop coefficient (Kc)."
             input "nozzle_${z}","enum",title:"Irrigation Method",options:nozzleOptions(), defaultValue:"Spray",description:"Determines precipitation rate."
@@ -331,15 +337,10 @@ private void updateSoilMemory(){
         (1..getZoneCountCached()).each{ z ->
             def k = "zoneDepletion_zone${z}"
             def t = "zoneDepletionTs_zone${z}"
-            def dep = (state[k] instanceof Number) ? state[k] : 0G
+            def dep = (state[k] instanceof Number)?state[k]:0G
             def ts  = state[t]
             zoneMap["zone${z}"] = [depletion: dep, updated: ts]
         }
-        def json = new groovy.json.JsonOutput().toJson(zoneMap)
-        state.soilMemoryJson = json
-        def c=getDataChild()
-        if(c) c.sendEvent(name:"soilMemoryJson", value:json, descriptionText:"Per-zone ET JSON data")
-        logInfo "updateSoilMemory(): published soilMemoryJson for ${zoneMap.size()} zones"
     }catch(e){logWarn "updateSoilMemory(): ${e}"}
 }
 
@@ -675,22 +676,47 @@ private void fetchWxLocation(){
 }
 
 /* ---------- Event Publishing ---------- */
-private publishSummary(Map results) {
+private publishSummary(Map results){
     def c=getDataChild();if(!c)return
     String ts=new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone)
-    String summary=results.collect{k,v->"${k}=(ET:${v.etBudgetPct}%, Seasonal:${v.seasonalBudgetPct}%)"}.join(", ")
-    String json=JsonOutput.toJson(results)
-    childEmitEvent(c,"summaryText",summary,"Hybrid ET+Seasonal summary",null,true)
-    childEmitEvent(c,"summaryJson",json,"Hybrid ET+Seasonal JSON summary",null,true)
+    Integer zoneCount=cachedZoneCount?:results?.size()?:0
+    def meta=[
+        timestamp:ts,
+        wxSource:c?.currentValue("wxSource")?:"Unknown",
+        wxLocation:c?.currentValue("wxLocation")?:"",
+        wxChecked:c?.currentValue("wxChecked")?:"",
+        freezeAlert:(c?.currentValue("freezeAlert")?.toString()=="true"),
+        freezeLowTemp:c?.currentValue("freezeLowTemp")?:"",
+        units:settings.tempUnits?:"°F",
+        zoneCount:zoneCount
+    ]
+    def soilMap=getSoilMemorySummary();def zones=[]
+    results.each{k,v->
+        def zoneStr=k.toString()
+		def zoneNum=(zoneStr=~/\d+/)?((zoneStr=~/\d+/)[0]as Integer):null
+		def zoneName=settings["name_${zoneNum}"]?:"Zone ${zoneNum}"
+		def soil=soilMap[zoneStr]?:[:]
+		zones<<[
+		    id:zoneNum,
+		    zone:zoneName,
+		    etBudgetPct:v.etBudgetPct?:0,
+		    seasonalBudgetPct:v.seasonalBudgetPct?:0,
+		    depletion:soil.depletion?:0,
+		    updated:soil.updated?:""
+		]
+    }
+    def combined=[meta:meta,zones:zones]
+    String json=new groovy.json.JsonOutput().toJson(combined)
+    String summaryText=zones.collect{z->"${z.zone}: ET ${z.etBudgetPct}%, Seasonal ${z.seasonalBudgetPct}%, Soil ${String.format('%.3f',z.depletion)}in"}.join(" | ")
+    childEmitEvent(c,"summaryText",summaryText,"Hybrid ET+Seasonal+Soil summary",null,true)
+    childEmitEvent(c,"summaryJson",json,"Unified JSON summary updated",null,true)
     childEmitEvent(c,"summaryTimestamp",ts,"Summary timestamp updated",null,true)
-    childEmitEvent(c,"soilMemoryJson",JsonOutput.toJson(getSoilMemorySummary()),"Per-zone ET JSON data",null,true)
-    if(c.respondsTo("parseSummary"))c.parseSummary(json)
     def freeze=detectFreezeAlert(state.lastWeather?:[:])
-    String u=state.lastWeather?.unit?:settings.tempUnits?:'F'
+    String u=state.lastWeather?.unit?:settings.tempUnits?:"F"
     String desc=freeze.freezeAlert?"Freeze/Frost detected (${freeze.freezeAlertText})":"No freeze or frost risk"
     childEmitChangedEvent(c,"freezeAlert",freeze.freezeAlert,desc)
-    if(freeze.freezeLowTemp!=null)childEmitEvent(c,"freezeLowTemp",freeze.freezeLowTemp,"Forecast daily low (${u=='C'?'°C':'°F'})",u)
-    logInfo "publishSummary(): summary + freeze data published (${results.size()} zones)"
+    if(freeze.freezeLowTemp!=null)childEmitEvent(c,"freezeLowTemp",freeze.freezeLowTemp,"Forecast daily low (${u})",u)
+    logInfo"publishSummary(): unified summaryJson emitted (${zones.size()} zones)"
 }
 
 private BigDecimal convTemp(BigDecimal val, String from='F', String to=(settings.tempUnits?:'F')){
