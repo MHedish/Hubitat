@@ -65,13 +65,14 @@
 ---
 
 ## 🌈 0.6.4.1 — Final Stabilization (Release)
-**App v0.6.4.1 / Driver v0.6.4.1 — Released 2025-12-23**
+**App v0.6.4.4 / Driver v0.6.4.1 — Released 2025-12-24**
 
 - 0.6.0.1 – Normalized wxTimestamp handling across NOAA, OWM, and Tomorrow.io providers (consistent local time, correct forecast reference)
 - 0.6.1.0 – Refactored child event logging.
 - 0.6.2.0 – Added wxLocation attribute – Forecast location (NOAA)
 - 0.6.3.0 – Refactored JSON output.
 - 0.6.4.1 – Deleted parseSummary() stub.
+- 0.6.4.4 – HTML headers.
 
 > **WET-IT — precision irrigation through weather intelligence and Hubitat automation.**
 <!--stackedit_data:
