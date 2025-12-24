@@ -3,12 +3,12 @@
 *A Hubitat App for Weather-Based Smart Irrigation Using Real Evapotranspiration (ET) Modeling*
 
 ![Platform](https://img.shields.io/badge/Platform-Hubitat-blue) 
-![Version](https://img.shields.io/badge/Version-0.6.4.1-green)
+![Version](https://img.shields.io/badge/Version-0.6.4.4-green)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
-**App Version:** 0.6.4.1  
+**App Version:** 0.6.4.4  
 **Driver Version:** 0.6.4.1  
-**Release Date:** 2025-12-23 
+**Release Date:** 2025-12-24 
 **Author:** Marc Hedish  
 
 ---
@@ -188,6 +188,6 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 
 > © 2025 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEwOTAxNzI2OTMsMTM3NTU5NzEyLDIxMT
-k4NTgyMjNdfQ==
+eyJoaXN0b3J5IjpbMTIyNjI2MTc3MiwxMzc1NTk3MTIsMjExOT
+g1ODIyM119
 -->
