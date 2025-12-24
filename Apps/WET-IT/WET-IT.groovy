@@ -16,14 +16,17 @@
 *  0.6.3.2   –– Reworked summaryJson structure: added metadata block and per-zone array with ET, Seasonal, and Soil data.
 *  0.6.4.0   –– Added per-zone naming via zonePage(); user-defined names now populate the “zone” field in unified summaryJson.
 *  0.6.4.1   –– Updated publishSummary() to use zone friendly name in summary text.
+*  0.6.4.2   –– Cosmetic cleanup; Updated buildZoneDirectory() to display user-friendly zone names in setup list.
+*  0.6.4.3   –– Reverted
+*  0.6.4.4   –– Updated section headers with HTML color and size.
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.6.4.1"
-@Field static final String APP_MODIFIED="2025-12-23"
+@Field static final String APP_VERSION="0.6.4.4"
+@Field static final String APP_MODIFIED="2025-12-24"
 @Field static final int MAX_ZONES=48
 @Field static def cachedChild=null
 @Field static Integer cachedZoneCount=null
@@ -69,24 +72,21 @@ preferences{page(name:"mainPage")}
 def mainPage() {
 	getZoneCountCached(true)
     dynamicPage(name:"mainPage",install:true,uninstall:true){
-        /* ==========================================================
-         * 1️ Header / App Info
-         * ========================================================== */
-        section("") {
-        paragraph "<div style='text-align:center;'><img src='https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT/images/Logo.png' width='180'></div>"
+
+        /* ---------- 1️ Header / App Info ---------- */
+        section(){
+        paragraph "<div style='text-align:center;'><img src='https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT/images/Logo.png' width='200'></div>"
         paragraph "<div style='text-align:center;'>Weather-Enhanced Time-based Irrigation Tuning (WET-IT)</div>"
         paragraph "<div style='text-align:center;'>WET-IT brings <i>local-first, Rachio/Hydrawise/Orbit-style intelligence</i> to any irrigation controller — running professional evapotranspiration (ET) and soil-moisture modeling directly inside your Hubitat hub.</div>"
         paragraph "<a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md' target='_blank'>📘 View Documentation</a>"
         paragraph "<small>v${APP_VERSION} (${APP_MODIFIED})</small>"
         }
-        /* ==========================================================
-         * 2️ Zone Setup (ABC-style navigation)
-         * ========================================================== */
- 		section(""){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
+
+        /* ---------- 2️ Zone Setup (ABC-style navigation) ---------- */
+ 		section(){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
         buildZoneDirectory()
-        /* ==========================================================
-         * 3️ Evapotranspiration & Seasonal Settings
-         * ========================================================== */
+
+        /* ---------- 3️ Evapotranspiration & Seasonal Settings ---------- */
 		section("🍂 Evapotranspiration & Seasonal Settings (Advanced)", hideable:true, hidden:true) {
 		    paragraph "Adjust these values only if you wish to override automatically estimated baseline ET₀ (reference evapotranspiration) values."
 		    input "baselineEt0Inches","decimal",title:"Baseline ET₀ (in/day)",
@@ -99,14 +99,14 @@ def mainPage() {
 	        defaultValue:true,submitOnChange:true
 	    if(settings.useSoilMemory){
 	        paragraph "<b>Soil Memory Active:</b> Tracking ${cachedZoneCount} zones."
-	        href page:"soilPage",title:"💧 Manage Soil Memory",description:"Reset or review per-zone depletion for ${getZoneCountCached()} zones"
+	        href page:"soilPage",title:"🌾 Manage Soil Memory",description:"Reset or review per-zone depletion for ${getZoneCountCached()} zones"
 	    }
 	}
-        /* ==========================================================
-         * 4️ Weather Configuration
-         * ========================================================== */
- 		section(""){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
-        section("🌦️ Weather Configuration"){
+
+		/* ---------- 4️ Weather Configuration ---------- */
+ 		section(){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
+        section(){
+			 paragraph htmlHeading("🌦️ Weather Configuration", "#4682B4")
 		    input"weatherSource","enum",title:"Select Weather Source",
 		        options:["openweather":"OpenWeather (API Key Required)",
 		                 "tomorrow":"Tomorrow.io (API Key Required)",
@@ -133,11 +133,11 @@ def mainPage() {
 	        app.updateSetting("freezeThreshold",[value:defVal,type:"enum"])
 		    input "freezeThreshold","enum",title:"Freeze Warning Threshold (°${unit})",options:options,defaultValue:defVal,description:"Select the temperature below which freeze/frost alerts trigger",submitOnChange:true
 		}
-        /* ==========================================================
-         * 5️ Logging Tools & Diagnostics
-         * ========================================================== */
- 		section(""){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
-        section("📈️ Logging Tools"){
+
+		/* ---------- 5️ Logging Tools & Diagnostics ---------- */
+ 		section(){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
+        section(){
+			paragraph htmlHeading("📈️ Logging Tools", "#1E90FF")
             paragraph "Utilities for testing, verification, and logging management."
 		    input "logEvents","bool",title:"Log All Events",defaultValue:false
 		    input "logEnable","bool",title:"Enable Debug Logging",defaultValue:false
@@ -145,7 +145,8 @@ def mainPage() {
             input "btnDisableDebug","button",title: "🧹 Disable Debug Logging Now"
             paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"
 		}
-        section("⚙️ System Diagnostics"){
+        section(){
+			paragraph htmlHeading("⚙️ System Diagnostics", "#1E90FF")
             input "btnVerifyChild","button",title: "🔍 Verify Data Child Device"
             input "btnVerifySystem","button",title: "✅ Verify System Integrity"
             input "btnRunWeatherUpdate","button",title: "💧 Run Weather/ET Updates Now"
@@ -155,45 +156,45 @@ def mainPage() {
             paragraph "📍 Hub Location: ${location.name?:'Unknown'} (${location.latitude}, ${location.longitude})"
 			paragraph "<i>Ensure hub time zone and location are correct for accurate ET calculations.</i>"
         }
-        /* ==========================================================
-         * 6️ About / Version Info (Footer)
-         * ========================================================== */
-        section("") {
+
+		/* ---------- 6️ About / Version Info (Footer) ---------- */
+        section() {
             paragraph "<hr><div style='text-align:center; font-size:90%;'><b>${APP_NAME}</b> v${APP_VERSION} (${APP_MODIFIED})<br>© 2025 Marc Hedish – Licensed under Apache 2.0<br><a href='https://github.com/MHedish/Hubitat' target='_blank'>GitHub Repository</a></div>"
         }
     }
 }
 
-/* ==========================================================
- *  ZONE PAGE FRAMEWORK
- * ========================================================== */
-
-/* --- OPTION LISTS --- */
+/* ---------- Zone Page Framework ---------- */
+/* --- Option Lists --- */
 def soilOptions(){["Sand","Loamy Sand","Sandy Loam","Loam","Clay Loam","Silty Clay","Clay"]}
 def plantOptions(){["Cool Season Turf","Warm Season Turf","Shrubs","Trees","Groundcover","Annuals","Vegetables","Native Low Water"]}
 def nozzleOptions(){["Spray","Rotor","MP Rotator","Drip Emitter","Drip Line","Bubbler"]}
-
-/* --- ZONE SUMMARY BUILDER --- */
 def summaryForZone(z){
     def soil=settings["soil_${z}"]?:"Loam";def plant=settings["plant_${z}"]?:"Cool Season Turf";def noz=settings["nozzle_${z}"]?:"Spray";return "Soil: ${soil}, Plant: ${plant}, Nozzle: ${noz}"
 }
 
-def buildZoneDirectory(){
+private buildZoneDirectory(){
     if(settings.tempCopyMsgClear){app.removeSetting("copyStatusMsg");app.removeSetting("tempCopyMsgClear")}
-    section("🌱 Zone Setup"){
+    section(){
+		paragraph htmlHeading("🌱 Zone Setup", "#2E8B57")
         input "zoneCount","number",title:"Number of Zones (1–${MAX_ZONES})",defaultValue:cachedZoneCount,range:"1..${MAX_ZONES}",required:true,submitOnChange:true
         def zCount=(settings.zoneCount?:cachedZoneCount?:1).toInteger()
-        if(zCount<1)zCount=1;if(zCount>MAX_ZONES){zCount=MAX_ZONES;app.updateSetting("zoneCount",[value:zCount,type:"number"]);logWarn"buildZoneDirectory(): zoneCount clamped to ${MAX_ZONES}"}
+        if(zCount<1)zCount=1
+        if(zCount>MAX_ZONES){zCount=MAX_ZONES;app.updateSetting("zoneCount",[value:zCount,type:"number"]);logWarn"buildZoneDirectory(): zoneCount clamped to ${MAX_ZONES}"}
         if(zCount){
-            paragraph "<b>Configured Zones:</b> Click below to configure."
-            (1..zCount).each{z->href page:"zonePage",params:[zone:z],title:"Zone ${z}",description:summaryForZone(z),state:"complete"}
+            paragraph"<b>Configured Zones:</b> Click to configure."
+            (1..zCount).each{z->
+                def zName=settings["name_${z}"]?.trim()
+                def titleTxt=zName?:"Zone ${z}"
+                href page:"zonePage",params:[zone:z],title:titleTxt,description:summaryForZone(z),state:"complete"
+            }
         }
         if(zCount>1){
             def btnTitle=settings.copyConfirm?"⚠️ Confirm Copy (Cannot be Undone)":"📋 Copy Zone 1 Settings → All Zones"
-            input "btnCopyZones","button",title:btnTitle
+            input"btnCopyZones","button",title:btnTitle
             if(settings.copyConfirm){
-                input "btnCancelCopy","button",title:"❌ Cancel"
-                paragraph "<b>Note</b>: <i>This will overwrite all zone parameters—including custom advanced overrides (precip, Kc, MAD, etc.)—with Zone 1 values.</i>"
+                input"btnCancelCopy","button",title:"❌ Cancel"
+                paragraph"<b>Note</b>: <i>This will overwrite all zone parameters—including custom advanced overrides (precip, Kc, MAD, etc.)—with Zone 1 values.</i>"
             }else if(settings.copyStatusMsg){paragraph settings.copyStatusMsg}
         }
     }
@@ -201,9 +202,10 @@ def buildZoneDirectory(){
 
 def zonePage(params){
 	Integer z=(params?.zone?:1) as Integer;state.activeZone=z
-    dynamicPage(name:"zonePage",title:"Zone ${z} Configuration",install:false,uninstall:false){
-        section("Basic Settings"){
-			input "name_${z}","text",title:"Zone Name",description:"Friendly name for this zone (optional)."
+    dynamicPage(name:"zonePage",install:false,uninstall:false){
+        section(){
+			paragraph htmlHeading("🌱 Zone ${z} Configuration", "#2E8B57")
+			input "name_${z}","text",title:"<b>Zone Name</b>",description:"Friendly name for this zone (optional)."
             input "soil_${z}","enum",title:"Soil Type",options:soilOptions(),defaultValue:"Loam",description:"Determines water holding capacity."
             input "plant_${z}","enum",title:"Plant Type",options:plantOptions(),defaultValue:"Cool Season Turf",description:"Sets crop coefficient (Kc)."
             input "nozzle_${z}","enum",title:"Irrigation Method",options:nozzleOptions(), defaultValue:"Spray",description:"Determines precipitation rate."
@@ -219,25 +221,29 @@ def zonePage(params){
 }
 
 def soilPage() {
-    dynamicPage(name:"soilPage", title:"💧 Soil Memory Management", install:false, uninstall:false) {
-        section("Per-Zone Memory") {
+    dynamicPage(name:"soilPage",install:false,uninstall:false) {
+        section(){
+			paragraph htmlHeading("🌾 Soil Memory Management", "#A0522D")
             (1..getZoneCountCached()).each {z->
                 def key="zoneDepletion_zone${z}";def tsKey="zoneDepletionTs_zone${z}"
                 BigDecimal d=(atomicState[key]?:0G) as BigDecimal
                 String ts=atomicState[tsKey]?:'—'
-                paragraph "Zone ${z}: ${String.format('%.3f', d)} in.<br><i>Last updated:</i> ${ts}"
+                paragraph "<b>Zone ${z}</b>: ${String.format('%.3f', d)} in.<br><i>Last updated:</i> ${ts}"
                 def btnTitle=settings["soilResetConfirm_${z}"]?"⚠️ Confirm Reset Zone ${z}":"🔄 Reset Zone ${z}"
                 input"btnResetSoil_${z}","button",title:btnTitle
                 if(settings["soilResetConfirm_${z}"])input "btnCancelReset_${z}","button",title:"❌ Cancel"
             }
         }
-        section("Global Reset") {
+        section(){
+			paragraph htmlHeading("⚠️ Global Reset", "#B22222")
             def allTitle=settings.resetAllConfirm?"⚠️ Confirm Reset All Zones":"♻️ Reset All Soil Memory"
             input "btnResetAllSoil","button",title: allTitle
             if(settings.resetAllConfirm)input"btnCancelResetAll","button",title:"❌ Cancel"
         }
     }
 }
+
+private String htmlHeading(String text,String color="#2E8B57"){return"<h2 style='margin-top:8px;margin-bottom:6px;color:${color};font-weight:bold;'>${text}</h2>"}
 
 /* ---------- Button Handler Block ---------- */
 def appButtonHandler(String btn){
