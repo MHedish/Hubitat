@@ -138,7 +138,7 @@ def mainPage() {
  		section(){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
         section(){
 			paragraph htmlHeading("📈️ Logging Tools", "#1E90FF")
-            paragraph "Utilities for testing, verification, and logging management."
+            paragraph "Controls for logging management."
 		    input "logEvents","bool",title:"Log All Events",defaultValue:false
 		    input "logEnable","bool",title:"Enable Debug Logging",defaultValue:false
 		    paragraph "Auto-off after 30 minutes when debug logging is enabled."
@@ -147,6 +147,7 @@ def mainPage() {
 		}
         section(){
 			paragraph htmlHeading("⚙️ System Diagnostics", "#1E90FF")
+            paragraph "Utilities for testing and verification."
             input "btnVerifyChild","button",title: "🔍 Verify Data Child Device"
             input "btnVerifySystem","button",title: "✅ Verify System Integrity"
             input "btnRunWeatherUpdate","button",title: "💧 Run Weather/ET Updates Now"
