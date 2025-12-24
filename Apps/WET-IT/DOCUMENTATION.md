@@ -1,6 +1,6 @@
 # 🌿 Weather-Enhanced Time-based Irrigation Tuning (WET-IT)
 ## Full Documentation
-*Comprehensive Technical & Integration Reference (App v0.6.4.1 / Driver v0.6.4.1)*
+*Comprehensive Technical & Integration Reference (App v0.6.4.4 / Driver v0.6.4.1)*
 
 WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.  
 It brings Rachio/Hydrawise-style intelligence entirely offline — no cloud, no lag, just physics-driven irrigation.
@@ -194,7 +194,6 @@ If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API c
 | `summaryTimestamp` | string | Last hybrid ET calculation |
 | `summaryText` | string | Human-readable ET summary |
 | `summaryJson` | string | JSON summary for all zones |
-| `soilMemoryJson` | string | Persistent soil depletion info |
 | `freezeAlert` | bool | True when below threshold |
 | `freezeLowTemp` | number | Freeze warning threshold |
 | `zone#Et` | number | ET adjustment (%) per zone |
