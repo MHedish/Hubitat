@@ -74,7 +74,7 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 ### 💧 WebCoRE Example
 
 - Sets baseline time (in minutes) for each zone.
-- Schedules M/W/F at Sunrise during the summer months.
+- Schedules M/W/F at Sunrise excluding winter months.
 - Sets 30 second minimum for a zone to water.
 
 ![Piston Example](https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/images/WebCoRE.png)
