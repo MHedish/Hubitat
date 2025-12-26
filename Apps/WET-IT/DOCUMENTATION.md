@@ -3,7 +3,7 @@
 *Comprehensive Technical & Integration Reference (App v0.6.4.9 / Driver v0.6.4.3)*
 
 WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.  
-It brings Rachio/Hydrawise-style intelligence entirely local — no cloud, no lag, no subscriptionsjust physics-driven irrigation.
+It brings Rachio/Hydrawise-style intelligence entirely local — no cloud, no lag, no subscription, just physics-driven irrigation.
 
 You can choose between:
 
@@ -193,9 +193,10 @@ If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API c
 | `wxLocation` | string | City/State/Forecast Office/Radar Station (US Only)|
 | `summaryTimestamp` | string | Last hybrid ET calculation |
 | `summaryText` | string | Human-readable ET summary |
-| `summaryJson` | string | JSON summary for all zones |
+| `datasetJson` | string | Comprehensive JSON for all zones |
 | `freezeAlert` | bool | True when below threshold |
 | `freezeLowTemp` | number | Freeze warning threshold |
+| `zone#Et` | number | ET adjustment (%) per zone |
 | `zone#Et` | number | ET adjustment (%) per zone |
 | `zone#Seasonal` | number | Seasonal adjustment (%) per zone |
 
@@ -323,7 +324,8 @@ Automations can safely:
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTkwMTk2MjAyNiw1Njk5Njg3NTAsLTE3Mz
-MwMTc2ODIsLTExMTc3MzQ3OTEsLTc4MTcwMjEyNywtMTM3Mzc0
-MjM1MCwxNzcyNDE3OTM5LDkzMTA3MzE0MSwtODU2NTUwN119
+eyJoaXN0b3J5IjpbLTIwOTYzMTE1NTUsNTY5OTY4NzUwLC0xNz
+MzMDE3NjgyLC0xMTE3NzM0NzkxLC03ODE3MDIxMjcsLTEzNzM3
+NDIzNTAsMTc3MjQxNzkzOSw5MzEwNzMxNDEsLTg1NjU1MDddfQ
+==
 -->
