@@ -20,7 +20,6 @@ This is the formula Rain Bird, Rachio, Hunter, Hydrawise, and almost all “smar
 ### **FAO-56 Penman–Monteith ET Formula**
 
 $$ET_0 = \frac{0.408\Delta(R_n - G) + \gamma\frac{900}{T+273}u_2(e_s - e_a)}{\Delta + \gamma(1+0.34u_2)}$$
-
 Where:
 
 -   **Rn** = net radiation
