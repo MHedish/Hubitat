@@ -144,8 +144,8 @@ If you see “⚙️ Click [Done] to begin automatic initialization…”, simpl
 2️⃣ **Zone Setup** – Define zone count and characteristics  
 3️⃣ **ET & Seasonal Settings (Advanced)** – Tune ET₀ and scaling  
 4️⃣ **Weather Configuration** – Choose provider and API key(s)  
-5️⃣**Data Publishing**
-6️⃣**Diagnostics** – Verify system, test weather, manage logs  
+5️⃣**Data Publishing**– Choose JSON, Device Attributes, Summary Text
+6️⃣**Logging Tools / Diagnostics** – Verify system, test weather, manage loggging 
 
 ---
 
@@ -189,6 +189,6 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 
 > © 2025 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTUwNjczNTM2NCwtMTU2MjU1ODMwOSwxMj
+eyJoaXN0b3J5IjpbMTk3MjQ2NzMyNCwtMTU2MjU1ODMwOSwxMj
 I2MjYxNzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
 -->
