@@ -9,7 +9,7 @@ Both Rachio and Rain Bird rely on the **FAO-56 Penman–Monteith equation** to c
 -   Soil type
 -   Precipitation rate of zone nozzles
 
-The formulas below _are_ what both Rachio and Rain Bird state they base their calculations on.
+The following formulas _are_ the foundation upon which both Rachio and Rain Bird base their calculations.
 
 ----------
 
