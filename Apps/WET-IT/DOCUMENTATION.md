@@ -186,20 +186,19 @@ If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API c
 | Attribute | Type | Description |
 |:--|:--|:--|
 | `appInfo` | string | App version / metadata |
-| `driverInfo` | string | Driver version / metadata |
-| `wxSource` | string | Active weather provider |
-| `wxTimestamp` | string | Forecast origin time |
-| `wxChecked` | string | Forecast poll/check time |
-| `wxLocation` | string | City/State/Forecast Office/Radar Station (US Only)|
-| `summaryTimestamp` | string | Last hybrid ET calculation |
-| `summaryText` | string | Human-readable ET summary |
 | `datasetJson` | string | Comprehensive JSON for all zones |
+| `driverInfo` | string | Driver version / metadata |
 | `freezeAlert` | bool | True when below threshold |
 | `freezeLowTemp` | number | Freeze warning threshold |
+| `summaryText` | string | Human-readable ET summary |
+| `summaryTimestamp` | string | Last hybrid ET calculation |
+| `wxChecked` | string | Forecast poll/check time |
+| `wxLocation` | string | City/State/Forecast Office/Radar Station (US Only)|
+| `wxSource` | string | Active weather provider |
+| `wxTimestamp` | string | Forecast origin time |
 | `zone#Et` | number | ET adjustment (%) per zone |
-| `zone#Et` | number | ET adjustment (%) per zone |
+| `zone#Name` | string | Friendly name for each zone |
 | `zone#Seasonal` | number | Seasonal adjustment (%) per zone |
-
 ---
 
 ## 💧 Marking Zones as Watered – Resetting the ET Cycle
@@ -324,8 +323,7 @@ Automations can safely:
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIwOTYzMTE1NTUsNTY5OTY4NzUwLC0xNz
-MzMDE3NjgyLC0xMTE3NzM0NzkxLC03ODE3MDIxMjcsLTEzNzM3
-NDIzNTAsMTc3MjQxNzkzOSw5MzEwNzMxNDEsLTg1NjU1MDddfQ
-==
+eyJoaXN0b3J5IjpbNDAyMzIwODY2LDU2OTk2ODc1MCwtMTczMz
+AxNzY4MiwtMTExNzczNDc5MSwtNzgxNzAyMTI3LC0xMzczNzQy
+MzUwLDE3NzI0MTc5MzksOTMxMDczMTQxLC04NTY1NTA3XX0=
 -->
