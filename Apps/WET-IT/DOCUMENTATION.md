@@ -322,8 +322,8 @@ Automations can safely:
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbOTM4ODU3ODk3LDM1Mzk4OTQ1Niw0MDIzMj
-A4NjYsNTY5OTY4NzUwLC0xNzMzMDE3NjgyLC0xMTE3NzM0Nzkx
-LC03ODE3MDIxMjcsLTEzNzM3NDIzNTAsMTc3MjQxNzkzOSw5Mz
-EwNzMxNDEsLTg1NjU1MDddfQ==
+eyJoaXN0b3J5IjpbLTE4NDE5MDExNzUsMzUzOTg5NDU2LDQwMj
+MyMDg2Niw1Njk5Njg3NTAsLTE3MzMwMTc2ODIsLTExMTc3MzQ3
+OTEsLTc4MTcwMjEyNywtMTM3Mzc0MjM1MCwxNzcyNDE3OTM5LD
+kzMTA3MzE0MSwtODU2NTUwN119
 -->
