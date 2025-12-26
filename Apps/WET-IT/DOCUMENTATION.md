@@ -81,7 +81,6 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 
 ---
 
-
 ### ⚙️ Node-RED Example
 
 **Nodes:**  
@@ -233,49 +232,6 @@ If these methods aren’t called, WET-IT assumes the zone hasn’t been watered,
 ET calculations are **time-based**, not daily resets. WET-IT determines soil depletion by measuring how long it’s been since watering — making accurate resets essential for realistic modeling.
 
 ---
-
-## 🌅 Sunrise/Sunset Automation Template Example (With ET Reset)
-
-WET-IT provides dynamic water budgets and timing logic that you can tie to sunrise or sunset triggers.  
-Below are examples that include **ET reset events** at the end of irrigation cycles.
-
-### 🌅 Rule Machine Example
-
-```groovy
-Set Variable wetitSummary = %device:WET-IT Data:summaryJson%
-Parse JSON wetitSummary into json
-For each zone:
-    runtime = baseMinutes * (json.zones.zone1.etBudgetPct / 100)
-    If freezeAlert == false:
-        Send command to controller: setZoneRuntime(zone1, runtime)
-Wait until irrigation completes
-wetit.markZoneWatered(zone1)
-```
-
----
-
-### 💧 WebCoRE Example
-
-![Piston](https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/images/WebCoRE.png)
-
----
-
-### ⚙️ Node-RED Example
-
-**Nodes:**  
-- Inject Node → `sunrise` (daily trigger)  
-- Hubitat Device Node → `WET-IT Data`  
-- JSON Node → Parse `summaryJson`  
-- Function Node:  
-  ```javascript
-  let pct = msg.payload.zones.zone1.etBudgetPct;
-  let base = 15;
-  let runtime = base * pct / 100;
-  msg.payload = { zone: 1, runtime: runtime };
-  return msg;
-  ```
-- Delay Node → Wait for runtime duration  
-- Hubitat Command Node → `markZoneWatered(1)`  
 
 ## 🧊 Freeze Protection Logic
 
