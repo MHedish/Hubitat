@@ -19,14 +19,19 @@
 *  0.6.4.2   –– Cosmetic cleanup; Updated buildZoneDirectory() to display user-friendly zone names in setup list.
 *  0.6.4.3   –– Reverted
 *  0.6.4.4   –– Updated section headers with HTML color and size.
+*  0.6.4.5   –– Restored per-zone attribute updates (Name, ET, Seasonal) alongside unified summaryJson publishing; Renamed publishSummary() to publishZoneData.
+*  0.6.4.6   –– Added user controls for JSON vs. attribute publishing; enforced at least one publishing mode active at all times with live toggle enforcement for publishing options.
+*  0.6.4.7   –– Added automatic cleanup of unused child attributes when publishing options are disabled.
+*  0.6.4.8   –– Removed force of JSON/attribute publishing.
+*  0.6.4.9   –– Renamed summaryJson → datasetJson to reflect comprehensive dataset contents (meta + all zones); updated private publishZoneData() to always publish summaryText/summaryTimestamp.
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.6.4.4"
-@Field static final String APP_MODIFIED="2025-12-24"
+@Field static final String APP_VERSION="0.6.4.9"
+@Field static final String APP_MODIFIED="2025-12-26"
 @Field static final int MAX_ZONES=48
 @Field static def cachedChild=null
 @Field static Integer cachedZoneCount=null
@@ -81,9 +86,9 @@ def mainPage() {
         paragraph "<a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md' target='_blank'>📘 View Documentation</a>"
         paragraph "<small>v${APP_VERSION} (${APP_MODIFIED})</small>"
         }
+ 		section(){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
 
         /* ---------- 2️ Zone Setup (ABC-style navigation) ---------- */
- 		section(){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
         buildZoneDirectory()
 
         /* ---------- 3️ Evapotranspiration & Seasonal Settings ---------- */
@@ -123,7 +128,7 @@ def mainPage() {
 		    }
 		    input"btnTestWx","button",title:"🌤️ Test Weather Now",
 		        description:"Verifies connectivity for the selected weather source."
-		    paragraph"<b>Note:</b> OpenWeather and Tomorrow.io each require their own API key. NOAA does not and can serve as a backup source when enabled."
+		    paragraph"<b>Note:</b> OpenWeather and Tomorrow.io each require their own API key. NOAA does not require an API key and can serve as a backup source when enabled."
 			if(atomicState.tempApiMsg) paragraph "<b>Last API Test:</b> ${atomicState.tempApiMsg}";atomicState.remove("tempApiMsg")
         }
 		section("🌦️ Weather Configuration (Advanced)", hideable:true, hidden:true){
@@ -133,16 +138,23 @@ def mainPage() {
 	        app.updateSetting("freezeThreshold",[value:defVal,type:"enum"])
 		    input "freezeThreshold","enum",title:"Freeze Warning Threshold (°${unit})",options:options,defaultValue:defVal,description:"Select the temperature below which freeze/frost alerts trigger",submitOnChange:true
 		}
+ 		section(){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
 
 		/* ---------- 5️ Logging Tools & Diagnostics ---------- */
- 		section(){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
         section(){
-			paragraph htmlHeading("📈️ Logging Tools", "#1E90FF")
-            paragraph "Controls for logging management."
+		    paragraph htmlHeading("📊 Data Publishing", "#1E90FF")
+		    paragraph "Controls for JSON and individual zone attribute publishing to child device. Summary Text is always published."
+		    input "publishJSON","bool",title:"Publish comprehensive zone JSON (default).",defaultValue:true,submitOnChange:true
+		    input "publishAttributes","bool",title:"Publish individual zone attributes.",defaultValue:false,submitOnChange:true
+		    paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"
+		}
+        section(){
+			paragraph htmlHeading("📑 Logging Tools", "#1E90FF")
+            paragraph "Controls for event and debug log management."
 		    input "logEvents","bool",title:"Log All Events",defaultValue:false
 		    input "logEnable","bool",title:"Enable Debug Logging",defaultValue:false
 		    paragraph "Auto-off after 30 minutes when debug logging is enabled."
-            input "btnDisableDebug","button",title: "🧹 Disable Debug Logging Now"
+            input "btnDisableDebug","button",title: "🛑 Disable Debug Logging Now"
             paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"
 		}
         section(){
@@ -150,7 +162,7 @@ def mainPage() {
             paragraph "Utilities for testing and verification."
             input "btnVerifyChild","button",title: "🔍 Verify Data Child Device"
             input "btnVerifySystem","button",title: "✅ Verify System Integrity"
-            input "btnRunWeatherUpdate","button",title: "💧 Run Weather/ET Updates Now"
+            input "btnRunWeatherUpdate","button",title: "🔄 Run Weather/ET Updates Now"
 			if(atomicState.tempDiagMsg)paragraph "<b>Last Diagnostic:</b> ${atomicState.tempDiagMsg}";atomicState.tempDiagMsg="&nbsp;"
 			def c=getDataChild(true);def loc=c?.currentValue('wxLocation');paragraph "🌦️ ${loc?loc+' ':''}Weather → Forecast (${c?.currentValue('wxSource')?:'n/a'}): ${c?.currentValue('wxTimestamp')?:'n/a'}, Checked: ${c?.currentValue('wxChecked')?:'n/a'}"
 			def s=getCurrentSeasons(location.latitude);paragraph "🍃 Current Seasons → Astronomical: <b>${s.currentSeasonA}</b>, Meteorological: <b>${s.currentSeasonM}</b>"
@@ -342,11 +354,11 @@ private void updateSoilMemory(){
     try{
         def zoneMap = [:]
         (1..getZoneCountCached()).each{ z ->
-            def k = "zoneDepletion_zone${z}"
-            def t = "zoneDepletionTs_zone${z}"
-            def dep = (state[k] instanceof Number)?state[k]:0G
-            def ts  = state[t]
-            zoneMap["zone${z}"] = [depletion: dep, updated: ts]
+            def k="zoneDepletion_zone${z}"
+            def t="zoneDepletionTs_zone${z}"
+            def dep=(state[k] instanceof Number)?state[k]:0G
+            def ts=state[t]
+            zoneMap["zone${z}"]=[depletion: dep, updated: ts]
         }
     }catch(e){logWarn "updateSoilMemory(): ${e}"}
 }
@@ -365,7 +377,7 @@ private void resetAllSoilMemory(){
 
 /* ---------- Lifecycle ---------- */
 def installed(){logInfo "Installed: ${appInfoString()}";runIn(2,"bootstrap")}
-def updated(){logInfo "Updated: ${appInfoString()}";atomicState.logEnable=settings.logEnable?:false;fetchWxLocation();initialize()}
+def updated(){logInfo "Updated: ${appInfoString()}";atomicState.logEnable=settings.logEnable?:false;fetchWxLocation();cleanupUnusedChildData();initialize()}
 def initialize(){logInfo "Initializing: ${appInfoString()}";unschedule("autoDisableDebugLogging");if(atomicState.logEnable)runIn(1800,"autoDisableDebugLogging")
     if(!verifyDataChild()){logWarn"initialize(): ❌ Cannot continue; data child missing or invalid";return}
     def child=getDataChild()
@@ -442,16 +454,32 @@ def verifyDataChild(){
     logInfo"verifyDataChild(): ✅ Child device verified (${reg.displayName}, DNI=${reg.deviceNetworkId})";return true
 }
 
+private cleanupUnusedChildData(){
+    def c=getDataChild();if(!c)return
+    if(!settings.publishJSON){
+        try{c.deleteCurrentState("datasetJson")}catch(e){logDebug"cleanupUnusedChildData(): datasetJson missing or already removed (${e.message})"}
+    }
+    if(!settings.publishAttributes){
+        (1..(cachedZoneCount?:0)).each{z->
+            ["zone${z}Name","zone${z}Et","zone${z}Seasonal"].each{n->
+                try{c.deleteCurrentState(n)}catch(e){logDebug"cleanupUnusedChildData(): ${n} missing or already removed (${e.message})"}
+            }
+        }
+    }
+    logInfo"cleanupUnusedChildData(): removed unused child attributes per publish settings"
+}
+
 private Integer getZoneCountCached(boolean refresh=false){if(refresh||cachedZoneCount==null)cachedZoneCount=(settings.zoneCount?:4)as Integer;return cachedZoneCount}
 
 def verifySystem(){
     logInfo"Running full system verification..."
     def verified=verifyDataChild();if(!verified){logWarn"verifySystem(): ❌ Data child missing or invalid";return false}
     def child=getDataChild();def issues=[]
-    ["summaryText","summaryJson","wxLocation","wxSource","wxTimestamp","driverInfo","appInfo"].each{
+    ["summaryText","summaryTimestamp","wxLocation","wxSource","wxTimestamp","driverInfo","appInfo"].each{
         if(!child.hasAttribute(it))issues<<"missing ${it}"
     }
     (1..cachedZoneCount).each{
+	    if(!child.hasAttribute("zone${it}Name"))issues<<"missing zone${it}Name"
 	    if(!child.hasAttribute("zone${it}Et"))issues<<"missing zone${it}Et"
 	    if(!child.hasAttribute("zone${it}Seasonal"))issues<<"missing zone${it}Seasonal"
 	    atomicState."zoneDepletion_zone${it}" = (atomicState."zoneDepletion_zone${it}" ?: 0G)
@@ -469,8 +497,7 @@ def verifySystem(){
 
 /* ---------- Weather & ET Engine ---------- */
 private Map fetchWeather(boolean force=false){
-    String src=(settings.weatherSource?:'openweather').toLowerCase()
-    String unit=(settings.tempUnits?:'F')
+    String src=(settings.weatherSource?:'openweather').toLowerCase();String unit=(settings.tempUnits?:'F')
     Map wx=null
     switch(src){
         case 'openweather':
@@ -642,7 +669,7 @@ private runWeatherUpdate(){
     Map etResults=etComputeZoneBudgets(env,zoneList,"et")
     Map seasonalResults=etComputeZoneBudgets(env,zoneList,"seasonal")
     Map hybridResults=[:];zoneList.each{z->def id=z.id;hybridResults[id]=[etBudgetPct:etResults[id]?.budgetPct?:0,seasonalBudgetPct:seasonalResults[id]?.budgetPct?:0]}
-    publishSummary(hybridResults)
+    publishZoneData(hybridResults)
 }
 
 private Map getCurrentSeasons(BigDecimal lat){
@@ -683,7 +710,7 @@ private void fetchWxLocation(){
 }
 
 /* ---------- Event Publishing ---------- */
-private publishSummary(Map results){
+private publishZoneData(Map results){
     def c=getDataChild();if(!c)return
     String ts=new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone)
     Integer zoneCount=cachedZoneCount?:results?.size()?:0
@@ -715,15 +742,27 @@ private publishSummary(Map results){
     def combined=[meta:meta,zones:zones]
     String json=new groovy.json.JsonOutput().toJson(combined)
     String summaryText=zones.collect{z->"${z.zone}: ET ${z.etBudgetPct}%, Seasonal ${z.seasonalBudgetPct}%, Soil ${String.format('%.3f',z.depletion)}in"}.join(" | ")
-    childEmitEvent(c,"summaryText",summaryText,"Hybrid ET+Seasonal+Soil summary",null,true)
-    childEmitEvent(c,"summaryJson",json,"Unified JSON summary updated",null,true)
+	childEmitEvent(c,"summaryText",summaryText,"Hybrid ET+Seasonal+Soil summary",null,true)
     childEmitEvent(c,"summaryTimestamp",ts,"Summary timestamp updated",null,true)
+    logInfo"publishZoneData(): summary text emitted (${zones.size()} zones)"
+	if(settings.publishJSON){
+	    childEmitEvent(c,"datasetJson",json,"Unified JSON data published",null,true)
+	    logInfo"publishZoneData(): unified datasetJson emitted (${zones.size()} zones)"
+	}
+	if(settings.publishAttributes){
+	    zones.each{z->
+		    def id=z.id
+		    childEmitChangedEvent(c,"zone${id}Name",z.zone,"Zone ${id} friendly name",null,false)
+		    childEmitChangedEvent(c,"zone${id}Et",z.etBudgetPct,"ET budget for Zone ${id}","%",false)
+		    childEmitChangedEvent(c,"zone${id}Seasonal",z.seasonalBudgetPct,"Seasonal budget for Zone ${id}","%",false)
+		}
+	    logInfo"publishZoneData(): zone attributes emitted (${zones.size()} zones)"
+    }
     def freeze=detectFreezeAlert(state.lastWeather?:[:])
     String u=state.lastWeather?.unit?:settings.tempUnits?:"F"
     String desc=freeze.freezeAlert?"Freeze/Frost detected (${freeze.freezeAlertText})":"No freeze or frost risk"
     childEmitChangedEvent(c,"freezeAlert",freeze.freezeAlert,desc)
     if(freeze.freezeLowTemp!=null)childEmitEvent(c,"freezeLowTemp",freeze.freezeLowTemp,"Forecast daily low (${u})",u)
-    logInfo"publishSummary(): unified summaryJson emitted (${zones.size()} zones)"
 }
 
 private BigDecimal convTemp(BigDecimal val, String from='F', String to=(settings.tempUnits?:'F')){
