@@ -302,7 +302,7 @@ Automations can safely:
 | 🧩 Verify Data Child | Ensures driver binding |
 | 🌤 Test Weather Now | Validates API response |
 | 💧 Run ET Calculations | Executes full hybrid model |
-| 🔇 Disable Debug Logging | Turns off verbose logs |
+| 🛑 Disable Debug Logging | Turns off verbose logs |
 
 **Internal Highlights:**
 - `emitEvent()` and `emitChangedEvent()` handle updates safely  
@@ -316,14 +316,14 @@ Automations can safely:
 
  - [README.md](./README.md) — Overview and Installation  
  - [CHANGELOG.md](./CHANGELOG.md) — Version History  
- - [DEVELOPER_NOTES.md](./DEVELOPER_NOTES.md) — Architecture and ET Logic
 
 ---
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNDAyMzIwODY2LDU2OTk2ODc1MCwtMTczMz
-AxNzY4MiwtMTExNzczNDc5MSwtNzgxNzAyMTI3LC0xMzczNzQy
-MzUwLDE3NzI0MTc5MzksOTMxMDczMTQxLC04NTY1NTA3XX0=
+eyJoaXN0b3J5IjpbLTkyMDE2NzU2MCw0MDIzMjA4NjYsNTY5OT
+Y4NzUwLC0xNzMzMDE3NjgyLC0xMTE3NzM0NzkxLC03ODE3MDIx
+MjcsLTEzNzM3NDIzNTAsMTc3MjQxNzkzOSw5MzEwNzMxNDEsLT
+g1NjU1MDddfQ==
 -->
