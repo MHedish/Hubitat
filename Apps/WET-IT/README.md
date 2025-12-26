@@ -61,7 +61,6 @@ If you have [Hubitat Package Manager (HPM)](https://hubitatpackagemanager.hubita
    - **Verify Functionality**
    - **Verify Forecast Connectivity**
 
-
 ---
 
 ### **Option 2 — Manual Installation (Import Method)**
@@ -189,6 +188,7 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 
 > © 2025 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTM3OTQzNjI1MywtMTU2MjU1ODMwOSwxMj
-I2MjYxNzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
+eyJoaXN0b3J5IjpbLTE4NzA4NDI3NywxMzc5NDM2MjUzLC0xNT
+YyNTU4MzA5LDEyMjYyNjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgy
+MjNdfQ==
 -->
