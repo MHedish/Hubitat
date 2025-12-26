@@ -16,13 +16,15 @@
 *  0.6.3.2  –– Updated parseSummary() to support new unified summaryJson format with meta and zone array.
 *  0.6.4.0  –– Updated parseSummary() to use friendly zone names.
 *  0.6.4.1  –– Deleted parseSummary() stub. It was never in use.
+*  0.6.4.2  –– Added zoneName attribute.
+*  0.6.4.3  –– Renamed summaryJson → datasetJson to reflect comprehensive dataset contents (meta + all zones).
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "0.6.4.1"
-@Field static final String DRIVER_MODIFIED = "2025-12-23"
+@Field static final String DRIVER_VERSION  = "0.6.4.3"
+@Field static final String DRIVER_MODIFIED = "2025-12-26"
 @Field static final int MAX_ZONES = 48
 
 metadata {
@@ -37,18 +39,19 @@ metadata {
         capability "Refresh"
 
         attribute "appInfo","string"
+        attribute "datasetJson","string"
         attribute "driverInfo","string"
 		attribute "freezeAlert","bool"
 		attribute "freezeLowTemp","number"
-        attribute "summaryJson","string"
         attribute "summaryText","string"
         attribute "summaryTimestamp","string"
-        attribute "wxSource","string"
-        attribute "wxTimestamp","string"
         attribute "wxChecked","string"
         attribute "wxLocation","string"
+        attribute "wxSource","string"
+        attribute "wxTimestamp","string"
         // Static predeclare up to MAX_ZONES
         (1..MAX_ZONES).each{
+            attribute "zone${it}Name","string"
             attribute "zone${it}Et","number"
             attribute "zone${it}Seasonal","number"
         }
@@ -91,7 +94,7 @@ private updateZoneAttributes(Number zCount){
     zCount=zCount?.toInteger()?:0
     try{
         (zCount+1..MAX_ZONES).each{
-            ["Et","Seasonal"].each{ suffix ->
+            ["Name","Et","Seasonal"].each{suffix ->
                 def n="zone${it}${suffix}"
                 if(device.currentValue(n)!=null){
                     try{device.deleteCurrentState(n);logDebug"Cleared stale ${n}"}
