@@ -123,7 +123,7 @@ If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API c
 
 4. **Verify Functionality**
    - Once initialization completes, review the `WET-IT Data` device attributes:
-     - `wxSource`, `wxTimestamp`, `summaryText`, ``
+     - `wxSource`, `wxTimestamp`, `summaryText`, `wxLocation`, `wxSource`
    - Logs will confirm successful ET computation and soil memory tracking.
 
 ---
@@ -189,6 +189,6 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 
 > © 2025 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTA0NDUzNzU5LC0xNTYyNTU4MzA5LDEyMj
-YyNjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ==
+eyJoaXN0b3J5IjpbMTM3OTQzNjI1MywtMTU2MjU1ODMwOSwxMj
+I2MjYxNzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
 -->
