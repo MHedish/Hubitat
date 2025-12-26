@@ -24,9 +24,10 @@ It’s the foundation for precision irrigation, ensuring each zone receives just
 | 🌦 ET-Based Control | Real weather + soil data | Adaptive precision |
 
 <details>
-    <Summary>Learn more about the FAO-56 Penman–Monteith ET Formula</Summary>
+    <Summary>Learn more about the FAO-56 Penman–Monteith ET Formula being used.</Summary>
 
 ---
+
 🌧️ **The Actual Formulas Used (Industry Standard ET-Based Watering)**
 
 Both Rachio and Rain Bird rely on the **FAO-56 Penman–Monteith equation** to calculate **Reference Evapotranspiration (ET₀)** and then modify watering schedules based on:
