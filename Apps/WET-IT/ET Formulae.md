@@ -43,9 +43,9 @@ $$ETc=ET0×KcET$$​
 
 Where:
 - **Kc** = crop coefficient
-	- Cool-season turf: 0.65–0.8
-	- Warm-season turf: 0.60–0.7
-	- Native shrubs: 0.3–0.5
+	- Cool-season turf: 0.65–0.80
+	- Warm-season turf: 0.60–0.70
+	- Native shrubs: 0.30–0.50
 
 Both Rachio and Rain Bird use similar default Kc tables.
 
@@ -71,7 +71,7 @@ $$Depletion≥MAD×TAW$$
 
 Where:
 - **TAW = Total Available Water** in soil
-    
+
 $$TAW=RAW+AW=(FC−PWP)×RootDepth$$
 
 - **MAD** (Management Allowed Depletion)
