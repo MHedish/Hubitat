@@ -15,7 +15,7 @@ The following formulas _are_ the foundation upon which both Rachio and Rain Bird
 
 ## 1️⃣ **Reference ET Formula (ET₀ – the global irrigation standard)**
 
-This is the formula Rain Bird, Rachio, Hunter, Hydrawise, and almost all “smart” controllers use:
+Rain Bird, Rachio, Hunter, Hydrawise, and of course WET-IT, as well as practically all “smart” controllers, use this formula:
 
 ### **FAO-56 Penman–Monteith ET Formula**
 
@@ -31,7 +31,7 @@ Where:
 -   **Δ** = slope of vapor pressure curve
 -   **γ** = psychrometric constant
 
-Weather data comes from NOAA, Hyperlocal PWS, or WeatherBug networks (depending on brand/model).
+Weather data comes from NOAA, Hyperlocal PWS, OpenWeather, tomorrow.io, or WeatherBug networks (depending on brand/model).
 
 ----------
 
@@ -113,8 +113,9 @@ When the bucket empties:
 
 $$WateringTime = \frac{(MAD \times TAW)}{PR}WateringTime=PR(MAD×TAW)​$$
 
-**Weather Forecast Use:**  
+**Weather Forecast Use:**
 Rachio _subtracts forecast precipitation_ from future ET deficits and can delay watering if rain is predicted.
+
 ----------
 
 ## 🌤️ **Rain Bird’s Method**
@@ -143,15 +144,16 @@ Both brands apply:
 
 ### **Rain Skip**
 
-$$Skip \text{ if } ForecastRain \ge ThresholdSkip if ForecastRain≥Threshold$$
+$$Skip \text{ if ForecastRain ≥ Threshold}$$
+
 Typically 0.125–0.25 in (3–6 mm)
 
 ### **Wind Skip**
 
-$$Skip \text{ if windSpeed ≥ userThreshold}Skip if windSpeed ≥ userThreshold$$
+$$Skip \text{ if windSpeed ≥ userThreshold}$$
 
 ### **Freeze Skip**
 
-$$Skip \text{ if forecastTemp ≤ freezeLimit}Skip if forecastTemp ≤ freezeLimit$$
+$$Skip \text{ if forecastTemp ≤ freezeLimit}$$
 
 These are simple conditional checks—not formulaic.
