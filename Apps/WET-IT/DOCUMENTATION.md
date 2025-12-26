@@ -71,7 +71,7 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 
 ---
 
-### 💧 WebCoRE Example
+### 💧 webCoRE Example
 
 - Sets baseline time (in minutes) for each zone.
 - Schedules M/W/F at Sunrise excluding winter months.
