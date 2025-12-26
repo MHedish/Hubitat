@@ -13,13 +13,14 @@ The formulas below _are_ what both Rachio and Rain Bird state they base their ca
 
 ----------
 
-# 1️⃣ **Reference ET Formula (ET₀ – the global irrigation standard)**
+## 1️⃣ **Reference ET Formula (ET₀ – the global irrigation standard)**
 
 This is the formula Rain Bird, Rachio, Hunter, Hydrawise, and almost all “smart” controllers use:
 
 ### **FAO-56 Penman–Monteith ET Formula**
 
 $$ET_0 = \frac{0.408\Delta(R_n - G) + \gamma\frac{900}{T+273}u_2(e_s - e_a)}{\Delta + \gamma(1+0.34u_2)}$$
+
 Where:
 
 -   **Rn** = net radiation
@@ -34,13 +35,14 @@ Weather data comes from NOAA, Hyperlocal PWS, or WeatherBug networks (depending 
 
 ----------
 
-# 2️⃣ **Actual Water Use for a Specific Plant Zone**
+## 2️⃣ **Actual Water Use for a Specific Plant Zone**
 
 After ET₀, convert to the specific plant type:
 
 $$ETc=ET0×KcET$$​
 
 Where:
+
 - **Kc** = crop coefficient
 	- Cool-season turf: 0.65–0.80
 	- Warm-season turf: 0.60–0.70
@@ -50,7 +52,7 @@ Both Rachio and Rain Bird use similar default Kc tables.
 
 ----------
 
-# 3️⃣ **Soil Moisture Balance (Used by Rachio & some Rain Bird models)**
+## 3️⃣ **Soil Moisture Balance (Used by Rachio & some Rain Bird models)**
 
 $$Depletion_{today}​=Depletion_{yesterday}​+ETc​−Pe​−Irrigation$$
 
@@ -62,7 +64,7 @@ Rachio **does** maintain the soil bucket, filling and emptying it daily.
 
 ----------
 
-# 4️⃣ **Allowed Depletion (MAD) and Irrigation Trigger**
+## 4️⃣ **Allowed Depletion (MAD) and Irrigation Trigger**
 
 A zone waters when:
 
@@ -83,7 +85,7 @@ Rain Bird simply recalculates required minutes directly from ET₀ instead of us
 
 ----------
 
-# 5️⃣ **Required Irrigation Depth**
+## 5️⃣ **Required Irrigation Depth**
 
 $$Depth_{required}=Depletion$$
 
@@ -92,14 +94,13 @@ Then convert to time:
 $$Runtime = \frac{Depth_{required}}{PR}$$​​
 
 Where:
+
 - **PR = precipitation rate** of the zone (in/hr or mm/hr)
 ----------
 
-# 📌 Summary of How Each Brand Implements This
+# 📌 How Each Brand Implements These Methods
 
-----------
-
-# 🌱 **Rachio’s Method (Full Model – “Flex Daily”)**
+## 🌱 **Rachio’s Method (Full Model – “Flex Daily”)**
 
 Rachio Flex Daily =  
 **ET₀ → ETC → Soil Bucket → MAD → Required Depth → Runtime Calculation**
@@ -114,10 +115,9 @@ $$WateringTime = \frac{(MAD \times TAW)}{PR}WateringTime=PR(MAD×TAW)​$$
 
 **Weather Forecast Use:**  
 Rachio _subtracts forecast precipitation_ from future ET deficits and can delay watering if rain is predicted.
-
 ----------
 
-# 🌤️ **Rain Bird’s Method**
+## 🌤️ **Rain Bird’s Method**
 
 Rain Bird depends heavily on model:
 
@@ -137,7 +137,7 @@ These commercial controllers can use full ET logic similar to Rachio but still d
 
 ----------
 
-# 📡 **Rain Sensor / Weather Intelligence Factors**
+## 📡 **Rain Sensor / Weather Intelligence Factors**
 
 Both brands apply:
 
