@@ -181,11 +181,13 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 
 ## 🔍 Learn More
 - [Changelog](./CHANGELOG.md)
+- [Wikipedia: Evapotranspiration](https://en.wikipedia.org/wiki/Evapotranspiration)  
+- [USGS – ET & Water Cycle](https://www.usgs.gov/water-science-school/science/evapotranspiration-and-water-cycle)
 
 ---
 
 > © 2025 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTExNTI1MDY3OCwxMjI2MjYxNzcyLDEzNz
-U1OTcxMiwyMTE5ODU4MjIzXX0=
+eyJoaXN0b3J5IjpbLTE1NjI1NTgzMDksMTIyNjI2MTc3MiwxMz
+c1NTk3MTIsMjExOTg1ODIyM119
 -->
