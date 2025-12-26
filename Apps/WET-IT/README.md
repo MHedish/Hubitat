@@ -118,12 +118,12 @@ If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API c
 
 3. **Verify Forecast Connectivity**
  - Under⚙️ System Diagnostics you can press
-`` 💧 Run Weather/ET Updates Now `` which will fetch the current weather forecast and report the results right below it:
+`` 🔄 Run Weather/ET Updates Now `` which will fetch the current weather forecast and report the results right below it:
 ``Last Diagnostic: zone1=(ET:26%, Seasonal:5%), zone2=(ET:14%, Seasonal:5%), zone3=(ET:4%, Seasonal:5%), zone4=(ET:13%, Seasonal:5%)``
 
 4. **Verify Functionality**
    - Once initialization completes, review the `WET-IT Data` device attributes:
-     - `wxSource`, `wxTimestamp`, `etBudgetPct`, `seasonalBudgetPct`
+     - `wxSource`, `wxTimestamp`, `summaryText`, ``
    - Logs will confirm successful ET computation and soil memory tracking.
 
 ---
@@ -189,6 +189,6 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 
 > © 2025 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTk3MjQ2NzMyNCwtMTU2MjU1ODMwOSwxMj
-I2MjYxNzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
+eyJoaXN0b3J5IjpbMTA0NDUzNzU5LC0xNTYyNTU4MzA5LDEyMj
+YyNjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ==
 -->
