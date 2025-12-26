@@ -19,7 +19,7 @@ This _is_ the formula Rain Bird, Rachio, Hunter, Hydrawise, and almost all “sm
 
 ### **FAO-56 Penman–Monteith ET Formula**
 
-$ET_0 = \frac{0.408\Delta(R_n - G) + \gamma\frac{900}{T+273}u_2(e_s - e_a)}{\Delta + \gamma(1+0.34u_2)}$
+$$ET_0 = \frac{0.408\Delta(R_n - G) + \gamma\frac{900}{T+273}u_2(e_s - e_a)}{\Delta + \gamma(1+0.34u_2)}$$
 
 Where:
 
@@ -39,7 +39,7 @@ Weather data comes from NOAA, Hyperlocal PWS, or WeatherBug networks (depending 
 
 After ET₀, convert to the specific plant type:
 
-ETc=ET0×KcET_c = ET_0 \times K_cETc​=ET0​×Kc​
+$$ETc=ET0×KcET$$​
 
 Where:
 - **Kc** = crop coefficient
@@ -53,7 +53,7 @@ Both Rachio and Rain Bird use similar default Kc tables.
 
 # 3️⃣ **Soil Moisture Balance (Used by Rachio & some Rain Bird models)**
 
-Depletiontoday=Depletionyesterday+ETc−Pe−IrrigationDepletion_{today} = Depletion_{yesterday} + ET_c - P_e - IrrigationDepletiontoday​=Depletionyesterday​+ETc​−Pe​−Irrigation
+$$Depletion_{today}​=Depletion_{yesterday}​+ETc​−Pe​−Irrigation$$
 
 Where:
 - **Pₑ** = effective precipitation (forecast or observed)
@@ -67,12 +67,12 @@ Rachio **does** maintain the soil bucket, filling and emptying it daily.
 
 A zone waters when:
 
-Depletion≥MAD×TAWDepletion \ge MAD \times TAWDepletion≥MAD×TAW
+$$Depletion≥MAD×TAW$$
 
 Where:
 - **TAW = Total Available Water** in soil
     
-TAW=RAW+AW=(FC−PWP)×RootDepthTAW = RAW + AW = (FC - PWP) \times RootDepthTAW=RAW+AW=(FC−PWP)×RootDepth
+$$TAW=RAW+AW=(FC−PWP)×RootDepth$$
 
 - **MAD** (Management Allowed Depletion)
 	- Typically 30–50% for turf
@@ -86,11 +86,11 @@ Rain Bird simply recalculates required minutes directly from ET₀ instead of us
 
 # 5️⃣ **Required Irrigation Depth**
 
-Depthrequired=DepletionDepth_{required} = DepletionDepthrequired​=Depletion
+$$Depth_{required}=Depletion$$
 
 Then convert to time:
 
-Runtime=DepthrequiredPRRuntime = \frac{Depth_{required}}{PR}Runtime=PRDepthrequired​​
+$$Runtime = \frac{Depth_{required}}{PR}$$​​
 
 Where:
 - **PR = precipitation rate** of the zone (in/hr or mm/hr)
@@ -107,11 +107,11 @@ Rachio Flex Daily =
 
 They maintain day-by-day soil moisture:
 
-SMnew=SMold−ETc+P+IrrigationSM_{new} = SM_{old} - ET_c + P + IrrigationSMnew​=SMold​−ETc​+P+Irrigation
+$$SM_{new} = SM_{old} - ET_c + P + IrrigationSMnew​=SMold​−ETc​+P+Irrigation$$
 
 When the bucket empties:
 
-WateringTime=(MAD×TAW)PRWateringTime = \frac{(MAD \times TAW)}{PR}WateringTime=PR(MAD×TAW)​
+$$WateringTime = \frac{(MAD \times TAW)}{PR}WateringTime=PR(MAD×TAW)​$$
 
 **Weather Forecast Use:**  
 Rachio _subtracts forecast precipitation_ from future ET deficits and can delay watering if rain is predicted.
@@ -127,7 +127,7 @@ Uses **ET-based runtime adjustment**, not a soil bucket.
 
 Formula:
 
-AdjustedTime=BaseTime×ETcETbaselineAdjustedTime = BaseTime \times \frac{ET_c}{ET_{baseline}}AdjustedTime=BaseTime×ETbaseline​ETc​​
+$$AdjustedTime = BaseTime \times \frac{ET_c}{ET_{baseline}}AdjustedTime=BaseTime×ETbaseline​ETc​​$$
 
 Where **ET₍baseline₎** is monthly historical ET.
 
@@ -144,16 +144,15 @@ Both brands apply:
 
 ### **Rain Skip**
 
-Skip if ForecastRain≥ThresholdSkip \text{ if } ForecastRain \ge ThresholdSkip if ForecastRain≥Threshold
-
+$$Skip \text{ if } ForecastRain \ge ThresholdSkip if ForecastRain≥Threshold$$
 Typically 0.125–0.25 in (3–6 mm)
 
 ### **Wind Skip**
 
-Skip if windSpeed ≥ userThresholdSkip \text{ if windSpeed ≥ userThreshold}Skip if windSpeed ≥ userThreshold
+$$Skip \text{ if windSpeed ≥ userThreshold}Skip if windSpeed ≥ userThreshold$$
 
 ### **Freeze Skip**
 
-Skip if forecastTemp ≤ freezeLimitSkip \text{ if forecastTemp ≤ freezeLimit}Skip if forecastTemp ≤ freezeLimit
+$$Skip \text{ if forecastTemp ≤ freezeLimit}Skip if forecastTemp ≤ freezeLimit$$
 
 These are simple conditional checks—not formulaic.
