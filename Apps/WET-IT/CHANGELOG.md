@@ -76,5 +76,6 @@
 
 > **WET-IT — precision irrigation through weather intelligence and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTgxMjA3MjM1OCwxODQ3MDM3ODAzXX0=
+eyJoaXN0b3J5IjpbLTEwMjk5Nzg0NywtODEyMDcyMzU4LDE4ND
+cwMzc4MDNdfQ==
 -->
