@@ -299,9 +299,9 @@ Automations can safely:
 | Action | Purpose |
 |:--|:--|
 | ✅ Verify System Integrity | Checks app-driver connection |
-| 🧩 Verify Data Child | Ensures driver binding |
+| 🔍 Verify Data Child | Ensures driver binding |
 | 🌤 Test Weather Now | Validates API response |
-| 💧 Run ET Calculations | Executes full hybrid model |
+| 🔄 Run ET Calculations | Executes full hybrid model |
 | 🛑 Disable Debug Logging | Turns off verbose logs |
 
 **Internal Highlights:**
@@ -322,7 +322,7 @@ Automations can safely:
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTkyMDE2NzU2MCw0MDIzMjA4NjYsNTY5OT
+eyJoaXN0b3J5IjpbMTUxMDUyOTUzNiw0MDIzMjA4NjYsNTY5OT
 Y4NzUwLC0xNzMzMDE3NjgyLC0xMTE3NzM0NzkxLC03ODE3MDIx
 MjcsLTEzNzM3NDIzNTAsMTc3MjQxNzkzOSw5MzEwNzMxNDEsLT
 g1NjU1MDddfQ==
