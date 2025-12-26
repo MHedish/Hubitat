@@ -15,7 +15,7 @@ The formulas below _are_ what both Rachio and Rain Bird state they base their ca
 
 # 1️⃣ **Reference ET Formula (ET₀ – the global irrigation standard)**
 
-This _is_ the formula Rain Bird, Rachio, Hunter, Hydrawise, and almost all “smart” controllers use:
+This is the formula Rain Bird, Rachio, Hunter, Hydrawise, and almost all “smart” controllers use:
 
 ### **FAO-56 Penman–Monteith ET Formula**
 
