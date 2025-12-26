@@ -64,8 +64,8 @@
 
 ---
 
-## 🌈 0.6.4.1 — Final Stabilization (Release)
-**App v0.6.4.4 / Driver v0.6.4.1 — Released 2025-12-24**
+## 🌈 0.6.4.x — Final Stabilization (Release)
+**App v0.6.4.9 / Driver v0.6.4.3 — Released 2025-12-26**
 
 - 0.6.0.1 – Normalized wxTimestamp handling across NOAA, OWM, and Tomorrow.io providers (consistent local time, correct forecast reference)
 - 0.6.1.0 – Refactored child event logging.
@@ -73,9 +73,15 @@
 - 0.6.3.0 – Refactored JSON output.
 - 0.6.4.1 – Deleted parseSummary() stub.
 - 0.6.4.4 – HTML headers.
+- 0.6.4.5 – Restored per-zone attribute updates (Name, ET, Seasonal) alongside unified summaryJson publishing; Renamed publishSummary() to publishZoneData.
+*  0.6.4.6 – Added user controls for JSON vs. attribute publishing; enforced at least one publishing mode active at all times with live toggle enforcement for publishing options.
+*  0.6.4.7   –– Added automatic cleanup of unused child attributes when publishing options are disabled.
+*  0.6.4.8   –– Removed force of JSON/attribute publishing.
+*  0.6.4.9   –– Renamed summaryJson → datasetJson to reflect comprehensive dataset contents (meta + all zones); updated private publishZoneData() to always publish summaryText/summaryTimestamp.
+*
 
 > **WET-IT — precision irrigation through weather intelligence and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEwMjk5Nzg0NywtODEyMDcyMzU4LDE4ND
-cwMzc4MDNdfQ==
+eyJoaXN0b3J5IjpbNTE3MjEwOTE4LC0xMDI5OTc4NDcsLTgxMj
+A3MjM1OCwxODQ3MDM3ODAzXX0=
 -->
