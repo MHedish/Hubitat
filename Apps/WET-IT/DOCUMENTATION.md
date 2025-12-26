@@ -58,8 +58,8 @@ WET-IT does not directly schedule watering; instead, it supplies real-time **ET 
 **Trigger:** `Time occurs at Sunrise + 0 minutes`  
 **Action Sequence:**
 ```groovy
-Set Variable wetitSummary = %device:WET-IT Data:summaryJson%
-Parse JSON wetitSummary into json
+Set Variable wetitData = %device:WET-IT Data: datasetJson%
+Parse JSON wetitData into json
 For each zone:
     runtime = baseMinutes * (json.zones.zone1.etBudgetPct / 100)
     If freezeAlert == false:
@@ -87,7 +87,7 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 **Nodes:**  
 - Inject Node → `sunrise` (daily trigger)  
 - Hubitat Device Node → `WET-IT Data`  
-- JSON Node → Parse `summaryJson`  
+- JSON Node → Parse `datasetJson`  
 - Function Node:  
   ```javascript
   let pct = msg.payload.zones.zone1.etBudgetPct;
@@ -322,8 +322,8 @@ Automations can safely:
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTUxMDUyOTUzNiw0MDIzMjA4NjYsNTY5OT
-Y4NzUwLC0xNzMzMDE3NjgyLC0xMTE3NzM0NzkxLC03ODE3MDIx
-MjcsLTEzNzM3NDIzNTAsMTc3MjQxNzkzOSw5MzEwNzMxNDEsLT
-g1NjU1MDddfQ==
+eyJoaXN0b3J5IjpbMzUzOTg5NDU2LDQwMjMyMDg2Niw1Njk5Nj
+g3NTAsLTE3MzMwMTc2ODIsLTExMTc3MzQ3OTEsLTc4MTcwMjEy
+NywtMTM3Mzc0MjM1MCwxNzcyNDE3OTM5LDkzMTA3MzE0MSwtOD
+U2NTUwN119
 -->
