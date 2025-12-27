@@ -2,6 +2,10 @@
 ## Full Documentation
 *Comprehensive Technical & Integration Reference (App v0.6.4.13 / Driver v0.6.4.4)*
 
+![Platform](https://img.shields.io/badge/Platform-Hubitat-blue) 
+![Version](https://img.shields.io/badge/Version-0.6.4.13-green)
+![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
+
 WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.  
 It brings Rachio/Hydrawise-style intelligence entirely local — no cloud, no lag, no subscription, just physics-driven irrigation.
 
