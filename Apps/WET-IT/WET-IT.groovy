@@ -25,15 +25,17 @@
 *  0.6.4.8   –– Removed force of JSON/attribute publishing.
 *  0.6.4.9   –– Renamed summaryJson → datasetJson to reflect comprehensive dataset contents (meta + all zones); updated private publishZoneData() to always publish summaryText/summaryTimestamp.
 *  0.6.4.10  –– Graphics / UI
-*  0.6.4.11  –– Added Rain Skip and Wind Skip protection with user thresholds (unit-sensitive, mirrors freeze alert behavior).
+*  0.6.4.11  –– Added rainAlert and WindAlert protection with user thresholds (unit-sensitive, mirrors freeze alert behavior).
+*  0.6.4.12  –– Fixed dynamicPage setting persistence by moving app.updateSetting() calls after input() blocks in advanced weather configuration.
+*  0.6.4.13  –– Internal cleanup.
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.6.4.11"
-@Field static final String APP_MODIFIED="2025-12-26"
+@Field static final String APP_VERSION="0.6.4.13"
+@Field static final String APP_MODIFIED="2025-12-27"
 @Field static final int MAX_ZONES=48
 @Field static def cachedChild=null
 @Field static Integer cachedZoneCount=null
@@ -76,7 +78,7 @@ def disableDebugLoggingNow(){try{unschedule("autoDisableDebugLogging");atomicSta
 
 /* ---------- Preferences & Main Page ---------- */
 preferences{page(name:"mainPage")}
-def mainPage() {
+def mainPage(){
 	getZoneCountCached(true)
     dynamicPage(name:"mainPage",install:true,uninstall:true){
 
@@ -94,32 +96,27 @@ def mainPage() {
         buildZoneDirectory()
 
         /* ---------- 3️ Evapotranspiration & Seasonal Settings ---------- */
-		section("🍂 Evapotranspiration & Seasonal Settings (Advanced)", hideable:true, hidden:true) {
-		    paragraph "Adjust these values only if you wish to override automatically estimated baseline ET₀ (reference evapotranspiration) values."
-		    input "baselineEt0Inches","decimal",title:"Baseline ET₀ (in/day)",
-		        description:"Typical daily evapotranspiration for your region during summer.",range:"0.0..1.0"
-	    input "adjustSeasonalFactor","decimal",title:"Seasonal Adjustment Factor",
-	        description:"Scale seasonal variation. Default: 1.00 = no adjustment.",defaultValue:1.00,range:"0.0..2.0"
-	    input "useSoilMemory","bool",
-	        title:"Enable Soil Moisture Tracking (Rachio / Hydrawise / Orbit style)",
-	        description:"Persist daily soil depletion for each zone (requires Hubitat storage).",
-	        defaultValue:true,submitOnChange:true
+		section("🍂 Evapotranspiration & Seasonal Settings (Advanced)",hideable:true,hidden:true){
+	    input "useSoilMemory","bool",title:"Enable Soil Moisture Tracking (Rachio / Hydrawise / Orbit style)<br><small>Persistent daily soil depletion for each zone (requires Hubitat storage).</small>",defaultValue:true,submitOnChange:true
 	    if(settings.useSoilMemory){
-	        paragraph "<b>Soil Memory Active:</b> Tracking ${cachedZoneCount} zones."
-	        href page:"soilPage",title:"🌾 Manage Soil Memory",description:"Reset or review per-zone depletion for ${getZoneCountCached()} zones"
+	        paragraph "<h3 style='margin-top:4px;margin-bottom:10px;color:#2E8B57;'>💾 Soil Memory Active: Tracking ${cachedZoneCount} zones.</h3>"
+	        href page:"soilPage",title:"🌾 Manage Soil Memory",description:"Reset or review per-zone depletion memory."
 	    }
+ 		paragraph "<hr style='margin-top:2px;margin-bottom:10px;'>"
+	    paragraph "<i>Adjust these values only if you wish to override automatically estimated baseline ET₀ (reference evapotranspiration) values.</i>"
+	    input "baselineEt0Inches","decimal",title:"Baseline ET₀ (in/day)<br><small>Typical daily evapotranspiration for your region during summer (0.0–1.0).</small>",range:"0.0..1.0"
+	    input "adjustSeasonalFactor","decimal",title:"Seasonal Adjustment Factor<br><small>Scale seasonal variation. Default: 1.00 = no adjustment (0.00–2.00).</small>",defaultValue:1.00,range:"0.0..2.0"
 	}
 
 		/* ---------- 4️ Weather Configuration ---------- */
  		section(){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
         section(){
-			paragraph htmlHeading("🌦️ Weather Configuration", "#4682B4")
+			paragraph htmlHeading("🌦️ Weather Configuration","#4682B4")
 		    input"weatherSource","enum",title:"Select Weather Source",
 		        options:["openweather":"OpenWeather (API Key Required)",
 		                 "tomorrow":"Tomorrow.io (API Key Required)",
 		                 "noaa":"NOAA (No API Key Required)"],
 		        defaultValue:"noaa",required:true,submitOnChange:true
-
 		    if(settings.weatherSource=="openweather"){
 		        input"owmApiKey","text",title:"OpenWeather API Key",required:true,submitOnChange:true
 		        input"useNoaaBackup","bool",title:"Use NOAA NWS as backup if OpenWeather unavailable",defaultValue:true
@@ -130,52 +127,53 @@ def mainPage() {
 		    }
 		    input"btnTestWx","button",title:"🌤️ Test Weather Now",
 		        description:"Verifies connectivity for the selected weather source."
-		    paragraph"<b>Note:</b> OpenWeather and Tomorrow.io each require their own API key. NOAA does not require an API key and can serve as a backup source when enabled."
+		    paragraph"<b>Note</b>: OpenWeather and Tomorrow.io each require their own API key. NOAA does not require an API key and can serve as a backup source when enabled."
 			if(atomicState.tempApiMsg) paragraph "<b>Last API Test:</b> ${atomicState.tempApiMsg}";atomicState.remove("tempApiMsg")
         }
-		section("🌦️ Weather Configuration (Advanced)", hideable:true, hidden:true){
+		section("🌦️ Weather Configuration (Advanced)",hideable:true,hidden:true){
 		    input "tempUnits","enum",title:"Temperature Units",options:["F","C"],defaultValue:location.temperatureScale,submitOnChange:true
 		    def unit=(settings.tempUnits?:"F")as String
-		    def options=(unit=="F")?(33..41).collect{"${it}"}:(0..10).collect{sprintf("%.1f",it*0.5)};def defVal=(unit=="F")?"35":"1.5"
-		    if(!settings.freezeThreshold || !options.contains(settings.freezeThreshold.toString()))
-		        app.updateSetting("freezeThreshold",[value:defVal,type:"enum"])
-		    input"freezeThreshold","enum",title:"Freeze Warning Threshold (°${unit})",options:options,defaultValue:defVal,description:"Select the temperature below which freeze/frost alerts trigger",submitOnChange:true
-		    def rainTitle=(unit=="F")?"Rain Skip Threshold (in)":"Rain Skip Threshold (mm)"
-		    def rainOpts=(unit=="F")?["0.125","0.150","0.175","0.200","0.225","0.250"]:["3.0","4.0","5.0","6.0"];def rainDef=(unit=="F")?"0.125":"3.0"
-		    if(!settings.rainSkipThreshold || !rainOpts.contains(settings.rainSkipThreshold.toString()))
-		        app.updateSetting("rainSkipThreshold",[value:rainDef,type:"enum"])
-		    input"rainSkipThreshold","enum",title:rainTitle,options:rainOpts,defaultValue:rainDef,description:"Trigger skip irrigation if forecast rainfall ≥ threshold",submitOnChange:true
-		    def windTitle=(unit=="F")?"Wind Skip Threshold (mph)":"Wind Skip Threshold (kph)"
-		    def windOpts=(unit=="F")?(10..40).step(5).collect{"${it}"}:(15..60).step(5).collect{"${it}"};def windDef=(unit=="F")?"12":"20"
-		    if(!settings.windSkipThreshold || !windOpts.contains(settings.windSkipThreshold.toString()))
-		        app.updateSetting("windSkipThreshold",[value:windDef,type:"enum"])
-		    input"windSkipThreshold","enum",title:windTitle,options:windOpts,defaultValue:windDef,description:"Trigger skip irrigation if forecast wind speed ≥ threshold",submitOnChange:true
+		    def options=(unit=="F")?(33..41).collect{it.toString()}:(0..10).collect{sprintf("%.1f",it*0.5).toString()}
+		    def defVal=(unit=="F")?"35":"1.5"
+		    def freezeVal=settings.freezeThreshold?.toString()
+		    if(!freezeVal||!options.contains(freezeVal))app.updateSetting("freezeThreshold",[value:defVal,type:"enum"])
+		    input"freezeThreshold","enum",title:"Freeze Warning Threshold (°${unit})<br><small>Select the temperature below which freeze/frost alerts are triggered.</small>",options:options,defaultValue:defVal,submitOnChange:false
+		    def rainOpts=(unit=="F")?["0.125","0.150","0.175","0.200","0.225","0.250"]:["3.0","4.0","5.0","6.0"]
+		    def rainUnit=(unit=="F")?"in":"mm";def rainDef=(unit=="F")?"0.125":"3.0"
+		    def rainVal=settings.rainSkipThreshold?.toString()
+		    if(!rainVal||!rainOpts.contains(rainVal))app.updateSetting("rainSkipThreshold",[value:rainDef,type:"enum"])
+		    input"rainSkipThreshold","enum",title:"Rain Skip Threshold (${rainUnit})<br><small>Trigger skip irrigation if forecast rainfall ≥ threshold.</small>",options:rainOpts,defaultValue:rainDef,submitOnChange:false
+		    def windOpts=(unit=="F")?(10..40).step(5).collect{it.toString()}:(15..60).step(5).collect{it.toString()}
+		    def windUnit=(unit=="F")?"mph":"kph";def windDef=(unit=="F")?"12":"20"
+		    def windVal=settings.windSkipThreshold?.toString()
+		    if(!windVal||!windOpts.contains(windVal))app.updateSetting("windSkipThreshold",[value:windDef,type:"enum"])
+		    input"windSkipThreshold","enum",title:"Wind Skip Threshold (${windUnit})<br><small>Trigger skip irrigation if forecast wind speed ≥ threshold.</small>",options:windOpts,defaultValue:windDef,submitOnChange:false
 		}
  		section(){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
 
 		/* ---------- 5️ Logging Tools & Diagnostics ---------- */
         section(){
-		    paragraph htmlHeading("📊 Data Publishing", "#1E90FF")
+		    paragraph htmlHeading("📊 Data Publishing","#1E90FF")
 		    paragraph "Controls for JSON and individual zone attribute publishing to child device. Summary Text is always published."
-		    input "publishJSON","bool",title:"Publish comprehensive zone JSON (default).",defaultValue:true,submitOnChange:true
-		    input "publishAttributes","bool",title:"Publish individual zone attributes.",defaultValue:false,submitOnChange:true
+		    input"publishJSON","bool",title:"Publish comprehensive zone JSON (default).",defaultValue:true,submitOnChange:true
+		    input"publishAttributes","bool",title:"Publish individual zone attributes.",defaultValue:false,submitOnChange:true
 		    paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"
 		}
         section(){
-			paragraph htmlHeading("📑 Logging Tools", "#1E90FF")
+			paragraph htmlHeading("📑 Logging Tools","#1E90FF")
             paragraph "Controls for event and debug log management."
-		    input "logEvents","bool",title:"Log All Events",defaultValue:false
-		    input "logEnable","bool",title:"Enable Debug Logging",defaultValue:false
+		    input"logEvents","bool",title:"Log All Events",defaultValue:false
+		    input"logEnable","bool",title:"Enable Debug Logging",defaultValue:false
 		    paragraph "Auto-off after 30 minutes when debug logging is enabled."
-            input "btnDisableDebug","button",title: "🛑 Disable Debug Logging Now"
+            input"btnDisableDebug","button",title: "🛑 Disable Debug Logging Now"
             paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"
 		}
         section(){
-			paragraph htmlHeading("⚙️ System Diagnostics", "#1E90FF")
+			paragraph htmlHeading("⚙️ System Diagnostics","#1E90FF")
             paragraph "Utilities for testing and verification."
-            input "btnVerifyChild","button",title: "🔍 Verify Data Child Device"
-            input "btnVerifySystem","button",title: "✅ Verify System Integrity"
-            input "btnRunWeatherUpdate","button",title: "🔄 Run Weather/ET Updates Now"
+            input"btnVerifyChild","button",title: "🔍 Verify Data Child Device"
+            input"btnVerifySystem","button",title: "✅ Verify System Integrity"
+            input"btnRunWeatherUpdate","button",title: "🔄 Run Weather/ET Updates Now"
 			if(atomicState.tempDiagMsg)paragraph "<b>Last Diagnostic:</b> ${atomicState.tempDiagMsg}";atomicState.tempDiagMsg="&nbsp;"
 			def c=getDataChild(true);def loc=c?.currentValue('wxLocation');paragraph "🌦️ ${loc?loc+' ':''}Weather → Forecast (${c?.currentValue('wxSource')?:'n/a'}): ${c?.currentValue('wxTimestamp')?:'n/a'}, Checked: ${c?.currentValue('wxChecked')?:'n/a'}"
 			def s=getCurrentSeasons(location.latitude);paragraph "🍃 Current Seasons → Astronomical: <b>${s.currentSeasonA}</b>, Meteorological: <b>${s.currentSeasonM}</b>"
@@ -184,39 +182,35 @@ def mainPage() {
         }
 
 		/* ---------- 6️ About / Version Info (Footer) ---------- */
-        section() {
+        section(){
             paragraph "<hr><div style='text-align:center; font-size:90%;'><b>${APP_NAME}</b> v${APP_VERSION} (${APP_MODIFIED})<br>© 2025 Marc Hedish – Licensed under Apache 2.0<br><a href='https://github.com/MHedish/Hubitat' target='_blank'>GitHub Repository</a></div>"
         }
     }
 }
 
 /* ---------- Zone Page Framework ---------- */
-/* --- Option Lists --- */
 def soilOptions(){["Sand","Loamy Sand","Sandy Loam","Loam","Clay Loam","Silty Clay","Clay"]}
 def plantOptions(){["Cool Season Turf","Warm Season Turf","Shrubs","Trees","Groundcover","Annuals","Vegetables","Native Low Water"]}
 def nozzleOptions(){["Spray","Rotor","MP Rotator","Drip Emitter","Drip Line","Bubbler"]}
-def summaryForZone(z){
-    def soil=settings["soil_${z}"]?:"Loam";def plant=settings["plant_${z}"]?:"Cool Season Turf";def noz=settings["nozzle_${z}"]?:"Spray";return "Soil: ${soil}, Plant: ${plant}, Nozzle: ${noz}"
-}
+def summaryForZone(z){def soil=settings["soil_${z}"]?:"Loam";def plant=settings["plant_${z}"]?:"Cool Season Turf";def noz=settings["nozzle_${z}"]?:"Spray";return "Soil: ${soil}, Plant: ${plant}, Nozzle: ${noz}"}
 
 private buildZoneDirectory(){
     if(settings.tempCopyMsgClear){app.removeSetting("copyStatusMsg");app.removeSetting("tempCopyMsgClear")}
     section(){
-		paragraph htmlHeading("🌱 Zone Setup", "#2E8B57")
-        input "zoneCount","number",title:"Number of Zones (1–${MAX_ZONES})",defaultValue:cachedZoneCount,range:"1..${MAX_ZONES}",required:true,submitOnChange:true
+		paragraph htmlHeading("🌱 Zone Setup","#2E8B57")
+        input"zoneCount","number",title:"Number of Zones (1–${MAX_ZONES})",defaultValue:cachedZoneCount,range:"1..${MAX_ZONES}",required:true,submitOnChange:true
         def zCount=(settings.zoneCount?:cachedZoneCount?:1).toInteger()
         if(zCount<1)zCount=1
         if(zCount>MAX_ZONES){zCount=MAX_ZONES;app.updateSetting("zoneCount",[value:zCount,type:"number"]);logWarn"buildZoneDirectory(): zoneCount clamped to ${MAX_ZONES}"}
         if(zCount){
             paragraph"<b>Configured Zones:</b> Click to configure."
             (1..zCount).each{z->
-                def zName=settings["name_${z}"]?.trim()
-                def titleTxt=zName?:"Zone ${z}"
+                def zName=settings["name_${z}"]?.trim();def titleTxt=zName?:"Zone ${z}"
                 href page:"zonePage",params:[zone:z],title:titleTxt,description:summaryForZone(z),state:"complete"
             }
         }
         if(zCount>1){
-            def btnTitle=settings.copyConfirm?"⚠️ Confirm Copy (Cannot be Undone)":"📋 Copy Zone 1 Settings → All Zones"
+            def btnTitle=settings.copyConfirm?"⚠️ Confirm Copy (Cannot be Undone)":"📋 Copy Zone 1 Settings → All ${zCount} Zones"
             input"btnCopyZones","button",title:btnTitle
             if(settings.copyConfirm){
                 input"btnCancelCopy","button",title:"❌ Cancel"
@@ -230,26 +224,26 @@ def zonePage(params){
 	Integer z=(params?.zone?:1) as Integer;state.activeZone=z
     dynamicPage(name:"zonePage",install:false,uninstall:false){
         section(){
-			paragraph htmlHeading("🌱 Zone ${z} Configuration", "#2E8B57")
-			input "name_${z}","text",title:"<b>Zone Name</b>",description:"Friendly name for this zone (optional)."
-            input "soil_${z}","enum",title:"Soil Type",options:soilOptions(),defaultValue:"Loam",description:"Determines water holding capacity."
-            input "plant_${z}","enum",title:"Plant Type",options:plantOptions(),defaultValue:"Cool Season Turf",description:"Sets crop coefficient (Kc)."
-            input "nozzle_${z}","enum",title:"Irrigation Method",options:nozzleOptions(), defaultValue:"Spray",description:"Determines precipitation rate."
+			paragraph htmlHeading("🌱 Zone ${z} Configuration","#2E8B57")
+			input"name_${z}","text",title:"Zone Name<br><small>Friendly name for this zone (optional).</small>"
+            input"soil_${z}","enum",title:"Soil Type<br><small>Determines water holding capacity.</small>",options:soilOptions(),defaultValue:"Loam"
+            input"plant_${z}","enum",title:"Plant Type<br><small>Sets crop coefficient (Kc).</small>",options:plantOptions(),defaultValue:"Cool Season Turf"
+            input"nozzle_${z}","enum",title:"Irrigation Method<br><small>Determines precipitation rate.</small>",options:nozzleOptions(),defaultValue:"Spray"
         }
         section("Advanced Parameters",hideable:true,hidden:true){
-            input "precip_${z}","decimal",title:"Precipitation Rate Override (in/hr)",description:"Overrides default based on irrigation method."
-            input "root_${z}","decimal",title:"Root Depth (in)",description:"Default derived from plant type."
-            input "kc_${z}","decimal",title:"Crop Coefficient (Kc)",description:"Adjusts ET sensitivity."
-            input "mad_${z}","decimal",title:"Allowed Depletion (0–1)",description:"Fraction of available water before irrigation is recommended."
-            input "resetAdv_${z}","button",title:"Reset Advanced Settings"
+            input"precip_${z}","decimal",title:"Precipitation Rate Override (in/hr)<br><small>Overrides default based on irrigation method.</small>"
+            input"root_${z}","decimal",title:"Root Depth (in)<br><small>Default derived from plant type.</small>"
+            input"kc_${z}","decimal",title:"Crop Coefficient (Kc)<br><small>Adjusts ET sensitivity.</small>"
+            input"mad_${z}","decimal",title:"Allowed Depletion (0–1)<br><small>Fraction of available water before irrigation is recommended.</small>"
+            input"resetAdv_${z}","button",title:"Reset Advanced Parameters"
         }
     }
 }
 
-def soilPage() {
-    dynamicPage(name:"soilPage",install:false,uninstall:false) {
+def soilPage(){
+    dynamicPage(name:"soilPage",install:false,uninstall:false){
         section(){
-			paragraph htmlHeading("🌾 Soil Memory Management", "#A0522D")
+			paragraph htmlHeading("🌾 Soil Memory Management","#A0522D")
             (1..getZoneCountCached()).each {z->
                 def key="zoneDepletion_zone${z}";def tsKey="zoneDepletionTs_zone${z}"
                 BigDecimal d=(atomicState[key]?:0G) as BigDecimal
@@ -257,13 +251,13 @@ def soilPage() {
                 paragraph "<b>Zone ${z}</b>: ${String.format('%.3f', d)} in.<br><i>Last updated:</i> ${ts}"
                 def btnTitle=settings["soilResetConfirm_${z}"]?"⚠️ Confirm Reset Zone ${z}":"🔄 Reset Zone ${z}"
                 input"btnResetSoil_${z}","button",title:btnTitle
-                if(settings["soilResetConfirm_${z}"])input "btnCancelReset_${z}","button",title:"❌ Cancel"
+                if(settings["soilResetConfirm_${z}"])input"btnCancelReset_${z}","button",title:"❌ Cancel"
             }
         }
         section(){
-			paragraph htmlHeading("⚠️ Global Reset", "#B22222")
+			paragraph htmlHeading("⚠️ Global Reset","#B22222")
             def allTitle=settings.resetAllConfirm?"⚠️ Confirm Reset All Zones":"♻️ Reset All Soil Memory"
-            input "btnResetAllSoil","button",title: allTitle
+            input"btnResetAllSoil","button",title: allTitle
             if(settings.resetAllConfirm)input"btnCancelResetAll","button",title:"❌ Cancel"
         }
     }
@@ -347,51 +341,45 @@ private void resetAdvancedForZone(Integer z){
 // Reset one zone’s ET deficit by percentage (same logic as btnResetSoil_X)
 private void resetSoilForZone(Object... args){
     try{
-        def z = (args.size()>0 ? args[0] : 0) as Integer
-        def pct = (args.size()>1 ? args[1] : 1.0) as BigDecimal
-        pct = Math.min(Math.max(pct, 0.0G), 1.0G)
-        def k = "zoneDepletion_zone${z}"
-        def tKey = "zoneDepletionTs_zone${z}"
-        def oldVal = (state[k] ?: 0G) as BigDecimal
-        def newVal = oldVal * (1.0 - pct)
-        state[k] = newVal
-        state[tKey] = new Date().format("yyyy-MM-dd HH:mm:ss", location.timeZone)
+        def z=(args.size()>0?args[0]:0) as Integer
+        def pct=(args.size()>1?args[1]:1.0) as BigDecimal
+        pct=Math.min(Math.max(pct,0.0G),1.0G)
+        def k="zoneDepletion_zone${z}";def tKey="zoneDepletionTs_zone${z}"
+        def oldVal=(state[k]?:0G) as BigDecimal;def newVal=oldVal*(1.0-pct)
+        state[k]=newVal;state[tKey]=new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone)
         updateSoilMemory()
-        logInfo "resetSoilForZone(${z},${pct}): ${String.format('%.3f',oldVal)}→${String.format('%.3f',newVal)} (${(pct*100).intValue()}% refill)"
-    }catch(e){
-        logWarn "resetSoilForZone(${args}): ${e}"
-    }
+        logInfo"resetSoilForZone(${z},${pct}): ${String.format('%.3f',oldVal)}→${String.format('%.3f',newVal)} (${(pct*100).intValue()}% refill)"
+    }catch(e){logWarn"resetSoilForZone(${args}): ${e}"}
 }
 
 private void updateSoilMemory(){
     try{
         def zoneMap = [:]
-        (1..getZoneCountCached()).each{ z ->
-            def k="zoneDepletion_zone${z}"
-            def t="zoneDepletionTs_zone${z}"
+        (1..getZoneCountCached()).each{z->
+            def k="zoneDepletion_zone${z}";def t="zoneDepletionTs_zone${z}"
             def dep=(state[k] instanceof Number)?state[k]:0G
             def ts=state[t]
             zoneMap["zone${z}"]=[depletion: dep, updated: ts]
         }
-    }catch(e){logWarn "updateSoilMemory(): ${e}"}
+    }catch(e){logWarn"updateSoilMemory(): ${e}"}
 }
 
 // Clear all ET deficits (same logic as btnResetAllSoil)
 private void resetAllSoilMemory(){
     try{
-        (1..getZoneCountCached()).each{ z ->
+        (1..getZoneCountCached()).each{z->
             state.remove("zoneDepletion_zone${z}")
             state.remove("zoneDepletionTs_zone${z}")
         }
         updateSoilMemory()
-        logInfo "resetAllSoilMemory(): Cleared all zone depletion records"
-    }catch(e){logWarn "resetAllSoilMemory(): ${e}"}
+        logInfo"resetAllSoilMemory(): Cleared all zone depletion records"
+    }catch(e){logWarn"resetAllSoilMemory(): ${e}"}
 }
 
 /* ---------- Lifecycle ---------- */
-def installed(){logInfo "Installed: ${appInfoString()}";runIn(2,"bootstrap")}
-def updated(){logInfo "Updated: ${appInfoString()}";atomicState.logEnable=settings.logEnable?:false;fetchWxLocation();cleanupUnusedChildData();initialize()}
-def initialize(){logInfo "Initializing: ${appInfoString()}";unschedule("autoDisableDebugLogging");if(atomicState.logEnable)runIn(1800,"autoDisableDebugLogging")
+def installed(){logInfo"Installed: ${appInfoString()}";runIn(2,"bootstrap")}
+def updated(){logInfo"Updated: ${appInfoString()}";atomicState.logEnable=settings.logEnable?:false;fetchWxLocation();cleanupUnusedChildData();initialize()}
+def initialize(){logInfo"Initializing: ${appInfoString()}";unschedule("autoDisableDebugLogging");if(atomicState.logEnable)runIn(1800,"autoDisableDebugLogging")
     if(!verifyDataChild()){logWarn"initialize(): ❌ Cannot continue; data child missing or invalid";return}
     def child=getDataChild()
     try{
@@ -495,14 +483,13 @@ def verifySystem(){
 	    if(!child.hasAttribute("zone${it}Name"))issues<<"missing zone${it}Name"
 	    if(!child.hasAttribute("zone${it}Et"))issues<<"missing zone${it}Et"
 	    if(!child.hasAttribute("zone${it}Seasonal"))issues<<"missing zone${it}Seasonal"
-	    atomicState."zoneDepletion_zone${it}" = (atomicState."zoneDepletion_zone${it}" ?: 0G)
-	    atomicState."zoneDepletionTs_zone${it}" = (atomicState."zoneDepletionTs_zone${it}" ?: "—")
+	    atomicState."zoneDepletion_zone${it}"=(atomicState."zoneDepletion_zone${it}"?:0G)
+	    atomicState."zoneDepletionTs_zone${it}"=(atomicState."zoneDepletionTs_zone${it}"?:"—")
 	}
     def wx=child.currentValue("wxSource")?:'UNKNOWN'
     if(wx in ['UNKNOWN','Not yet fetched',''])issues<<"invalid weather source (${wx})"
     if(issues){
-        issues.each{logWarn"verifySystem(): ⚠️ ${it}"}
-        logInfo"verifySystem(): ❌ Issues detected"
+        issues.each{logWarn"verifySystem(): ⚠️ ${it}"};logInfo"verifySystem(): ❌ Issues detected"
         return false
     }
     logInfo"verifySystem(): ✅ Attributes verified for ${z} zones";logInfo"verifySystem(): ✅ System check passed";return true
@@ -671,7 +658,7 @@ private runWeatherUpdate(){
         logWarn"runWeatherUpdate(): No valid API key or source configured; aborting";return
     }
     if(!verifyDataChild()){logWarn"runWeatherUpdate(): cannot continue, child invalid";return}
-    Integer zoneCount=(cachedZoneCount ?: settings?.zoneCount ?: 0) as Integer
+    Integer zoneCount=(cachedZoneCount?:settings?.zoneCount?:0) as Integer
     if(zoneCount<=0||zoneCount>48){
         logWarn"runWeatherUpdate(): Invalid zone count (${zoneCount}); attempting dynamic recovery via verifySystem()"
         verifySystem();zoneCount=(cachedZoneCount?:settings?.zoneCount?:0) as Integer
@@ -751,7 +738,7 @@ private publishZoneData(Map results){
         freezeAlert:(c?.currentValue("freezeAlert")?.toString()=="true"),
         freezeLowTemp:c?.currentValue("freezeLowTemp")?:"",
         rainAlert:(c?.currentValue("rainAlert")?.toString()=="true"),
-	 	rainForecast:c?.currentValue("rainForecast") ?: "",
+	 	rainForecast:c?.currentValue("rainForecast")?:"",
 	 	windAlert:(c?.currentValue("windAlert")?.toString()=="true"),
     	windSpeed:c?.currentValue("windSpeed")?:"",
         units:settings.tempUnits?:"°F",
@@ -779,7 +766,7 @@ private publishZoneData(Map results){
     childEmitEvent(c,"summaryTimestamp",ts,"Summary timestamp updated",null,true)
     logInfo"publishZoneData(): summary text emitted (${zones.size()} zones)"
 	if(settings.publishJSON){
-	    childEmitEvent(c,"datasetJson",json,"Unified JSON data published",null,true)
+	    childEmitChangedEvent(c,"datasetJson",json,"Unified JSON data published",null,true)
 	    logInfo"publishZoneData(): unified datasetJson emitted (${zones.size()} zones)"
 	}
 	if(settings.publishAttributes){
@@ -806,7 +793,7 @@ private publishZoneData(Map results){
 	if(wind.windSpeed!=null)childEmitEvent(c,"windSpeed",wind.windSpeed,"Forecast daily wind speed (${wind.unit=='C'?'kph':'mph'})",wind.unit=='C'?'kph':'mph')
 }
 
-private BigDecimal convTemp(BigDecimal val, String from='F', String to=(settings.tempUnits?:'F')){
+private BigDecimal convTemp(BigDecimal val,String from='F',String to=(settings.tempUnits?:'F')){
     if(!val)return 0
     if(from==to)return val.setScale(2,BigDecimal.ROUND_HALF_UP)
     return (to=='C')?((val-32)*5/9).setScale(2,BigDecimal.ROUND_HALF_UP):((val*9/5)+32).setScale(2,BigDecimal.ROUND_HALF_UP)
@@ -886,7 +873,6 @@ private Map etComputeZoneBudgets(Map env,List<Map> zones,String method){
         }else{budgetPct=etCalcSeasonalBudget(et0In,rainIn,baseEt0,5G,200G);newDepletion=null}
         result[zId.toString()]=[budgetPct:budgetPct.setScale(0,BigDecimal.ROUND_HALF_UP),newDepletion:newDepletion]
     }
-
     atomicState.etLastCalcTs=nowStr
     logDebug"etComputeZoneBudgets(): per-zone Δt applied; ref=${nowStr}"
     return result
