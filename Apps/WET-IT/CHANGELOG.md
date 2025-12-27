@@ -78,7 +78,8 @@
 - 0.6.4.7 – Added automatic cleanup of unused child attributes when publishing options are disabled.
 - 0.6.4.8 – Removed force of JSON/attribute publishing.
 - 0.6.4.9 – Renamed summaryJson → datasetJson to reflect comprehensive dataset contents (meta + all zones); updated private publishZoneData() to always publish summaryText/summaryTimestamp
-- 0.6.4.9 – Added rainAlert and WindAlert protection with user thresholds (unit-sensitive, mirrors freeze alert behavior).
+- 0.6.4.9 – Added rainAlert and windAlert protection with user thresholds (unit-sensitive, mirrors freeze alert behavior).
+- 0.6.4.12 – Fixed dynamicPage setting persistence.
 
 > **WET-IT — precision irrigation through weather intelligence and Hubitat automation.**
 <!--stackedit_data:
