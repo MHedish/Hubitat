@@ -24,13 +24,15 @@
 *  0.6.4.7   –– Added automatic cleanup of unused child attributes when publishing options are disabled.
 *  0.6.4.8   –– Removed force of JSON/attribute publishing.
 *  0.6.4.9   –– Renamed summaryJson → datasetJson to reflect comprehensive dataset contents (meta + all zones); updated private publishZoneData() to always publish summaryText/summaryTimestamp.
+*  0.6.4.10  –– Graphics / UI
+*  0.6.4.11  –– Added Rain Skip and Wind Skip protection with user thresholds (unit-sensitive, mirrors freeze alert behavior).
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.6.4.9"
+@Field static final String APP_VERSION="0.6.4.11"
 @Field static final String APP_MODIFIED="2025-12-26"
 @Field static final int MAX_ZONES=48
 @Field static def cachedChild=null
@@ -81,14 +83,14 @@ def mainPage() {
         /* ---------- 1️ Header / App Info ---------- */
         section(){
         paragraph "<div style='text-align:center;'><img src='https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT/images/Logo.png' width='200'></div>"
-        paragraph "<div style='text-align:center;'>Weather-Enhanced Time-based Irrigation Tuning (WET-IT)</div>"
-        paragraph "<div style='text-align:center;'>WET-IT brings <i>local-first, Rachio/Hydrawise/Orbit-style intelligence</i> to any irrigation controller — running professional evapotranspiration (ET) and soil-moisture modeling directly inside your Hubitat hub.</div>"
+        paragraph "<div style='text-align:center;'><h2>Weather-Enhanced Time-based Irrigation Tuning (WET-IT)</h2></div>"
+        paragraph "<div style='text-align:center;'>WET-IT brings <i>local-first, Rachio/Hydrawise/Orbit-style intelligence</i> to any irrigation controller — running professional<br> evapotranspiration (ET) and soil-moisture modeling directly inside your Hubitat hub.</div>"
         paragraph "<a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md' target='_blank'>📘 View Documentation</a>"
         paragraph "<small>v${APP_VERSION} (${APP_MODIFIED})</small>"
         }
- 		section(){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
+ 		section(){paragraph "<hr style='margin-top:2px;margin-bottom:10px;'>"}
 
-        /* ---------- 2️ Zone Setup (ABC-style navigation) ---------- */
+        /* -------------------- 2️ Zone Setup -------------------- */
         buildZoneDirectory()
 
         /* ---------- 3️ Evapotranspiration & Seasonal Settings ---------- */
@@ -111,7 +113,7 @@ def mainPage() {
 		/* ---------- 4️ Weather Configuration ---------- */
  		section(){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
         section(){
-			 paragraph htmlHeading("🌦️ Weather Configuration", "#4682B4")
+			paragraph htmlHeading("🌦️ Weather Configuration", "#4682B4")
 		    input"weatherSource","enum",title:"Select Weather Source",
 		        options:["openweather":"OpenWeather (API Key Required)",
 		                 "tomorrow":"Tomorrow.io (API Key Required)",
@@ -132,11 +134,22 @@ def mainPage() {
 			if(atomicState.tempApiMsg) paragraph "<b>Last API Test:</b> ${atomicState.tempApiMsg}";atomicState.remove("tempApiMsg")
         }
 		section("🌦️ Weather Configuration (Advanced)", hideable:true, hidden:true){
-			input "tempUnits","enum",title:"Temperature Units",options:["F","C"],defaultValue:location.temperatureScale,submitOnChange:true
-			def unit=(settings.tempUnits?:"F")as String;def options=(unit=="C")?(0..10).collect{sprintf("%.1f",it*0.5)}:(33..41).collect{"${it}"};def defVal=(unit=="C")?"1.5":"35"
-		    if(!settings.freezeThreshold||!options.contains(settings.freezeThreshold.toString()))
-	        app.updateSetting("freezeThreshold",[value:defVal,type:"enum"])
-		    input "freezeThreshold","enum",title:"Freeze Warning Threshold (°${unit})",options:options,defaultValue:defVal,description:"Select the temperature below which freeze/frost alerts trigger",submitOnChange:true
+		    input "tempUnits","enum",title:"Temperature Units",options:["F","C"],defaultValue:location.temperatureScale,submitOnChange:true
+		    def unit=(settings.tempUnits?:"F")as String
+		    def options=(unit=="F")?(33..41).collect{"${it}"}:(0..10).collect{sprintf("%.1f",it*0.5)};def defVal=(unit=="F")?"35":"1.5"
+		    if(!settings.freezeThreshold || !options.contains(settings.freezeThreshold.toString()))
+		        app.updateSetting("freezeThreshold",[value:defVal,type:"enum"])
+		    input"freezeThreshold","enum",title:"Freeze Warning Threshold (°${unit})",options:options,defaultValue:defVal,description:"Select the temperature below which freeze/frost alerts trigger",submitOnChange:true
+		    def rainTitle=(unit=="F")?"Rain Skip Threshold (in)":"Rain Skip Threshold (mm)"
+		    def rainOpts=(unit=="F")?["0.125","0.150","0.175","0.200","0.225","0.250"]:["3.0","4.0","5.0","6.0"];def rainDef=(unit=="F")?"0.125":"3.0"
+		    if(!settings.rainSkipThreshold || !rainOpts.contains(settings.rainSkipThreshold.toString()))
+		        app.updateSetting("rainSkipThreshold",[value:rainDef,type:"enum"])
+		    input"rainSkipThreshold","enum",title:rainTitle,options:rainOpts,defaultValue:rainDef,description:"Trigger skip irrigation if forecast rainfall ≥ threshold",submitOnChange:true
+		    def windTitle=(unit=="F")?"Wind Skip Threshold (mph)":"Wind Skip Threshold (kph)"
+		    def windOpts=(unit=="F")?(10..40).step(5).collect{"${it}"}:(15..60).step(5).collect{"${it}"};def windDef=(unit=="F")?"12":"20"
+		    if(!settings.windSkipThreshold || !windOpts.contains(settings.windSkipThreshold.toString()))
+		        app.updateSetting("windSkipThreshold",[value:windDef,type:"enum"])
+		    input"windSkipThreshold","enum",title:windTitle,options:windOpts,defaultValue:windDef,description:"Trigger skip irrigation if forecast wind speed ≥ threshold",submitOnChange:true
 		}
  		section(){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
 
@@ -632,9 +645,25 @@ private Map detectFreezeAlert(Map wx){
     if(a){alertText=a;alert=true}
     else{
         BigDecimal threshold=(settings.freezeThreshold?:(unit=='C'?1.7:35)) as BigDecimal
-        if(tLowU<threshold){alert=true;alertText=alertText="Low ${tLow.setScale(1, BigDecimal.ROUND_HALF_UP)}°${unit} (threshold <${threshold}°${unit})"}
+        if(tLowU<threshold){alert=true;alertText=alertText="Low ${tLow.setScale(1,BigDecimal.ROUND_HALF_UP)}°${unit} (threshold <${threshold}°${unit})"}
     }
     return [freezeAlert:alert,freezeAlertText:alertText,freezeLowTemp:tLowU,unit:unit]
+}
+
+private Map detectRainAlert(Map wx){
+    String unit=(settings.tempUnits?:'F');String alertText="None";boolean alert=false
+    BigDecimal rain=(wx?.precip24h?:0) as BigDecimal
+    BigDecimal threshold=(settings.rainSkipThreshold?:(unit=='C'?3.0:0.125)) as BigDecimal
+    if(rain>=threshold){alert=true;alertText="Forecast ${rain.setScale(2,BigDecimal.ROUND_HALF_UP)}${unit=='C'?'mm':'in'} ≥ ${threshold}${unit=='C'?'mm':'in'}"}
+    return [rainAlert:alert,rainAlertText:alertText,rainForecast:rain,unit:unit]
+}
+
+private Map detectWindAlert(Map wx){
+    String unit=(settings.tempUnits?:'F');String alertText="None";boolean alert=false
+    BigDecimal wind=(wx?.windSpeed?:0) as BigDecimal
+    BigDecimal threshold=(settings.windSkipThreshold?:(unit=='C'?20.0:12.0)) as BigDecimal
+    if(wind>=threshold){alert=true;alertText="Wind ${wind.setScale(1,BigDecimal.ROUND_HALF_UP)}${unit=='C'?'kph':'mph'} ≥ ${threshold}${unit=='C'?'kph':'mph'}"}
+    return [windAlert:alert,windAlertText:alertText,windSpeed:wind,unit:unit]
 }
 
 private runWeatherUpdate(){
@@ -674,11 +703,11 @@ private runWeatherUpdate(){
 
 private Map getCurrentSeasons(BigDecimal lat){
     def tz=location.timeZone;int doy=new Date().format('D',tz).toInteger();int m=new Date().format('M',tz).toInteger()
-    String astro=(doy<80?"Winter":doy<172?"Spring":doy<266?"Summer":doy<355?"Fall":"Winter")
-    String meteo=([12,1,2].contains(m)?"Winter":[3,4,5].contains(m)?"Spring":[6,7,8].contains(m)?"Summer":"Fall")
+    String astro=(doy<80?"❄️ Winter":doy<172?"🌸 Spring":doy<266?"☀️ Summer":doy<355?"🍂 Fall":"❄️ Winter")
+    String meteo=([12,1,2].contains(m)?"❄️ Winter":[3,4,5].contains(m)?"🌸 Spring":[6,7,8].contains(m)?"☀️ Summer":"🍂 Fall")
     if(lat<0){
-        if(astro=="Winter")astro="Summer";else if(astro=="Spring")astro="Fall";else if(astro=="Summer")astro="Winter";else if(astro=="Fall")astro="Spring"
-        if(meteo=="Winter")meteo="Summer";else if(meteo=="Spring")meteo="Fall";else if(meteo=="Summer")meteo="Winter";else if(meteo=="Fall")meteo="Spring"
+        if(astro=="❄️ Winter")astro="☀️ Summer";else if(astro=="🌸 Spring")astro="🍂 Fall";else if(astro=="☀️ Summer")astro="❄️ Winter";else if(astro=="🍂 Fall")astro="🌸 Spring"
+        if(meteo=="❄️ Winter")meteo="☀️ Summer";else if(meteo=="🌸 Spring")meteo="🍂 Fall";else if(meteo=="☀️ Summer")meteo="❄️ Winter";else if(meteo=="🍂 Fall")meteo="🌸 Spring"
     }
     return[currentSeasonA:astro,currentSeasonM:meteo]
 }
@@ -721,6 +750,10 @@ private publishZoneData(Map results){
         wxChecked:c?.currentValue("wxChecked")?:"",
         freezeAlert:(c?.currentValue("freezeAlert")?.toString()=="true"),
         freezeLowTemp:c?.currentValue("freezeLowTemp")?:"",
+        rainAlert:(c?.currentValue("rainAlert")?.toString()=="true"),
+	 	rainForecast:c?.currentValue("rainForecast") ?: "",
+	 	windAlert:(c?.currentValue("windAlert")?.toString()=="true"),
+    	windSpeed:c?.currentValue("windSpeed")?:"",
         units:settings.tempUnits?:"°F",
         zoneCount:zoneCount
     ]
@@ -763,6 +796,14 @@ private publishZoneData(Map results){
     String desc=freeze.freezeAlert?"Freeze/Frost detected (${freeze.freezeAlertText})":"No freeze or frost risk"
     childEmitChangedEvent(c,"freezeAlert",freeze.freezeAlert,desc)
     if(freeze.freezeLowTemp!=null)childEmitEvent(c,"freezeLowTemp",freeze.freezeLowTemp,"Forecast daily low (${u})",u)
+	def rain=detectRainAlert(state.lastWeather?:[:])
+	String descRain=rain.rainAlert?"Rain Alert active (${rain.rainAlertText})":"No rain alert"
+	childEmitChangedEvent(c,"rainAlert",rain.rainAlert,descRain)
+	if(rain.rainForecast!=null)childEmitEvent(c,"rainForecast",rain.rainForecast,"Forecast daily rain (${rain.unit=='C'?'mm':'in'})",rain.unit=='C'?'mm':'in')
+	def wind=detectWindAlert(state.lastWeather?:[:])
+	String descWind=wind.windAlert?"Wind Alert active (${wind.windAlertText})":"No wind alert"
+	childEmitChangedEvent(c,"windAlert",wind.windAlert,descWind)
+	if(wind.windSpeed!=null)childEmitEvent(c,"windSpeed",wind.windSpeed,"Forecast daily wind speed (${wind.unit=='C'?'kph':'mph'})",wind.unit=='C'?'kph':'mph')
 }
 
 private BigDecimal convTemp(BigDecimal val, String from='F', String to=(settings.tempUnits?:'F')){
