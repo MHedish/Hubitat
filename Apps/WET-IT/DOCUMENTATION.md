@@ -28,7 +28,7 @@ It’s the foundation for precision irrigation, ensuring each zone receives just
 | 🌦 ET-Based Control | Real weather + soil data | Adaptive precision |
 
 <details>
-    <Summary>Learn more about the FAO-56 Penman–Monteith ET Formula being used.</Summary>
+    <Summary>Uncover more about the FAO-56 Penman–Monteith ET Formula being used.</Summary>
 
 ---
 
