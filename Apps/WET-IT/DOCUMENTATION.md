@@ -356,10 +356,14 @@ If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API c
 | `appInfo` | string | App version / metadata |
 | `datasetJson` | string | Comprehensive JSON for all zones |
 | `driverInfo` | string | Driver version / metadata |
-| `freezeAlert` | bool | True when below threshold |
+| `freezeAlert` | bool | True when forecast below threshold |
 | `freezeLowTemp` | number | Freeze warning threshold |
+| `rainAlert` | bool | True when 24 hour rain forecast above threshold |
+| `rainForecast` | number | 24 hour rain forecast |
 | `summaryText` | string | Human-readable ET summary |
 | `summaryTimestamp` | string | Last hybrid ET calculation |
+| `windAlert` | bool | True when wind forecast above threshold |
+| `windSpeed` | number | Forecasted wind speed |
 | `wxChecked` | string | Forecast poll/check time |
 | `wxLocation` | string | City/State/Forecast Office/Radar Station (US Only)|
 | `wxSource` | string | Active weather provider |
