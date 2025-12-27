@@ -18,12 +18,13 @@
 *  0.6.4.1  –– Deleted parseSummary() stub. It was never in use.
 *  0.6.4.2  –– Added zoneName attribute.
 *  0.6.4.3  –– Renamed summaryJson → datasetJson to reflect comprehensive dataset contents (meta + all zones).
+*  0.6.4.4  –– Added windAlert and rainAlert attributes.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "0.6.4.3"
+@Field static final String DRIVER_VERSION  = "0.6.4.4"
 @Field static final String DRIVER_MODIFIED = "2025-12-26"
 @Field static final int MAX_ZONES = 48
 
@@ -43,8 +44,12 @@ metadata {
         attribute "driverInfo","string"
 		attribute "freezeAlert","bool"
 		attribute "freezeLowTemp","number"
+		attribute "rainAlert","bool"
+		attribute "rainForecast","number"
         attribute "summaryText","string"
         attribute "summaryTimestamp","string"
+		attribute "windAlert","bool"
+		attribute "windSpeed","number"
         attribute "wxChecked","string"
         attribute "wxLocation","string"
         attribute "wxSource","string"
