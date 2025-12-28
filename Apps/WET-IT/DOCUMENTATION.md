@@ -28,7 +28,9 @@ It’s the foundation for precision irrigation, ensuring each zone receives just
 | 🌦 ET-Based Control | Real weather + soil data | Adaptive precision |
 
 <details>
-    <Summary>Uncover more about the FAO-56 Penman–Monteith ET Formula being used.</Summary>
+    <Summary>
+		More than you ever wanted to know about the FAO-56 Penman–Monteith ET Formula being used:  $$ET_0 = \frac{0.408\Delta(R_n - G) + \gamma\frac{900}{T+273}u_2(e_s - e_a)}{\Delta + \gamma(1+0.34u_2)}$$
+	</Summary>
 
 ---
 
@@ -202,12 +204,12 @@ Further reading:
 
 ---
 
-## 🌅 Sunrise/Sunset Scheduling for Legacy Controllers
+## 🌄🌅 Sunrise/Sunset Scheduling for Legacy Controllers
 
 Many legacy irrigation controllers only support **fixed clock-time scheduling**, such as 6:00 AM, which cannot adapt to seasonal daylight changes.  
 WET-IT provides **dynamic water budgets** that, when paired with Hubitat’s built-in **sunrise/sunset events**, allow these systems to act intelligently.
 
-### 🧠 Why Sunrise Irrigation Matters
+### 🤔 Why Sunrise Irrigation Matters
 
 Extensive agricultural and horticultural research shows that **pre-dawn or sunrise irrigation** provides the optimal balance of water efficiency and plant health:
 
@@ -226,7 +228,7 @@ Numerous sources support this recommendation, including the **University of Cali
 
 WET-IT does not directly schedule watering; instead, it supplies real-time **ET budgets** and **timestamps** that can be combined with sunrise/sunset logic in Rule Machine, webCoRE, or Node-RED.
 
-### 🌅 Rule Machine Example (Dynamic Sunrise Trigger)
+### 🌄 Rule Machine Example (Dynamic Sunrise Trigger)
 
 **Trigger:** `Time occurs at Sunrise + 0 minutes`  
 **Action Sequence:**
@@ -427,6 +429,40 @@ Automations can safely:
 
 ---
 
+## 🌧️ Rain Protection Logic
+
+WET-IT monitors forecast rain amount.  
+If the 24 hour rain forecast is low temperature ≥ configured **Rain Skip Threshold**, these attributes update automatically:
+
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `rainAlert` | bool | True when forecasted rain is above threshold |
+| `rainForecast` | number | Amount of forecasted rain in the next 24 hours |
+
+Automations can safely:  
+- Skip irrigation when rainAlert = true  
+- Send notifications or trigger alerts  
+- Resume after rain event
+
+---
+
+## 💨 Wind Protection Logic
+
+WET-IT monitors forecast wind values.  
+If the forecasted windss are ≥ configured **Wind Skip Threshold**, these attributes update automatically:
+
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `windAlert` | bool | True when freeze risk active |
+| `windSpeed` | number | Configured temperature threshold |
+
+Automations can safely:  
+- Skip irrigation when windAlert = true  
+- Send notifications or trigger alerts  
+- Resume when forecasted winds will not affect irrigation
+
+---
+
 ## 🔧 Developer & Diagnostic Tools
 
 | Action | Purpose |
@@ -445,7 +481,7 @@ Automations can safely:
 
 ---
 
-## 🧭 Related Documentation
+## 📖 Related Documentation
 
  - [README.md](./README.md) — Overview and Installation  
  - [CHANGELOG.md](./CHANGELOG.md) — Version History  
