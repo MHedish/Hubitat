@@ -25,17 +25,20 @@
 *  0.6.4.8   –– Removed force of JSON/attribute publishing.
 *  0.6.4.9   –– Renamed summaryJson → datasetJson to reflect comprehensive dataset contents (meta + all zones); updated private publishZoneData() to always publish summaryText/summaryTimestamp.
 *  0.6.4.10  –– Graphics / UI
-*  0.6.4.11  –– Added rainAlert and WindAlert protection with user thresholds (unit-sensitive, mirrors freeze alert behavior).
+*  0.6.4.11  –– Added rainAlert and windAlert protection with user thresholds (unit-sensitive, mirrors freeze alert behavior).
 *  0.6.4.12  –– Fixed dynamicPage setting persistence by moving app.updateSetting() calls after input() blocks in advanced weather configuration.
 *  0.6.4.13  –– Internal cleanup.
+*  0.6.4.14  –– Fixed stale meta JSON by forcing fresh child reference in runWeatherUpdate().
+*  0.6.4.15  –– Reordered publishSummary() so JSON creation happens after alerts are updated.
+*  0.6.4.16  –– Added missing atomicState.wxSource=wx.source in fetchWeather().
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.6.4.13"
-@Field static final String APP_MODIFIED="2025-12-27"
+@Field static final String APP_VERSION="0.6.4.16"
+@Field static final String APP_MODIFIED="2025-12-28"
 @Field static final int MAX_ZONES=48
 @Field static def cachedChild=null
 @Field static Integer cachedZoneCount=null
@@ -529,9 +532,10 @@ private Map fetchWeather(boolean force=false){
     }else{
         logDebug"fetchWeather(): Weather unchanged; wxTimestamp held (${atomicState.wxTimestamp})"
     }
-    if(getDataChild()&&wx?.source){
-        def c=getDataChild()
-        childEmitChangedEvent(c,"wxSource",wx.source,"Weather provider updated")
+	atomicState.wxSource=wx.source
+    def c=getDataChild()
+    if(c&&atomicState.wxSource){
+        childEmitChangedEvent(c,"wxSource",atomicState.wxSource,"Weather provider updated")
         childEmitChangedEvent(c,"wxTimestamp",atomicState.wxTimestamp,"Weather timestamp updated")
         childEmitChangedEvent(c,"wxChecked",atomicState.wxChecked,"Weather check timestamp updated")
     }
@@ -658,6 +662,7 @@ private runWeatherUpdate(){
         logWarn"runWeatherUpdate(): No valid API key or source configured; aborting";return
     }
     if(!verifyDataChild()){logWarn"runWeatherUpdate(): cannot continue, child invalid";return}
+	def c=getDataChild(true)
     Integer zoneCount=(cachedZoneCount?:settings?.zoneCount?:0) as Integer
     if(zoneCount<=0||zoneCount>48){
         logWarn"runWeatherUpdate(): Invalid zone count (${zoneCount}); attempting dynamic recovery via verifySystem()"
@@ -727,62 +732,14 @@ private void fetchWxLocation(){
 
 /* ---------- Event Publishing ---------- */
 private publishZoneData(Map results){
-    def c=getDataChild();if(!c)return
-    String ts=new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone)
-    Integer zoneCount=cachedZoneCount?:results?.size()?:0
-    def meta=[
-        timestamp:ts,
-        wxSource:c?.currentValue("wxSource")?:"Unknown",
-        wxLocation:c?.currentValue("wxLocation")?:"",
-        wxChecked:c?.currentValue("wxChecked")?:"",
-        freezeAlert:(c?.currentValue("freezeAlert")?.toString()=="true"),
-        freezeLowTemp:c?.currentValue("freezeLowTemp")?:"",
-        rainAlert:(c?.currentValue("rainAlert")?.toString()=="true"),
-	 	rainForecast:c?.currentValue("rainForecast")?:"",
-	 	windAlert:(c?.currentValue("windAlert")?.toString()=="true"),
-    	windSpeed:c?.currentValue("windSpeed")?:"",
-        units:settings.tempUnits?:"°F",
-        zoneCount:zoneCount
-    ]
-    def soilMap=getSoilMemorySummary();def zones=[]
-    results.each{k,v->
-        def zoneStr=k.toString()
-		def zoneNum=(zoneStr=~/\d+/)?((zoneStr=~/\d+/)[0]as Integer):null
-		def zoneName=settings["name_${zoneNum}"]?:"Zone ${zoneNum}"
-		def soil=soilMap[zoneStr]?:[:]
-		zones<<[
-		    id:zoneNum,
-		    zone:zoneName,
-		    etBudgetPct:v.etBudgetPct?:0,
-		    seasonalBudgetPct:v.seasonalBudgetPct?:0,
-		    depletion:soil.depletion?:0,
-		    updated:soil.updated?:""
-		]
-    }
-    def combined=[meta:meta,zones:zones]
-    String json=new groovy.json.JsonOutput().toJson(combined)
-    String summaryText=zones.collect{z->"${z.zone}: ET ${z.etBudgetPct}%, Seasonal ${z.seasonalBudgetPct}%, Soil ${String.format('%.3f',z.depletion)}in"}.join(" | ")
-	childEmitEvent(c,"summaryText",summaryText,"Hybrid ET+Seasonal+Soil summary",null,true)
-    childEmitEvent(c,"summaryTimestamp",ts,"Summary timestamp updated",null,true)
-    logInfo"publishZoneData(): summary text emitted (${zones.size()} zones)"
-	if(settings.publishJSON){
-	    childEmitChangedEvent(c,"datasetJson",json,"Unified JSON data published",null,true)
-	    logInfo"publishZoneData(): unified datasetJson emitted (${zones.size()} zones)"
-	}
-	if(settings.publishAttributes){
-	    zones.each{z->
-		    def id=z.id
-		    childEmitChangedEvent(c,"zone${id}Name",z.zone,"Zone ${id} friendly name",null,false)
-		    childEmitChangedEvent(c,"zone${id}Et",z.etBudgetPct,"ET budget for Zone ${id}","%",false)
-		    childEmitChangedEvent(c,"zone${id}Seasonal",z.seasonalBudgetPct,"Seasonal budget for Zone ${id}","%",false)
-		}
-	    logInfo"publishZoneData(): zone attributes emitted (${zones.size()} zones)"
-    }
-    def freeze=detectFreezeAlert(state.lastWeather?:[:])
-    String u=state.lastWeather?.unit?:settings.tempUnits?:"F"
-    String desc=freeze.freezeAlert?"Freeze/Frost detected (${freeze.freezeAlertText})":"No freeze or frost risk"
-    childEmitChangedEvent(c,"freezeAlert",freeze.freezeAlert,desc)
-    if(freeze.freezeLowTemp!=null)childEmitEvent(c,"freezeLowTemp",freeze.freezeLowTemp,"Forecast daily low (${u})",u)
+	def c=getDataChild();if(!c){logDebug"publishZoneData(): getDataChild() returned null.";return}
+	String ts=new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone)
+	Integer zoneCount=cachedZoneCount?:results?.size()?:0
+	def freeze=detectFreezeAlert(state.lastWeather?:[:])
+	String u=state.lastWeather?.unit?:settings.tempUnits?:"F"
+	String desc=freeze.freezeAlert?"Freeze/Frost detected (${freeze.freezeAlertText})":"No freeze or frost risk"
+	childEmitChangedEvent(c,"freezeAlert",freeze.freezeAlert,desc)
+	if(freeze.freezeLowTemp!=null)childEmitEvent(c,"freezeLowTemp",freeze.freezeLowTemp,"Forecast daily low (${u})",u)
 	def rain=detectRainAlert(state.lastWeather?:[:])
 	String descRain=rain.rainAlert?"Rain Alert active (${rain.rainAlertText})":"No rain alert"
 	childEmitChangedEvent(c,"rainAlert",rain.rainAlert,descRain)
@@ -791,6 +748,55 @@ private publishZoneData(Map results){
 	String descWind=wind.windAlert?"Wind Alert active (${wind.windAlertText})":"No wind alert"
 	childEmitChangedEvent(c,"windAlert",wind.windAlert,descWind)
 	if(wind.windSpeed!=null)childEmitEvent(c,"windSpeed",wind.windSpeed,"Forecast daily wind speed (${wind.unit=='C'?'kph':'mph'})",wind.unit=='C'?'kph':'mph')
+	def meta=[
+		timestamp:ts,
+		wxChecked:atomicState.wxChecked?:"",
+		wxLocation:atomicState.wxLocation?:"",
+		wxSource:atomicState.wxSource?:"Unknown",
+		wxTimestamp:atomicState.wxTimestamp?:"",
+		freezeAlert:(c?.currentValue("freezeAlert")?.toString()=="true"),
+		freezeLowTemp:c?.currentValue("freezeLowTemp")?:"",
+		rainAlert:(c?.currentValue("rainAlert")?.toString()=="true"),
+		rainForecast:c?.currentValue("rainForecast")?:"",
+		windAlert:(c?.currentValue("windAlert")?.toString()=="true"),
+		windSpeed:c?.currentValue("windSpeed")?:"",
+		units:settings.tempUnits?:"°F",
+		zoneCount:zoneCount
+	]
+	def soilMap=getSoilMemorySummary();def zones=[]
+	results.each{k,v->
+		def zoneStr=k.toString()
+		def zoneNum=(zoneStr=~/\d+/)?((zoneStr=~/\d+/)[0]as Integer):null
+		def zoneName=settings["name_${zoneNum}"]?:"Zone ${zoneNum}"
+		def soil=soilMap[zoneStr]?:[:]
+		zones<<[
+			id:zoneNum,
+			zone:zoneName,
+			etBudgetPct:v.etBudgetPct?:0,
+			seasonalBudgetPct:v.seasonalBudgetPct?:0,
+			depletion:soil.depletion?:0,
+			updated:soil.updated?:""
+		]
+	}
+	def combined=[meta:meta,zones:zones]
+	String json=new groovy.json.JsonOutput().toJson(combined)
+	String summaryText=zones.collect{z->"${z.zone}: ET ${z.etBudgetPct}%, Seasonal ${z.seasonalBudgetPct}%, Soil ${String.format('%.3f',z.depletion)}in"}.join(" | ")
+	childEmitEvent(c,"summaryText",summaryText,"Hybrid ET+Seasonal+Soil summary",null,true)
+	childEmitEvent(c,"summaryTimestamp",ts,"Summary timestamp updated",null,true)
+	logInfo"publishZoneData(): summary text emitted (${zones.size()} zones)"
+	if(settings.publishJSON){
+		childEmitChangedEvent(c,"datasetJson",json,"Unified JSON data published",null,true)
+		logInfo"publishZoneData(): unified datasetJson emitted (${zones.size()} zones)"
+	}
+	if(settings.publishAttributes){
+		zones.each{z->
+			def id=z.id
+			childEmitChangedEvent(c,"zone${id}Name",z.zone,"Zone ${id} friendly name",null,false)
+			childEmitChangedEvent(c,"zone${id}Et",z.etBudgetPct,"ET budget for Zone ${id}","%",false)
+			childEmitChangedEvent(c,"zone${id}Seasonal",z.seasonalBudgetPct,"Seasonal budget for Zone ${id}","%",false)
+		}
+		logInfo"publishZoneData(): zone attributes emitted (${zones.size()} zones)"
+	}
 }
 
 private BigDecimal convTemp(BigDecimal val,String from='F',String to=(settings.tempUnits?:'F')){
