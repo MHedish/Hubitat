@@ -65,7 +65,7 @@
 ---
 
 ## 🌈 0.6.4.x — Final Stabilization (Release)
-**App v0.6.4.9 / Driver v0.6.4.3 — Released 2025-12-26**
+**App v0.6.4.16 / Driver v0.6.4.4 — Released 2025-12-28**
 
 - 0.6.0.1 – Normalized wxTimestamp handling across NOAA, OWM, and Tomorrow.io providers (consistent local time, correct forecast reference)
 - 0.6.1.0 – Refactored child event logging.
