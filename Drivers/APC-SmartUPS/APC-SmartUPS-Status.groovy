@@ -13,14 +13,16 @@
 *  1.0.1.1   -- Enhanced handleUPSStatus() to properly normalize multi-token NMC strings (e.g., “Online, Smart Trim”) via improved regex boundaries and partial-match detection.
 *  1.0.1.2   -- Added nextBatteryReplacement attribute; captures and normalizes NMC "Next Battery Replacement Date" from battery status telemetry.
 *  1.0.1.3   -- Added wiringFault attribute detection in handleUPSStatus(); automatically emits true/false based on "Site Wiring Fault" presence in UPS status line.
+*  1.0.1.4   -- Corrected emitEvent() and emitChangedEvent()
+*  1.0.1.5   -- Changed asynchronous delay when stale state variable is detected to blocking/synchronous to allow lazy-flushed update to complete before forcing refresh().
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.1.3"
-@Field static final String DRIVER_MODIFIED = "2025.12.17"
+@Field static final String DRIVER_VERSION  = "1.0.1.5"
+@Field static final String DRIVER_MODIFIED = "2025.12.29"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
 /* ===============================
@@ -149,8 +151,8 @@ private logInfo(msg)  {if(logEvents) log.info  "[${DRIVER_NAME}] $msg"}
 private logWarn(msg)  {log.warn "[${DRIVER_NAME}] $msg"}
 private logError(msg) {log.error"[${DRIVER_NAME}] $msg"}
 private void emitLastUpdate(){def s=getTransient("sessionStart");def ms=s?(now()-s):0;def sec=(ms/1000).toDouble().round(3);emitChangedEvent("lastUpdate",new Date().format("MM/dd/yyyy h:mm:ss a"),"Data Capture Run Time = ${sec}s");clearTransient("sessionStart")}
-private emitEvent(String name,def value,String desc=null,String unit=null){sendEvent(name:name,value:value,unit:unit,descriptionText:desc);if(logEvents)logInfo"[${DRIVER_NAME}] ${desc? "${name}=${value} (${desc})":"${name}=${value}"}"}
-private emitChangedEvent(String n,def v,String d=null,String u=null){def o=device.currentValue(n);if(o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d);logInfo d?"${n}=${v} (${d})":"${n}=${v}"}else logDebug "No change for ${n} (still ${o})"}
+private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
+private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 private updateConnectState(String newState){def old=device.currentValue("connectStatus");def last=getTransient("lastConnectState");if(old!=newState&&last!=newState){setTransient("lastConnectState",newState);emitChangedEvent("connectStatus",newState)}else{logDebug"updateConnectState(): no change (${old} → ${newState})"}}
 private updateCommandState(String newCmd){def old=state.lastCommand;state.lastCommand=newCmd;if(old!=newCmd)logDebug"lastCommand = ${newCmd}"}
 private def normalizeDateTime(String r){if(!r||r.trim()=="")return r;try{def m=r=~/^(\d{2})\/(\d{2})\/(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/;if(m.matches()){def(mm,dd,yy,hh,mi,ss)=m[0][1..6];def y=(yy as int)<80?2000+(yy as int):1900+(yy as int);def f="${mm}/${dd}/${y}"+(hh?" ${hh}:${mi}:${ss?:'00'}":"");def d=Date.parse(hh?"MM/dd/yyyy HH:mm:ss":"MM/dd/yyyy",f);return hh?d.format("MM/dd/yyyy h:mm:ss a",location.timeZone):d.format("MM/dd/yyyy",location.timeZone)};for(fmt in["MM/dd/yyyy HH:mm:ss","MM/dd/yyyy h:mm:ss a","MM/dd/yyyy","yyyy-MM-dd","MMM dd yyyy HH:mm:ss"])try{def d=Date.parse(fmt,r);return(fmt.contains("HH")||fmt.contains("h:mm:ss"))?d.format("MM/dd/yyyy h:mm:ss a",location.timeZone):d.format("MM/dd/yyyy",location.timeZone)}catch(e){} }catch(e){};return r}
@@ -297,7 +299,7 @@ private void sendUPSCommand(String cmdName,List cmds){
         logInfo"${cmdName} deferred 15s (Telnet busy with ${state.lastCommand})"
         if(state.deferredCommand==cmdName){
             logWarn"sendUPSCommand(): repeated deferral detected for ${cmdName}; forcing full session reset"
-            resetTransientState("sendUPSCommand");updateConnectState("Disconnected");closeConnection();runInMillis(500,"refresh");return
+            resetTransientState("sendUPSCommand");updateConnectState("Disconnected");closeConnection();pauseExecution(1000);return
         }
         state.deferredCommand=cmdName
         def retryTarget=(cmdName=="Reconnoiter")?"refresh":cmdName
