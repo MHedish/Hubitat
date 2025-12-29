@@ -35,4 +35,6 @@
 ### 🚀 1.0.1.x — Production Updates
 - 1.0.1.1 Enhanced handleUPSStatus() to properly normalize multi-token NMC strings (e.g., “Online, Smart Trim”) via improved regex boundaries and partial-match detection.
 - 1.0.1.2 Added nextBatteryReplacement attribute; captures and normalizes NMC "Next Battery Replacement Date" from battery status telemetry.
-- 10.01.3 Added wiringFault attribute detection in handleUPSStatus(); automatically emits true/false based on "Site Wiring Fault" presence in UPS status line. 
+- 1.0.1.3 Added wiringFault attribute detection in handleUPSStatus(); automatically emits true/false based on "Site Wiring Fault" presence in UPS status line.
+- 1.0.1.4 Corrected emitEvent() and emitChangedEvent().
+- 1.0.1.5 Changed asynchronous delay when stale state variable is detected to blocking/synchronous to allow lazy-flushed update to complete before forcing refresh().
