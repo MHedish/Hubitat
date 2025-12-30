@@ -195,7 +195,7 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 > © 2025 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE4NzA4NDI3NywxMzc5NDM2MjUzLC0xNT
-YyNTU4MzA5LDEyMjYyNjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgy
-MjNdfQ==
+eyJoaXN0b3J5IjpbLTEyMzUwNzc0MTgsLTE4NzA4NDI3NywxMz
+c5NDM2MjUzLC0xNTYyNTU4MzA5LDEyMjYyNjE3NzIsMTM3NTU5
+NzEyLDIxMTk4NTgyMjNdfQ==
 -->
