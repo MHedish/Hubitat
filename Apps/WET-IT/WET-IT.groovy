@@ -7,38 +7,15 @@
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  0.6.0.0   –– Initial Beta Release
-*  0.6.0.1   –– Normalized wxTimestamp handling across NOAA, OWM, and Tomorrow.io providers (consistent local time, correct forecast reference)
-*  0.6.1.0   –– Refactored child event logging.
-*  0.6.2.0   –– Added wxLocation attribute - Forecast location (NOAA) via fetchWxLocation()
-*  0.6.3.0   –– Refactored JSON output.
-*  0.6.3.1   –– Separated id and zone in JSON.
-*  0.6.3.2   –– Reworked summaryJson structure: added metadata block and per-zone array with ET, Seasonal, and Soil data.
-*  0.6.4.0   –– Added per-zone naming via zonePage(); user-defined names now populate the “zone” field in unified summaryJson.
-*  0.6.4.1   –– Updated publishSummary() to use zone friendly name in summary text.
-*  0.6.4.2   –– Cosmetic cleanup; Updated buildZoneDirectory() to display user-friendly zone names in setup list.
-*  0.6.4.3   –– Reverted
-*  0.6.4.4   –– Updated section headers with HTML color and size.
-*  0.6.4.5   –– Restored per-zone attribute updates (Name, ET, Seasonal) alongside unified summaryJson publishing; Renamed publishSummary() to publishZoneData.
-*  0.6.4.6   –– Added user controls for JSON vs. attribute publishing; enforced at least one publishing mode active at all times with live toggle enforcement for publishing options.
-*  0.6.4.7   –– Added automatic cleanup of unused child attributes when publishing options are disabled.
-*  0.6.4.8   –– Removed force of JSON/attribute publishing.
-*  0.6.4.9   –– Renamed summaryJson → datasetJson to reflect comprehensive dataset contents (meta + all zones); updated private publishZoneData() to always publish summaryText/summaryTimestamp.
-*  0.6.4.10  –– Graphics / UI
-*  0.6.4.11  –– Added rainAlert and windAlert protection with user thresholds (unit-sensitive, mirrors freeze alert behavior).
-*  0.6.4.12  –– Fixed dynamicPage setting persistence by moving app.updateSetting() calls after input() blocks in advanced weather configuration.
-*  0.6.4.13  –– Internal cleanup.
-*  0.6.4.14  –– Fixed stale meta JSON by forcing fresh child reference in runWeatherUpdate().
-*  0.6.4.15  –– Reordered publishSummary() so JSON creation happens after alerts are updated.
-*  0.6.4.16  –– Added missing atomicState.wxSource=wx.source in fetchWeather().
+*  1.0.0.0   –– Initial Public Release
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="0.6.4.16"
-@Field static final String APP_MODIFIED="2025-12-28"
+@Field static final String APP_VERSION="1.0.0.0"
+@Field static final String APP_MODIFIED="2025-12-29"
 @Field static final int MAX_ZONES=48
 @Field static def cachedChild=null
 @Field static Integer cachedZoneCount=null
@@ -93,7 +70,7 @@ def mainPage(){
         paragraph "<a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md' target='_blank'>📘 View Documentation</a>"
         paragraph "<small>v${APP_VERSION} (${APP_MODIFIED})</small>"
         }
- 		section(){paragraph "<hr style='margin-top:2px;margin-bottom:10px;'>"}
+ 		section(){paragraph "<hr style='margin-top:2px;margin-bottom:2px;'>"}
 
         /* -------------------- 2️ Zone Setup -------------------- */
         buildZoneDirectory()
@@ -112,7 +89,7 @@ def mainPage(){
 	}
 
 		/* ---------- 4️ Weather Configuration ---------- */
- 		section(){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
+ 		section(){paragraph "<hr style='margin-top:10px;margin-bottom:2px;'>"}
         section(){
 			paragraph htmlHeading("🌦️ Weather Configuration","#4682B4")
 		    input"weatherSource","enum",title:"Select Weather Source",
@@ -152,7 +129,21 @@ def mainPage(){
 		    if(!windVal||!windOpts.contains(windVal))app.updateSetting("windSkipThreshold",[value:windDef,type:"enum"])
 		    input"windSkipThreshold","enum",title:"Wind Skip Threshold (${windUnit})<br><small>Trigger skip irrigation if forecast wind speed ≥ threshold.</small>",options:windOpts,defaultValue:windDef,submitOnChange:false
 		}
- 		section(){paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"}
+        section(){
+            paragraph htmlHeading("🚨 Active Weather Alerts", "#4682B4")
+            def freeze=atomicState.freezeAlert;def freezeLow=atomicState.freezeLowTemp
+            def rain=atomicState.rainAlert;def rainAmt=atomicState.rainForecast
+            def wind=atomicState.windAlert;def windSpd=atomicState.windSpeed
+            if(freeze==null&&rain==null&&wind==null){
+                paragraph "<i>No weather alert data yet. Run a weather update to populate alerts.</i>"
+            }else{
+                def unit=settings.tempUnits?:"F";def rainUnit=(unit=="C")?"mm":"in";def windUnit=(unit=="C")?"kph":"mph"
+                if(freeze)paragraph "<b>🧊 Freeze/Frost:</b> ${"<span style='color:#B22222;'>Active – Projected low ${freezeLow}${unit}</span>"}"
+                if(rain)paragraph "<b>🌧️ Rain:</b> ${"<span style='color:blue;'>Active – Forecast ${rainAmt}${rainUnit}</span>"}"
+                if(wind)paragraph "<b>💨 Wind:</b> ${"<span style='color:#B85C00;'>Active – ${windSpd}${windUnit}</span>"}"
+            }
+        }
+ 		section(){paragraph "<hr style='margin-top:10px;margin-bottom:2px;'>"}
 
 		/* ---------- 5️ Logging Tools & Diagnostics ---------- */
         section(){
@@ -169,7 +160,7 @@ def mainPage(){
 		    input"logEnable","bool",title:"Enable Debug Logging",defaultValue:false
 		    paragraph "Auto-off after 30 minutes when debug logging is enabled."
             input"btnDisableDebug","button",title: "🛑 Disable Debug Logging Now"
-            paragraph "<hr style='margin-top:10px;margin-bottom:10px;'>"
+            paragraph "<hr style='margin-top:10px;margin-bottom:2px;'>"
 		}
         section(){
 			paragraph htmlHeading("⚙️ System Diagnostics","#1E90FF")
@@ -224,7 +215,7 @@ private buildZoneDirectory(){
 }
 
 def zonePage(params){
-	Integer z=(params?.zone?:1) as Integer;state.activeZone=z
+	Integer z=(params?.zone?:1)as Integer;state.activeZone=z
     dynamicPage(name:"zonePage",install:false,uninstall:false){
         section(){
 			paragraph htmlHeading("🌱 Zone ${z} Configuration","#2E8B57")
@@ -249,7 +240,7 @@ def soilPage(){
 			paragraph htmlHeading("🌾 Soil Memory Management","#A0522D")
             (1..getZoneCountCached()).each {z->
                 def key="zoneDepletion_zone${z}";def tsKey="zoneDepletionTs_zone${z}"
-                BigDecimal d=(atomicState[key]?:0G) as BigDecimal
+                BigDecimal d=(atomicState[key]?:0G)as BigDecimal
                 String ts=atomicState[tsKey]?:'—'
                 paragraph "<b>Zone ${z}</b>: ${String.format('%.3f', d)} in.<br><i>Last updated:</i> ${ts}"
                 def btnTitle=settings["soilResetConfirm_${z}"]?"⚠️ Confirm Reset Zone ${z}":"🔄 Reset Zone ${z}"
@@ -275,8 +266,8 @@ def appButtonHandler(String btn){
 	if(btn.startsWith("resetAdv_")){Integer z=(btn-"resetAdv_")as Integer;resetAdvancedForZone(z);return}
 	if(btn=="btnResetAllSoil"){if(!settings.resetAllConfirm){app.updateSetting("resetAllConfirm",[value:true,type:"bool"]);return};resetAllSoilMemory();app.updateSetting("resetAllConfirm",[value:false,type:"bool"]);return}
 	if(btn=="btnCancelResetAll"){app.updateSetting("resetAllConfirm",[value:false,type:"bool"]);return}
-	if(btn.startsWith("btnResetSoil_")){def z=(btn-"btnResetSoil_") as Integer;if(!settings["soilResetConfirm_${z}"]){app.updateSetting("soilResetConfirm_${z}",[value:true,type:"bool"]);return};resetSoilForZone(z);app.updateSetting("soilResetConfirm_${z}",[value:false,type:"bool"]);return}
-	if(btn.startsWith("btnCancelReset_")){def z=(btn-"btnCancelReset_") as Integer;app.updateSetting("soilResetConfirm_${z}",[value:false,type:"bool"]);return}
+	if(btn.startsWith("btnResetSoil_")){def z=(btn-"btnResetSoil_")as Integer;if(!settings["soilResetConfirm_${z}"]){app.updateSetting("soilResetConfirm_${z}",[value:true,type:"bool"]);return};resetSoilForZone(z);app.updateSetting("soilResetConfirm_${z}",[value:false,type:"bool"]);return}
+	if(btn.startsWith("btnCancelReset_")){def z=(btn-"btnCancelReset_")as Integer;app.updateSetting("soilResetConfirm_${z}",[value:false,type:"bool"]);return}
     if(btn=="btnDisableDebug"){disableDebugLoggingNow();return}
     if(btn=="btnRunWeatherUpdate"){runWeatherUpdate();def msg=getDataChild(true)?.currentValue("summaryText")?:'⚠️ No ET summary available';logInfo"ET run completed: ${msg}";app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
 	if(btn=="btnVerifyChild"){def ok=verifyDataChild();def msg=ok?"✅ Data child verified successfully.":"⚠️ Data child verification failed. Check logs.";logInfo msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
@@ -344,11 +335,11 @@ private void resetAdvancedForZone(Integer z){
 // Reset one zone’s ET deficit by percentage (same logic as btnResetSoil_X)
 private void resetSoilForZone(Object... args){
     try{
-        def z=(args.size()>0?args[0]:0) as Integer
-        def pct=(args.size()>1?args[1]:1.0) as BigDecimal
+        def z=(args.size()>0?args[0]:0)as Integer
+        def pct=(args.size()>1?args[1]:1.0)as BigDecimal
         pct=Math.min(Math.max(pct,0.0G),1.0G)
         def k="zoneDepletion_zone${z}";def tKey="zoneDepletionTs_zone${z}"
-        def oldVal=(state[k]?:0G) as BigDecimal;def newVal=oldVal*(1.0-pct)
+        def oldVal=(state[k]?:0G)as BigDecimal;def newVal=oldVal*(1.0-pct)
         state[k]=newVal;state[tKey]=new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone)
         updateSoilMemory()
         logInfo"resetSoilForZone(${z},${pct}): ${String.format('%.3f',oldVal)}→${String.format('%.3f',newVal)} (${(pct*100).intValue()}% refill)"
@@ -559,8 +550,10 @@ private Map fetchWeatherOwm(boolean force=false){
             BigDecimal tMaxF=(d.temp?.max?:0)as BigDecimal,tMinF=(d.temp?.min?:tMaxF)as BigDecimal
             BigDecimal tMax=convTemp(tMaxF,'F',unit),tMin=convTemp(tMinF,'F',unit)
             BigDecimal rainMm=(d.rain?:0)as BigDecimal,rainIn=etMmToIn(rainMm)
-            r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,unit:unit,providerTs:providerTs]
-            childEmitChangedEvent(getDataChild(),"wxSource","OpenWeather 3.0","OpenWeather 3.0: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rainIn=${rainIn}")
+			BigDecimal windSpeedF=(d.wind_speed?:resp.data.current?.wind_speed?:0)as BigDecimal
+			String windDir=(d.wind_deg?:resp.data.current?.wind_deg?:'')?.toString()
+            r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,windSpeed:windSpeedF,windDir:windDir,unit:unit,providerTs:providerTs]
+			childEmitChangedEvent(getDataChild(),"wxSource","OpenWeather 3.0","OpenWeather 3.0: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rainIn=${rainIn}, wind=${windSpeedF}${unit=='C'?'kph':'mph'}")
         };return r
     }catch(e){logError"fetchWeatherOwm(): ${e.message}";return null}
 }
@@ -592,10 +585,19 @@ private Map fetchWeatherNoaa(boolean force=false){
             BigDecimal tMinC=(p.minTemperature?.values?.getAt(0)?.value?:tMaxC)as BigDecimal
             BigDecimal tMaxF=convTemp(tMaxC,'C','F'),tMinF=convTemp(tMinC,'C','F')
             BigDecimal tMax=convTemp(tMaxC,'C',unit),tMin=convTemp(tMinC,'C',unit)
-            BigDecimal rainMm=(p.quantitativePrecipitation?.values?.getAt(0)?.value?:0)
+            BigDecimal rainMm=0;if(p?.quantitativePrecipitation?.values){def vals=p.quantitativePrecipitation.values;def now=new Date();def cutoff=now+(24*60*60*1000);vals.each{v->try{def vs=Date.parse("yyyy-MM-dd'T'HH:mm:ssX",v.validTime.split('/')[0]);if(vs<=cutoff&&v.value!=null)rainMm+=(v.value as BigDecimal)}catch(ignored){}}}
             BigDecimal rainIn=etMmToIn(rainMm)
-            r=[tMaxC:tMaxC,tMinC:tMinC,tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,unit:unit,providerTs:providerTs]
-            childEmitChangedEvent(getDataChild(),"wxSource","NOAA NWS","NOAA NWS: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rainIn=${rainIn}")
+            String windSpeed='';String windDir='';try{
+                String forecastUrl="https://api.weather.gov/gridpoints/${gridUrl.split('/gridpoints/')[1]}/forecast"
+                httpGet([uri:forecastUrl,headers:["User-Agent":"Hubitat-WET-IT","Accept":"application/geo+json","Accept-Encoding":"identity"]]){fr->
+                    def f;if(fr?.data instanceof Map)f=fr.data
+                    else if(fr?.data?.respondsTo("read"))f=new groovy.json.JsonSlurper().parse(fr.data)
+                    else f=new groovy.json.JsonSlurper().parseText(fr?.data?.toString()?:'{}')
+                    def fp=f?.properties?.periods?.getAt(0);if(fp){windSpeed=(fp.windSpeed?:'');windDir=(fp.windDirection?:'')}
+                }
+            }catch(ignore){}
+            r=[tMaxC:tMaxC,tMinC:tMinC,tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,rain24h:rainIn,windSpeed:windSpeed,windDir:windDir,unit:unit,providerTs:providerTs]
+            childEmitChangedEvent(getDataChild(),"wxSource","NOAA NWS","NOAA NWS: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rainIn=${rainIn}, wind=${windSpeed}")
         };return r
     }catch(e){logError"fetchWeatherNoaa(): ${e.message}";return null}
 }
@@ -618,8 +620,10 @@ private Map fetchWeatherTomorrow(boolean force=false){
             BigDecimal tMaxF=(v.temperatureMax?:0)as BigDecimal,tMinF=(v.temperatureMin?:tMaxF)as BigDecimal
             BigDecimal tMax=convTemp(tMaxF,'F',unit),tMin=convTemp(tMinF,'F',unit)
             BigDecimal rainMm=(v.precipitationSum?:0)as BigDecimal,rainIn=etMmToIn(rainMm)
-            r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,unit:unit,providerTs:providerTs]
-            childEmitChangedEvent(getDataChild(),"wxSource","Tomorrow.io","Tomorrow.io: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rainIn=${rainIn}")
+			BigDecimal windSpeedF=(v.windSpeedAvg?:v.windSpeedMax?:0)as BigDecimal
+			String windDir=(v.windDirectionAvg?:v.windDirection?:'')?.toString()
+            r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,windSpeed:windSpeedF,windDir:windDir,unit:unit,providerTs:providerTs]
+            childEmitChangedEvent(getDataChild(),"wxSource","Tomorrow.io","Tomorrow.io: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rainIn=${rainIn}, wind=${windSpeedF}${unit=='C'?'kph':'mph'}")
         };return r
     }catch(e){logError"fetchWeatherTomorrow(): ${e.message}";return null}
 }
@@ -635,7 +639,7 @@ private Map detectFreezeAlert(Map wx){
     def a=(alerts.flatten().unique().find{it=~/(?i)(freeze|frost|cold)/})
     if(a){alertText=a;alert=true}
     else{
-        BigDecimal threshold=(settings.freezeThreshold?:(unit=='C'?1.7:35)) as BigDecimal
+        BigDecimal threshold=(settings.freezeThreshold?:(unit=='C'?1.7:35))as BigDecimal
         if(tLowU<threshold){alert=true;alertText=alertText="Low ${tLow.setScale(1,BigDecimal.ROUND_HALF_UP)}°${unit} (threshold <${threshold}°${unit})"}
     }
     return [freezeAlert:alert,freezeAlertText:alertText,freezeLowTemp:tLowU,unit:unit]
@@ -643,19 +647,30 @@ private Map detectFreezeAlert(Map wx){
 
 private Map detectRainAlert(Map wx){
     String unit=(settings.tempUnits?:'F');String alertText="None";boolean alert=false
-    BigDecimal rain=(wx?.precip24h?:0) as BigDecimal
-    BigDecimal threshold=(settings.rainSkipThreshold?:(unit=='C'?3.0:0.125)) as BigDecimal
+    BigDecimal rain=(wx?.rain24h?:wx?.precip24h?:0)as BigDecimal
+    BigDecimal threshold=(settings.rainSkipThreshold?:(unit=='C'?3.0:0.125))as BigDecimal
     if(rain>=threshold){alert=true;alertText="Forecast ${rain.setScale(2,BigDecimal.ROUND_HALF_UP)}${unit=='C'?'mm':'in'} ≥ ${threshold}${unit=='C'?'mm':'in'}"}
     return [rainAlert:alert,rainAlertText:alertText,rainForecast:rain,unit:unit]
 }
 
 private Map detectWindAlert(Map wx){
     String unit=(settings.tempUnits?:'F');String alertText="None";boolean alert=false
-    BigDecimal wind=(wx?.windSpeed?:0) as BigDecimal
-    BigDecimal threshold=(settings.windSkipThreshold?:(unit=='C'?20.0:12.0)) as BigDecimal
+    BigDecimal threshold=(settings.windSkipThreshold?:(unit=='C'?20.0:12.0))as BigDecimal
+    def raw=wx?.windSpeed;BigDecimal wind=0
+    if(raw instanceof Number){wind=raw as BigDecimal;if(unit!='C'&&wind<60)wind*=2.237}
+    else if(raw instanceof String){
+        def s=(""+raw).toLowerCase()
+        def m=s=~/([\d.]+)\s*(mph|kph|km\/h|mps|m\/s)?/
+        if(m.find()){
+            wind=m.group(1).toBigDecimal();def u=(m.groupCount()>1&&m.group(2))?m.group(2):''
+            if(u.contains('kph')||u.contains('km'))wind/=1.609
+            else if(u.contains('mps')||u.contains('m/s'))wind*=2.237
+        }
+    }
     if(wind>=threshold){alert=true;alertText="Wind ${wind.setScale(1,BigDecimal.ROUND_HALF_UP)}${unit=='C'?'kph':'mph'} ≥ ${threshold}${unit=='C'?'kph':'mph'}"}
     return [windAlert:alert,windAlertText:alertText,windSpeed:wind,unit:unit]
 }
+
 
 private runWeatherUpdate(){
     if(!owmApiKey&&!tioApiKey&&(settings.weatherSource!="noaa")){
@@ -663,10 +678,10 @@ private runWeatherUpdate(){
     }
     if(!verifyDataChild()){logWarn"runWeatherUpdate(): cannot continue, child invalid";return}
 	def c=getDataChild(true)
-    Integer zoneCount=(cachedZoneCount?:settings?.zoneCount?:0) as Integer
+    Integer zoneCount=(cachedZoneCount?:settings?.zoneCount?:0)as Integer
     if(zoneCount<=0||zoneCount>48){
         logWarn"runWeatherUpdate(): Invalid zone count (${zoneCount}); attempting dynamic recovery via verifySystem()"
-        verifySystem();zoneCount=(cachedZoneCount?:settings?.zoneCount?:0) as Integer
+        verifySystem();zoneCount=(cachedZoneCount?:settings?.zoneCount?:0)as Integer
         if(zoneCount<=0||zoneCount>48){logError"runWeatherUpdate(): Recovery failed — no valid zones (${zoneCount}); aborting ET update";return}
         else logInfo"runWeatherUpdate(): Recovery succeeded — found ${zoneCount} active zone(s)"
     }
@@ -741,10 +756,12 @@ private publishZoneData(Map results){
 	childEmitChangedEvent(c,"freezeAlert",freeze.freezeAlert,desc)
 	if(freeze.freezeLowTemp!=null)childEmitEvent(c,"freezeLowTemp",freeze.freezeLowTemp,"Forecast daily low (${u})",u)
 	def rain=detectRainAlert(state.lastWeather?:[:])
+	if(rain?.rainForecast instanceof Number)rain.rainForecast=rain.rainForecast.toBigDecimal().setScale(2,BigDecimal.ROUND_HALF_UP)
 	String descRain=rain.rainAlert?"Rain Alert active (${rain.rainAlertText})":"No rain alert"
 	childEmitChangedEvent(c,"rainAlert",rain.rainAlert,descRain)
 	if(rain.rainForecast!=null)childEmitEvent(c,"rainForecast",rain.rainForecast,"Forecast daily rain (${rain.unit=='C'?'mm':'in'})",rain.unit=='C'?'mm':'in')
 	def wind=detectWindAlert(state.lastWeather?:[:])
+	if(wind?.windSpeed instanceof Number)wind.windSpeed=wind.windSpeed.toBigDecimal().setScale(2,BigDecimal.ROUND_HALF_UP)
 	String descWind=wind.windAlert?"Wind Alert active (${wind.windAlertText})":"No wind alert"
 	childEmitChangedEvent(c,"windAlert",wind.windAlert,descWind)
 	if(wind.windSpeed!=null)childEmitEvent(c,"windSpeed",wind.windSpeed,"Forecast daily wind speed (${wind.unit=='C'?'kph':'mph'})",wind.unit=='C'?'kph':'mph')
@@ -797,6 +814,11 @@ private publishZoneData(Map results){
 		}
 		logInfo"publishZoneData(): zone attributes emitted (${zones.size()} zones)"
 	}
+    try {
+        atomicState.freezeAlert=freeze.freezeAlert;atomicState.freezeLowTemp=freeze.freezeLowTemp;atomicState.rainAlert=rain.rainAlert
+        atomicState.rainForecast=rain.rainForecast;atomicState.windAlert=wind.windAlert;atomicState.windSpeed=wind.windSpeed
+        logDebug "publishZoneData(): atomicState weather alerts persisted"
+    }catch(e){logWarn "publishZoneData(): failed to persist atomicState alerts (${e.message})"}
 }
 
 private BigDecimal convTemp(BigDecimal val,String from='F',String to=(settings.tempUnits?:'F')){
@@ -819,7 +841,7 @@ private adjustSoilDepletion(){
         logInfo"adjustSoilDepletion(): ET₀=${String.format('%.3f',etDaily)} • adj=${String.format('%.2f',seasonalAdj)} • Δ=${String.format('%.3f',etScaled)} (${String.format('%.1f',elapsedMin)}m)"
         (1..getZoneCountCached()).each{z->
             def k="zoneDepletion_zone${z}";def tKey="zoneDepletionTs_zone${z}"
-            def dep=(atomicState[k]?:0G) as BigDecimal
+            def dep=(atomicState[k]?:0G)as BigDecimal
             atomicState[k]=(dep+etScaled).toBigDecimal();atomicState[tKey]=nowStr
             logDebug"Zone ${z}: +${String.format('%.3f',etScaled)}in ET (total=${String.format('%.3f',atomicState[k])})"
         }
