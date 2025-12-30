@@ -96,6 +96,6 @@
 > **WET-IT 1.0.0.0 — Intelligent irrigation, perfected.**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTcyNTI4NDU2OSwtMTAyOTk3ODQ3LC04MT
-IwNzIzNTgsMTg0NzAzNzgwM119
+eyJoaXN0b3J5IjpbMTM4MzM4MDQ0NiwxNzI1Mjg0NTY5LC0xMD
+I5OTc4NDcsLTgxMjA3MjM1OCwxODQ3MDM3ODAzXX0=
 -->
