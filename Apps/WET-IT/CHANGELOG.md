@@ -64,27 +64,37 @@
 
 ---
 
-## 🌈 0.6.4.x — Final Stabilization (Release)
+## 🌦️ 0.6.4.x — Pre-Release Stabilization Cycle  
 **App v0.6.4.16 / Driver v0.6.4.4 — Released 2025-12-28**
 
-- 0.6.0.1 – Normalized wxTimestamp handling across NOAA, OWM, and Tomorrow.io providers (consistent local time, correct forecast reference)
-- 0.6.1.0 – Refactored child event logging.
-- 0.6.2.0 – Added wxLocation attribute – Forecast location (NOAA)
-- 0.6.3.0 – Refactored JSON output.
-- 0.6.4.1 – Deleted parseSummary() stub.
-- 0.6.4.4 – HTML headers.
-- 0.6.4.5 – Restored per-zone attribute updates (Name, ET, Seasonal) alongside unified summaryJson publishing; renamed publishSummary() to publishZoneData.
-- 0.6.4.6 – Added user controls for JSON vs. attribute publishing; enforced at least one publishing mode active at all times with live toggle enforcement for publishing options.
-- 0.6.4.7 – Added automatic cleanup of unused child attributes when publishing options are disabled.
-- 0.6.4.8 – Removed force of JSON/attribute publishing.
-- 0.6.4.9 – Renamed summaryJson → datasetJson to reflect comprehensive dataset contents (meta + all zones); updated private publishZoneData() to always publish summaryText/summaryTimestamp
-- 0.6.4.9 – Added rainAlert and windAlert protection with user thresholds (unit-sensitive, mirrors freeze alert behavior).
-- 0.6.4.12 – Fixed dynamicPage setting persistence.
-- 0.6.4.14 – Fixed stale meta JSON by forcing fresh child reference in runWeatherUpdate().
-- 0.6.4.15 – Reordered publishSummary() so JSON creation happens after alerts are updated.
-- 0.6.4.16 – Added missing atomicState.wxSource=wx.source in fetchWeather().
+- Unified **data publishing architecture**: renamed `publishSummary()` → `publishZoneData()` and ensured consistent `datasetJson` and per-zone attribute emission.  
+- Added **user controls** for publishing modes (JSON vs. attributes) with live toggle validation and automatic cleanup of stale child states.  
+- Enhanced **weather alert system** — introduced `rainAlert` and `windAlert` alongside `freezeAlert`, with configurable user thresholds and unit-sensitive behavior.  
+- Normalized **forecast handling** across NOAA, OWM, and Tomorrow.io; corrected `wxTimestamp`, `wxSource`, and °F/°C conversions.  
+- Improved **meta JSON synchronization** and enforced guaranteed publishing of `summaryText` and `summaryTimestamp`.  
+- Refined **logging, initialization, and verification** sequence; ensured deterministic `runWeatherUpdate()` execution.  
+- Finalized **UI refinements** — consistent HTML headers, cleaner sections, and improved layout readability.
 
-> **WET-IT — precision irrigation through weather intelligence and Hubitat automation.**
+> Final pre-1.0 release cycle: architectural freeze, consistency audit, and documentation pass in preparation for v1.0.0.0.
+
+---
+
+## ☀️ 1.0.0.0 — Production Release  
+**App v1.0.0.0 / Driver v1.0.0.0 — Released 2025-12-29**
+
+- Introduced **Active Weather Alerts** panel in app UI for immediate visibility of forecast-driven conditions:  
+  - 🧊 Freeze/Frost – projected low below configured threshold  
+  - 🌧️ Rain – forecast precipitation meets skip criteria  
+  - 💨 Wind – forecast wind speed exceeds configured threshold  
+- Uses atomicState-backed data for reliable display across reboots and weather-source changes.  
+- Added atomicState persistence block in `publishZoneData()` to guarantee alert retention.  
+- Refined wind and rain precision (rounded for display while maintaining high-precision ET calculations).  
+- Improved accessibility and readability of alert colors (deep amber/red palette).  
+- Completed full app/driver consistency audit and schema validation.  
+- Finalized pre-1.0 verification suite, marking official stable release.
+
+> **WET-IT 1.0.0.0 — Intelligent irrigation, perfected.**
+
 <!--stackedit_data:
 eyJoaXN0b3J5IjpbMTcyNTI4NDU2OSwtMTAyOTk3ODQ3LC04MT
 IwNzIzNTgsMTg0NzAzNzgwM119
