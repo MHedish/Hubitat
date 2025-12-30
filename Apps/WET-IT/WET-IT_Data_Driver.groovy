@@ -7,25 +7,14 @@
 *  Child driver for WET-IT app.  Displays and publishes hybrid ET + Seasonal summary data.
 *
 *  Changelog:
-*  0.6.0.0  –– Initial Beta Release
-*  0.6.0.1  –– Moved Attribute Reference link to DOCUMENTATION.md
-*  0.6.1.0  –– Refactored child event logging; removed extraneous commands
-*  0.6.2.0  –– Added wxLocation attribute - Forecast location (NOAA).
-*  0.6.3.0  –– Refactored JSON output.
-*  0.6.3.1  –– Refined parseSummary() to keep numeric order when summarizing.
-*  0.6.3.2  –– Updated parseSummary() to support new unified summaryJson format with meta and zone array.
-*  0.6.4.0  –– Updated parseSummary() to use friendly zone names.
-*  0.6.4.1  –– Deleted parseSummary() stub. It was never in use.
-*  0.6.4.2  –– Added zoneName attribute.
-*  0.6.4.3  –– Renamed summaryJson → datasetJson to reflect comprehensive dataset contents (meta + all zones).
-*  0.6.4.4  –– Added windAlert and rainAlert attributes.
+*  1.0.0.0  –– Initial Public Release
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "0.6.4.4"
-@Field static final String DRIVER_MODIFIED = "2025-12-26"
+@Field static final String DRIVER_VERSION  = "1.0.0.0"
+@Field static final String DRIVER_MODIFIED = "2025-12-29"
 @Field static final int MAX_ZONES = 48
 
 metadata {
