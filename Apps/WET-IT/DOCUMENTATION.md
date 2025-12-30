@@ -1,9 +1,9 @@
 # 🌿 Weather-Enhanced Time-based Irrigation Tuning (WET-IT)
 ## Full Documentation
-*Comprehensive Technical & Integration Reference (App v0.6.4.16 / Driver v0.6.4.4)*
+*Comprehensive Technical & Integration Reference (App v1.0.0.0 / Driver v1.0.0.0)*
 
 ![Platform](https://img.shields.io/badge/Platform-Hubitat-blue) 
-![Version](https://img.shields.io/badge/Version-0.6.4.16-green)
+![Version](https://img.shields.io/badge/Version-1.0.0.0-green?t=20251229)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
 WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.  
@@ -186,7 +186,7 @@ Typically 0.125–0.25 in (3–6 mm)
 
 ### **Wind Skip**
 
-$$Skip \text{ if windSpeed ≥ userThreshold}$$
+$$Skip \text{ if windSpeed — ≥ userThreshold}$$
 
 ### **Freeze Skip**
 
@@ -377,6 +377,11 @@ If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API c
 | `zone#Et` | number | ET adjustment (%) per zone |
 | `zone#Name` | string | Friendly name for each zone |
 | `zone#Seasonal` | number | Seasonal adjustment (%) per zone |
+
+### 🧠 State Persistence
+
+As of v1.0.0.0, weather alert data (freeze, rain, wind) is persisted in `atomicState` to maintain status consistency across hub reboots and service restarts.
+
 ---
 
 ## 💧 Marking Zones as Watered – Resetting the ET Cycle
@@ -486,13 +491,4 @@ Automations can safely:
  - [README.md](./README.md) — Overview and Installation  
  - [CHANGELOG.md](./CHANGELOG.md) — Version History  
 
----
-
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
-
-<!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE4NDE5MDExNzUsMzUzOTg5NDU2LDQwMj
-MyMDg2Niw1Njk5Njg3NTAsLTE3MzMwMTc2ODIsLTExMTc3MzQ3
-OTEsLTc4MTcwMjEyNywtMTM3Mzc0MjM1MCwxNzcyNDE3OTM5LD
-kzMTA3MzE0MSwtODU2NTUwN119
--->
