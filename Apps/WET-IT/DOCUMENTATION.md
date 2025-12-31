@@ -342,28 +342,14 @@ A  **NOAA office**  is a physical facility where personnel, such as forecasters,
 -   **Location:**  Radar stations are strategically placed to ensure broad coverage of the country. The location is chosen for optimal atmospheric scanning, which might not be near a population center or a convenient office location.
 -   **Purpose:**  The sole purpose is the automated collection of raw weather data (Level II data, such as reflectivity and radial velocity) which is then sent to the various NWS offices and other users for processing and analysis.
 
-Key Differences Summary
+### Key Differences Summary
 
 | Feature | NOAA Office (specifically NWS WFO) | Radar Station |
 |:--|:--|:--|
 | **Primary Role** | Forecast generation, data analysis, issuing warnings, public communication | Automated data collection (raw radar data)|
-| **Staffing**  
-
-Staffed by meteorologists and support personnel
-
-Uncrewed, an automated technical facility
-
-**Output**
-
-Forecasts, warnings, advisories, and other human-analyzed products
-
-Unprocessed radar data (reflectivity, velocity)
-
-**Location**
-
-Can be anywhere, often in populated areas or co-located with universities
-
-Located for optimal atmospheric coverage, often remote
+| **Staffing** | Staffed by meteorologists and support personnel | Uncrewed, an automated technical facility |
+| **Output** | Forecasts, warnings, advisories, and other human-analyzed products | Unprocessed radar data (reflectivity, velocity) |
+| **Location** | Can be anywhere, often in populated areas or co-located with universities | Located for optimal atmospheric coverage, often remote|
 
 In short, the radar station is a data collection tool, and the NOAA office is where that data is interpreted and transformed into usable weather information.
 
@@ -563,6 +549,6 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTExNjkyMDY3MjAsLTk3MzUxNjE0MCwtMj
+eyJoaXN0b3J5IjpbLTE3NjA4NjYwODEsLTk3MzUxNjE0MCwtMj
 g4OTAwNTYwLDEwNDUxMzQwNF19
 -->
