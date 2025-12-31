@@ -344,19 +344,10 @@ A  **NOAA office**  is a physical facility where personnel, such as forecasters,
 
 Key Differences Summary
 
-Feature
-
-NOAA Office (specifically NWS WFO)
-
-Radar Station
-
-**Primary Role**
-
-Forecast generation, data analysis, issuing warnings, public communication
-
-Automated data collection (raw radar data)
-
-**Staffing**
+| Feature | NOAA Office (specifically NWS WFO) | Radar Station |
+|:--|:--|:--|
+| **Primary Role** | Forecast generation, data analysis, issuing warnings, public communication | Automated data collection (raw radar data)|
+| **Staffing**  
 
 Staffed by meteorologists and support personnel
 
@@ -375,13 +366,6 @@ Can be anywhere, often in populated areas or co-located with universities
 Located for optimal atmospheric coverage, often remote
 
 In short, the radar station is a data collection tool, and the NOAA office is where that data is interpreted and transformed into usable weather information.
-| Feature | NOAA Office (NWS Weather Forecast Office) | Radar Station (e.g., NEXRAD WSR-88D) |
-|--|--|--|
-| **Primary Role** | Data analysis, forecasting, and public warning issuance | Raw weather data collection via radar technology |
-| **Output** | Forecasts, watches, warnings, and emergency information broadcasts | Data analysis, forecasting, and public warning issuance | Level II (base data) and Level III (processed) radar data |
-| **Location** | A general office building, potentially far from the radar itself | A specific physical site housing the radar tower and equipment shelter |
-| **Personnel** | Meteorologists and forecasters | Technicians and maintenance specialists (often remotely supported) |
-
 
 ---
 
@@ -579,6 +563,6 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTQ2OTA4MDE0NiwtOTczNTE2MTQwLC0yOD
-g5MDA1NjAsMTA0NTEzNDA0XX0=
+eyJoaXN0b3J5IjpbLTExNjkyMDY3MjAsLTk3MzUxNjE0MCwtMj
+g4OTAwNTYwLDEwNDUxMzQwNF19
 -->
