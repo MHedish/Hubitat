@@ -434,6 +434,27 @@ In short, the radar station is a data collection tool, and the NOAA office is wh
 
 ---
 
+## 💧 Irrigation Method Reference
+> Defines the precipitation rate and efficiency of each irrigation type.  
+> Used to calculate zone runtime based on ET-derived water requirements.
+
+| Irrigation Method | Typical Rate (in/hr) | Efficiency | Application Depth | Description |
+|--------------------|----------------------|-------------|--------------------|--------------|
+| Spray | 1.5–2.0 | 60–70 % | Shallow–Moderate | Fixed spray heads with overlapping circular patterns. High precipitation rate, short runtime, prone to wind drift and runoff on slopes. |
+| Rotor | 0.4–0.8 | 70–80 % | Moderate–Deep | Gear-driven or impact rotors with slow rotation and broad coverage. Uniform application, less prone to runoff. |
+| MP Rotator | 0.4–0.6 | 75–85 % | Moderate–Deep | Multi-trajectory rotating stream nozzle; lower rate for improved uniformity and wind resistance. Excellent for mixed zones. |
+| Drip Emitter | 0.2–0.5 | 85–95 % | Targeted | Individual emitters at plant bases or rows. Extremely efficient, minimal evaporation or overspray. |
+| Drip Line | 0.3–0.6 | 85–95 % | Targeted | Continuous inline emitters spaced along tubing. Ideal for planters, beds, or long runs. |
+| Bubbler | 0.5–2.0 | 80–90 % | Localized | Flood-style emitters for tree wells or basins. High localized rate for deep watering of single plants. |
+
+---
+
+💡 *The app converts the precipitation rate and efficiency into a runtime multiplier for each zone.  
+Lower-rate systems (e.g., MP Rotator, Drip) run longer but deliver more uniform moisture with less waste.*
+
+
+---
+
 ### 🧠 State Persistence
 
 As of v1.0.0.0, weather alert data (freeze, rain, wind) is persisted in `atomicState` to maintain status consistency across hub reboots and service restarts.
