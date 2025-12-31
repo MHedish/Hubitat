@@ -322,10 +322,59 @@ Weather API 🌦️ → ET₀ Calculation 🌡 → Soil Model 🌾 → Driver At
 | **[Tomorrow.io](https://docs.tomorrow.io/reference/welcome)** | ✅ | High-resolution meteorological model |
 | **[NOAA NWS](https://www.weather.gov/documentation/services-web-api)** | ❌ | Built-in fallback |
 
-
 ✅ Use **“Test Weather Now”** to validate configuration.  
 If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API calls fail.
 
+---
+NOAA Office vs 
+
+A  **NOAA office**  is a physical facility where personnel, such as forecasters, work to issue forecasts, warnings, and other hazard information. A  **radar station**  is a specific, uncrewed technical installation containing a radar system  (like the WSR-88D, also known as NEXRAD) that automatically scans the atmosphere and collects raw weather data.
+
+NOAA Office
+
+-   **Function:**  NWS (a part of NOAA) local Weather Forecast Offices (WFOs) are staffed by expert meteorologists who analyze the atmosphere, generate localized forecasts, issue timely warnings for their specific region, and broadcast information via NOAA Weather Radio.
+-   **Location:**  There are 122 forecast offices across the United States. While some may be located adjacent to a radar, many are miles away from the physical radar tower itself.
+-   **Purpose:**  The primary purpose is the human interpretation of data and the dissemination of actionable information to the public and other agencies like first responders and airlines.
+
+Radar Station
+
+-   **Function:**  This is the physical site of the radar equipment (antenna, transmitter, receiver housed in a protective dome). It mechanically or electronically scans the atmosphere using radio waves to detect precipitation, wind speed, and direction.
+-   **Location:**  Radar stations are strategically placed to ensure broad coverage of the country. The location is chosen for optimal atmospheric scanning, which might not be near a population center or a convenient office location.
+-   **Purpose:**  The sole purpose is the automated collection of raw weather data (Level II data, such as reflectivity and radial velocity) which is then sent to the various NWS offices and other users for processing and analysis.
+
+Key Differences Summary
+
+Feature
+
+NOAA Office (specifically NWS WFO)
+
+Radar Station
+
+**Primary Role**
+
+Forecast generation, data analysis, issuing warnings, public communication
+
+Automated data collection (raw radar data)
+
+**Staffing**
+
+Staffed by meteorologists and support personnel
+
+Uncrewed, an automated technical facility
+
+**Output**
+
+Forecasts, warnings, advisories, and other human-analyzed products
+
+Unprocessed radar data (reflectivity, velocity)
+
+**Location**
+
+Can be anywhere, often in populated areas or co-located with universities
+
+Located for optimal atmospheric coverage, often remote
+
+In short, the radar station is a data collection tool, and the NOAA office is where that data is interpreted and transformed into usable weather information.
 ---
 
 ## 🧩 Zone Model Parameters
@@ -522,5 +571,6 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTI4ODkwMDU2MCwxMDQ1MTM0MDRdfQ==
+eyJoaXN0b3J5IjpbNTY3MjgxNDQ0LC0yODg5MDA1NjAsMTA0NT
+EzNDA0XX0=
 -->
