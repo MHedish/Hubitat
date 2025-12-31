@@ -375,6 +375,12 @@ Can be anywhere, often in populated areas or co-located with universities
 Located for optimal atmospheric coverage, often remote
 
 In short, the radar station is a data collection tool, and the NOAA office is where that data is interpreted and transformed into usable weather information.
+|  |  |
+|--|--|
+|  |  |
+
+
+
 
 ---
 
@@ -572,6 +578,6 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMzQzMTI4MzIyLC05NzM1MTYxNDAsLTI4OD
-kwMDU2MCwxMDQ1MTM0MDRdfQ==
+eyJoaXN0b3J5IjpbMTUyNDA3NDEyMCwtOTczNTE2MTQwLC0yOD
+g5MDA1NjAsMTA0NTEzNDA0XX0=
 -->
