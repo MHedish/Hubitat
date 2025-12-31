@@ -305,7 +305,7 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 ## ⚙️ System Architecture
 
 ```
-Weather API 🌤 → ET₀ Calculation 🌡 → Soil Model 🌾 → Driver Attributes 📊 → Automations (RM / webCoRE / Node-RED)
+Weather API 🌦️ → ET₀ Calculation 🌡 → Soil Model 🌾 → Driver Attributes 📊 → Automations (RM / webCoRE / Node-RED)
 ```
 
 **App (WET-IT)** – performs calculations and weather polling  
@@ -314,7 +314,7 @@ Weather API 🌤 → ET₀ Calculation 🌡 → Soil Model 🌾 → Driver Attri
 
 ---
 
-## 🌦 Weather Providers
+## 🌦️ Weather Providers
 
 | Source | Key | Notes |
 |:--|:--:|:--|
@@ -377,6 +377,35 @@ If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API c
 | `zone#Et` | number | ET adjustment (%) per zone |
 | `zone#Name` | string | Friendly name for each zone |
 | `zone#Seasonal` | number | Seasonal adjustment (%) per zone |
+
+---
+
+## 🌿 Plant Type Reference
+> Defines vegetation categories and corresponding crop coefficients (Kc).  
+> Used to calculate evapotranspiration (ET₀ × Kc).
+
+| Plant Type | Description | Typical Kc Range | Example |
+|-------------|--------------|------------------|----------|
+| Turf (Cool Season) | Cool-climate grasses (fescue, rye) | 0.8–1.0 | Lawns, sports fields |
+| Turf (Warm Season) | Heat-tolerant grasses (Bermuda, zoysia) | 0.6–0.8 | Southern lawns |
+| Vegetables | Herbs, annuals, leafy crops | 0.7–0.9 | Herbs, wildflowers |
+| Shrubs | Woody ornamentals, perennials | 0.5–0.7 | Foundation plantings |
+| Trees | Mature trees, deep roots | 0.3–0.6 | Shade or fruit trees |
+
+---
+
+## 🌾 Soil Type Reference
+> Controls soil moisture retention and depletion rate.
+
+| Soil Type | Field Capacity | Infiltration | Typical Depth | Comments |
+|------------|----------------|---------------|----------------|-----------|
+| Sand | Low | Fast | Shallow | Drains quickly, frequent watering |
+| Loamy Sand | Low–Medium | Medium–Fast | Shallow–Medium | Common baseline |
+| Loam | Medium | Medium | Moderate | Balanced texture |
+| Clay Loam | High | Slow | Deep | High retention, slow infiltration |
+| Clay | Very High | Very Slow | Deep | Rarely irrigated, risk of runoff |
+
+---
 
 ### 🧠 State Persistence
 
