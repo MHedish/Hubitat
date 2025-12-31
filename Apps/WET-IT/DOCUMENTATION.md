@@ -326,7 +326,7 @@ Weather API 🌦️ → ET₀ Calculation 🌡 → Soil Model 🌾 → Driver At
 If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API calls fail.
 
 ---
-## NOAA Office vs Radar Station
+## 🏢 NOAA Office vs 📡 Radar Station
 
 A  **NOAA office**  is a physical facility where personnel, such as forecasters, work to issue forecasts, warnings, and other hazard information. A  **radar station**  is a specific, uncrewed technical installation containing a radar system  (like the WSR-88D, also known as NEXRAD) that automatically scans the atmosphere and collects raw weather data.
 
