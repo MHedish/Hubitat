@@ -377,7 +377,8 @@ Located for optimal atmospheric coverage, often remote
 In short, the radar station is a data collection tool, and the NOAA office is where that data is interpreted and transformed into usable weather information.
 | Feature | NOAA Office (NWS Weather Forecast Office) | Radar Station (e.g., NEXRAD WSR-88D) |
 |--|--|--|
-| Primary Role |  |  |
+| Primary Role | Data analysis, forecasting, and public warning issuance | Raw weather data collection via radar technology |
+| Output | | Primary Role | Data analysis, forecasting, and public warning issuance | Raw weather data collection via radar technology | | Raw weather data collection via radar technology |
 
 ---
 
@@ -575,6 +576,6 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTExNDkyMjczNDMsLTk3MzUxNjE0MCwtMj
+eyJoaXN0b3J5IjpbLTEzMDMzMDA2MzIsLTk3MzUxNjE0MCwtMj
 g4OTAwNTYwLDEwNDUxMzQwNF19
 -->
