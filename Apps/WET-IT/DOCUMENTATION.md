@@ -378,7 +378,9 @@ In short, the radar station is a data collection tool, and the NOAA office is wh
 | Feature | NOAA Office (NWS Weather Forecast Office) | Radar Station (e.g., NEXRAD WSR-88D) |
 |--|--|--|
 | Primary Role | Data analysis, forecasting, and public warning issuance | Raw weather data collection via radar technology |
-| Output | | Primary Role | Data analysis, forecasting, and public warning issuance | Raw weather data collection via radar technology | | Raw weather data collection via radar technology |
+| Output | Forecasts, watches, warnings, and emergency information broadcasts | Data analysis, forecasting, and public warning issuance | Level II (base data) and Level III (processed) radar data |
+| Location| A general office building, potentially far from the radar itself | Data analysis, forecasting, and public warning issuance | Level II (base data) and Level III (processed) radar data |
+
 
 ---
 
@@ -576,6 +578,6 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEzMDMzMDA2MzIsLTk3MzUxNjE0MCwtMj
-g4OTAwNTYwLDEwNDUxMzQwNF19
+eyJoaXN0b3J5IjpbNjg0MDMyNTA0LC05NzM1MTYxNDAsLTI4OD
+kwMDU2MCwxMDQ1MTM0MDRdfQ==
 -->
