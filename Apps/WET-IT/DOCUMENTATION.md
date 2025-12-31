@@ -326,17 +326,17 @@ Weather API 🌦️ → ET₀ Calculation 🌡 → Soil Model 🌾 → Driver At
 If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API calls fail.
 
 ---
-NOAA Office vs 
+## NOAA Office vs Radar Station
 
 A  **NOAA office**  is a physical facility where personnel, such as forecasters, work to issue forecasts, warnings, and other hazard information. A  **radar station**  is a specific, uncrewed technical installation containing a radar system  (like the WSR-88D, also known as NEXRAD) that automatically scans the atmosphere and collects raw weather data.
 
-NOAA Office
+### 🏢 NOAA Office
 
 -   **Function:**  NWS (a part of NOAA) local Weather Forecast Offices (WFOs) are staffed by expert meteorologists who analyze the atmosphere, generate localized forecasts, issue timely warnings for their specific region, and broadcast information via NOAA Weather Radio.
 -   **Location:**  There are 122 forecast offices across the United States. While some may be located adjacent to a radar, many are miles away from the physical radar tower itself.
 -   **Purpose:**  The primary purpose is the human interpretation of data and the dissemination of actionable information to the public and other agencies like first responders and airlines.
 
-Radar Station
+### 📡 Radar Station
 
 -   **Function:**  This is the physical site of the radar equipment (antenna, transmitter, receiver housed in a protective dome). It mechanically or electronically scans the atmosphere using radio waves to detect precipitation, wind speed, and direction.
 -   **Location:**  Radar stations are strategically placed to ensure broad coverage of the country. The location is chosen for optimal atmospheric scanning, which might not be near a population center or a convenient office location.
@@ -571,6 +571,6 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNTY3MjgxNDQ0LC0yODg5MDA1NjAsMTA0NT
-EzNDA0XX0=
+eyJoaXN0b3J5IjpbLTk3MzUxNjE0MCwtMjg4OTAwNTYwLDEwND
+UxMzQwNF19
 -->
