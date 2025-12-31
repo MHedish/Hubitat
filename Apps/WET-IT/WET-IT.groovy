@@ -8,14 +8,18 @@
 *
 *  Changelog:
 *  1.0.0.0   –– Initial Public Release
+*  1.0.0.1   –– Added href links to headings.
+*  1.0.0.2   –– Added href links to titles.
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="1.0.0.0"
-@Field static final String APP_MODIFIED="2025-12-29"
+@Field static final String APP_VERSION="1.0.0.2"
+@Field static final String APP_MODIFIED="2025-12-31"
+@Field static final String REPO_ROOT = "https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT"
+@Field static final String RAW_ROOT  = "https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT"
 @Field static final int MAX_ZONES=48
 @Field static def cachedChild=null
 @Field static Integer cachedZoneCount=null
@@ -64,10 +68,10 @@ def mainPage(){
 
         /* ---------- 1️ Header / App Info ---------- */
         section(){
-        paragraph "<div style='text-align:center;'><img src='https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT/images/Logo.png' width='200'></div>"
+        paragraph "<div style='text-align:center;'><img src='${RAW_ROOT}/images/Logo.png' width='200'></div>"
         paragraph "<div style='text-align:center;'><h2>Weather-Enhanced Time-based Irrigation Tuning (WET-IT)</h2></div>"
         paragraph "<div style='text-align:center;'>WET-IT brings <i>local-first, Rachio/Hydrawise/Orbit-style intelligence</i> to any irrigation controller — running professional<br> evapotranspiration (ET) and soil-moisture modeling directly inside your Hubitat hub.</div>"
-        paragraph "<a href='https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md' target='_blank'>📘 View Documentation</a>"
+        paragraph "<a href='${REPO_ROOT}/DOCUMENTATION.md' target='_blank'>📘 View Documentation</a>"
         paragraph "<small>v${APP_VERSION} (${APP_MODIFIED})</small>"
         }
  		section(){paragraph "<hr style='margin-top:2px;margin-bottom:2px;'>"}
@@ -91,7 +95,7 @@ def mainPage(){
 		/* ---------- 4️ Weather Configuration ---------- */
  		section(){paragraph "<hr style='margin-top:10px;margin-bottom:2px;'>"}
         section(){
-			paragraph htmlHeading("🌦️ Weather Configuration","#4682B4")
+			paragraph htmlHeadingLink("🌦️","Weather Configuration","${REPO_ROOT}/DOCUMENTATION.md#-weather-providers","#4682B4")
 		    input"weatherSource","enum",title:"Select Weather Source",
 		        options:["openweather":"OpenWeather (API Key Required)",
 		                 "tomorrow":"Tomorrow.io (API Key Required)",
@@ -130,7 +134,7 @@ def mainPage(){
 		    input"windSkipThreshold","enum",title:"Wind Skip Threshold (${windUnit})<br><small>Trigger skip irrigation if forecast wind speed ≥ threshold.</small>",options:windOpts,defaultValue:windDef,submitOnChange:false
 		}
         section(){
-            paragraph htmlHeading("🚨 Active Weather Alerts", "#4682B4")
+            paragraph htmlHeadingLink("🚨","Active Weather Alerts","${REPO_ROOT}/DOCUMENTATION.md#-freeze-protection-logic","#4682B4")
             def freeze=atomicState.freezeAlert;def freezeLow=atomicState.freezeLowTemp
             def rain=atomicState.rainAlert;def rainAmt=atomicState.rainForecast
             def wind=atomicState.windAlert;def windSpd=atomicState.windSpeed
@@ -147,7 +151,7 @@ def mainPage(){
 
 		/* ---------- 5️ Logging Tools & Diagnostics ---------- */
         section(){
-		    paragraph htmlHeading("📊 Data Publishing","#1E90FF")
+		    paragraph htmlHeadingLink("📊","Data Publishing","${REPO_ROOT}/DOCUMENTATION.md#-driver-attribute-reference","#1E90FF")
 		    paragraph "Controls for JSON and individual zone attribute publishing to child device. Summary Text is always published."
 		    input"publishJSON","bool",title:"Publish comprehensive zone JSON (default).",defaultValue:true,submitOnChange:true
 		    input"publishAttributes","bool",title:"Publish individual zone attributes.",defaultValue:false,submitOnChange:true
@@ -163,7 +167,7 @@ def mainPage(){
             paragraph "<hr style='margin-top:10px;margin-bottom:2px;'>"
 		}
         section(){
-			paragraph htmlHeading("⚙️ System Diagnostics","#1E90FF")
+			paragraph htmlHeadingLink("⚙️","System Diagnostics","${REPO_ROOT}/DOCUMENTATION.md#-developer--diagnostic-tools","#1E90FF")
             paragraph "Utilities for testing and verification."
             input"btnVerifyChild","button",title: "🔍 Verify Data Child Device"
             input"btnVerifySystem","button",title: "✅ Verify System Integrity"
@@ -218,11 +222,11 @@ def zonePage(params){
 	Integer z=(params?.zone?:1)as Integer;state.activeZone=z
     dynamicPage(name:"zonePage",install:false,uninstall:false){
         section(){
-			paragraph htmlHeading("🌱 Zone ${z} Configuration","#2E8B57")
+			paragraph htmlHeadingLink("🌱","Zone ${z} Configuration","${REPO_ROOT}/DOCUMENTATION.md#-plant-type-reference","#2E8B57")
 			input"name_${z}","text",title:"Zone Name<br><small>Friendly name for this zone (optional).</small>"
-            input"soil_${z}","enum",title:"Soil Type<br><small>Determines water holding capacity.</small>",options:soilOptions(),defaultValue:"Loam"
-            input"plant_${z}","enum",title:"Plant Type<br><small>Sets crop coefficient (Kc).</small>",options:plantOptions(),defaultValue:"Cool Season Turf"
-            input"nozzle_${z}","enum",title:"Irrigation Method<br><small>Determines precipitation rate.</small>",options:nozzleOptions(),defaultValue:"Spray"
+            input"soil_${z}","enum",title:"${htmlTitleLink('Soil Type',"${REPO_ROOT}/DOCUMENTATION.md#-soil-type-reference","#A0522D")}<br><small>Determines water holding capacity.</small>",options:soilOptions(),defaultValue:"Loam"
+            input"plant_${z}","enum",title:"${htmlTitleLink('Plant Type',"${REPO_ROOT}/DOCUMENTATION.md#-plant-type-reference","#2E8B57")}<br><small>Sets crop coefficient (Kc).</small>",options:plantOptions(),defaultValue:"Cool Season Turf"
+            input"nozzle_${z}","enum",title:"${htmlTitleLink('Irrigation Method',"${REPO_ROOT}/DOCUMENTATION.md#-irrigation-method-reference","#4682B4")}<br><small>Determines precipitation rate.</small>",options:nozzleOptions(),defaultValue:"Spray"
         }
         section("Advanced Parameters",hideable:true,hidden:true){
             input"precip_${z}","decimal",title:"Precipitation Rate Override (in/hr)<br><small>Overrides default based on irrigation method.</small>"
@@ -237,8 +241,8 @@ def zonePage(params){
 def soilPage(){
     dynamicPage(name:"soilPage",install:false,uninstall:false){
         section(){
-			paragraph htmlHeading("🌾 Soil Memory Management","#A0522D")
-            (1..getZoneCountCached()).each {z->
+			paragraph htmlHeadingLink("🌾","Soil Memory Management","${REPO_ROOT}/DOCUMENTATION.md#-marking-zones-as-watered--resetting-the-et-cycle","#A0522D")
+            (1..getZoneCountCached()).each {z->a
                 def key="zoneDepletion_zone${z}";def tsKey="zoneDepletionTs_zone${z}"
                 BigDecimal d=(atomicState[key]?:0G)as BigDecimal
                 String ts=atomicState[tsKey]?:'—'
@@ -258,6 +262,8 @@ def soilPage(){
 }
 
 private String htmlHeading(String text,String color="#2E8B57"){return"<h2 style='margin-top:8px;margin-bottom:6px;color:${color};font-weight:bold;'>${text}</h2>"}
+private String htmlHeadingLink(String emoji="",String text,String url,String color="#2E8B57"){String s=emoji?.trim()?:"";String sp=s?"&nbsp;":"";return"<h2 style='margin-top:8px;margin-bottom:6px;font-weight:bold;'>${s}${sp}<a href='${url}'target='_blank' style='color:${color};font-weight:bold;text-decoration:underline;'>${text}</a></h2>"}
+private String htmlTitleLink(String text,String url,String color="#2E8B57"){return"<a href='${url}'target='_blank'style='color:${color};text-decoration:underline;'>${text}</a>"}
 
 /* ---------- Button Handler Block ---------- */
 def appButtonHandler(String btn){
