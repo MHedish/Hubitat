@@ -79,8 +79,8 @@
 
 ---
 
-## ☀️ 1.0.0.0 — Production Release  
-**App v1.0.0.0 / Driver v1.0.0.0 — Released 2025-12-29**
+## ☀️ 1.0.0.2 — Production Release  
+**App v1.0.0.2 / Driver v1.0.0.0 — Released 2025-12-31**
 
 - Introduced **Active Weather Alerts** panel in app UI for immediate visibility of forecast-driven conditions:  
   - 🧊 Freeze/Frost – projected low below configured threshold  
@@ -94,6 +94,8 @@
 - Finalized pre-1.0 verification suite, marking official stable release.
 
 > **WET-IT 1.0.0.0 — Intelligent irrigation, perfected.**
+- 1.0.0.0 — Initial Release.
+- 1.0.0.2 — Added hyperlinks to the associated sections of DOCUMENTATION.md to key headings and titles.
 
 <!--stackedit_data:
 eyJoaXN0b3J5IjpbMTM4MzM4MDQ0NiwxNzI1Mjg0NTY5LC0xMD
