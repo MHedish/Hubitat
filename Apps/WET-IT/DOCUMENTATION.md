@@ -464,13 +464,10 @@ Lower-rate systems (e.g., MP Rotator, Drip) run longer but deliver more uniform 
 | Adjusted Runtime | seconds | Calculated automatically by WET-IT based on ET and seasonal adjustments. | Displayed in the Data Driver as `zoneXAdjustedTime`. |
 | ET Budget (%) | percent | Dynamic efficiency adjustment derived from evapotranspiration deficit or surplus. | Usually near 100 % for average weather; increases during hot, dry periods. |
 | Seasonal Budget (%) | percent | Optional manual or calendar-based adjustment applied after ET calculation. | Allows seasonal offsets for conservation or maintenance. |
-
 ---
 
 💡 *In practice:*  
-If a zone’s base runtime is **20 min (entered as 20)** and the ET budget is **85 %**,  
-the system converts this to **20 × 60 = 1,200 s**,  
-then multiplies by 0.85 → **1,020 s (≈ 17 min adjusted runtime).**
+If a zone’s base runtime is **20 min (entered as 20)** and the ET budget is **85 %**,  the system converts this to **20 × 60 = 1,200 s**,  then multiplies by 0.85 → **1,020 s (≈ 17 min adjusted runtime).**
 
 
 ---
@@ -590,6 +587,6 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTExMzc1MTUzMzcsMTM2MzQ4NDc4MiwtOT
+eyJoaXN0b3J5IjpbLTE2MjA5NTE2NzEsMTM2MzQ4NDc4MiwtOT
 czNTE2MTQwLC0yODg5MDA1NjAsMTA0NTEzNDA0XX0=
 -->
