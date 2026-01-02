@@ -454,7 +454,7 @@ Lower-rate systems (e.g., MP Rotator, Drip) run longer but deliver more uniform 
 
 ---
 
-## Base Runtime Reference ⏱️
+## 🕓 Base Runtime Reference
 > Establishes the **baseline irrigation duration** for each zone.  
 > Used with ET and seasonal budget percentages to calculate the final adjusted runtime.
 
