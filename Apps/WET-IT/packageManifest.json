@@ -2,7 +2,7 @@
   "packageName": "WET-IT",
   "author": "Marc Hedish",
   "version": "1.0.0.2",
-  "minimumHEVersion": "2.3.6",
+  "minimumHEVersion": "2.3.7",
   "dateReleased": "2025-12-31",
   "releaseNotes": "v1.0.0.0 — Initial Release.\nv1.0.0.2 — Added hyperlinks to the associated sections of DOCUMENTATION.md to key headings and titles.",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md",
