@@ -31,10 +31,25 @@
 - Verified sustained telemetry accuracy across multi-day intervals and hub reboots.  
 - Hardened recovery and cleanup logic ensuring self-healing operation under all Telnet lifecycle edge cases.  
 - Final event emission and scheduling synchronization tested and confirmed stable.  
-- Marked as the **reference release** for future incremental feature builds.  
-### 🚀 1.0.1.x — Production Updates
-- 1.0.1.1 Enhanced handleUPSStatus() to properly normalize multi-token NMC strings (e.g., “Online, Smart Trim”) via improved regex boundaries and partial-match detection.
-- 1.0.1.2 Added nextBatteryReplacement attribute; captures and normalizes NMC "Next Battery Replacement Date" from battery status telemetry.
-- 1.0.1.3 Added wiringFault attribute detection in handleUPSStatus(); automatically emits true/false based on "Site Wiring Fault" presence in UPS status line.
-- 1.0.1.4 Corrected emitEvent() and emitChangedEvent().
-- 1.0.1.5 Changed asynchronous delay when stale state variable is detected to blocking/synchronous to allow lazy-flushed update to complete before forcing refresh().
+- Marked as the **reference release** for future incremental feature builds.
+
+## 🚀 1.0.1.x — Production Updates
+- Enhanced handleUPSStatus() to properly normalize multi-token NMC strings (e.g., “Online, Smart Trim”) via improved regex boundaries and partial-match detection.
+- Added nextBatteryReplacement attribute; captures and normalizes NMC "Next Battery Replacement Date" from battery status telemetry.
+- Added wiringFault attribute detection in handleUPSStatus(); automatically emits true/false based on "Site Wiring Fault" presence in UPS status line.
+- Corrected emitEvent() and emitChangedEvent().
+- Changed asynchronous delay when stale state variable is detected to blocking/synchronous to allow lazy-flushed update to complete before forcing refresh().
+
+**1.0.2.0 — Watchdog Refinement**
+- Improved session watchdog logic for faster recovery from hung Telnet sessions.  
+- Hardened finalization process and synchronization timing between transient cleanup and deferred retries.
+
+**1.0.2.1 — Deferred Command Handling and Clock Validation Fix**  
+- Introduced residual transient detection to prevent recursive reconnoiter loops.  
+- Resolved `checkUPSClock()` exception caused by invalid reference object type.  
+- Enhanced `resetTransientState()` to ensure full session teardown before recovery.
+
+**1.0.2.2 — Stable Core Release**  
+- Hybrid `state` / `atomicState` lifecycle separation for precise session control.  
+- Eliminated watchdog recursion and `deferredCommand` residue.  
+- Deterministic Telnet recovery, consistent finalization.
