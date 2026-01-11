@@ -1,7 +1,7 @@
 /*
 *  APC SmartUPS Status Driver
 *
-*  Copyright 2025 MHedish
+*  Copyright 2025, 2026 MHedish
 *  Licensed under the Apache License, Version 2.0
 *  https://www.apache.org/licenses/LICENSE-2.0
 *
@@ -15,14 +15,17 @@
 *  1.0.1.3   -- Added wiringFault attribute detection in handleUPSStatus(); automatically emits true/false based on "Site Wiring Fault" presence in UPS status line.
 *  1.0.1.4   -- Corrected emitEvent() and emitChangedEvent()
 *  1.0.1.5   -- Changed asynchronous delay when stale state variable is detected to blocking/synchronous to allow lazy-flushed update to complete before forcing refresh().
+*  1.0.2.0   -- Changed state.lastCommand to atomicState.lastCommand
+*  1.0.2.1   -- Corrected variable in checkUPSClock()
+*  1.0.2.2   -- Changed state.deferredCommand to atomicState.deferredCommand
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.1.5"
-@Field static final String DRIVER_MODIFIED = "2025.12.29"
+@Field static final String DRIVER_VERSION  = "1.0.2.2"
+@Field static final String DRIVER_MODIFIED = "2026.01.11"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
 /* ===============================
@@ -144,17 +147,17 @@ preferences {
 /* ===============================
    Utilities
    =============================== */
-private String driverInfoString() {return "${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"}
+private String driverInfoString(){return "${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"}
 private driverDocBlock(){return"<div style='text-align:center;'><b>⚡${DRIVER_NAME} v${DRIVER_VERSION}</b> (${DRIVER_MODIFIED})<br><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/README.md#%EF%B8%8F-configuration-parameters' target='_blank'><b>⚙️ Configuration Parameters</b></a><br><a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/README.md#-attribute-reference' target='_blank'><b>📊 Attribute Reference Guide</b></a><hr></div>"}
-private logDebug(msg) {if(logEnable) log.debug "[${DRIVER_NAME}] $msg"}
-private logInfo(msg)  {if(logEvents) log.info  "[${DRIVER_NAME}] $msg"}
-private logWarn(msg)  {log.warn "[${DRIVER_NAME}] $msg"}
-private logError(msg) {log.error"[${DRIVER_NAME}] $msg"}
+private logDebug(msg){if(logEnable) log.debug "[${DRIVER_NAME}] $msg"}
+private logInfo(msg) {if(logEvents) log.info  "[${DRIVER_NAME}] $msg"}
+private logWarn(msg) {log.warn "[${DRIVER_NAME}] $msg"}
+private logError(msg){log.error"[${DRIVER_NAME}] $msg"}
 private void emitLastUpdate(){def s=getTransient("sessionStart");def ms=s?(now()-s):0;def sec=(ms/1000).toDouble().round(3);emitChangedEvent("lastUpdate",new Date().format("MM/dd/yyyy h:mm:ss a"),"Data Capture Run Time = ${sec}s");clearTransient("sessionStart")}
 private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
 private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 private updateConnectState(String newState){def old=device.currentValue("connectStatus");def last=getTransient("lastConnectState");if(old!=newState&&last!=newState){setTransient("lastConnectState",newState);emitChangedEvent("connectStatus",newState)}else{logDebug"updateConnectState(): no change (${old} → ${newState})"}}
-private updateCommandState(String newCmd){def old=state.lastCommand;state.lastCommand=newCmd;if(old!=newCmd)logDebug"lastCommand = ${newCmd}"}
+private updateCommandState(String newCmd){def old=atomicState.lastCommand;atomicState.lastCommand=newCmd;if(old!=newCmd)logDebug"lastCommand = ${newCmd}"}
 private def normalizeDateTime(String r){if(!r||r.trim()=="")return r;try{def m=r=~/^(\d{2})\/(\d{2})\/(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/;if(m.matches()){def(mm,dd,yy,hh,mi,ss)=m[0][1..6];def y=(yy as int)<80?2000+(yy as int):1900+(yy as int);def f="${mm}/${dd}/${y}"+(hh?" ${hh}:${mi}:${ss?:'00'}":"");def d=Date.parse(hh?"MM/dd/yyyy HH:mm:ss":"MM/dd/yyyy",f);return hh?d.format("MM/dd/yyyy h:mm:ss a",location.timeZone):d.format("MM/dd/yyyy",location.timeZone)};for(fmt in["MM/dd/yyyy HH:mm:ss","MM/dd/yyyy h:mm:ss a","MM/dd/yyyy","yyyy-MM-dd","MMM dd yyyy HH:mm:ss"])try{def d=Date.parse(fmt,r);return(fmt.contains("HH")||fmt.contains("h:mm:ss"))?d.format("MM/dd/yyyy h:mm:ss a",location.timeZone):d.format("MM/dd/yyyy",location.timeZone)}catch(e){} }catch(e){};return r}
 private void initTelnetBuffer(){def b=getTransient("telnetBuffer");if(b instanceof List&&b.size()){def t;try{def p=b[-(Math.min(3,b.size()))..-1]*.line.findAll{it}.join(" | ");t=p[-(Math.min(80,p.size()))..-1]}catch(e){t="unavailable (${e.message})"};logDebug"initTelnetBuffer(): clearing leftover buffer (${b.size()} lines, preview='${t}')"};setTransient("telnetBuffer",[]);setTransient("sessionStart",now());logDebug"initTelnetBuffer(): Session start at ${new Date(getTransient('sessionStart'))}"}
 private checkExternalUPSControlChange(){def c=device.currentValue("upsControlEnabled")as Boolean;def p=state.lastUpsControlEnabled as Boolean;if(p==null){state.lastUpsControlEnabled=c;return};if(c!=p){logInfo "UPS Control state changed externally (${p} → ${c})";state.lastUpsControlEnabled=c;updateUPSControlState(c);unschedule(autoDisableUPSControl);if(c)runIn(1800,"autoDisableUPSControl")else state.remove("controlDeviceName")}}
@@ -247,8 +250,8 @@ private updateUPSControlState(Boolean enable){
    Lifecycle
    =============================== */
 def installed(){logInfo "Installed";initialize()}
-def updated() {logInfo "Preferences updated";initialize()}
-def initialize() {
+def updated(){logInfo "Preferences updated";initialize()}
+def initialize(){
     logInfo "${driverInfoString()} initializing..."
     emitEvent("driverInfo", driverInfoString())
     state.upsControlEnabled=state.upsControlEnabled?:false
@@ -293,22 +296,22 @@ private checkSessionTimeout(Map data){
     }else logDebug"checkSessionTimeout(): ${cmd} completed or cleaned normally after ${elapsed}ms"
 }
 
-private void sendUPSCommand(String cmdName,List cmds){
-    if(!state.upsControlEnabled&&cmdName!="Reconnoiter"){logWarn"${cmdName} called but UPS control is disabled";state.remove("pendingDeferredCmd");return}
+private void sendUPSCommand(String cmdName, List cmds){
+    if(!state.upsControlEnabled&&cmdName!="Reconnoiter"){logWarn"${cmdName} called but UPS control is disabled";atomicState.remove("pendingDeferredCmd");return}
     if(device.currentValue("connectStatus")!="Disconnected"){
-        logInfo"${cmdName} deferred 15s (Telnet busy with ${state.lastCommand})"
-        if(state.deferredCommand==cmdName){
-            logWarn"sendUPSCommand(): repeated deferral detected for ${cmdName}; forcing full session reset"
-            resetTransientState("sendUPSCommand");updateConnectState("Disconnected");closeConnection();pauseExecution(1000);return
+		logInfo"${cmdName} deferred 15s (Telnet busy with ${atomicState.lastCommand})"
+        if(atomicState.deferredCommand==cmdName){
+			logWarn"sendUPSCommand(): repeated deferral detected for ${cmdName}; forcing full session reset"
+            resetTransientState("sendUPSCommand");updateConnectState("Disconnected");closeConnection();runIn(2,"refresh");return
         }
-        state.deferredCommand=cmdName
+        atomicState.deferredCommand=cmdName
         def retryTarget=(cmdName=="Reconnoiter")?"refresh":cmdName
         logDebug"sendUPSCommand(): scheduling deferred ${retryTarget} retry in 15s";runIn(15,retryTarget);return
     }
-    state.remove("deferredCommand");updateCommandState(cmdName);updateConnectState("Initializing")
+    atomicState.remove("deferredCommand");updateCommandState(cmdName);updateConnectState("Initializing")
     emitChangedEvent("lastCommandResult","Pending","${cmdName} queued for execution");logInfo"Executing UPS command: ${cmdName}"
-    try{
-        setTransient("sessionStart",now());logDebug"sendUPSCommand(): session start timestamp = ${getTransient('sessionStart')}"
+    try {
+        setTransient("sessionStart",now());logDebug "sendUPSCommand(): session start timestamp = ${getTransient('sessionStart')}"
         telnetClose();updateConnectState("Connecting");initTelnetBuffer()
         state.pendingCmds=["$Username","$Password"]+cmds+["whoami"]
         logDebug"sendUPSCommand(): Opening transient Telnet connection to ${upsIP}:${upsPort}"
@@ -320,8 +323,8 @@ private void sendUPSCommand(String cmdName,List cmds){
     }
 }
 
-private delayedTelnetSend() {
-    if(state.pendingCmds) {
+private delayedTelnetSend(){
+    if(state.pendingCmds){
         logDebug "delayedTelnetSend(): sending ${state.pendingCmds.size()} queued commands"
         telnetSend(state.pendingCmds, 500);state.remove("pendingCmds")
     }
@@ -350,29 +353,29 @@ private void resetTransientState(String origin, Boolean suppressWarn=false){
 /* ===============================
    Commands
    =============================== */
-def alarmTest() {sendUPSCommand("Alarm Test",["ups -a start"])}
-def selfTest()  {sendUPSCommand("Self Test",["ups -s start"])}
-def upsOn()     {sendUPSCommand("UPS On",["ups -c on"])}
-def upsOff()    {sendUPSCommand("UPS Off",["ups -c off"])}
-def reboot()    {sendUPSCommand("Reboot",["ups -c reboot"])}
-def sleep()     {sendUPSCommand("Sleep",["ups -c sleep"])}
+def alarmTest(){sendUPSCommand("Alarm Test",["ups -a start"])}
+def selfTest() {sendUPSCommand("Self Test",["ups -s start"])}
+def upsOn()    {sendUPSCommand("UPS On",["ups -c on"])}
+def upsOff()   {sendUPSCommand("UPS Off",["ups -c off"])}
+def reboot()   {sendUPSCommand("Reboot",["ups -c reboot"])}
+def sleep()    {sendUPSCommand("Sleep",["ups -c sleep"])}
 def toggleRunTimeCalibration(){
     def active=(device.currentValue("runTimeCalibration")=="active")
     if(active){sendUPSCommand("Cancel Calibration",["ups -r stop"])}
     else{sendUPSCommand("Calibrate Run Time",["ups -r start"])}
 }
-def setOutletGroup(p0, p1, p2) {
+def setOutletGroup(p0,p1,p2){
     emitEvent("lastCommandResult","N/A");logInfo "Set Outlet Group called [$p0 $p1 $p2]"
-    if(!device.currentValue("upsSupportsOutlet")) {logWarn"setOutletGroup unsupported on this UPS model";emitEvent("lastCommandResult","Unsupported");return}
-    if(!p1) {logError "Outlet group is required.";return}
-    if(!p2) {logError "Command is required.";return}
+    if(!device.currentValue("upsSupportsOutlet")){logWarn"setOutletGroup unsupported on this UPS model";emitEvent("lastCommandResult","Unsupported");return}
+    if(!p1){logError "Outlet group is required.";return}
+    if(!p2){logError "Command is required.";return}
     def cmd="ups -o ${p0.trim()} ${p1.trim()} ${(p2?:'0').trim()}";logDebug "setOutletGroup(): issuing UPS command '${cmd}'"
     sendUPSCommand("setOutletGroup",[cmd])
 }
 
 def refresh() {
     checkExternalUPSControlChange()
-    if(connectStatus in ["Connected", "Trying"]) {
+    if(connectStatus in ["Connected", "Trying"]){
         logInfo "refresh(): Telnet session already active, skipping this refresh request"
         return
     }
@@ -392,7 +395,7 @@ private finalizeSession(String origin){
     try{
         if(getTransient("sessionStart"))emitLastUpdate()
         if(device.currentValue("connectStatus")!="Disconnected")updateConnectState("Disconnecting")
-        def cmd=(state.lastCommand?:"Session");emitChangedEvent("lastCommandResult","Complete","${cmd} completed normally");logDebug"finalizeSession(): Cleanup from ${origin}"
+        def cmd=(atomicState.lastCommand?:"Session");emitChangedEvent("lastCommandResult","Complete","${cmd} completed normally");logDebug"finalizeSession(): Cleanup from ${origin}"
         def lc=(cmd.toLowerCase())
         switch(lc){
             case"self test":try{def n=device.currentValue("nextCheckMinutes")as Integer;if(n==null||n>1){logInfo"Post self-test refresh scheduled for 45s";runIn(45,"refresh")}}catch(e){logWarn"finalizeSession(): post-self-test refresh error (${e.message})"};break
@@ -433,11 +436,12 @@ private handleLastTransfer(def pair){
 private checkUPSClock(Long upsEpoch){
     try{
         def upsDate=new Date(upsEpoch+((upsTZOffset?:0)*60000))
-        def refTime=getTransient("upsBannerRefTime")?:now()
-        def diff=Math.abs(ref.time-upsDate.time)/1000
-        def msg="UPS clock skew >${diff>300?'5m':'1m'} (${diff.intValue()}s, TZ offset=${upsTZOffset?:0}m). UPS=${upsDate.format('MM/dd/yyyy h:mm:ss a',location.timeZone)}, Hub=${ref.format('MM/dd/yyyy h:mm:ss a',location.timeZone)}"
+        def refMillis=getTransient("upsBannerRefTime")?:now()
+        def refDate=(refMillis instanceof Date)?refMillis:new Date(refMillis)
+        def diff=Math.abs(refDate.time-upsDate.time)/1000
+        def msg="UPS clock skew >${diff>300?'5m':'1m'} (${diff.intValue()}s, TZ offset=${upsTZOffset?:0}m). UPS=${upsDate.format('MM/dd/yyyy h:mm:ss a',location.timeZone)}, Hub=${refDate.format('MM/dd/yyyy h:mm:ss a',location.timeZone)}"
         if(diff>300)logError msg else if(diff>60)logWarn msg
-    }catch(e){logDebug "checkUPSClock(): ${e.message}"}finally{clearTransient("upsBannerRefTime")}
+    }catch(e){logDebug"checkUPSClock(): ${e.message}"}finally{clearTransient("upsBannerRefTime")}
 }
 
 private handleBatteryData(def pair){
@@ -492,7 +496,7 @@ private handleIdentificationAndSelfTest(def pair){
 }
 
 private handleUPSCommands(def pair){
-    if(!pair) return;def code=pair[0]?.trim(),desc=translateUPSError(code),cmd=state.lastCommand
+    if(!pair) return;def code=pair[0]?.trim(),desc=translateUPSError(code),cmd=atomicState.lastCommand
     def validCmds=["Alarm Test","Self Test","UPS On","UPS Off","Reboot","Sleep","Calibrate Run Time","setOutletGroup"]
     if(!(cmd in validCmds))return
     if(code in["E000:","E001:"]){emitChangedEvent("lastCommandResult","Success","Command '${cmd}' acknowledged by UPS (${desc})");logInfo"UPS Command '${cmd}' succeeded (${desc})";return}
@@ -520,7 +524,7 @@ private handleAlarmCount(List<String> lines){
 
 private void handleBannerData(String l){
     def mName=(l =~ /^Name\s*:\s*([^\s]+).*/)
-    if(mName.find()) {
+    if(mName.find()){
         def nameVal=mName.group(1).trim()
         def curLbl=device.getLabel()
         if(useUpsNameForLabel){
@@ -554,10 +558,10 @@ private void handleBannerData(String l){
         clearTransient("nmcStatusDesc")
     }
     def mContact=(l =~ /Contact\s*:\s*(.*?)\s+Time\s*:/)
-    if(mContact.find()) {
+    if(mContact.find()){
         def contactVal=mContact.group(1).trim();emitChangedEvent("upsContact",contactVal,"UPS Contact = ${contactVal}")
     }
-    def mLocation=(l =~ /Location\s*:\s*(.*?)\s+User\s*:/);if(mLocation.find()) {
+    def mLocation=(l =~ /Location\s*:\s*(.*?)\s+User\s*:/);if(mLocation.find()){
         def locationVal=mLocation.group(1).trim()
         emitChangedEvent("upsLocation",locationVal,"UPS Location = ${locationVal}")
     }
@@ -605,7 +609,7 @@ private void handleNMCData(List<String> lines){
 
 private handleBannerSection(List<String> lines){lines.each{l->handleBannerData(l)}}
 private handleUPSAboutSection(List<String> lines){lines.each{l->handleIdentificationAndSelfTest(l.split(/\s+/))}}
-private handleDetStatus(List<String> lines){lines.each{l->def p=l.split(/\s+/);handleUPSStatus(p);handleLastTransfer(p);handleBatteryData(p);handleElectricalMetrics(p);handleIdentificationAndSelfTest(p);handleUPSCommands(p)};def cmd=(state.lastCommand?:'').toLowerCase()}
+private handleDetStatus(List<String> lines){lines.each{l->def p=l.split(/\s+/);handleUPSStatus(p);handleLastTransfer(p);handleBatteryData(p);handleElectricalMetrics(p);handleIdentificationAndSelfTest(p);handleUPSCommands(p)};def cmd=(atomicState.lastCommand?:'').toLowerCase()}
 private List<String> extractSection(List<Map> lines,String start,String end){def i0=lines.findIndexOf{it.line.startsWith(start)};if(i0==-1)return[];def i1=(i0+1..<lines.size()).find{lines[it].line.startsWith(end)}?:lines.size();lines.subList(i0+1,i1)*.line}
 
 private void processBufferedSession(){
@@ -630,16 +634,16 @@ private void processBufferedSession(){
     finalizeSession("processBufferedSession")
 }
 
-private void processUPSCommand() {
+private void processUPSCommand(){
     def buf=getTransient("telnetBuffer")?:[]
     if(!buf||buf.isEmpty()){
         logDebug "processUPSCommand(): No buffered data to process";return
     }
     def lines=buf.findAll {it.line}.collect {it.line.trim()}
-    clearTransient("telnetBuffer");def cmd = state.lastCommand?:"Unknown"
+    clearTransient("telnetBuffer");def cmd=atomicState.lastCommand?:"Unknown"
     logDebug "processUPSCommand(): processing ${lines.size()} lines for UPS command '${cmd}'"
     def errLine=lines.find { it ==~ /^E\\d{3}:/ }
-    if(errLine) {
+    if(errLine){
         logInfo "processUPSCommand(): UPS command '${cmd}' returned '${errLine}'"
         handleUPSCommands(errLine.split(/\s+/))
     }else{
@@ -666,27 +670,27 @@ private void clearTransient(String key=null){if(key){transientContext.remove("${
 /* ===============================
    Parse
    =============================== */
-private parse(String msg) {
+private parse(String msg){
     msg=msg.replaceAll('\r\n','\n').replaceAll('\r','\n');def lines=msg.split('\n').findAll {it.trim()}
     lines.each {line ->
         logDebug "Buffering line: ${line}"
         if(!state.authStarted) initTelnetBuffer()
-        def buf = getTransient("telnetBuffer")?:[]
+        def buf=getTransient("telnetBuffer")?:[]
         buf << [cmd: device.currentValue("lastCommand")?:"unknown",line: line]
         setTransient("telnetBuffer",buf)
-        if(!state.authStarted) {
+        if(!state.authStarted){
             updateConnectState("Connected");logDebug "First Telnet data seen; session flagged as Connected"
             def cmd=device.currentValue("lastCommand")
-            if(cmd) {
+            if(cmd){
                 updateCommandState(cmd)
             }else{
                 logDebug "parse(): Skipping updateCommandState – no current command yet (auth handshake)"
             }
-            setTransient("upsBannerRefTime",now());state.authStarted = true
+            setTransient("upsBannerRefTime",now());state.authStarted=true
         }else{
-            if(line.startsWith("apc>whoami"))state.whoamiEchoSeen = true
-            if(line.startsWith("E000: Success"))state.whoamiAckSeen = true
-            if(line.trim().equalsIgnoreCase(Username.trim()))state.whoamiUserSeen = true
+            if(line.startsWith("apc>whoami"))state.whoamiEchoSeen=true
+            if(line.startsWith("E000: Success"))state.whoamiAckSeen=true
+            if(line.trim().equalsIgnoreCase(Username.trim()))state.whoamiUserSeen=true
             if((state.whoamiEchoSeen&&state.whoamiAckSeen&&state.whoamiUserSeen)
                 ||(connectStatus=="UPSCommand"&&state.whoamiEchoSeen)){
                 logDebug "whoami sequence complete, processing buffer..."
