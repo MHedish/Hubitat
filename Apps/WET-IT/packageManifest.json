@@ -3,7 +3,7 @@
   "author": "Marc Hedish",
   "version": "1.0.0.3",
   "minimumHEVersion": "2.3.8",
-  "dateReleased": "2025-12-31",
+  "dateReleased": "2026-01-16",
   "releaseNotes": "v1.0.0.0 — Initial Release.\nv1.0.0.2 — Added hyperlinks to the associated sections of DOCUMENTATION.md to key headings and titles.\nv1.0.0.3 — Added 'Actuator' capability for Rule Machine users.",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md",
   "description": "Local-first evapotranspiration (ET) and soil-moisture modeling app for Hubitat. Provides professional-grade irrigation intelligence similar to Rachio, Orbit, and Hydrawise, running entirely on-hub.",
