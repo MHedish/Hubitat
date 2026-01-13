@@ -8,13 +8,18 @@
 *
 *  Changelog:
 *  1.0.0.0  –– Initial Public Release
+*  1.0.1.0  –– Added baseTime and adjustedTime attributes
+*  1.0.2.0  –– Fixed EtAdjustedTime
+*  1.0.3.0  –– Added activeProgram attribute
+*  1.0.3.1  –– Added activeZoneName and activeProgramName attributes
+*  1.0.3.2  –– Added Actuator as a command for Rule Machine
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "1.0.0.0"
-@Field static final String DRIVER_MODIFIED = "2025-12-29"
+@Field static final String DRIVER_VERSION  = "1.0.3.2"
+@Field static final String DRIVER_MODIFIED = "2026-01-13"
 @Field static final int MAX_ZONES = 48
 
 metadata {
@@ -25,9 +30,14 @@ metadata {
         description: "Receives and displays hybrid evapotranspiration (ET) and seasonal-adjust data from the WET-IT app.",
         importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/WET-IT_Data_Driver.groovy"
     ) {
+		capability "Actuator"
         capability "Sensor"
         capability "Refresh"
 
+        attribute "activeZone","number"
+        attribute "activeZoneName","string"
+        attribute "activeProgram","number"
+        attribute "activeProgramName","string"
         attribute "appInfo","string"
         attribute "datasetJson","string"
         attribute "driverInfo","string"
@@ -48,6 +58,8 @@ metadata {
             attribute "zone${it}Name","string"
             attribute "zone${it}Et","number"
             attribute "zone${it}Seasonal","number"
+            attribute "zone${it}BaseTime","number"
+            attribute "zone${it}EtAdjustedTime","number"
         }
 
         command "initialize"
@@ -88,7 +100,7 @@ private updateZoneAttributes(Number zCount){
     zCount=zCount?.toInteger()?:0
     try{
         (zCount+1..MAX_ZONES).each{
-            ["Name","Et","Seasonal"].each{suffix ->
+            ["Name","Et","Seasonal","BaseTime","EtAdjustedTime"].each{suffix ->
                 def n="zone${it}${suffix}"
                 if(device.currentValue(n)!=null){
                     try{device.deleteCurrentState(n);logDebug"Cleared stale ${n}"}
