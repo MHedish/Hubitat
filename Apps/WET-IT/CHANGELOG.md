@@ -96,13 +96,40 @@
 - 1.0.0.0 — Initial Release.
 - 1.0.0.2 — Added hyperlinks to the associated sections of DOCUMENTATION.md to key headings and titles.
 
+## 🌱 1.0.1.x — Attribute Expansion & Stability Pass
+**App v1.0.1.0–1.0.1.3 / Driver v1.0.1.0 — Early January 2026**
+
+- Added `baseTime` and `adjustedTime` attributes for improved runtime tracking.
+- Introduced `baseTimeUnit` to standardize input (minutes/seconds) across all zones.
+- Refined per-zone UI widths and improved visual alignment for configuration pages.
+- Implemented automatic validation of runtime values to prevent zero-length cycles.
+- Improved event emission and state-change detection for more accurate dashboards.
+- Enhanced soil memory performance; reduced redundant logging on update events.
+- Began code normalization and cleanup in preparation for scheduler integration.
+- Verified attribute publication and JSON payload structure across app/driver.
+
+---
+
+## 🌿 1.0.2.x — Weather Integration & Scheduler Foundation
+**App v1.0.2.0–1.0.2.3 / Driver v1.0.2.0–1.0.2.3 — Mid January 2026**
+
+- Introduced device (valve/switch) control for direct zone actuation.
+- Added multi-provider weather support (OpenWeather, Tomorrow.io, NOAA).
+- Created framework for future CRON-based scheduling logic.
+- Refined program copy and validation logic; improved dynamic enable/disable of test buttons.
+- Unified ET calculation handling and simplified unit conversions.
+- Introduced initial soil memory reset and recovery features.
+- Expanded driver with `activeProgram` and `activeZoneName` attributes.
+- Enhanced `emitEvent()` consistency between app and child driver for robust synchronization.
+- Completed foundational architecture for upcoming scheduler and conflict detection system.
+
 
 
 ## ☀️ 1.4.0.0 — Production Release
 **App v1.4.0.0 / Driver v1.4.0.0 — Released 2026-01-16**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTA5MTg0MDA3OSwtMTE3NDIzMTkxNiwxMz
-gzMzgwNDQ2LDE3MjUyODQ1NjksLTEwMjk5Nzg0NywtODEyMDcy
-MzU4LDE4NDcwMzc4MDNdfQ==
+eyJoaXN0b3J5IjpbNTIzMDI4MjMsLTExNzQyMzE5MTYsMTM4Mz
+M4MDQ0NiwxNzI1Mjg0NTY5LC0xMDI5OTc4NDcsLTgxMjA3MjM1
+OCwxODQ3MDM3ODAzXX0=
 -->
