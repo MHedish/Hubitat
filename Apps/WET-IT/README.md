@@ -34,14 +34,12 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 - Completed consistency audit and schema validation for production release
 
 - Hybrid **ET + Seasonal** model with fractional daily scaling  
-- Multi-provider weather support: **OpenWeather 3.0**, **Tomorrow.io**, **NOAA NWS**  
+- Multi-provider weather support: **OpenWeather 3.0**, **Tomorrow.io**, **Tempest Personal Weather Station**,**NOAA NWS**  
 - Per-zone soil, plant, and nozzle modeling with adjustable coefficients  
 - Optional **Soil Memory** persistence (Rachio / Orbit style)  
 - Freeze/frost warnings and automatic thresholds  
 - Hub location diagnostics and elapsed-time tracking  
 - Lightweight and efficient — entirely local on Hubitat  
-
----
 
 ## ⚙️ Installation
 
@@ -105,12 +103,13 @@ If you prefer not to use HPM:
 After installation (HPM or manual):
 
 1. **Verify Weather Source**
-   - Choose your preferred source (NOAA, OpenWeather, or Tomorrow.io).  
+   - Choose your preferred source (NOAA, OpenWeather, Tempest, or Tomorrow.io).  
   ## 🌦 Weather Providers
 
 | Source | Key | Notes |
 |:--|:--:|:--|
 | **[OpenWeather 3.0](https://openweathermap.org/api/one-call-3)** | ✅ | Hourly and forecast-based ET₀ |
+| **[Tomorrow.io](https://docs.tomorrow.io/reference/welcome)** | ✅ | High-resolution meteorological model |
 | **[Tomorrow.io](https://docs.tomorrow.io/reference/welcome)** | ✅ | High-resolution meteorological model |
 | **[NOAA NWS](https://www.weather.gov/documentation/services-web-api)** | ❌ | Built-in fallback |
 
@@ -197,7 +196,7 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 > © 2025 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNDIyMzIyNjUxLC0xMjM1MDc3NDE4LC0xOD
+eyJoaXN0b3J5IjpbNzMwNjI1NDQ3LC0xMjM1MDc3NDE4LC0xOD
 cwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2MjYx
 NzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
 -->
