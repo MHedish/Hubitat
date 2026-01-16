@@ -380,8 +380,6 @@ In short, the radar station is a data collection tool, and the NOAA office is wh
 
 > 🧠 *`wxTimestamp` shows when the data was issued; `wxChecked` shows when it was polled.*
 
----
-
 ## 📊 Driver Attribute Reference
 
 | Attribute | Type | Description |
@@ -397,8 +395,8 @@ In short, the radar station is a data collection tool, and the NOAA office is wh
 | `rainForecast` | number | 24-hour rain forecast |
 | `summaryText` | string | Human-readable ET summary |
 | `summaryTimestamp` | string | Last hybrid ET calculation |
-| `windAlert` | bool | True when wind forecast above threshold |
-| `windAlertString` | string | 'true' when wind forecast above threshold |
+| `windAlert` | bool | True when wind forecast above threshold *or* personal weather station wind speed exceeds threshold |
+| `windAlertString` | string | 'true' when wind forecast above threshold *or* personal weather station wind speed exceeds threshold|
 | `windSpeed` | number | Forecasted wind speed |
 | `wxChecked` | string | Forecast poll/check time |
 | `wxLocation` | string | City/State/Forecast Office/Radar Station (US Only)|
@@ -407,8 +405,6 @@ In short, the radar station is a data collection tool, and the NOAA office is wh
 | `zone#Et` | number | ET adjustment (%) per zone |
 | `zone#Name` | string | Friendly name for each zone |
 | `zone#Seasonal` | number | Seasonal adjustment (%) per zone |
-
----
 
 ## 🌿 Plant Type Reference
 > Defines vegetation categories and corresponding crop coefficients (Kc).  
@@ -592,7 +588,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNDYzMzA3OTQyLC05OTgxNDY1NDMsLTE2Mj
+eyJoaXN0b3J5IjpbODA3MjAxMDE4LC05OTgxNDY1NDMsLTE2Mj
 A5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1
 NjAsMTA0NTEzNDA0XX0=
 -->
