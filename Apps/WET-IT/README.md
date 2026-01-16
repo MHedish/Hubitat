@@ -33,7 +33,6 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 - Improved accessibility and color contrast in weather alert section
 - Ensured atomicState persistence for alert data after hub reboots
 - Completed consistency audit and schema validation for production release
-
 - Hybrid **ET + Seasonal** model with fractional daily scaling
 - Multi-provider weather support: **OpenWeather 3.0**, **Tomorrow.io**, **Tempest Personal Weather Station**,**NOAA NWS**
 - Per-zone soil, plant, and nozzle modeling with adjustable coefficients
@@ -43,11 +42,11 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 - Lightweight and efficient — entirely local on Hubitat
 
 ### 🆕 v1.0.4.0 Updates
-- Added a comprehensive scheduler supporting up to 48 zones and 16 programs
-- Each program can be set for a specific **time-of-day** *or* to **begin by** or **end by** sunrise.
-- Program intervals can be set to daily, every other day, up to once every 7 days.
+- Added a *comprehensive scheduler* supporting up to 48 zones and 16 programs.
+- Each program can be set for a specific **time-of-day** *or* to **begin by** or **end by** sunrise, accouting for var
+- Program intervals can be set to daily, every other day, or up to once every 7 days.
 - Wind/Rain/Freeze alerts will automatically skip irrigation based on user preferences.
-- User selectable water sensors will automatically skip irrigation if wet.
+- User-selectable water sensors will automatically skip irrigation if wet.
 - For Tempest PWS users, the haptic rain sensor is also available as a live rain sensor.
 - Wind/Rain/Freeze events are reported in the app, device, and are checked immediately before a scheduled irrigation event.
 
@@ -204,7 +203,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjExMjkzNjM4MywxNjQyNTIzMTA0LC0xMj
+eyJoaXN0b3J5IjpbMjAxOTc4OTM4MCwxNjQyNTIzMTA0LC0xMj
 M1MDc3NDE4LC0xODcwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1
 ODMwOSwxMjI2MjYxNzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX
 0=
