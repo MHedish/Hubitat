@@ -392,8 +392,8 @@ In short, the radar station is a data collection tool, and the NOAA office is wh
 | `freezeAlert` | bool | True when forecast below threshold |
 | `freezeAlertString` | string | 'true' when forecast below threshold |
 | `freezeLowTemp` | number | Freeze warning threshold |
-| `rainAlert` | bool | True when 24-hour rain forecast above threshold |
-| `rainAlertString` | bool | True when 24-hour rain forecast above threshold |
+| `rainAlert` | bool | True when 24-hour rain forecast above threshold *or* local water sensor is marked as wet |
+| `rainAlertString` | string | 'true' when 24-hour rain forecast above threshold *or* local water sensor is marked as wet|
 | `rainForecast` | number | 24-hour rain forecast |
 | `summaryText` | string | Human-readable ET summary |
 | `summaryTimestamp` | string | Last hybrid ET calculation |
@@ -592,7 +592,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTExMzY2NTg0MTUsLTk5ODE0NjU0MywtMT
-YyMDk1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkw
-MDU2MCwxMDQ1MTM0MDRdfQ==
+eyJoaXN0b3J5IjpbNDYzMzA3OTQyLC05OTgxNDY1NDMsLTE2Mj
+A5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1
+NjAsMTA0NTEzNDA0XX0=
 -->
