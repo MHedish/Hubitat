@@ -308,7 +308,7 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 - The best time to water with sprinklers is  **early morning, just before or around sunrise (around 5-9 AM)**, to minimize evaporation, allow deep root absorption before heat, and let leaves dry before nightfall, preventing fungus; avoid midday due to high evaporation and nighttime watering, which promotes disease.
 <details>
     <Summary>
-Why Early Morning is Best
+**Why Early Morning is Best**
   </summary>
 
 -   **Reduced  [Evaporation](https://www.google.com/search?q=Evaporation&rlz=1C1CHBF_enUS1042US1042&oq=sprinkler+water+at+sunrise+or+time+of+day&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRigATIHCAIQIRigATIHCAMQIRigATIHCAQQIRigATIHCAUQIRifBTIHCAYQIRifBTIHCAcQIRifBTIHCAgQIRiPAtIBCTEyODM0ajBqNKgCA7ACAfEFT0CiScNyTJo&sourceid=chrome&ie=UTF-8&ved=2ahUKEwjnn6DA_5CSAxXCMlkFHaJHEJ8QgK4QegQIAxAB):**  Cooler temperatures and calmer winds mean less water is lost to the air, ensuring more reaches the roots.
@@ -606,7 +606,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNjMyNDE2MTQ0LC05OTgxNDY1NDMsLTE2Mj
+eyJoaXN0b3J5IjpbLTgwNzM4OTkyLC05OTgxNDY1NDMsLTE2Mj
 A5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1
 NjAsMTA0NTEzNDA0XX0=
 -->
