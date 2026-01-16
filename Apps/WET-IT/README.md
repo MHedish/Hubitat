@@ -177,8 +177,6 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 
 > Use **🌤 Test Weather Now** to confirm connectivity.
 
----
-
 ## 🪴 Per-Zone Configuration
 
 | Category | Defines | Example Values |
@@ -188,12 +186,11 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 | **Nozzle Type** | Precipitation rate | Spray 1.8 · Rotor 0.6 · Drip 0.2 |
 | **Advanced Overrides** | Precision tuning | Kc 0.4–1.2 · MAD 0.2–0.6 · Depth 3–24 in |
 
----
-
 ## 👥 Contributors
 
-**Author:** Marc Hedish (@MHedish)  
-**Documentation:** ChatGPT (OpenAI)  
+**Author:** Marc Hedish (@MHedish)
+**Documentation:** ChatGPT (OpenAI)
+**Special Thanks:** 
 **Platform:** [Hubitat Elevation](https://hubitat.com)
 
 ## 🔍 Learn More
@@ -206,7 +203,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTU1MDM2NTM4OCwtMTIzNTA3NzQxOCwtMT
+eyJoaXN0b3J5IjpbMTY0MjUyMzEwNCwtMTIzNTA3NzQxOCwtMT
 g3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2
 MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
 -->
