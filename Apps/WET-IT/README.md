@@ -154,11 +154,11 @@ If you see “⚙️ Click [Done] to begin automatic initialization…”, simpl
 
 1️⃣ **App Info** – Version, links, docs  
 2️⃣ **Zone Setup** – Define zone count and characteristics
-🆕
-3️⃣ **ET & Seasonal Settings (Advanced)** – Tune ET₀ and scaling  
-4️⃣ **Weather Configuration** – Choose provider and API key(s)  
-5️⃣**Data Publishing**– Choose JSON, Device Attributes, Summary Text
-6️⃣**Logging Tools / Diagnostics** – Verify system, test weather, manage loggging 
+3️⃣**🆕Program Scheduling** – Define o
+4️⃣ **ET & Seasonal Settings (Advanced)** – Tune ET₀ and scaling  
+5️⃣ **Weather Configuration** – Choose provider and API key(s)  
+6️⃣**Data Publishing**– Choose JSON, Device Attributes, Summary Text
+7️⃣**Logging Tools / Diagnostics** – Verify system, test weather, manage loggging 
 
 ---
 
@@ -205,7 +205,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjEyNjkzNzc5NywtMTIzNTA3NzQxOCwtMT
+eyJoaXN0b3J5IjpbLTEzNDE3NjQ2NSwtMTIzNTA3NzQxOCwtMT
 g3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2
 MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
 -->
