@@ -160,8 +160,8 @@ If you see “⚙️ Click [Done] to begin automatic initialization…”, simpl
 6️⃣ **Active Weather Alerts** – View Freeze/Frost, Rain, Wind alerts
 7️⃣ **Rain Sensor** – Choose any installed outdoor rain/moisture sensor to skip irrigation.  *Bonus: Tempest users can select their haptic rain sensor as well.*
 8️⃣**Data Publishing**– Choose JSON, Device Attributes, Summary Text
-9️⃣**Logging Tools** – manage logging
-🔟**System Diagnostics** – Verify system, test weather
+9️⃣**Logging Tools** – Manage information and debug logging
+🔟**System Diagnostics** – Verify system, test weather, review location, and connection information
 
 ---
 
@@ -208,7 +208,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNDQzMTIzMTE4LC0xMjM1MDc3NDE4LC0xOD
-cwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2MjYx
-NzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
+eyJoaXN0b3J5IjpbMTUxMDI3NTEwMiwtMTIzNTA3NzQxOCwtMT
+g3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2
+MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
 -->
