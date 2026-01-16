@@ -98,6 +98,7 @@
 - 1.0.0.2 — Added hyperlinks to the associated sections of DOCUMENTATION.md to key headings and titles.
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTM4MzM4MDQ0NiwxNzI1Mjg0NTY5LC0xMD
-I5OTc4NDcsLTgxMjA3MjM1OCwxODQ3MDM3ODAzXX0=
+eyJoaXN0b3J5IjpbLTExNzQyMzE5MTYsMTM4MzM4MDQ0NiwxNz
+I1Mjg0NTY5LC0xMDI5OTc4NDcsLTgxMjA3MjM1OCwxODQ3MDM3
+ODAzXX0=
 -->
