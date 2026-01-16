@@ -302,7 +302,24 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 ## 📅️ Program Scheduling
 
 - Internal scheduler automates irrigation events (up to 16 schedules)
-- Each schedule can be set to begin at a specific time of day *or* begin watering at sunrise (typically preferred) 
+- Each schedule can be set to begin at a specific time of day *or* begin watering at sunrise
+- The best time to water with sprinklers is  **early morning, just before or around sunrise (around 5-9 AM)**, to minimize evaporation, allow deep root absorption before heat, and let leaves dry before nightfall, preventing fungus; avoid midday due to high evaporation and nighttime watering, which promotes disease.
+
+**Why Early Morning is Best:**
+
+-   **Reduced  [Evaporation](https://www.google.com/search?q=Evaporation&rlz=1C1CHBF_enUS1042US1042&oq=sprinkler+water+at+sunrise+or+time+of+day&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRigATIHCAIQIRigATIHCAMQIRigATIHCAQQIRigATIHCAUQIRifBTIHCAYQIRifBTIHCAcQIRifBTIHCAgQIRiPAtIBCTEyODM0ajBqNKgCA7ACAfEFT0CiScNyTJo&sourceid=chrome&ie=UTF-8&ved=2ahUKEwjnn6DA_5CSAxXCMlkFHaJHEJ8QgK4QegQIAxAB):**  Cooler temperatures and calmer winds mean less water is lost to the air, ensuring more reaches the roots.
+-   **Plant Absorption:**  Water is available when plants are ready to absorb it as the sun rises, making it more efficient.
+-   **Disease Prevention:**  Leaves dry as the sun warms up, preventing fungal issues that thrive on prolonged moisture overnight.
+-   **Better  [Water](https://www.google.com/search?q=Water&rlz=1C1CHBF_enUS1042US1042&oq=sprinkler+water+at+sunrise+or+time+of+day&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRigATIHCAIQIRigATIHCAMQIRigATIHCAQQIRigATIHCAUQIRifBTIHCAYQIRifBTIHCAcQIRifBTIHCAgQIRiPAtIBCTEyODM0ajBqNKgCA7ACAfEFT0CiScNyTJo&sourceid=chrome&ie=UTF-8&ved=2ahUKEwjnn6DA_5CSAxXCMlkFHaJHEJ8QgK4QegQIAxAF)  [Pressure](https://www.google.com/search?q=Pressure&rlz=1C1CHBF_enUS1042US1042&oq=sprinkler+water+at+sunrise+or+time+of+day&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRigATIHCAIQIRigATIHCAMQIRigATIHCAQQIRigATIHCAUQIRifBTIHCAYQIRifBTIHCAcQIRifBTIHCAgQIRiPAtIBCTEyODM0ajBqNKgCA7ACAfEFT0CiScNyTJo&sourceid=chrome&ie=UTF-8&ved=2ahUKEwjnn6DA_5CSAxXCMlkFHaJHEJ8QgK4QegQIAxAG):**  Municipal water pressure is often higher in the early morning.
+
+**Times to Avoid:**
+
+-   **Midday (10 AM - 4 PM):**  High heat and sun cause rapid evaporation, wasting water.
+-   **Night (After 6 PM):**  Leaves stay wet for too long, creating ideal conditions for fungal diseases like  [mildew](https://www.google.com/search?q=mildew&rlz=1C1CHBF_enUS1042US1042&oq=sprinkler+water+at+sunrise+or+time+of+day&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRigATIHCAIQIRigATIHCAMQIRigATIHCAQQIRigATIHCAUQIRifBTIHCAYQIRifBTIHCAcQIRifBTIHCAgQIRiPAtIBCTEyODM0ajBqNKgCA7ACAfEFT0CiScNyTJo&sourceid=chrome&ie=UTF-8&mstk=AUtExfBADlW7MA0nq8Q_m1yYuE6yg59tdzMOqx_B902_hGkqA7aVps7c-UMhNpdWJbKksS17Dwe8uiXX1-VcdhPuEO7VFneDYb3gDk2oPjo0wJlSwP5qc-IhGvjwV1VV2XoXquCSraB6Q6BANludM2ouW0p1mozj3sFj1y0gkRJN5jXrA4A&csui=3&ved=2ahUKEwjnn6DA_5CSAxXCMlkFHaJHEJ8QgK4QegQIBRAC)  and  [rust](https://www.google.com/search?q=rust&rlz=1C1CHBF_enUS1042US1042&oq=sprinkler+water+at+sunrise+or+time+of+day&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRigATIHCAIQIRigATIHCAMQIRigATIHCAQQIRigATIHCAUQIRifBTIHCAYQIRifBTIHCAcQIRifBTIHCAgQIRiPAtIBCTEyODM0ajBqNKgCA7ACAfEFT0CiScNyTJo&sourceid=chrome&ie=UTF-8&mstk=AUtExfBADlW7MA0nq8Q_m1yYuE6yg59tdzMOqx_B902_hGkqA7aVps7c-UMhNpdWJbKksS17Dwe8uiXX1-VcdhPuEO7VFneDYb3gDk2oPjo0wJlSwP5qc-IhGvjwV1VV2XoXquCSraB6Q6BANludM2ouW0p1mozj3sFj1y0gkRJN5jXrA4A&csui=3&ved=2ahUKEwjnn6DA_5CSAxXCMlkFHaJHEJ8QgK4QegQIBRAD).
+
+**[Evening Watering](https://www.google.com/search?q=Evening+Watering&rlz=1C1CHBF_enUS1042US1042&oq=sprinkler+water+at+sunrise+or+time+of+day&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRigATIHCAIQIRigATIHCAMQIRigATIHCAQQIRigATIHCAUQIRifBTIHCAYQIRifBTIHCAcQIRifBTIHCAgQIRiPAtIBCTEyODM0ajBqNKgCA7ACAfEFT0CiScNyTJo&sourceid=chrome&ie=UTF-8&mstk=AUtExfBADlW7MA0nq8Q_m1yYuE6yg59tdzMOqx_B902_hGkqA7aVps7c-UMhNpdWJbKksS17Dwe8uiXX1-VcdhPuEO7VFneDYb3gDk2oPjo0wJlSwP5qc-IhGvjwV1VV2XoXquCSraB6Q6BANludM2ouW0p1mozj3sFj1y0gkRJN5jXrA4A&csui=3&ved=2ahUKEwjnn6DA_5CSAxXCMlkFHaJHEJ8QgK4QegQIBhAB)  (4-6 PM):**
+
+-   This is a backup option if morning isn't possible, but it carries a slight risk of fungus as temperatures drop overnight.
 
 ## ⚙️ System Architecture
 
@@ -583,7 +600,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTc5MjM4NzE1OCwtOTk4MTQ2NTQzLC0xNj
-IwOTUxNjcxLDEzNjM0ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAw
-NTYwLDEwNDUxMzQwNF19
+eyJoaXN0b3J5IjpbLTIwNzU3OTE0OTYsLTk5ODE0NjU0MywtMT
+YyMDk1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkw
+MDU2MCwxMDQ1MTM0MDRdfQ==
 -->
