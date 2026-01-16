@@ -185,6 +185,8 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 | **Nozzle Type** | Precipitation rate | Spray 1.8 · Rotor 0.6 · Drip 0.2 |
 | **Advanced Overrides** | Precision tuning | Kc 0.4–1.2 · MAD 0.2–0.6 · Depth 3–24 in |
 
+## 🪴 Per-Zone Configuration
+
 ## 👥 Contributors
 
 **Author:** Marc Hedish (@MHedish)
@@ -202,8 +204,8 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE0NjkzOTQwMTUsMTY0MjUyMzEwNCwtMT
-IzNTA3NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1
-NTgzMDksMTIyNjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM1
-19
+eyJoaXN0b3J5IjpbMTE1NDI2NDg5NywxNjQyNTIzMTA0LC0xMj
+M1MDc3NDE4LC0xODcwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1
+ODMwOSwxMjI2MjYxNzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX
+0=
 -->
