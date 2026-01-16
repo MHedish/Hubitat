@@ -531,7 +531,7 @@ Automations can safely:
 ## 🌧️ Rain Protection Logic
 
 WET-IT monitors forecast rain amount.  
-If the 24 hour rain forecast is low temperature ≥ configured **Rain Skip Threshold**, these attributes update automatically:
+If the 24-hour rain forecast is low temperature ≥ configured **Rain Skip Threshold**, these attributes update automatically:
 
 | Attribute | Type | Description |
 |:--|:--|:--|
@@ -574,7 +574,6 @@ Automations can safely:
 
 **Internal Highlights:**
 - `emitEvent()` and `emitChangedEvent()` handle updates safely  
-- `atomicState` caches transient data  
 - Log formatting standardized with `[WET-IT]` prefix  
 - Auto-disable debug after 30 min
 
@@ -587,7 +586,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMz
-YzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkwMDU2MCwxMDQ1MTM0
-MDRdfQ==
+eyJoaXN0b3J5IjpbMzY0NTcxOTAyLC05OTgxNDY1NDMsLTE2Mj
+A5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1
+NjAsMTA0NTEzNDA0XX0=
 -->
