@@ -26,7 +26,7 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 
 ### 💡 Highlights
 
-### 🆕 v1.0.0.0 Updates
+###  v1.0.0.0 Updates
 - Added **Active Weather Alerts** panel (Freeze, Rain, Wind) in app UI
 - Rounded rain and wind data for cleaner display precision
 - Improved accessibility and color contrast in weather alert section
@@ -40,6 +40,9 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 - Freeze/frost warnings and automatic thresholds  
 - Hub location diagnostics and elapsed-time tracking  
 - Lightweight and efficient — entirely local on Hubitat  
+
+### 🆕 v1.0.4.0 Updates
+- Added full z
 
 ## ⚙️ Installation
 
@@ -197,7 +200,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNTQ0MTk4OTA4LC0xMjM1MDc3NDE4LC0xOD
-cwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2MjYx
-NzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
+eyJoaXN0b3J5IjpbMTk0MDA5ODY4NCwtMTIzNTA3NzQxOCwtMT
+g3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2
+MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
 -->
