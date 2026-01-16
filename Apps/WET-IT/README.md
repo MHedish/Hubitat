@@ -16,7 +16,9 @@
 ## 🌎 Overview
 
 **WET-IT** brings professional-grade **Evapotranspiration (ET)** and **Seasonal Adjustment Modeling** to the Hubitat ecosystem.  
-It models how much water each irrigation zone *should* need based on real weather data and plant/soil parameters — without directly scheduling watering.  
+It models how much water each irrigation zone *should* need based on real weather data and plant/soil parameters — ~~without directly scheduling watering.~~  ***Now with full scheduling!***
+
+Supports up to 48 zones and 16 schedules.
 
 ### 🧩 Core Purpose
 
@@ -195,7 +197,7 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 > © 2025 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTE0OTQ3OTgzNiwtMTIzNTA3NzQxOCwtMT
-g3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2
-MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
+eyJoaXN0b3J5IjpbNDIyMzIyNjUxLC0xMjM1MDc3NDE4LC0xOD
+cwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2MjYx
+NzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
 -->
