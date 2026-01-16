@@ -110,7 +110,7 @@ After installation (HPM or manual):
 |:--|:--:|:--|
 | **[OpenWeather 3.0](https://openweathermap.org/api/one-call-3)** | ✅ | Hourly and forecast-based ET₀ |
 | **[Tomorrow.io](https://docs.tomorrow.io/reference/welcome)** | ✅ | High-resolution meteorological model |
-| **[Tempest](https://docs.tomorrow.io/reference/welcome)** | ✅ | High-resolution meteorological model |
+| **[Tempest](https://tempest.earth/)** | ✅ | Hyper-local weather observation and forecasting |
 | **[NOAA NWS](https://www.weather.gov/documentation/services-web-api)** | ❌ | Built-in fallback |
 
 
@@ -141,7 +141,6 @@ no cloud dependency, no external scheduler, and complete zone-level control.
 
 If you see “⚙️ Click [Done] to begin automatic initialization…”, simply press **Done** once and the bootstrap will complete within seconds.
 
-
 ---
 
 ## 🧭 Configuration Flow
@@ -163,7 +162,7 @@ If you see “⚙️ Click [Done] to begin automatic initialization…”, simpl
 | **Tomorrow.io** | ✅ | [developer.tomorrow.io](https://developer.tomorrow.io) |
 | **NOAA NWS** | ❌ | Built-in (no key required) |
 
-You will need an account to create an API Key for OpenWeather and Tomorrow.io.  Their *free* accounts have more than enough API calls for this app (12 times per day).
+You will need an account to create an API Key for OpenWeather, Tomorrow.io, and Tempest.  Their *free* accounts have more than enough API calls for this app (12 times per day).
 
 > Use **🌤 Test Weather Now** to confirm connectivity.
 
@@ -196,7 +195,7 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 > © 2025 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEzNjgyMTA5NjYsLTEyMzUwNzc0MTgsLT
-E4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4MzA5LDEyMjYy
-NjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ==
+eyJoaXN0b3J5IjpbLTEyMjQ1MDg0MiwtMTIzNTA3NzQxOCwtMT
+g3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2
+MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
 -->
