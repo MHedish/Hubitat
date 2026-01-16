@@ -536,7 +536,8 @@ Automations can safely:
 
 ## 🆕Rain Sensor
 - Beginning with v1.0.4.0 users can select any local rain/moisture sensors installed to automatically skip scheduled irrigation events.
-Tempest
+- Tempest PWS users can also select their haptic rain sensor.
+- Rain sensors are checked just before each scheduled irrigation event
 
 
 ## 💨 Wind Protection Logic
@@ -581,7 +582,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTYyMjU5MjM3MSwtOTk4MTQ2NTQzLC0xNj
+eyJoaXN0b3J5IjpbLTg5MDQ3NzE1NCwtOTk4MTQ2NTQzLC0xNj
 IwOTUxNjcxLDEzNjM0ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAw
 NTYwLDEwNDUxMzQwNF19
 -->
