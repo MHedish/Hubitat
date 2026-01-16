@@ -301,7 +301,8 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 
 ## 📅️ Program Scheduling
 
-- Internal scheduler automates irrigation events (up to 16 schedules) 
+- Internal scheduler automates irrigation events (up to 16 schedules)
+- Each schedule can be set to begin at a specific time of day *or* begin watering at sunrise (typically preferred) 
 
 ## ⚙️ System Architecture
 
@@ -582,7 +583,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIwMjQzOTc0MDAsLTk5ODE0NjU0MywtMT
-YyMDk1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkw
-MDU2MCwxMDQ1MTM0MDRdfQ==
+eyJoaXN0b3J5IjpbMTc5MjM4NzE1OCwtOTk4MTQ2NTQzLC0xNj
+IwOTUxNjcxLDEzNjM0ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAw
+NTYwLDEwNDUxMzQwNF19
 -->
