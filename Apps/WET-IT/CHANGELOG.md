@@ -96,9 +96,13 @@
 - 1.0.0.0 — Initial Release.
 - 1.0.0.2 — Added hyperlinks to the associated sections of DOCUMENTATION.md to key headings and titles.
 
-## ☀️ 1.4.0.0 — Production Release  
+
+
+## ☀️ 1.4.0.0 — Production Release
+**App v1.4.0.0 / Driver v1.4.0.0 — Released 2026-01-16**
+
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTA2OTE4NTYzNiwtMTE3NDIzMTkxNiwxMz
+eyJoaXN0b3J5IjpbMTA5MTg0MDA3OSwtMTE3NDIzMTkxNiwxMz
 gzMzgwNDQ2LDE3MjUyODQ1NjksLTEwMjk5Nzg0NywtODEyMDcy
 MzU4LDE4NDcwMzc4MDNdfQ==
 -->
