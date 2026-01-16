@@ -110,7 +110,7 @@ After installation (HPM or manual):
 |:--|:--:|:--|
 | **[OpenWeather 3.0](https://openweathermap.org/api/one-call-3)** | ✅ | Hourly and forecast-based ET₀ |
 | **[Tomorrow.io](https://docs.tomorrow.io/reference/welcome)** | ✅ | High-resolution meteorological model |
-| **[Tomorrow.io](https://docs.tomorrow.io/reference/welcome)** | ✅ | High-resolution meteorological model |
+| **[Tempest](https://docs.tomorrow.io/reference/welcome)** | ✅ | High-resolution meteorological model |
 | **[NOAA NWS](https://www.weather.gov/documentation/services-web-api)** | ❌ | Built-in fallback |
 
 
@@ -196,7 +196,7 @@ You will need an account to create an API Key for OpenWeather and Tomorrow.io.  
 > © 2025 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNzMwNjI1NDQ3LC0xMjM1MDc3NDE4LC0xOD
-cwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2MjYx
-NzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
+eyJoaXN0b3J5IjpbLTEzNjgyMTA5NjYsLTEyMzUwNzc0MTgsLT
+E4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4MzA5LDEyMjYy
+NjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ==
 -->
