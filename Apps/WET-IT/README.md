@@ -33,17 +33,17 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 - Ensured atomicState persistence for alert data after hub reboots
 - Completed consistency audit and schema validation for production release
 
-- Hybrid **ET + Seasonal** model with fractional daily scaling  
-- Multi-provider weather support: **OpenWeather 3.0**, **Tomorrow.io**, **Tempest Personal Weather Station**,**NOAA NWS**  
-- Per-zone soil, plant, and nozzle modeling with adjustable coefficients  
-- Optional **Soil Memory** persistence (Rachio / Orbit style)  
-- Freeze/frost warnings and automatic thresholds  
-- Hub location diagnostics and elapsed-time tracking  
-- Lightweight and efficient — entirely local on Hubitat  
+- Hybrid **ET + Seasonal** model with fractional daily scaling
+- Multi-provider weather support: **OpenWeather 3.0**, **Tomorrow.io**, **Tempest Personal Weather Station**,**NOAA NWS**
+- Per-zone soil, plant, and nozzle modeling with adjustable coefficients
+- Optional **Soil Memory** persistence (Rachio / Orbit style)
+- Freeze/frost warnings and automatic thresholds
+- Hub location diagnostics and elapsed-time tracking
+- Lightweight and efficient — entirely local on Hubitat
 
 ### 🆕 v1.0.4.0 Updates
 - Added a comprehensive scheduler supporting up to 48 zones and 16 programs
-- Each program can be set for a specific **time-of-day** *or* to **begin by** or end by sunrise.
+- Each program can be set for a specific **time-of-day** *or* to **begin by** or **end by** sunrise.
 - Program intervals can be set to daily, every other day, up to once every 7 days.
 - Wind/Rain/Freeze alerts will automatically skip irrigation based on user preferences.
 - User selectable water sensors will automatically skip irrigation if wet.
@@ -53,8 +53,6 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 ## ⚙️ Installation
 
 WET-IT can be installed in two ways:
-
----
 
 ### **Option 1 — Install via Hubitat Package Manager (Recommended)**
 
@@ -206,7 +204,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbODg5MDE3OTE4LC0xMjM1MDc3NDE4LC0xOD
-cwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2MjYx
-NzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
+eyJoaXN0b3J5IjpbMTQ0ODM2ODYzNywtMTIzNTA3NzQxOCwtMT
+g3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2
+MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
 -->
