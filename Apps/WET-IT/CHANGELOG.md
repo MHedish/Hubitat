@@ -121,15 +121,29 @@
 - Introduced initial soil memory reset and recovery features.
 - Expanded driver with `activeProgram` and `activeZoneName` attributes.
 - Enhanced `emitEvent()` consistency between app and child driver for robust synchronization.
-- Completed foundational architecture for upcoming scheduler and conflict detection system.
+- Completed foundational architecture for the upcoming scheduler and conflict detection system.
 
+## 🌾 1.0.3.x — Full Scheduler Integration & Weather Intelligence
+**App v1.0.3.0–1.0.3.36 / Driver v1.0.3.3 — Late January 2026**
 
+- Introduced **single CRON-based scheduler**, promoting WET-IT from a data provider to a **self-contained, local irrigation scheduler**.
+- Implemented sequential zone execution for **pressure-balanced, deterministic runtime control**.
+- Added **program-level minimum runtime validation** to ensure meaningful irrigation cycles.
+- Unified all scheduling logic (programs, zones, manual runs) under one timing framework.
+- Added full program copy/delete/shift-down logic for reliable dynamic reconfiguration.
+- Introduced **Tempest Personal Weather Station (PWS)** as a fourth data provider for hyper-local forecasting.
+- Enhanced **Active Weather Alert system** (Freeze, Rain, Wind) with configurable thresholds and dashboard-ready text attributes.
+- Expanded and refined **Data Publishing** options — JSON, per-attribute, and unified summary output.
+- Improved runtime logs, diagnostics, and version self-reporting.
+- Prepared for unified 1.0.4.x series by normalizing state handling and scheduler recovery behavior.
+
+---
 
 ## ☀️ 1.4.0.0 — Production Release
 **App v1.4.0.0 / Driver v1.4.0.0 — Released 2026-01-16**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNTIzMDI4MjMsLTExNzQyMzE5MTYsMTM4Mz
-M4MDQ0NiwxNzI1Mjg0NTY5LC0xMDI5OTc4NDcsLTgxMjA3MjM1
-OCwxODQ3MDM3ODAzXX0=
+eyJoaXN0b3J5IjpbLTE5MzY2OTU0LDUyMzAyODIzLC0xMTc0Mj
+MxOTE2LDEzODMzODA0NDYsMTcyNTI4NDU2OSwtMTAyOTk3ODQ3
+LC04MTIwNzIzNTgsMTg0NzAzNzgwM119
 -->
