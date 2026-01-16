@@ -77,8 +77,6 @@
 
 > Final pre-1.0 release cycle: architectural freeze, consistency audit, and documentation pass in preparation for v1.0.0.0.
 
----
-
 ## ☀️ 1.0.0.2 — Production Release  
 **App v1.0.0.2 / Driver v1.0.0.0 — Released 2025-12-31**
 
@@ -108,8 +106,6 @@
 - Began code normalization and cleanup in preparation for scheduler integration.
 - Verified attribute publication and JSON payload structure across app/driver.
 
----
-
 ## 🌿 1.0.2.x — Weather Integration & Scheduler Foundation
 **App v1.0.2.0–1.0.2.3 / Driver v1.0.2.0–1.0.2.3 — Mid January 2026**
 
@@ -137,13 +133,11 @@
 - Improved runtime logs, diagnostics, and version self-reporting.
 - Prepared for unified 1.0.4.x series by normalizing state handling and scheduler recovery behavior.
 
----
-
 ## ☀️ 1.4.0.0 — Production Release
 **App v1.4.0.0 / Driver v1.4.0.0 — Released 2026-01-16**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE5MzY2OTU0LDUyMzAyODIzLC0xMTc0Mj
-MxOTE2LDEzODMzODA0NDYsMTcyNTI4NDU2OSwtMTAyOTk3ODQ3
-LC04MTIwNzIzNTgsMTg0NzAzNzgwM119
+eyJoaXN0b3J5IjpbMTE3MjU4NzE5OSw1MjMwMjgyMywtMTE3ND
+IzMTkxNiwxMzgzMzgwNDQ2LDE3MjUyODQ1NjksLTEwMjk5Nzg0
+NywtODEyMDcyMzU4LDE4NDcwMzc4MDNdfQ==
 -->
