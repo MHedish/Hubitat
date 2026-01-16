@@ -305,7 +305,7 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 ## ⚙️ System Architecture
 
 ```
-Weather API 🌦️ → ET₀ Calculation 🌡 → Soil Model 🌾 → Driver Attributes 📊 → Automations (RM / webCoRE / Node-RED)
+Weather API 🌦️ → ET₀ Calculation 🌡 → Soil Model 🌾 → Driver Attributes 📊 → Automations (InternaRM / webCoRE / Node-RED)
 ```
 
 **App (WET-IT)** – performs calculations and weather polling  
@@ -556,7 +556,8 @@ Automations can safely:
 - Send notifications or trigger alerts  
 - Resume when forecasted winds will not affect irrigation
 
-# 🔧 Developer & Diagnostic Tools
+
+## 🔧 Developer & Diagnostic Tools
 
 | Action | Purpose |
 |:--|:--|
@@ -580,7 +581,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTU0NTA1NTc5NiwtOTk4MTQ2NTQzLC0xNj
-IwOTUxNjcxLDEzNjM0ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAw
-NTYwLDEwNDUxMzQwNF19
+eyJoaXN0b3J5IjpbLTExMDM2ODY4NjIsLTk5ODE0NjU0MywtMT
+YyMDk1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkw
+MDU2MCwxMDQ1MTM0MDRdfQ==
 -->
