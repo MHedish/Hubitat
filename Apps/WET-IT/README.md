@@ -160,9 +160,11 @@ If you see “⚙️ Click [Done] to begin automatic initialization…”, simpl
 |:--|:--:|:--|
 | **OpenWeather 3.0** | ✅ | [openweathermap.org/api](https://openweathermap.org/api) |
 | **Tomorrow.io** | ✅ | [developer.tomorrow.io](https://developer.tomorrow.io) |
+| **Tempest** | ✅ | [developer.tomorrow.io](https://developer.tomorrow.io) |
 | **NOAA NWS** | ❌ | Built-in (no key required) |
 
-You will need an account to create an API Key for OpenWeather, Tomorrow.io, and Tempest.  Their *free* accounts have more than enough API calls for this app (12 times per day).
+You will need an account to create an API Key for OpenWeather,  and Tomorrow.io.  Their *free* accounts have more than enough API calls for this app (12 times per day).
+You can generate your own API Key for Tempest.
 
 > Use **🌤 Test Weather Now** to confirm connectivity.
 
@@ -195,7 +197,7 @@ You will need an account to create an API Key for OpenWeather, Tomorrow.io, and 
 > © 2025 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEyMjQ1MDg0MiwtMTIzNTA3NzQxOCwtMT
+eyJoaXN0b3J5IjpbLTI5MjE1NDA4OCwtMTIzNTA3NzQxOCwtMT
 g3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2
 MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
 -->
