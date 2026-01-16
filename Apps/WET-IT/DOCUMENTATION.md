@@ -519,7 +519,7 @@ If the low temperature ≤ configured **Freeze Threshold**, these attributes upd
 | Attribute | Type | Description |
 |:--|:--|:--|
 | `freezeAlert` | bool | True when freeze risk active |
-| `freezeAlertString` | string | 'true' |
+| `freezeAlertString` | string | 'true' when freeze risk active |
 | `freezeLowTemp` | number | Configured temperature threshold |
 
 Automations can safely:  
@@ -537,7 +537,7 @@ If the 24-hour rain forecast is low temperature ≥ configured **Rain Skip Thres
 | Attribute | Type | Description |
 |:--|:--|:--|
 | `rainAlert` | bool | True when forecasted rain is above threshold |
-| `rainAlertString` | string| True when forecasted rain is above threshold |
+| `rainAlertString` | string| 'true' when forecasted rain is above threshold |
 | `rainForecast` | number | Amount of forecasted rain in the next 24 hours |
 
 Automations can safely:  
@@ -555,6 +555,7 @@ If the forecasted windss are ≥ configured **Wind Skip Threshold**, these attri
 | Attribute | Type | Description |
 |:--|:--|:--|
 | `windAlert` | bool | True when freeze risk active |
+| `windAlertString` | string | 'true' when freeze risk active |
 | `windSpeed` | number | Configured temperature threshold |
 
 Automations can safely:  
@@ -588,7 +589,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIwNzEyMzU4NjksLTk5ODE0NjU0MywtMT
+eyJoaXN0b3J5IjpbLTEyNTc4NTQ4MjksLTk5ODE0NjU0MywtMT
 YyMDk1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkw
 MDU2MCwxMDQ1MTM0MDRdfQ==
 -->
