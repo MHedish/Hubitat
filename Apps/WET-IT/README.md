@@ -46,7 +46,8 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 - Each program can be set for a specific time-of-day *or* to begin or end by sunrise.
 - Program intervals can be set to daily, every other day, up to once every 7 days.
 - Wind/Rain/Freeze alerts will automatically skip irrigation based on user preferences.
-- For Tempest PWS users, 
+- User selectable water sensors will automatically skip irrigation if wet.
+- For Tempest PWS users, the haptic rain sensor is also available as a live rain sensor.
 
 ## ⚙️ Installation
 
@@ -204,7 +205,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIxNDU2NjgwMTcsLTEyMzUwNzc0MTgsLT
-E4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4MzA5LDEyMjYy
-NjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ==
+eyJoaXN0b3J5IjpbMTE4MzI3NDc2NywtMTIzNTA3NzQxOCwtMT
+g3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2
+MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
 -->
