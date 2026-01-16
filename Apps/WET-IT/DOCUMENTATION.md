@@ -293,10 +293,11 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 ### 🪴 Summary Flow Example
 
 1. 02:00 → WET-IT updates weather (`wxChecked`, `wxTimestamp`)  
-2. Sunrise → Rule Machine/webCoRE trigger runs irrigation  
-3. Runtime scaled by ET percentage (`etBudgetPct`)  
-4. Controller marks completion → WET-IT resets soil depletion  
-5. Next sunrise → Model recalculates and repeats
+2. Internal scheduler calculates total runtime for a set of zones and be
+3. Sunrise → Rule Machine/webCoRE trigger runs irrigation  
+4. Runtime scaled by ET percentage (`etBudgetPct`)  
+5. Controller marks completion → WET-IT resets soil depletion  
+6. Next sunrise → Model recalculates and repeats
 
 > ⚡ *“Legacy controllers gain adaptive intelligence when sunrise becomes the clock.”*
 
@@ -305,14 +306,14 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 ## ⚙️ System Architecture
 
 ```
-Weather API 🌦️ → ET₀ Calculation 🌡 → Soil Model 🌾 → Driver Attributes 📊 → Automations (InternaRM / webCoRE / Node-RED)
+Weather API 🌦️ → ET₀ Calculation 🌡 → Soil Model 🌾 → Driver Attributes 📊 → Automations (Internal Scheduling / Rule Machine / webCoRE / Node-RED)
 ```
 
 **App (WET-IT)** – performs calculations and weather polling  
 **Driver (WET-IT Data)** – exposes results for dashboards and automations  
 **Automations** – act based on the computed water budget percentages
 
----
+
 
 ## 🌦️ Weather Providers
 
@@ -581,7 +582,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTExMDM2ODY4NjIsLTk5ODE0NjU0MywtMT
-YyMDk1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkw
-MDU2MCwxMDQ1MTM0MDRdfQ==
+eyJoaXN0b3J5IjpbODExMzMzNDE1LC05OTgxNDY1NDMsLTE2Mj
+A5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1
+NjAsMTA0NTEzNDA0XX0=
 -->
