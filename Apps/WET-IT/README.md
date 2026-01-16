@@ -132,7 +132,7 @@ If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API c
 3. **Verify Forecast Connectivity**
  - Under⚙️ System Diagnostics you can press
 `` 🔄 Run Weather/ET Updates Now `` which will fetch the current weather forecast and report the results right below it:
-``Last Diagnostic: zone1=(ET:26%, Seasonal:5%), zone2=(ET:14%, Seasonal:5%), zone3=(ET:4%, Seasonal:5%), zone4=(ET:13%, Seasonal:5%)``
+``Last Diagnostic: zone1=(ET:26%, Seasonal:5%), zone2=(ET:14%, Seasonal:5%), zone3=(ET:4%, Seasonal:5%), zone4=(ET:13%, Seasonal:5%) | Alerts: 🧊️ Freeze``
 
 4. **Verify Functionality**
    - Once initialization completes, review the `WET-IT Data` device attributes:
@@ -204,7 +204,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTQ0ODM2ODYzNywtMTIzNTA3NzQxOCwtMT
-g3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2
-MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
+eyJoaXN0b3J5IjpbNjMzNDAxNDk4LC0xMjM1MDc3NDE4LC0xOD
+cwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2MjYx
+NzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
 -->
