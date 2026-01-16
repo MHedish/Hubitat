@@ -319,6 +319,7 @@ Weather API 🌦️ → ET₀ Calculation 🌡 → Soil Model 🌾 → Driver At
 | Source | Key | Notes |
 |:--|:--:|:--|
 | **[OpenWeather 3.0](https://openweathermap.org/api/one-call-3)** | ✅ | Hourly and forecast-based ET₀ |
+| **[Tempest](https://tempest.earth/)** | ✅ | Hyper-local weather observation and forecasting |
 | **[Tomorrow.io](https://docs.tomorrow.io/reference/welcome)** | ✅ | High-resolution meteorological model |
 | **[NOAA NWS](https://www.weather.gov/documentation/services-web-api)** | ❌ | Built-in fallback |
 
@@ -588,7 +589,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbODA3MjAxMDE4LC05OTgxNDY1NDMsLTE2Mj
+eyJoaXN0b3J5IjpbLTUyOTI2OTE0LC05OTgxNDY1NDMsLTE2Mj
 A5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1
 NjAsMTA0NTEzNDA0XX0=
 -->
