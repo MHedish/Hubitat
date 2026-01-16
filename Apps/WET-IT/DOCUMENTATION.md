@@ -409,6 +409,8 @@ In short, the radar station is a data collection tool, and the NOAA office is wh
 
 | Attribute | Type | Description |
 |:--|:--|:--|
+| `activeZone` | Number | Current |
+| `appInfo` | string | App version / metadata |
 | `appInfo` | string | App version / metadata |
 | `datasetJson` | string | Comprehensive JSON for all zones |
 | `driverInfo` | string | Driver version / metadata |
@@ -535,7 +537,7 @@ If the low temperature ≤ configured **Freeze Threshold**, these attributes upd
 | Attribute | Type | Description |
 |:--|:--|:--|
 | `freezeAlert` | bool | True when freeze risk active |
-| `freezeAlertString` | string | 'true' when freeze risk active |
+| `freezeAlertText` | string | 'true' when freeze risk active |
 | `freezeLowTemp` | number | Configured temperature threshold |
 
 Automations can safely:  
@@ -552,7 +554,7 @@ If the 24-hour rain forecast is low temperature ≥ configured **Rain Skip Thres
 | Attribute | Type | Description |
 |:--|:--|:--|
 | `rainAlert` | bool | True when forecasted rain is above threshold |
-| `rainAlertString` | string| 'true' when forecasted rain is above threshold |
+| `rainAlertText` | string| 'true' when forecasted rain is above threshold |
 | `rainForecast` | number | Amount of forecasted rain in the next 24 hours |
 
 Automations can safely:  
@@ -574,7 +576,7 @@ If the forecasted windss are ≥ configured **Wind Skip Threshold**, these attri
 | Attribute | Type | Description |
 |:--|:--|:--|
 | `windAlert` | bool | True when freeze risk active |
-| `windAlertString` | string | 'true' when freeze risk active |
+| `windAlertText` | string | 'true' when freeze risk active |
 | `windSpeed` | number | Configured temperature threshold |
 
 Automations can safely:  
@@ -607,7 +609,8 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTEwNjAyNzE0NywtMjAzODE1OTY0MSwtOT
-k4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0ODQ3ODIsLTk3MzUx
-NjE0MCwtMjg4OTAwNTYwLDEwNDUxMzQwNF19
+eyJoaXN0b3J5IjpbLTEwNjUzODgzODIsMTEwNjAyNzE0NywtMj
+AzODE1OTY0MSwtOTk4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0
+ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAwNTYwLDEwNDUxMzQwNF
+19
 -->
