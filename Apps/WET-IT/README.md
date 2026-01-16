@@ -185,12 +185,12 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 | **Advanced Overrides** | Precision tuning | Kc 0.4–1.2 · MAD 0.2–0.6 · Depth 3–24 in |
 
 ## 📅️ Program Scheduling
-| Category | Defines | Example Values |
+| Category | Options | Notes |
 |:--|:--|:--|
-| **Start Time** | Water-holding capacity | Sand · Loam · Clay |
+| **Start Time** | Time-of-Day, Sunrise | Specific Time, Start at sunr |
 | **Runtime Adjustment Method** | Kc, MAD, Root Depth | Turf, Shrubs, Trees |
-| **Nozzle Type** | Precipitation rate | Spray 1.8 · Rotor 0.6 · Drip 0.2 |
-| **Advanced Overrides** | Precision tuning | Kc 0.4–1.2 · MAD 0.2–0.6 · Depth 3–24 in |
+| **Zones** | Precipitation rate | Spray 1.8 · Rotor 0.6 · Drip 0.2 |
+| **Schedule Days** | Precision tuning | Kc 0.4–1.2 · MAD 0.2–0.6 · Depth 3–24 in |
 
 
 ## 👥 Contributors
@@ -210,8 +210,8 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE5MzcwMzg1NTEsMTY0MjUyMzEwNCwtMT
-IzNTA3NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1
-NTgzMDksMTIyNjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM1
-19
+eyJoaXN0b3J5IjpbNjQ4NjI4MTAwLDE2NDI1MjMxMDQsLTEyMz
+UwNzc0MTgsLTE4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4
+MzA5LDEyMjYyNjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ
+==
 -->
