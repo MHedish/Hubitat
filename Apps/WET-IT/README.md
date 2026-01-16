@@ -1,4 +1,4 @@
-# 🌿 Weather-Enhanced Time-based Irrigation Tuning (WET-IT)
+# 🌿 Weather-Enhanced Time-based Irrigation Tuning (WET-IT) -- 
 
 *A Hubitat App for Weather-Based Smart Irrigation Using Real Evapotranspiration (ET) Modeling*
 
@@ -190,7 +190,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 
 **Author:** Marc Hedish (@MHedish)
 **Documentation:** ChatGPT (OpenAI)
-**Special Thanks:** JimB and aaiyar for allowing me a
+**Special Thanks:** JimB and aaiyar for allowing me to use their Tempest PWS for testing
 **Platform:** [Hubitat Elevation](https://hubitat.com)
 
 ## 🔍 Learn More
@@ -203,7 +203,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE2NzE3MjI5NywxNjQyNTIzMTA0LC0xMj
+eyJoaXN0b3J5IjpbLTg4Mzk2OTAzNSwxNjQyNTIzMTA0LC0xMj
 M1MDc3NDE4LC0xODcwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1
 ODMwOSwxMjI2MjYxNzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX
 0=
