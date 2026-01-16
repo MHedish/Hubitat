@@ -42,7 +42,8 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 - Lightweight and efficient — entirely local on Hubitat  
 
 ### 🆕 v1.0.4.0 Updates
-- Added full z
+- Added a comprehensive scheduler supporting up to 48 zones and 16 programs
+- Each programs can be set for a specifc t
 
 ## ⚙️ Installation
 
@@ -200,7 +201,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTk0MDA5ODY4NCwtMTIzNTA3NzQxOCwtMT
+eyJoaXN0b3J5IjpbLTYwMTIxMDYzOSwtMTIzNTA3NzQxOCwtMT
 g3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2
 MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
 -->
