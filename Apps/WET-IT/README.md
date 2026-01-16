@@ -189,8 +189,8 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 |:--|:--|:--|
 | **Start Time** | Time-of-Day, Sunrise | Specific Time, Start at Sunrise, End by Sunrise |
 | **Runtime Adjustment Method** | Base Only, Seasonal, ET | Seasonal and ET are determined by the total time required of all scheduled zones |
-| **Zones** | Precipitation rate | Spray 1.8 · Rotor 0.6 · Drip 0.2 |
-| **Schedule Days** | Precision tuning | Kc 0.4–1.2 · MAD 0.2–0.6 · Depth 3–24 in |
+| **Zones** | Select from the list of configured zones | Zones may be reused across schedules |
+| **Schedule Days** | Specific Days, Every N Days | Choose specif  |
 
 
 ## 👥 Contributors
@@ -210,8 +210,8 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE2MDQ0NzA5MjUsMTY0MjUyMzEwNCwtMT
-IzNTA3NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1
-NTgzMDksMTIyNjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM1
-19
+eyJoaXN0b3J5IjpbMTM5NTg4NjE2LDE2NDI1MjMxMDQsLTEyMz
+UwNzc0MTgsLTE4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4
+MzA5LDEyMjYyNjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ
+==
 -->
