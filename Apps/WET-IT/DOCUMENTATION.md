@@ -517,7 +517,6 @@ Automations can safely:
 - Send notifications or trigger alerts  
 - Resume when safe temperature restored
 
----
 
 ## 🌧️ Rain Protection Logic
 
@@ -535,7 +534,8 @@ Automations can safely:
 - Send notifications or trigger alerts  
 - Resume after rain event
 
----
+🆕Beginning with v1.0.4.0, Tempest PWS users can se
+
 
 ## 💨 Wind Protection Logic
 
@@ -579,7 +579,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNTE1MDM3MTM5LC05OTgxNDY1NDMsLTE2Mj
-A5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1
-NjAsMTA0NTEzNDA0XX0=
+eyJoaXN0b3J5IjpbLTE0NTgxNzY3NjgsLTk5ODE0NjU0MywtMT
+YyMDk1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkw
+MDU2MCwxMDQ1MTM0MDRdfQ==
 -->
