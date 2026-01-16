@@ -157,7 +157,8 @@ If you see “⚙️ Click [Done] to begin automatic initialization…”, simpl
 3️⃣**🆕Program Scheduling** – Define your personal irrigation schedule including advanced settings such as alert thresholds, minimum runtimes, et al.
 4️⃣ **ET & Seasonal Settings (Advanced)** – Tune ET₀ and scaling  
 5️⃣ **Weather Configuration** – Choose provider and API key(s)
-6️⃣ **Active Weather Alerts** -- View Freeze/Frost, 
+6️⃣ **Active Weather Alerts** – View Freeze/Frost, Rain, Wind alerts
+7️⃣ **Rain Sensor** – Choose any installed Rain/Moisture sensor
 6️⃣**Data Publishing**– Choose JSON, Device Attributes, Summary Text
 7️⃣**Logging Tools / Diagnostics** – Verify system, test weather, manage loggging 
 
@@ -206,7 +207,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTUwMTUzODI2MCwtMTIzNTA3NzQxOCwtMT
-g3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2
-MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
+eyJoaXN0b3J5IjpbLTE4NDIxOTg4MzAsLTEyMzUwNzc0MTgsLT
+E4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4MzA5LDEyMjYy
+NjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ==
 -->
