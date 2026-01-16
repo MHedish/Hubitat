@@ -203,7 +203,6 @@ Further reading:
 - [USGS – ET & Water Cycle](https://www.usgs.gov/water-science-school/science/evapotranspiration-and-water-cycle)
 
 
-
 ## 🌄🌅 Sunrise/Sunset Scheduling for Legacy Controllers
 
 Many legacy irrigation controllers only support **fixed clock-time scheduling**, such as 6:00 AM, which cannot adapt to seasonal daylight changes.  
@@ -300,7 +299,9 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 
 > ⚡ *“Legacy controllers gain adaptive intelligence when sunrise becomes the clock.”*
 
----
+## 📅️ Program Scheduling
+
+- Internal scheduler automates irrigation events (up to 16 schedules) 
 
 ## ⚙️ System Architecture
 
@@ -581,7 +582,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE1NDM5OTc2NjMsLTk5ODE0NjU0MywtMT
+eyJoaXN0b3J5IjpbLTIwMjQzOTc0MDAsLTk5ODE0NjU0MywtMT
 YyMDk1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkw
 MDU2MCwxMDQ1MTM0MDRdfQ==
 -->
