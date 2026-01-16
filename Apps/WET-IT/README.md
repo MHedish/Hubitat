@@ -164,7 +164,7 @@ If you see “⚙️ Click [Done] to begin automatic initialization…”, simpl
 | **NOAA NWS** | ❌ | Built-in (no key required) |
 
 You will need an account to create an API Key for OpenWeather,  and Tomorrow.io.  Their *free* accounts have more than enough API calls for this app (12 times per day).
-You can generate your own API Key for Tempest.
+You can generate your own API Key for Tempest on their [website](https://tempestwx.com/).
 
 > Use **🌤 Test Weather Now** to confirm connectivity.
 
@@ -194,10 +194,10 @@ You can generate your own API Key for Tempest.
 
 ---
 
-> © 2025 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
+> © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbODk1MjU0NDc2LC0xMjM1MDc3NDE4LC0xOD
+eyJoaXN0b3J5IjpbNTQ0MTk4OTA4LC0xMjM1MDc3NDE4LC0xOD
 cwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2MjYx
 NzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
 -->
