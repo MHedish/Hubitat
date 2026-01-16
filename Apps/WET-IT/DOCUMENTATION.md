@@ -413,15 +413,15 @@ In short, the radar station is a data collection tool, and the NOAA office is wh
 | `datasetJson` | string | Comprehensive JSON for all zones |
 | `driverInfo` | string | Driver version / metadata |
 | `freezeAlert` | bool | True when forecast below threshold |
-| `freezeAlertString` | string | 'true' when forecast below threshold |
+| `freezeAlertText` | string | 'true' when forecast below threshold |
 | `freezeLowTemp` | number | Freeze warning threshold |
 | `rainAlert` | bool | True when 24-hour rain forecast above threshold *or* local water sensor is marked as wet |
-| `rainAlertString` | string | 'true' when 24-hour rain forecast above threshold *or* local water sensor is marked as wet|
+| `rainAlertText` | string | 'true' when 24-hour rain forecast above threshold *or* local water sensor is marked as wet|
 | `rainForecast` | number | 24-hour rain forecast |
 | `summaryText` | string | Human-readable ET summary |
 | `summaryTimestamp` | string | Last hybrid ET calculation |
 | `windAlert` | bool | True when wind forecast above threshold *or* personal weather station wind speed exceeds threshold |
-| `windAlertString` | string | 'true' when wind forecast above threshold *or* personal weather station wind speed exceeds threshold|
+| `windAlertText` | string | 'true' when wind forecast above threshold *or* personal weather station wind speed exceeds threshold|
 | `windSpeed` | number | Forecasted wind speed |
 | `wxChecked` | string | Forecast poll/check time |
 | `wxLocation` | string | City/State/Forecast Office/Radar Station (US Only)|
@@ -607,7 +607,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIwMzgxNTk2NDEsLTk5ODE0NjU0MywtMT
-YyMDk1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkw
-MDU2MCwxMDQ1MTM0MDRdfQ==
+eyJoaXN0b3J5IjpbMTEwNjAyNzE0NywtMjAzODE1OTY0MSwtOT
+k4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0ODQ3ODIsLTk3MzUx
+NjE0MCwtMjg4OTAwNTYwLDEwNDUxMzQwNF19
 -->
