@@ -6,15 +6,16 @@
 ![Version](https://img.shields.io/badge/Version-1.0.4.0-green?t=20251229)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
-WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.  
+WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.
+
+# 🆕
+
 It brings Rachio/Hydrawise-style intelligence entirely local — no cloud, no lag, no subscription, just physics-driven irrigation.
 
 You can choose between:
 
 * 💧 **Weather-Based Adjustment** – daily runtime tuning from live weather  
 * 🌱 **Smart Soil Moisture Tracking** – persistent soil memory that adjusts dynamically over time
-
----
 
 ## ☀️ Why Evapotranspiration Matters
 
@@ -606,7 +607,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTkzNDc3NDU0OCwtOTk4MTQ2NTQzLC0xNj
+eyJoaXN0b3J5IjpbMTgxMDM0MDM0NywtOTk4MTQ2NTQzLC0xNj
 IwOTUxNjcxLDEzNjM0ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAw
 NTYwLDEwNDUxMzQwNF19
 -->
