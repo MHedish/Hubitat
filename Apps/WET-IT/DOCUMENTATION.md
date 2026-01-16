@@ -326,7 +326,7 @@ Weather API 🌦️ → ET₀ Calculation 🌡 → Soil Model 🌾 → Driver At
 ✅ Use **“Test Weather Now”** to validate configuration.  
 If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API calls fail.
 
----
+
 ## 🏢 NOAA Office vs 📡 Radar Station
 
 A  **NOAA office**  is a physical facility where personnel, such as forecasters, work to issue forecasts, warnings, and other hazard information. A  **radar station**  is a specific, uncrewed technical installation containing a radar system  (like the WSR-88D, also known as NEXRAD) that automatically scans the atmosphere and collects raw weather data.
@@ -354,7 +354,6 @@ A  **NOAA office**  is a physical facility where personnel, such as forecasters,
 
 In short, the radar station is a data collection tool, and the NOAA office is where that data is interpreted and transformed into usable weather information.
 
----
 
 ## 🧩 Zone Model Parameters
 
@@ -368,7 +367,6 @@ In short, the radar station is a data collection tool, and the NOAA office is wh
 | `kc` | Derived / override | Crop coefficient scaling |
 | `mad` | Derived / override | Allowed depletion (%) |
 
----
 
 ## 🕒 Timestamp & Temporal Model
 
@@ -432,7 +430,6 @@ In short, the radar station is a data collection tool, and the NOAA office is wh
 | Clay Loam | High | Slow | Deep | High retention, slow infiltration |
 | Clay | Very High | Very Slow | Deep | Rarely irrigated, risk of runoff |
 
----
 
 ## 💧 Irrigation Method Reference
 > Defines the precipitation rate and efficiency of each irrigation type.  
@@ -452,8 +449,6 @@ In short, the radar station is a data collection tool, and the NOAA office is wh
 💡 *The app converts the precipitation rate and efficiency into a runtime multiplier for each zone.  
 Lower-rate systems (e.g., MP Rotator, Drip) run longer but deliver more uniform moisture with less waste.*
 
----
-
 ## 🕓 Base Runtime Reference
 > Establishes the **baseline irrigation duration** for each zone.  
 > Used with ET and seasonal budget percentages to calculate the final adjusted runtime.
@@ -469,14 +464,9 @@ Lower-rate systems (e.g., MP Rotator, Drip) run longer but deliver more uniform 
 💡 *In practice:*  
 If a zone’s base runtime is **20 min (entered as 20)** and the ET budget is **85 %**,  the system converts this to **20 × 60 = 1,200 s**,  then multiplies by 0.85 → **1,020 s (≈ 17 min adjusted runtime).**
 
-
----
-
 ### 🧠 State Persistence
 
 As of v1.0.0.0, weather alert data (freeze, rain, wind) is persisted in `atomicState` to maintain status consistency across hub reboots and service restarts.
-
----
 
 ## 💧 Marking Zones as Watered – Resetting the ET Cycle
 
@@ -492,7 +482,7 @@ If these methods aren’t called, WET-IT assumes the zone hasn’t been watered,
 
 ```
 ┌─────────────┐    ┌──────────────┐    ┌───────────────┐    ┌────────────────┐
-│  Weather 🌦 │──▶│  ET Update 🌡 │──▶│  Irrigation 💧 │──▶│ markZoneWatered │
+│  Weather 🌦 │──▶│  ET Update 🌡 │──▶ │  Irrigation 💧│──▶│ markZoneWatered │
 └─────────────┘    └──────────────┘    └───────────────┘    └────────────────┘
        ▲                                                   │
        │<─────────── WET-IT calculates ET since last mark ─┘
@@ -589,7 +579,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTUyOTI2OTE0LC05OTgxNDY1NDMsLTE2Mj
+eyJoaXN0b3J5IjpbNTE1MDM3MTM5LC05OTgxNDY1NDMsLTE2Mj
 A5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1
 NjAsMTA0NTEzNDA0XX0=
 -->
