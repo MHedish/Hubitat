@@ -1,5 +1,5 @@
 # 🧾 WET-IT — Unified Changelog  
-> Covers development from v0.4.0.0 through v0.5.7.7  
+> Covers development from v0.4.0.0 through v1.4.0.0
 > Major architectural and stability milestones.
 
 ---
@@ -93,12 +93,12 @@
 - Completed full app/driver consistency audit and schema validation.  
 - Finalized pre-1.0 verification suite, marking official stable release.
 
-> **WET-IT 1.0.0.0 — Intelligent irrigation, perfected.**
 - 1.0.0.0 — Initial Release.
 - 1.0.0.2 — Added hyperlinks to the associated sections of DOCUMENTATION.md to key headings and titles.
 
+## ☀️ 1.4.0.0 — Production Release  
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTExNzQyMzE5MTYsMTM4MzM4MDQ0NiwxNz
-I1Mjg0NTY5LC0xMDI5OTc4NDcsLTgxMjA3MjM1OCwxODQ3MDM3
-ODAzXX0=
+eyJoaXN0b3J5IjpbMTA2OTE4NTYzNiwtMTE3NDIzMTkxNiwxMz
+gzMzgwNDQ2LDE3MjUyODQ1NjksLTEwMjk5Nzg0NywtODEyMDcy
+MzU4LDE4NDcwMzc4MDNdfQ==
 -->
