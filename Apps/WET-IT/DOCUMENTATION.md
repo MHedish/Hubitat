@@ -409,8 +409,10 @@ In short, the radar station is a data collection tool, and the NOAA office is wh
 
 | Attribute | Type | Description |
 |:--|:--|:--|
-| `activeZone` | Number | Current |
-| `appInfo` | string | App version / metadata |
+| `activeZone` | Number | Currently active one |
+| `activeZoneName` | string | Friendly name of currently active zone |
+| `activeZone` | Number | Currently active one |
+| `activeZoneName` | string | Friendly name of currently active zone |
 | `appInfo` | string | App version / metadata |
 | `datasetJson` | string | Comprehensive JSON for all zones |
 | `driverInfo` | string | Driver version / metadata |
@@ -609,8 +611,8 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEwNjUzODgzODIsMTEwNjAyNzE0NywtMj
-AzODE1OTY0MSwtOTk4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0
-ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAwNTYwLDEwNDUxMzQwNF
-19
+eyJoaXN0b3J5IjpbNTE4NDY0OTUxLDExMDYwMjcxNDcsLTIwMz
+gxNTk2NDEsLTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0
+NzgyLC05NzM1MTYxNDAsLTI4ODkwMDU2MCwxMDQ1MTM0MDRdfQ
+==
 -->
