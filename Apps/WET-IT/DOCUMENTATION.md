@@ -302,7 +302,9 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 ## 📅️ Program Scheduling
 
 - Internal scheduler automates irrigation events (up to 16 schedules)
-- Each schedule can be set to begin at a specific time of day *or* begin watering at sunrise
+- Each schedule can be set to begin at a specific time of day *or* **begin** watering at sunrise *or* end-
+
+
 - The best time to water with sprinklers is  **early morning, just before or around sunrise (around 5-9 AM)**, to minimize evaporation, allow deep root absorption before heat, and let leaves dry before nightfall, preventing fungus; avoid midday due to high evaporation and nighttime watering, which promotes disease.
 
 **Why Early Morning is Best:**
@@ -600,7 +602,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIwNzU3OTE0OTYsLTk5ODE0NjU0MywtMT
-YyMDk1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkw
-MDU2MCwxMDQ1MTM0MDRdfQ==
+eyJoaXN0b3J5IjpbMTYzMTQyOTc5MSwtOTk4MTQ2NTQzLC0xNj
+IwOTUxNjcxLDEzNjM0ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAw
+NTYwLDEwNDUxMzQwNF19
 -->
