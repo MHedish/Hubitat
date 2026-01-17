@@ -1250,13 +1250,277 @@ The summary of each program execution is also published to the **WET-IT Data Dri
 
 Next: [🌦 Weather & Alert Settings →](#-weather-alert-settings)
 
+## 🌦 Weather & Alert Settings
+<a id="-weather-alert-settings"></a>
+
+WET-IT’s weather and alert system enables dynamic watering decisions based on **forecast**, **live data**, and **safety conditions** such as freezing or wind.  
+These settings govern how environmental data from NOAA, OpenWeather, Tomorrow.io, or Tempest are interpreted to trigger skips, shorten runtimes, or adjust ET.
+
+---
+
+### ⚙️ Configuration Parameters
+
+| Setting | Description |
+|:--|:--|
+| **Primary Weather Provider** | Selects the main source for ET, temperature, wind, and forecast data. |
+| **Backup Weather Provider** | Optional fallback source if the primary fails. |
+| **Tempest PWS Integration** | When enabled, live data from your Tempest station is merged into ET and skip logic. |
+| **API Keys** | Required for OpenWeather and Tomorrow.io; not required for NOAA or Tempest. |
+| **Units** | Choose between *Imperial (°F / in)* or *Metric (°C / mm)*. |
+| **Weather Refresh Time** | Default daily update time (02:00 local). Can be adjusted. |
+| **Force Weather Refresh Button** | Manually trigger an immediate weather update and ET recalculation. |
+
+---
+
+### 🌡️ Skip Thresholds
+
+| Parameter | Default | Description |
+|:--|:--:|:--|
+| **Freeze Skip Temperature** | 35°F / 1.7°C | Cancels irrigation when forecast or observed temp ≤ threshold. |
+| **Rain Skip Amount** | 0.10 in / 2.5 mm | Minimum forecast or observed rain to trigger a skip. |
+| **Wind Skip Speed** | 15 mph / 24 km/h | Maximum allowable wind before skipping watering. |
+| **Rain Reset Duration** | 24 hours | Prevents watering for this duration after a qualifying rain event. |
+| **Skip Recheck Interval** | 1 hour | Frequency of skip condition re-evaluation before next program run. |
+
+These thresholds ensure irrigation runs only under favorable conditions.
+
+---
+
+### ⚠️ Alert Behavior
+
+| Alert Type | Trigger | Behavior |
+|:--|:--|:--|
+| **Freeze Alert** | Forecast or observed temp ≤ threshold | All programs are suspended until temps recover. |
+| **Rain Alert** | Forecast or observed rain ≥ limit | Programs skipped or delayed. |
+| **Wind Alert** | Forecast or observed speed ≥ limit | Program delayed or canceled. |
+| **Tempest Live Data** | Live rain or wind event | Real-time skip before start or mid-program cancellation. |
+
+When triggered, alerts:
+- Publish `*_Alert` attributes in the **WET-IT Data Driver**.  
+- Update the app’s dashboard summary.  
+- Optionally send Hubitat notifications if configured.
+
+---
+
+### 🧭 Provider Priority Logic
+
+1. **Tempest** (if connected) — live local readings for wind, rain, temperature, and UV.  
+2. **Tomorrow.io** — short-range forecast data with high temporal resolution.  
+3. **OpenWeather 3.0** — medium-range global forecast and radar-derived rain predictions.  
+4. **NOAA / NWS** — baseline source and fallback when cloud data are unavailable.
+
+This order ensures that WET-IT prioritizes **local and current** conditions over regional forecasts.
+
+---
+
+### 📊 Alert Attributes Published
+
+| Attribute | Type | Example | Description |
+|:--|:--|:--|:--|
+| `rainAlert` | bool | `true` | True when rain exceeds threshold. |
+| `rainAlertText` | string | “Forecast: 0.25 in within 12h.” | Human-readable message. |
+| `freezeAlert` | bool | `true` | True when freeze condition detected. |
+| `freezeAlertText` | string | “Low 31°F predicted at 05:00.” | Freeze alert detail. |
+| `windAlert` | bool | `true` | “Wind 22 mph sustained.” | High-wind advisory. |
+| `wxChecked` | string | “2026-01-16T02:00:00Z” | Timestamp of last weather check. |
+| `wxSource` | string | “Tempest” | Provider currently in use. |
+| `wxLocation` | string | “Austin, TX” | Provider-reported location name. |
+| `wxTimestamp` | string | “2026-01-16T01:58:30Z” | Timestamp of fetched data. |
+
+These attributes are accessible to Rule Machine, Node-RED, webCoRE, and dashboards for custom automation logic.
+
+---
+
+### 💡 Example Use Cases
+
+- **Smart Skip Rule**  
+
+>IF (rainAlert == true OR freezeAlert == true) THEN  
+Cancel irrigation programs  
+ELSE IF (windAlert == true) THEN  
+Delay watering 2 hours  
+END IF
 
 
+- **Weather Dashboard Tile**  
+Display `wxSource`, `rainForecast`, and `freezeLowTemp` for a live weather overview.
 
+- **Voice Integration (Alexa / Google)**  
+Expose `summaryText` and `wxSource` attributes through the Maker API for voice status queries.
 
+---
 
+### 🔔 Notification Options
 
+| Setting | Description |
+|:--|:--|
+| **Send Push Notification on Skip** | Sends Hubitat notification when a program is skipped due to weather. |
+| **Include Weather Summary** | Adds short condition summary in the notification message. |
+| **Send Alert on Provider Failure** | Notifies when primary provider is unreachable or returns invalid data. |
 
+Notifications use the Hubitat messaging system, allowing push or SMS outputs depending on your device configuration.
+
+---
+
+### 🧠 Tips
+
+- Use **Tempest PWS** for the most accurate hyper-local wind and rain data.  
+- Keep **NOAA** enabled as a fallback for baseline stability.  
+- Adjust **Skip Thresholds** seasonally — lower in winter, higher in summer.  
+- Avoid using multiple cloud providers simultaneously unless redundancy is desired.  
+- Enable **notifications** during testing to confirm skip logic is firing as expected.
+
+---
+
+Next: [📊 Driver Attribute Reference (Advanced Details) →](#-driver-attribute-reference-advanced)
+
+## 📊 Driver Attribute Reference (Advanced Details)
+<a id="-driver-attribute-reference-advanced"></a>
+
+The **WET-IT Data Driver** serves as the central hub for exposing all calculated, observed, and scheduled irrigation data.  
+These attributes allow dashboards, automations, and external applications to access every detail of WET-IT’s internal state.
+
+---
+
+### 🧱 Core Data Groups
+
+WET-IT’s driver organizes data into logical groups:
+
+| Group | Description |
+|:--|:--|
+| **System Metadata** | Identifies version, source, and update times. |
+| **Weather & Alerts** | Live and forecast-based data inputs from selected providers. |
+| **Zone Data** | ET, seasonal, and soil information for each configured zone. |
+| **Program Data** | Current state of running or scheduled programs. |
+| **Summary Data** | Aggregated information for dashboards and notifications. |
+
+---
+
+### 🧩 System Metadata
+
+| Attribute | Example | Description |
+|:--|:--|:--|
+| `driverInfo` | `WET-IT Data v1.0.4.0` | Version and build information. |
+| `appInfo` | `WET-IT App v1.0.4.0 (Scheduler Enabled)` | App status summary. |
+| `wxSource` | `Tempest` | Weather source currently in use. |
+| `wxChecked` | `2026-01-16 02:00` | Time of last successful weather update. |
+| `wxTimestamp` | `2026-01-16T02:00:00Z` | Raw ISO timestamp for integrations. |
+| `wxLocation` | `Austin, TX` | Location reported by provider. |
+| `summaryText` | `Lawn program ran 42 minutes; no skips.` | Dashboard summary line. |
+| `summaryTimestamp` | `2026-01-16T06:40:00Z` | Time the summary was updated. |
+
+---
+
+### 🌦 Weather & Alert Attributes
+
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `rainForecast` | number | Predicted rainfall (next 24 hours). |
+| `freezeLowTemp` | number | Lowest forecast temperature. |
+| `windSpeed` | number | Live or forecast wind speed. |
+| `rainAlert` | bool | True when rain exceeds threshold. |
+| `rainAlertText` | string | Text description of rain condition. |
+| `freezeAlert` | bool | True when freeze condition detected. |
+| `freezeAlertText` | string | Human-readable freeze status. |
+| `windAlert` | bool | True when high-wind condition detected. |
+| `windAlertText` | string | Human-readable wind description. |
+| `activeAlerts` | string | Combined string of active alerts (comma-separated). |
+
+All alerts update dynamically and are cleared automatically when conditions normalize.
+
+---
+
+### 💧 Zone Attributes
+
+| Attribute | Example | Description |
+|:--|:--|:--|
+| `zone1Name` | `"Front Lawn"` | Name label for Zone 1. |
+| `zone1Et` | `0.22` | Current daily ET loss (in). |
+| `zone1EtAdjustedTime` | `14.1` | Runtime (min) adjusted for ET. |
+| `zone1Seasonal` | `98` | Seasonal adjustment factor (%). |
+| `zone1BaseTime` | `15` | Configured base runtime (min). |
+| `zone1Status` | `Running` | Zone state: Idle / Running / Skipped. |
+
+These attributes are dynamically created for each defined zone and update every cycle or program run.
+
+---
+
+### 🗓 Program Attributes
+
+| Attribute | Example | Description |
+|:--|:--|:--|
+| `activeProgram` | `1` | Currently running program number. |
+| `activeProgramName` | `Lawn Morning` | Active program name. |
+| `activeZone` | `3` | Currently running zone number. |
+| `activeZoneName` | `Back Yard` | Active zone label. |
+| `programStatus` | `Running` | Overall program state (Idle / Running / Completed / Skipped). |
+| `lastProgramCompleted` | `Garden Beds` | Name of last program completed. |
+| `lastProgramTime` | `2026-01-16T06:45:00Z` | Completion timestamp. |
+
+---
+
+### 🪣 Soil & ET Tracking Attributes
+
+| Attribute | Example | Description |
+|:--|:--|:--|
+| `etToday` | `0.22` | Current day ET₀ value. |
+| `etYesterday` | `0.26` | Previous day ET₀. |
+| `etBaseline` | `0.23` | Reference ET baseline. |
+| `etBudget` | `95` | Current ET runtime adjustment percentage. |
+| `soilDeficit` | `0.18` | Current soil moisture depletion (in). |
+| `soilMoisture` | `82` | Remaining available water (%) for active zone. |
+| `madThreshold` | `50` | Depletion percentage that triggers irrigation. |
+
+---
+
+### 🧮 Derived & Computed Values
+
+| Attribute | Example | Description |
+|:--|:--|:--|
+| `etcToday` | `0.19` | Crop-adjusted ET for today. |
+| `etcYesterday` | `0.21` | Crop-adjusted ET for yesterday. |
+| `etcAverage7Day` | `0.20` | Rolling 7-day ET average. |
+| `seasonalFactor` | `102` | Seasonal runtime scaling (%). |
+| `rainTotal7Day` | `0.65` | Cumulative rainfall over past 7 days. |
+| `rainTotal30Day` | `1.91` | 30-day rainfall accumulation. |
+
+---
+
+### 🧰 JSON Dataset (datasetJson)
+
+The `datasetJson` attribute exposes the complete current model for use by external systems (Rule Machine, Node-RED, APIs, etc.).
+
+Example:
+```json
+{
+  "version": "1.0.4.0",
+  "timestamp": "2026-01-16T02:00:00Z",
+  "weather": {
+    "source": "Tempest",
+    "rainForecast": 0.12,
+    "windSpeed": 5.2,
+    "freezeLowTemp": 34
+  },
+  "zones": [
+    {
+      "id": 1,
+      "name": "Front Lawn",
+      "baseTime": 15,
+      "etBudgetPct": 93,
+      "etAdjustedTime": 13.9,
+      "soilDeficit": 0.18
+    },
+    {
+      "id": 2,
+      "name": "Garden Beds",
+      "baseTime": 10,
+      "etBudgetPct": 102,
+      "etAdjustedTime": 10.2,
+      "soilDeficit": 0.22
+    }
+  ]
+}
+```
 ## 🧩 Zone Model Parameters
 
 | Field | Derived From | Influences |
@@ -1849,11 +2113,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE0MTEyNDA1MzgsMTE0NTgwNjQyNSwxMD
-MxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgz
-MTE4LC0xOTE1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNz
-YwLC0xOTYzNzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcs
-LTIwMzgxNTk2NDEsLTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMz
-YzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkwMDU2MCwxMDQ1MTM0
-MDRdfQ==
+eyJoaXN0b3J5IjpbMzQzMzgxNDA4LDExNDU4MDY0MjUsMTAzMT
+E3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NTU4MzEx
+OCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4MDc2MC
+wtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0y
+MDM4MTU5NjQxLC05OTgxNDY1NDMsLTE2MjA5NTE2NzEsMTM2Mz
+Q4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1NjAsMTA0NTEzNDA0
+XX0=
 -->
