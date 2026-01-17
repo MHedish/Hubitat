@@ -775,6 +775,89 @@ These attributes can be leveraged in dashboards, automations, and Rule Machine l
 
 ---
 
+## ⚠️ Active Weather Alerts
+<a id="-active-weather-alerts"></a>
+
+WET-IT consolidates **Freeze**, **Rain**, and **Wind** alert data into a single **Active Weather Alerts** panel within the app UI.  
+This view provides a clear snapshot of current or forecasted conditions that could suspend irrigation programs.
+
+---
+
+### 🧩 Overview
+The Active Weather Alerts system merges data from all enabled weather providers and sensors to present:
+- Current forecast status (temperature, rainfall, wind speed)
+- Alert state (active/inactive)
+- A timestamp of the most recent weather update  
+- Color-coded icons for immediate recognition:
+  - 🧊 **Freeze/Frost** – critical; program execution disabled  
+  - 🌧 **Rain** – precipitation detected or predicted; watering suspended  
+  - 💨 **Wind** – excessive forecast speed; watering postponed  
+
+This panel updates automatically during every weather refresh cycle or manual diagnostic run.
+
+---
+
+### ⚙️ Operation
+- Alerts are derived from the most recent weather provider data (OpenWeather, Tomorrow.io, Tempest, or NOAA).
+- Each alert type can be independently enabled or disabled in **Weather Configuration (Advanced)**.
+- When any alert is active:
+  - The corresponding flag (`freezeAlert`, `rainAlert`, or `windAlert`) is set to `true`.  
+  - The system records context data (`freezeLowTemp`, `rainForecast`, `windSpeed`).  
+  - A formatted `summaryText` is published for dashboards and notifications.  
+- All three alerts are stored in `atomicState` for persistence across hub reboots.
+
+---
+
+### 🧠 Priority & Interaction
+If multiple alerts are active simultaneously, WET-IT applies a deterministic priority system to prevent overlap conflicts:
+
+1. **Freeze Alert (🧊)** – highest priority  
+2. **Rain Alert (🌧)** – medium priority  
+3. **Wind Alert (💨)** – lowest priority  
+
+Example:  
+If both a freeze and rain event are active, the system reports **“Freeze Warning”** as the active reason for skipped irrigation.
+
+---
+
+### 🧾 Published Attributes
+These driver attributes mirror the UI display and can be used in dashboards or automation logic:
+
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `freezeAlert` | Boolean | True when freeze conditions exist |
+| `freezeLowTemp` | Number | Projected low temperature |
+| `rainAlert` | Boolean | True when rainfall meets skip criteria |
+| `rainForecast` | Number | Forecast rainfall total |
+| `windAlert` | Boolean | True when wind exceeds threshold |
+| `windSpeed` | Number | Forecast/observed wind speed |
+| `activeAlerts` | String | Combined alert summary text |
+| `summaryText` | String | Concise UI summary including active alert(s) and timestamp |
+| `summaryTimestamp` | String | Timestamp of the last update |
+
+These values allow full automation integration and display synchronization between the app and child driver.
+
+---
+
+### 🧪 Diagnostics
+To test alert synchronization:
+1. Open **📑 Logging Tools & Diagnostics** in the app.  
+2. Tap **🔄 Run Weather/ET Updates Now** to force a refresh.  
+3. Review the **🚨 Active Weather Alerts** panel for current status.  
+4. Check the **WET-IT Data** driver to confirm that the same alerts and values are published.  
+5. Review hub logs for corresponding `[WET-IT]` messages confirming event emission.
+
+---
+
+### 📖 Related Sections
+- [Freeze Protection Logic](#-freeze-protection-logic)
+- [Rain Protection Logic](#-rain-protection-logic)
+- [Wind Protection Logic](#-wind-protection-logic)
+- [Weather Providers](#-weather-providers)
+- [Developer & Diagnostic Tools](#-developer--diagnostic-tools)
+
+
+
 ### 🧪 Diagnostics
 To verify operation:
 1. Run **🔄 Run Weather/ET Updates Now** to refresh wind data.
@@ -866,8 +949,8 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTc1MjUzMDY2MCwtMTk2Mzc0MjExNywtMT
-UxMTUyODc5NCwxMTA2MDI3MTQ3LC0yMDM4MTU5NjQxLC05OTgx
-NDY1NDMsLTE2MjA5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MT
-QwLC0yODg5MDA1NjAsMTA0NTEzNDA0XX0=
+eyJoaXN0b3J5IjpbLTEyMzY5ODA3NjAsLTE5NjM3NDIxMTcsLT
+E1MTE1Mjg3OTQsMTEwNjAyNzE0NywtMjAzODE1OTY0MSwtOTk4
+MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0ODQ3ODIsLTk3MzUxNj
+E0MCwtMjg4OTAwNTYwLDEwNDUxMzQwNF19
 -->
