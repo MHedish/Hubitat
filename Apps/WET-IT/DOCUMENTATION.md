@@ -1766,6 +1766,19 @@ This restores all functional data while rebuilding clean runtime tables.
 
 Next: [📗 Appendices & References →](#-appendices-references)
 
+## 📗 Appendices & References
+<a id="-appendices-references"></a>
+
+The following appendices provide supporting information, definitions, and reference material for WET-IT’s evapotranspiration (ET) and scheduling logic.
+
+---
+
+### 🧮 Appendix A — Key Formulae
+
+**Evapotranspiration (ET₀) – Penman–Monteith (simplified):**
+ET₀ = [0.408 * Δ * (Rn − G) + γ * (900 / (T + 273)) * u₂ * (es − ea)] / [Δ + γ * (1 + 0.34 * u₂)]
+
+
 
 Model Parameters
 
@@ -2359,11 +2372,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE3NjY2MDk4NDksMTE0NTgwNjQyNSwxMD
-MxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgz
-MTE4LC0xOTE1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNz
-YwLC0xOTYzNzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcs
-LTIwMzgxNTk2NDEsLTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMz
-YzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkwMDU2MCwxMDQ1MTM0
-MDRdfQ==
+eyJoaXN0b3J5IjpbMjIwMzQyNjgwLDExNDU4MDY0MjUsMTAzMT
+E3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NTU4MzEx
+OCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4MDc2MC
+wtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0y
+MDM4MTU5NjQxLC05OTgxNDY1NDMsLTE2MjA5NTE2NzEsMTM2Mz
+Q4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1NjAsMTA0NTEzNDA0
+XX0=
 -->
