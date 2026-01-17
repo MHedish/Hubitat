@@ -714,7 +714,7 @@ In the app’s **🌦 Weather Configuration (Advanced)** section:
 - Optionally select one or more **Rain / Moisture Sensor devices** with `capability.waterSensor`.
 - Specify the **trigger attribute** (e.g., `wet`, `water`, or `moisture`).
 
-If a Tempest station is configured and the setting **“Use Tempest as Rain Sensor”** is enabled, its rainfall data will be automatically incorporated even if no external water sensors are selected.
+If a Tempest station is configured and the setting **“Use Tempest as Rain Sensor”** is enabled, its haptic rainfall sensor will be automatically incorporated even if no external water sensors are selected.
 
 ---
 
@@ -801,7 +801,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTM1MTE5MjIxLC0xOTYzNzQyMTE3LC0xNT
+eyJoaXN0b3J5IjpbLTI2Mjk4Njk4LC0xOTYzNzQyMTE3LC0xNT
 ExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNTk2NDEsLTk5ODE0
 NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxND
 AsLTI4ODkwMDU2MCwxMDQ1MTM0MDRdfQ==
