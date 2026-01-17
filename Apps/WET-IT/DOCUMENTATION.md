@@ -1,4 +1,5 @@
 # 🌿 Weather-Enhanced Time-based Irrigation Tuning (WET-IT)
+
 ## Full Documentation
 *Comprehensive Technical & Integration Reference (App v1.0.4.0 / Driver v1.0.4.0)*
 
@@ -1022,9 +1023,9 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE5MTU0NDc0ODQsLTE4MTkzNDQ0MjQsLT
-EyMzY5ODA3NjAsLTE5NjM3NDIxMTcsLTE1MTE1Mjg3OTQsMTEw
-NjAyNzE0NywtMjAzODE1OTY0MSwtOTk4MTQ2NTQzLC0xNjIwOT
-UxNjcxLDEzNjM0ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAwNTYw
-LDEwNDUxMzQwNF19
+eyJoaXN0b3J5IjpbLTU5NTU4MzExOCwtMTkxNTQ0NzQ4NCwtMT
+gxOTM0NDQyNCwtMTIzNjk4MDc2MCwtMTk2Mzc0MjExNywtMTUx
+MTUyODc5NCwxMTA2MDI3MTQ3LC0yMDM4MTU5NjQxLC05OTgxND
+Y1NDMsLTE2MjA5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MTQw
+LC0yODg5MDA1NjAsMTA0NTEzNDA0XX0=
 -->
