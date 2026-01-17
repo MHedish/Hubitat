@@ -36,7 +36,7 @@ This release adds an **integrated scheduler** with:
 
 ---
 
-### 🌦 New Weather Provider — Tempest PWS Integration
+### 🌦️ New Weather Provider — Tempest PWS Integration
 
 v1.0.4.0 introduces **Tempest Personal Weather Station (PWS)** support, adding **hyper-local forecasting** and **real-time environmental data** to the ET model.
 
@@ -1069,7 +1069,7 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTYyODI2NjA1NywtNTk1NTgzMTE4LC0xOT
+eyJoaXN0b3J5IjpbLTExMDg5Njc0MiwtNTk1NTgzMTE4LC0xOT
 E1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0xOTYz
 NzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNT
 k2NDEsLTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0Nzgy
