@@ -668,6 +668,34 @@ In the app UI under **🌦 Weather Configuration**:
 If your selected provider is unavailable, WET-IT automatically retries using NOAA (when the option is enabled).
 
 ---
+## 🏢 NOAA Office vs 📡 Radar Station
+
+A  **NOAA office**  is a physical facility where personnel, such as forecasters, work to issue forecasts, warnings, and other hazard information. A  **radar station**  is a specific, uncrewed technical installation containing a radar system  (like the WSR-88D, also known as NEXRAD) that automatically scans the atmosphere and collects raw weather data.
+
+### 🏢 NOAA Office
+
+-   **Function:**  NWS (a part of NOAA) local Weather Forecast Offices (WFOs) are staffed by expert meteorologists who analyze the atmosphere, generate localized forecasts, issue timely warnings for their specific region, and broadcast information via NOAA Weather Radio.
+-   **Location:**  There are 122 forecast offices across the United States. While some may be located adjacent to a radar, many are miles away from the physical radar tower itself.
+-   **Purpose:**  The primary purpose is the human interpretation of data and the dissemination of actionable information to the public and other agencies like first responders and airlines.
+
+### 📡 Radar Station
+
+-   **Function:**  This is the physical site of the radar equipment (antenna, transmitter, receiver housed in a protective dome). It mechanically or electronically scans the atmosphere using radio waves to detect precipitation, wind speed, and direction.
+-   **Location:**  Radar stations are strategically placed to ensure broad coverage of the country. The location is chosen for optimal atmospheric scanning, which might not be near a population center or a convenient office location.
+-   **Purpose:**  The sole purpose is the automated collection of raw weather data (Level II data, such as reflectivity and radial velocity) which is then sent to the various NWS offices and other users for processing and analysis.
+
+### Key Differences Summary
+
+| Feature | NOAA Office (specifically NWS WFO) | Radar Station |
+|:--|:--|:--|
+| **Primary Role** | Forecast generation, data analysis, issuing warnings, public communication | Automated data collection (raw radar data)|
+| **Staffing** | Staffed by meteorologists and support personnel | Uncrewed, an automated technical facility |
+| **Output** | Forecasts, warnings, advisories, and other human-analyzed products | Unprocessed radar data (reflectivity, velocity) |
+| **Location** | Can be anywhere, often in populated areas or co-located with universities | Located for optimal atmospheric coverage, often remote|
+
+In short, the radar station is a data collection tool, and the NOAA office is where that data is interpreted and transformed into usable weather information.
+
+---
 
 ### 🔄 Data Model
 
@@ -838,32 +866,105 @@ This JSON mirrors the internal data model and can be parsed directly by Rule Mac
 
 Next: 🧩 App Configuration Reference →
 
-## 🏢 NOAA Office vs 📡 Radar Station
 
-A  **NOAA office**  is a physical facility where personnel, such as forecasters, work to issue forecasts, warnings, and other hazard information. A  **radar station**  is a specific, uncrewed technical installation containing a radar system  (like the WSR-88D, also known as NEXRAD) that automatically scans the atmosphere and collects raw weather data.
+## 🧩 App Configuration Reference
+<a id="-app-configuration-reference"></a>
 
-### 🏢 NOAA Office
+The WET-IT parent app manages all configuration parameters that define how the irrigation model operates.  
+These options control scheduling, weather sources, soil modeling, and automation behavior.
 
--   **Function:**  NWS (a part of NOAA) local Weather Forecast Offices (WFOs) are staffed by expert meteorologists who analyze the atmosphere, generate localized forecasts, issue timely warnings for their specific region, and broadcast information via NOAA Weather Radio.
--   **Location:**  There are 122 forecast offices across the United States. While some may be located adjacent to a radar, many are miles away from the physical radar tower itself.
--   **Purpose:**  The primary purpose is the human interpretation of data and the dissemination of actionable information to the public and other agencies like first responders and airlines.
+---
 
-### 📡 Radar Station
+### ⚙️ General Settings
 
--   **Function:**  This is the physical site of the radar equipment (antenna, transmitter, receiver housed in a protective dome). It mechanically or electronically scans the atmosphere using radio waves to detect precipitation, wind speed, and direction.
--   **Location:**  Radar stations are strategically placed to ensure broad coverage of the country. The location is chosen for optimal atmospheric scanning, which might not be near a population center or a convenient office location.
--   **Purpose:**  The sole purpose is the automated collection of raw weather data (Level II data, such as reflectivity and radial velocity) which is then sent to the various NWS offices and other users for processing and analysis.
+| Setting | Description |
+|:--|:--|
+| **App Name** | The label shown in your Hubitat Apps list. You can rename it safely. |
+| **Controller Mode** | Select between *Data Provider Only* (external automation control) or *Full Scheduler* (internal program execution). |
+| **Number of Zones** | Total irrigation zones managed by this instance. The app will automatically create and manage corresponding child devices. |
+| **Enable Soil Memory** | Tracks soil moisture depletion and recovery between watering events using the ET model. |
+| **Management Allowed Depletion (MAD)** | Percentage of soil water that can be lost before watering is required. Lower values water more often. |
+| **Default Precipitation Rate** | Nozzle output rate (in/hr or mm/hr) used for ET runtime calculations. |
+| **Base Runtime** | Default runtime used when ET or seasonal adjustments are disabled. |
 
-### Key Differences Summary
+---
 
-| Feature | NOAA Office (specifically NWS WFO) | Radar Station |
-|:--|:--|:--|
-| **Primary Role** | Forecast generation, data analysis, issuing warnings, public communication | Automated data collection (raw radar data)|
-| **Staffing** | Staffed by meteorologists and support personnel | Uncrewed, an automated technical facility |
-| **Output** | Forecasts, warnings, advisories, and other human-analyzed products | Unprocessed radar data (reflectivity, velocity) |
-| **Location** | Can be anywhere, often in populated areas or co-located with universities | Located for optimal atmospheric coverage, often remote|
+### 🕰️ Program Scheduling
 
-In short, the radar station is a data collection tool, and the NOAA office is where that data is interpreted and transformed into usable weather information.
+| Setting | Description |
+|:--|:--|
+| **Program Count** | Number of individual schedules (1–16) to define. |
+| **Program Start Mode** | Choose between *Fixed Time*, *Start at Sunrise*, or *End by Sunrise*. |
+| **Program Days Mode** | Interval (every N days) or weekly (e.g., M/W/F). |
+| **Weather Skip Controls** | Enable skip logic for Rain, Wind, and Freeze events. |
+| **Minimum Runtime Threshold** | Prevents ultra-short runs that could cycle valves unnecessarily. |
+| **Buffer Between Programs** | Delay (in minutes) to separate consecutive programs. |
+| **Soil Memory Integration** | Optionally link program logic to soil moisture depletion data. |
+
+---
+
+### 🌦️ Weather Source Configuration
+
+| Setting | Description |
+|:--|:--|
+| **Primary Weather Provider** | Select NOAA, OpenWeather, Tomorrow.io, or Tempest PWS. |
+| **Backup Weather Provider** | Secondary source used if the primary fails or is unavailable. |
+| **Tempest Station ID / Token** | Credentials required to access your local Tempest PWS. |
+| **API Keys (Cloud Providers)** | Enter keys for OpenWeather or Tomorrow.io if selected. |
+| **Weather Update Time** | Default: 02:00 local. Adjust as needed for your region. |
+| **Weather Units** | Choose between Imperial (in/°F) or Metric (mm/°C). |
+
+---
+
+### 🧮 Seasonal & ET Adjustments
+
+| Setting | Description |
+|:--|:--|
+| **Seasonal Adjust Mode** | Select between *Manual Percent*, *Auto ET-Based*, or *Hybrid*. |
+| **Baseline ET** | Average ET used as reference for runtime scaling. |
+| **ET Recalculation Frequency** | How often ET values are recomputed (daily, every 6 hours, etc.). |
+| **Rainfall Reset Logic** | Determines how observed rain replenishes the soil model (e.g., 1:1 or efficiency-adjusted). |
+| **Auto-Reset After Watering** | Automatically resets ET deficit after a manual or scheduled irrigation event. |
+
+---
+
+### 🔔 Notifications & Logging
+
+| Setting | Description |
+|:--|:--|
+| **Event Logging Level** | Off / Info / Debug. Controls verbosity of driver and app logs. |
+| **Send Alerts to Devices** | Optional: Push notifications for freeze, rain, or wind skips. |
+| **Dashboard Summary Tile** | Enables publishing of summary data to a single dashboard tile. |
+| **Advanced Debug Mode** | Logs detailed ET math and program execution traces. Disable for normal operation. |
+
+---
+
+### 💾 Maintenance & Tools
+
+| Tool | Description |
+|:--|:--|
+| **Force Weather Update** | Immediately polls all configured weather sources. |
+| **Recalculate ET** | Forces a manual ET recompute without fetching new weather data. |
+| **Mark All Zones Watered** | Resets all soil memory values to “full.” |
+| **Clear Stored Data** | Wipes ET, seasonal, and history data for troubleshooting. |
+| **Import / Export Settings** | Backup or restore configuration JSON between hubs. |
+
+---
+
+### 🧠 Tips
+
+- Keep at least one **Weather Provider** active for ET calculations.  
+- For most climates, **End-by-Sunrise** delivers the best results.  
+- When using **Tempest**, you can disable redundant rain sensors — live data is already provided.  
+- ET recalculation is light on resources; daily updates are sufficient for most users.  
+- Enable **Advanced Debug Mode** only while testing — logs grow quickly.
+
+---
+
+Next: [🌾 Zone Configuration Reference →](#-zone-configuration-reference)
+
+
+
 
 
 ## 🧩 Zone Model Parameters
@@ -1458,11 +1559,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE4NTU5ODE2ODgsMTE0NTgwNjQyNSwxMD
-MxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgz
-MTE4LC0xOTE1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNz
-YwLC0xOTYzNzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcs
-LTIwMzgxNTk2NDEsLTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMz
-YzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkwMDU2MCwxMDQ1MTM0
-MDRdfQ==
+eyJoaXN0b3J5IjpbMTYyMTc4MzM2MywxMTQ1ODA2NDI1LDEwMz
+ExNzY1NTEsMTM2OTYyODA1NiwxNzc2ODQ4MjM4LC01OTU1ODMx
+MTgsLTE5MTU0NDc0ODQsLTE4MTkzNDQ0MjQsLTEyMzY5ODA3Nj
+AsLTE5NjM3NDIxMTcsLTE1MTE1Mjg3OTQsMTEwNjAyNzE0Nywt
+MjAzODE1OTY0MSwtOTk4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNj
+M0ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAwNTYwLDEwNDUxMzQw
+NF19
 -->
