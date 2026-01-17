@@ -283,6 +283,116 @@ This mirrors Rachio’s *Flex Daily* logic and provides:
 > 🕐 *“WET-IT doesn’t just know when to start watering — it knows when you want it to finish.”*
 
 ---
+---
+
+## 📅️ Program Scheduling
+<a id="-program-scheduling"></a>
+
+The Scheduler Edition of WET-IT brings **full irrigation control** to your Hubitat hub — while still serving as a data engine for external automations.
+
+Each **program** defines *when* and *how* zones water.  
+A program can operate at a **specific clock time**, **start at sunrise**, or uniquely, **end by sunrise** — ensuring irrigation completes just as daylight begins.
+
+---
+
+### ⚙️ Program Structure
+
+Every WET-IT installation supports up to **16 independent programs**, each with:
+
+| Feature | Description |
+|:--|:--|
+| **Name & Active Flag** | Friendly program name and on/off toggle |
+| **Start Mode** | Fixed Time ⏰, Start at Sunrise 🌅, or End by Sunrise 🌄 |
+| **Runtime Method** | Base Only, Seasonal %, or ET-Based |
+| **Days Mode** | Interval (Every N Days) or Weekly (M/W/F etc.) |
+| **Zones** | Select one or more irrigation zones |
+| **Weather Skips** | Freeze ❄, Rain ☔, Wind 💨 avoidance logic |
+| **Minimum Runtime** | Skip if total adjusted time falls below threshold |
+| **Buffer Delay** | Optional delay between consecutive programs (minutes) |
+
+Programs run zones sequentially for proper pressure balance and reliability.  
+Sequential watering avoids conflicts, reduces surge, and ensures deterministic runtime control.
+
+---
+
+### 🌄 Why “End by Sunrise” Matters
+
+Most irrigation systems can only **start at** a fixed time.  
+WET-IT adds a unique ability — to **“end by sunrise”** — automatically back-calculating when to start so watering finishes *right as daylight begins.*  
+This mirrors Rachio’s *Flex Daily* logic and provides:
+
+- 🌞 **Pre-dawn watering** — minimizes evaporation and wind drift  
+- 🌿 **Dry foliage at sunrise** — prevents fungus and disease  
+- 💧 **Optimal plant uptake** — watering aligns with morning photosynthesis  
+- ⚙️ **Automatic runtime compensation** — adjusts dynamically for longer or shorter ET days  
+
+> 🕐 *“WET-IT doesn’t just know when to start watering — it knows when you want it to finish.”*
+
+---
+
+### 🌤️ Weather Intelligence & Skip Logic
+
+Before each program runs, WET-IT evaluates local conditions from your selected weather provider(s):
+
+| Condition | Trigger | Effect |
+|:--|:--|:--|
+| **Freeze Alert** | Forecast temperature ≤ threshold | Program skipped entirely |
+| **Rain Alert** | Forecast rain ≥ threshold | Skip or shorten runtime |
+| **Wind Alert** | Forecast wind ≥ threshold | Skip affected zones |
+| **Soil Memory** | Zone still moist (ET deficit below threshold) | Skip per-zone watering |
+
+All skip events are logged and reflected in the *WET-IT Data* driver attributes (`freezeAlert`, `rainAlert`, `windAlert`, etc.).
+
+---
+
+### ⏱ Runtime Calculation
+
+Runtime per zone depends on your chosen **Adjustment Method**:
+
+| Adjustment Mode | Formula | Description |
+|:--|:--|:--|
+| **Base Only** | `Runtime = BaseTime` | Fixed manual runtime |
+| **Seasonal Budget** | `Runtime = BaseTime × SeasonalFactor` | Adjusts with month or user input |
+| **ET-Based** | `Runtime = BaseTime × (ETc ÷ ETbaseline)` | Auto-tunes daily by live weather |
+
+WET-IT automatically clamps runtimes to valid limits and logs all computations for transparency.
+
+---
+
+### 💾 Soil Memory Integration
+
+When **Soil Memory** is enabled, each zone maintains a daily “moisture bucket.”  
+ET, rainfall, and irrigation update that bucket; watering occurs only when depletion exceeds the **Management Allowed Depletion (MAD)** threshold.
+
+This gives WET-IT the same behavioral model as **Rachio Flex Daily**, but fully local — no cloud, no polling delay, no external dependency.
+
+---
+
+### 🧠 Smart Sequencing & Conflict Detection
+
+WET-IT detects overlapping program schedules automatically.  
+If two programs collide, the later start is delayed by your configured **Program Buffer Delay** (default = 1 minute).  
+Detected overlaps are displayed in the UI as advisories.
+
+---
+
+### 🧩 Manual Control & Data Continuity
+
+Even with the internal scheduler active, WET-IT continues to function as a **data provider** for custom controllers, dashboards, and integrations.  
+All computed ET, seasonal, alert, and summary data are published to the **WET-IT Data** child driver as both:
+
+- **Structured JSON** (`datasetJson`) for automation use  
+- **Individual attributes** for Hubitat dashboards or Rule Machine variables  
+
+You can still:
+- 🟢 Manually start / 🔴 stop any zone or program  
+- ⏱ View live countdown and clock-face status  
+- 💧 Mark Zone Watered to reset ET for a single zone  
+- 🧹 Mark All Zones Watered to reset all soil depletion  
+
+These actions maintain full data integrity across both the scheduler and external automations.
+
+---
 
 ### 📊 Control Philosophy
 
@@ -292,11 +402,9 @@ This mirrors Rachio’s *Flex Daily* logic and provides:
 | **Seasonal Budget** | Monthly scaling | Internal or external |
 | **ET-Driven** | Live weather & soil model | Internal Scheduler (Sunrise / End-by) |
 
-This structure keeps WET-IT compatible with both **automation frameworks** and **fully autonomous scheduling**.
+This architecture keeps WET-IT fully compatible with both **automation frameworks** (Rule Machine, Node-RED, webCoRE) and **fully autonomous scheduling** — one engine, two use cases.
 
 ---
-
-Next: [🌄 Sunrise & Program Scheduling →](#-program-scheduling)
 
 ## 🌄🌅 Sunrise/Sunset Scheduling for Legacy Controllers
 
@@ -315,6 +423,10 @@ Extensive agricultural and horticultural research shows that **pre-dawn or sunri
 Numerous sources support this recommendation, including the **University of California Cooperative Extension**, **Texas A&M AgriLife**, and **EPA WaterSense** guidelines.
 
 > 🌞 *“Sunrise irrigation aligns watering with nature’s rhythm — plants drink when the day begins, not when the day ends.”*
+
+---
+
+Next: [🌦 Weather Providers & Alerts →](#-weather-providers)
 
 ---
 
@@ -1116,10 +1228,10 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTM2OTYyODA1NiwxNzc2ODQ4MjM4LC01OT
-U1ODMxMTgsLTE5MTU0NDc0ODQsLTE4MTkzNDQ0MjQsLTEyMzY5
-ODA3NjAsLTE5NjM3NDIxMTcsLTE1MTE1Mjg3OTQsMTEwNjAyNz
-E0NywtMjAzODE1OTY0MSwtOTk4MTQ2NTQzLC0xNjIwOTUxNjcx
-LDEzNjM0ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAwNTYwLDEwND
-UxMzQwNF19
+eyJoaXN0b3J5IjpbMTAzMTE3NjU1MSwxMzY5NjI4MDU2LDE3Nz
+Y4NDgyMzgsLTU5NTU4MzExOCwtMTkxNTQ0NzQ4NCwtMTgxOTM0
+NDQyNCwtMTIzNjk4MDc2MCwtMTk2Mzc0MjExNywtMTUxMTUyOD
+c5NCwxMTA2MDI3MTQ3LC0yMDM4MTU5NjQxLC05OTgxNDY1NDMs
+LTE2MjA5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MTQwLC0yOD
+g5MDA1NjAsMTA0NTEzNDA0XX0=
 -->
