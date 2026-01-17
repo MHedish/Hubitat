@@ -895,6 +895,108 @@ Automations can safely:
 - Send notifications or trigger alerts  
 - Resume when forecasted winds will not affect irrigation
 
+## 📊 Data Publishing & Attributes Reference
+<a id="-data-publishing"></a>
+<a id="-driver-attribute-reference"></a>
+
+WET-IT continuously publishes both **summary** and **per-zone data** to its child device — the **WET-IT Data driver**.  
+This allows dashboards, Rule Machine, and external systems to access live irrigation intelligence directly from Hubitat.
+
+---
+
+### 🧩 Overview
+The app transmits three categories of data:
+1. **Summary Data** — Overall weather, alert, and timestamp information.  
+2. **Zone Attributes** — ET and seasonal runtime data for each zone.  
+3. **JSON Dataset** — Complete snapshot of all zones in machine-readable form.
+
+Publishing occurs automatically whenever:
+- Weather data updates (`runWeatherUpdate()` or scheduled refresh)
+- ET or seasonal calculations are re-evaluated  
+- A program or zone completes execution  
+- A manual test or valve run ends  
+
+---
+
+### ⚙️ Configuration
+Within **📊 Data Publishing** (app UI):
+- **Publish comprehensive zone JSON (default)**  
+  - Enables generation of a `datasetJson` attribute with all zones and metrics.  
+- **Publish individual zone attributes**  
+  - Creates static driver attributes (`zone1Et`, `zone1BaseTime`, etc.) for direct reference.  
+- **Summary Text (always published)**  
+  - Provides a human-readable line summarizing current status, such as  
+    *“ET update complete — 4 zones adjusted, 1 freeze alert active.”*
+
+---
+
+### 🧾 Published Attributes
+#### **Core / System Attributes**
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `appInfo` | String | Current app version and modification date |
+| `driverInfo` | String | Driver version and update date |
+| `summaryText` | String | Formatted human summary of current ET and alert status |
+| `summaryTimestamp` | String | ISO timestamp of last update |
+| `datasetJson` | JSON | Full ET/seasonal dataset for all zones |
+
+#### **Active Zone / Program Attributes**
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `activeZone` | Number | Currently running zone number |
+| `activeZoneName` | String | Zone display name |
+| `activeProgram` | Number | Current running program index |
+| `activeProgramName` | String | Program display name |
+
+#### **Weather & Alert Attributes**
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `wxSource` | String | Active weather provider name |
+| `wxTimestamp` | String | Forecast source timestamp |
+| `wxChecked` | String | Local time the data was last verified |
+| `wxLocation` | String | Source station or forecast location |
+| `freezeAlert`, `rainAlert`, `windAlert` | Boolean | True when corresponding alert is active |
+| `freezeLowTemp`, `rainForecast`, `windSpeed` | Number | Forecast values for skip criteria |
+| `activeAlerts` | String | Combined text summary of all current alerts |
+
+#### **Zone-Level Attributes**
+> Published only when “Publish individual zone attributes” is enabled.
+Each zone (1–48) provides:
+| Example Attribute | Type | Description |
+|:--|:--|:--|
+| `zone1Name` | String | Zone display name |
+| `zone1Et` | Number | Calculated ET budget for the zone |
+| `zone1Seasonal` | Number | Seasonal adjustment factor (%) |
+| `zone1BaseTime` | Number | Configured baseline runtime (seconds) |
+| `zone1EtAdjustedTime` | Number | Adjusted runtime (after ET & seasonal scaling) |
+
+---
+
+### 💾 JSON Dataset Example
+The `datasetJson` attribute exposes all zone data as a single object:
+```json
+{
+  "zones": {
+    "zone1": {
+      "name": "Front Lawn",
+      "baseTime": 900,
+      "etAdjustedTime": 768,
+      "etBudgetPct": 85,
+      "rainAlert": false
+    },
+    "zone2": {
+      "name": "Back Garden",
+      "baseTime": 600,
+      "etAdjustedTime": 510,
+      "etBudgetPct": 85,
+      "rainAlert": false
+    }
+  },
+  "timestamp": "2026-01-16T06:20:15Z",
+  "wxSource": "Tempest",
+  "summaryText": "ET update complete — 4 zones adjusted, no alerts active."
+}
+
 
 ## 🔧 Developer & Diagnostic Tools
 
@@ -920,9 +1022,9 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTkxNjE2ODM1MCwtMTIzNjk4MDc2MCwtMT
-k2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0yMDM4
-MTU5NjQxLC05OTgxNDY1NDMsLTE2MjA5NTE2NzEsMTM2MzQ4ND
-c4MiwtOTczNTE2MTQwLC0yODg5MDA1NjAsMTA0NTEzNDA0XX0=
+eyJoaXN0b3J5IjpbLTEyNTU5NzUzNDAsLTEyMzY5ODA3NjAsLT
+E5NjM3NDIxMTcsLTE1MTE1Mjg3OTQsMTEwNjAyNzE0NywtMjAz
+ODE1OTY0MSwtOTk4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0OD
+Q3ODIsLTk3MzUxNjE0MCwtMjg4OTAwNTYwLDEwNDUxMzQwNF19
 
 -->
