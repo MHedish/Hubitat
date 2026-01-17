@@ -1891,6 +1891,82 @@ Special thanks to the Hubitat community testers for early validation, debugging,
 
 ---
 
+
+💡 Always trigger `markZoneWatered()` at cycle end to synchronize ET and soil memory.
+
+---
+
+### ❄️ Freeze Protection Logic
+
+Detects freeze/frost risk and suspends irrigation until recovery.
+
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `freezeAlert` | Boolean | True when freeze/frost detected |
+| `freezeLowTemp` | Number | Forecast minimum temperature |
+| `freezeAlertText` | String | Text summary (e.g., “Freeze Warning — 31°F”) |
+
+Freeze alerts persist in `atomicState` and auto-clear 24h after recovery.
+
+---
+
+### 🌧 Rain Protection Logic
+
+Prevents irrigation during or before rain events using forecast, sensors, or Tempest data.
+
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `rainAlert` | Boolean | True when forecast/sensor indicates wet conditions |
+| `rainForecast` | Number | Forecast rain accumulation |
+| `rainAlertText` | String | Text summary (e.g., “Rain skip — 0.18 in forecast”) |
+
+---
+
+### 💨 Wind Protection Logic
+
+Skips irrigation when forecast wind exceeds configured threshold.
+
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `windAlert` | Boolean | True when wind exceeds limit |
+| `windSpeed` | Number | Forecast/observed wind speed |
+| `windAlertText` | String | Text summary (“Wind skip — 25 mph forecast”) |
+
+---
+
+### ⚠️ Active Weather Alerts
+
+Consolidates freeze, rain, and wind events into a single logical panel.
+
+**Priority:**  
+1️⃣ Freeze → 2️⃣ Rain → 3️⃣ Wind  
+
+Publishes:
+- `activeAlerts` — formatted summary  
+- `summaryText` — human-readable dashboard message  
+- `summaryTimestamp` — ISO timestamp of last evaluation  
+
+---
+
+### 🧩 Diagnostics Reference
+
+To verify skip logic operation:
+1. Run **Run Weather/ET Updates Now**.  
+2. Check **Active Weather Alerts** for flags.  
+3. Validate attributes in **WET-IT Data** driver.  
+4. Observe Hubitat logs for `[WET-IT]` updates.
+
+---
+
+### 🧩 Related Sections
+- [Weather Providers](#-weather-alert-settings)
+- [Developer & Diagnostic Tools](#-developer-diagnostic-tools)
+- [Scheduling](#-program-scheduling-reference)
+
+---
+
+
+
 Next: [🏁 End of Documentation](#-end-of-documentation)
 
 
@@ -2486,11 +2562,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTc5MTYwODk1LDExNDU4MDY0MjUsMTAzMT
-E3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NTU4MzEx
-OCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4MDc2MC
-wtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0y
-MDM4MTU5NjQxLC05OTgxNDY1NDMsLTE2MjA5NTE2NzEsMTM2Mz
-Q4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1NjAsMTA0NTEzNDA0
-XX0=
+eyJoaXN0b3J5IjpbODIwNDIyODcsMTc5MTYwODk1LDExNDU4MD
+Y0MjUsMTAzMTE3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgs
+LTU5NTU4MzExOCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMT
+IzNjk4MDc2MCwtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2
+MDI3MTQ3LC0yMDM4MTU5NjQxLC05OTgxNDY1NDMsLTE2MjA5NT
+E2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1NjAs
+MTA0NTEzNDA0XX0=
 -->
