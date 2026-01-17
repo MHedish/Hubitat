@@ -340,14 +340,67 @@ Weather API 🌦️ → ET₀ Calculation 🌡 → Soil Model 🌾 → Driver At
 
 
 
-## 🌦️ Weather Providers
 
-| Source | Key | Notes |
-|:--|:--:|:--|
-| **[OpenWeather 3.0](https://openweathermap.org/api/one-call-3)** | ✅ | Hourly and forecast-based ET₀ |
-| **[Tempest](https://tempest.earth/)** | ✅ | Hyper-local weather observation and forecasting |
-| **[Tomorrow.io](https://docs.tomorrow.io/reference/welcome)** | ✅ | High-resolution meteorological model |
-| **[NOAA NWS](https://www.weather.gov/documentation/services-web-api)** | ❌ | Built-in fallback |
+## 🌦 Weather Providers
+<a id="-weather-providers"></a>
+
+WET-IT integrates multiple data sources to drive accurate **Evapotranspiration (ET)**, **forecast**, and **weather alert** modeling.  
+Each provider offers a slightly different data footprint; you may choose the one that best suits your location and hardware.
+
+### ☁️ Supported Providers
+
+| Provider | API Key | Backup Option | Notes |
+|:--|:--:|:--:|:--|
+| **OpenWeather 3.0** | ✅ | NOAA | Hourly forecast and current-conditions model. Fast and reliable with global coverage. |
+| **Tomorrow.io** | ✅ | NOAA | High-resolution global model; offers ET₀ and wind metrics. Ideal for advanced accuracy. |
+| **NOAA NWS** | ❌ | Built-in | Local U.S. National Weather Service feed — no key required. Ideal as fallback. |
+| **Tempest PWS** | ✅ | NOAA | Uses your **WeatherFlow Tempest Personal Weather Station** for hyper-local data, including on-site temperature, rainfall, and wind. |
+
+---
+
+### 🧭 Selection & Configuration
+
+In the app UI under **🌦 Weather Configuration**:
+- Choose your primary **Weather Source**.
+- Enter your API key if required.
+- Optionally enable **“Use NOAA NWS as backup”** for redundancy.
+
+If your selected provider is unavailable, WET-IT automatically retries using NOAA (when the option is enabled).
+
+---
+
+### 🔄 Data Model
+
+Each provider contributes to a combined model:
+- **ET₀ (Reference Evapotranspiration)**  
+- **Rain Forecast & Accumulation**  
+- **Wind Speed & Alerts**  
+- **Temperature & Freeze Forecasts**  
+- **Solar Radiation** (Tempest and Tomorrow.io only)
+
+The app computes and merges these metrics to calculate:
+- Adjusted ET-based runtimes  
+- Freeze, rain, and wind skip logic  
+- Alert text for dashboards and automations  
+
+---
+
+### 🧪 Testing & Verification
+
+✅ Use **“🌤 Test Weather Now”** in the app to:
+- Validate API key and connectivity.
+- Confirm provider response latency.
+- Display the last successful update in the diagnostic panel.
+
+**Tip:** If you have both a Tempest and a cloud provider, select **Tempest** and enable **NOAA backup** for maximum coverage and precision.
+
+---
+
+### 📖 Related Sections
+- [Freeze Protection Logic](#-freeze-protection-logic)
+- [Scheduling](#-scheduling)
+- [Developer & Diagnostic Tools](#-developer--diagnostic-tools)
+
 
 ✅ Use **“Test Weather Now”** to validate configuration.  
 If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API calls fail.
@@ -650,8 +703,8 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE5NjM3NDIxMTcsLTE1MTE1Mjg3OTQsMT
-EwNjAyNzE0NywtMjAzODE1OTY0MSwtOTk4MTQ2NTQzLC0xNjIw
-OTUxNjcxLDEzNjM0ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAwNT
-YwLDEwNDUxMzQwNF19
+eyJoaXN0b3J5IjpbMTM4Mjg1MjE3NCwtMTk2Mzc0MjExNywtMT
+UxMTUyODc5NCwxMTA2MDI3MTQ3LC0yMDM4MTU5NjQxLC05OTgx
+NDY1NDMsLTE2MjA5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MT
+QwLC0yODg5MDA1NjAsMTA0NTEzNDA0XX0=
 -->
