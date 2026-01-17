@@ -687,21 +687,72 @@ To verify operation:
 
 
 
-## 🌧️ Rain Protection Logic
 
-WET-IT monitors forecast rain amount.  
-If the 24-hour rain forecast is low temperature ≥ configured **Rain Skip Threshold**, these attributes update automatically:
+## 🌧 Rain Protection Logic
+<a id="-rain-protection-logic"></a>
 
+WET-IT provides multiple layers of **rain protection** to prevent unnecessary irrigation during or before rainfall.  
+It combines **forecast-based skip logic**, **live sensor feedback**, and (optionally) **Tempest PWS rainfall data** for maximum reliability.
+
+---
+
+### 🧩 Overview
+Rain protection evaluates both predicted and observed precipitation levels:  
+
+- If the **forecast rain total** exceeds the configured threshold, all active irrigation programs are skipped.  
+- If any **connected rain or moisture sensors** report a “wet” condition, watering is suspended until they clear.  
+- When using a **Tempest PWS**, local rain data is automatically merged with external forecasts for hyper-local accuracy.
+
+The system continuously recalculates rain probability and accumulation whenever a weather update occurs.
+
+---
+
+### ⚙️ Configuration
+In the app’s **🌦 Weather Configuration (Advanced)** section:
+- Choose a **Rain Skip Threshold** (default: 0.125 in / 3.0 mm).
+- Enable or disable **“☔ Skip programs during rain alerts.”**
+- Optionally select one or more **Rain / Moisture Sensor devices** with `capability.waterSensor`.
+- Specify the **trigger attribute** (e.g., `wet`, `water`, or `moisture`).
+
+If a Tempest station is configured and the setting **“Use Tempest as Rain Sensor”** is enabled, its rainfall data will be automatically incorporated even if no external water sensors are selected.
+
+---
+
+### 🧠 Behavior & Recovery
+- If rain is forecast or sensors detect moisture, the app sets `rainAlert = true`.  
+- The alert clears when both forecast totals and sensor states return below the defined thresholds.  
+- Program runs are skipped, and the summary message records the cause (`Rain skip — 0.22in forecast`).
+- Rain protection interacts with freeze and wind logic: the highest-priority alert always dominates.  
+- When all alerts clear, the scheduler resumes normal operation automatically.
+
+---
+
+### 🧾 Published Attributes
+When rain protection is active, the WET-IT Data driver publishes:
 | Attribute | Type | Description |
 |:--|:--|:--|
-| `rainAlert` | bool | True when forecasted rain is above threshold |
-| `rainAlertText` | string| 'true' when forecasted rain is above threshold |
-| `rainForecast` | number | Amount of forecasted rain in the next 24 hours |
+| `rainAlert` | Boolean | True when rainfall forecast or sensors indicate wet conditions |
+| `rainForecast` | Number | Forecast rainfall (inches or millimeters) |
+| `rainAlertText` | String | Human-readable alert summary (“Rain skip — 0.18 in forecast”) |
 
-Automations can safely:  
-- Skip irrigation when rainAlert = true  
-- Send notifications or trigger alerts  
-- Resume after rain event
+These attributes can be displayed on dashboards or used in Rule Machine to automate external controllers or notification routines.
+
+---
+
+### 🧪 Diagnostics
+To verify operation:
+1. Run **🔄 Run Weather/ET Updates Now** to refresh forecast data.
+2. Observe the **Rain Alert** section in the app’s **🚨 Active Weather Alerts** panel.
+3. Inspect the `rainAlert`, `rainForecast`, and `rainAlertText` values in the **WET-IT Data** driver.
+4. If a rain sensor is configured, confirm that toggling it between *dry* and *wet* states updates the app’s alert status in real time.
+
+---
+
+### 📖 Related Sections
+- [Freeze Protection Logic](#-freeze-protection-logic)
+- [Weather Providers](#-weather-providers)
+- [Developer & Diagnostic Tools](#-developer--diagnostic-tools)
+
 
 ## 🆕Rain Sensor
 - Beginning with v1.0.4.0 users can select any local rain/moisture sensors installed to automatically skip scheduled irrigation events.
@@ -750,8 +801,8 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTc0ODM3MDQ3NywtMTk2Mzc0MjExNywtMT
-UxMTUyODc5NCwxMTA2MDI3MTQ3LC0yMDM4MTU5NjQxLC05OTgx
-NDY1NDMsLTE2MjA5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MT
-QwLC0yODg5MDA1NjAsMTA0NTEzNDA0XX0=
+eyJoaXN0b3J5IjpbMTM1MTE5MjIxLC0xOTYzNzQyMTE3LC0xNT
+ExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNTk2NDEsLTk5ODE0
+NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxND
+AsLTI4ODkwMDU2MCwxMDQ1MTM0MDRdfQ==
 -->
