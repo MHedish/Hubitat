@@ -1549,8 +1549,129 @@ Action: Cancel Program "Lawn Morning"
 ---
 
 Next: [🧑‍💻 Developer & Diagnostic Tools →](#-developer-diagnostic-tools)
+## 🧑‍💻 Developer & Diagnostic Tools
+<a id="-developer-diagnostic-tools"></a>
 
+WET-IT includes built-in diagnostic tools for developers, testers, and advanced users.  
+These tools expose internal variables, logs, and recalculation functions for verification and debugging.
 
+---
+
+### 🧰 Diagnostic Commands
+
+| Command | Description |
+|:--|:--|
+| **`refresh()`** | Forces an immediate update of all weather sources and recalculates ET values. |
+| **`recalculateEt()`** | Recomputes ET₀ and ETc using existing weather data without polling new sources. |
+| **`markZoneWatered(zone, percent)`** | Manually resets soil memory for a specific zone. Optional percent value (0–100) allows partial refill. |
+| **`markAllZonesWatered()`** | Resets soil memory for all zones to 100%. |
+| **`clearSoilMemory()`** | Deletes all stored soil depletion data (advanced use only). |
+| **`disableDebugLoggingNow()`** | Immediately turns off debug logging to prevent log saturation. |
+
+All commands can be run directly from the driver device page or invoked programmatically through the Maker API.
+
+---
+
+### 🪵 Logging Modes
+
+| Mode | Description |
+|:--|:--|
+| **Info Logging** | Default mode; logs key actions, weather updates, and schedule runs. |
+| **Debug Logging** | Adds detailed ET math, skip logic, and runtime adjustments to the logs. |
+| **Trace Logging** | (Developer only) Provides raw event and schedule traces for low-level troubleshooting. |
+| **Silent Mode** | Disables all logs except errors. Useful for production or high-frequency polling setups. |
+
+> ⚠️ **Tip:** Debug and trace logging automatically turn off after 30 minutes to reduce unnecessary log volume.
+
+---
+
+### 📋 Verification Checklist
+
+Use this list to confirm correct installation and operation:
+
+1. ✅ **Driver Installed** — “WET-IT Data” driver created automatically by the app.  
+2. ✅ **Weather Provider Active** — `wxSource` attribute updates with correct provider name.  
+3. ✅ **ET Values Changing** — `etToday` and `etBudget` update after each weather poll.  
+4. ✅ **Zone Attributes Present** — `zone#Et`, `zone#BaseTime`, and `zone#EtAdjustedTime` visible in driver.  
+5. ✅ **Programs Running** — `activeProgram` and `summaryText` change during schedule events.  
+6. ✅ **Skip Events Triggering** — `rainAlert`, `windAlert`, or `freezeAlert` true when thresholds met.  
+
+---
+
+### 🧠 Debugging ET Calculations
+
+If ET or runtime values seem incorrect:
+
+1. Check the **weather provider’s timestamp** (`wxTimestamp`) to confirm data freshness.  
+2. Verify **units** (Imperial vs Metric) are consistent with nozzle precipitation rate inputs.  
+3. Confirm **zone precipitation rates** are accurate — most sprinkler nozzles output between 0.4–1.0 in/hr.  
+4. Enable **Debug Logging** and review logs for `ET calc:` entries.  
+5. Compare `etBaseline` vs `etToday` — high differences indicate seasonal scaling adjustments.  
+
+---
+
+### 🔍 Testing Skip Logic
+
+You can test weather skip conditions without changing live data:
+
+| Test Type | Method | Example |
+|:--|:--|:--|
+| **Freeze Skip** | Temporarily set `freezeLowTemp` below threshold. | `set freezeLowTemp = 30°F` |
+| **Rain Skip** | Manually adjust `rainForecast` above limit. | `set rainForecast = 0.25 in` |
+| **Wind Skip** | Set `windSpeed` above skip threshold. | `set windSpeed = 25 mph` |
+
+Each simulated change updates the skip logic engine immediately and logs the result.
+
+---
+
+### 🌐 Maker API Integration
+
+Developers can access all driver attributes through Hubitat’s Maker API:
+>GET http://[HUB_IP]/apps/api/[APP_ID]/devices/[DEVICE_ID]?access_token=[TOKEN]
+Example response snippet:
+```json
+{
+  "name": "WET-IT Data",
+  "label": "WET-IT Data Driver",
+  "attributes": [
+    {"name": "wxSource", "currentValue": "Tempest"},
+    {"name": "rainForecast", "currentValue": 0.15},
+    {"name": "etBudget", "currentValue": 94},
+    {"name": "activeProgramName", "currentValue": "Lawn Morning"}
+  ]
+}
+```
+You can parse this JSON to feed dashboards, RESTful APIs, or other control systems.
+
+----------
+
+### 🧩 Developer Notes
+
+-   All numeric attributes are stored as strings for Hubitat compatibility; cast them to floats when performing calculations externally.
+-   The app and driver communicate via parent-child messaging and synchronized state variables.
+-   Logs labeled **“ET calc”**, **“Runtime Adjust”**, or **“Weather Refresh”** show precise model steps.
+-   For rapid iteration, you can trigger multiple recalculations using `recalculateEt()` without waiting for polling intervals.
+-   No reboot is needed after changing weather providers — just run `refresh()`.
+  
+
+----------
+
+### 💡 Pro Tips
+
+-   Use **Node-RED or InfluxDB** to chart ET, rain, and runtime trends over time.
+    
+-   Combine WET-IT with **Hubitat dashboards** for live irrigation feedback.
+    
+-   Run WET-IT in **Data Provider mode** on one hub and consume its dataset via LAN or MQTT on another.
+    
+-   Backup your configuration using the built-in Import/Export JSON option before major edits.
+    
+-   Keep an eye on **Tempest firmware updates** — improved wind calibration enhances skip accuracy.
+    
+
+----------
+
+Next: 📘 System Maintenance & Recovery →
 
 
 
@@ -2150,11 +2271,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTMyMjA1NTQ3LDExNDU4MDY0MjUsMTAzMT
-E3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NTU4MzEx
-OCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4MDc2MC
-wtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0y
-MDM4MTU5NjQxLC05OTgxNDY1NDMsLTE2MjA5NTE2NzEsMTM2Mz
-Q4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1NjAsMTA0NTEzNDA0
-XX0=
+eyJoaXN0b3J5IjpbLTU1MDQzNjY2MiwxMTQ1ODA2NDI1LDEwMz
+ExNzY1NTEsMTM2OTYyODA1NiwxNzc2ODQ4MjM4LC01OTU1ODMx
+MTgsLTE5MTU0NDc0ODQsLTE4MTkzNDQ0MjQsLTEyMzY5ODA3Nj
+AsLTE5NjM3NDIxMTcsLTE1MTE1Mjg3OTQsMTEwNjAyNzE0Nywt
+MjAzODE1OTY0MSwtOTk4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNj
+M0ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAwNTYwLDEwNDUxMzQw
+NF19
 -->
