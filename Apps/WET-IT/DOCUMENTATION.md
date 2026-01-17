@@ -875,6 +875,13 @@ These options control scheduling, weather sources, soil modeling, and automation
 
 ---
 
+
+
+
+
+
+
+
 ### ⚙️ General Settings
 
 | Setting | Description |
@@ -963,6 +970,95 @@ These options control scheduling, weather sources, soil modeling, and automation
 
 Next: [🌾 Zone Configuration Reference →](#-zone-configuration-reference)
 
+## 🌾 Zone Configuration Reference
+<a id="-zone-configuration-reference"></a>
+
+Each irrigation **Zone** in WET-IT represents a physical valve or watering area such as turf, garden beds, shrubs, or trees.  
+Zone parameters determine how evapotranspiration (ET), soil depletion, and runtime adjustments are applied individually.
+
+---
+
+### ⚙️ Zone Definition
+
+| Setting | Description |
+|:--|:--|
+| **Zone Name** | User-friendly name for each irrigation zone (e.g., “Front Lawn”). |
+| **Zone Enabled** | Toggle to include or exclude this zone from scheduling. Disabled zones retain historical ET data but will not run. |
+| **Base Runtime (Minutes)** | The nominal watering time at 100 % adjustment under baseline conditions. |
+| **Precipitation Rate** | Nozzle output rate (in/hr or mm/hr) used for ET-to-runtime conversion. |
+| **Area Type (Plant Type)** | Determines the default crop coefficient (Kc) used for ET adjustments (e.g., Turf, Shrubs, Trees). |
+| **Soil Type** | Used to determine water-holding capacity and infiltration rate. Affects MAD (Management Allowed Depletion). |
+| **Sun Exposure** | Impacts the daily ET scaling factor; “Full Sun” zones lose water faster than “Partial Shade.” |
+| **Slope or Grade** | Optional factor used for per-zone soak cycles or erosion protection logic. |
+| **Soil Memory Enabled** | Allows the zone to participate in daily soil depletion tracking and ET-based watering decisions. |
+
+---
+
+### 🧮 Advanced ET & Seasonal Settings
+
+| Setting | Description |
+|:--|:--|
+| **Crop Coefficient (Kc)** | Fine-tunes ET for specific plant types beyond defaults (0.3 – 1.0 typical). |
+| **Allowed Depletion (%)** | Defines how much available water may be depleted before irrigation triggers. |
+| **ET Baseline Reference** | Localized average ET used to normalize runtime scaling. |
+| **Seasonal Adjustment (%)** | Optional manual offset (e.g., +10 % for hot months). |
+| **Soil Efficiency (%)** | Adjusts how effectively irrigation water replenishes soil moisture (default 85 %). |
+
+---
+
+### 💧 Runtime Modifiers
+
+| Setting | Description |
+|:--|:--|
+| **Minimum Runtime (Seconds)** | Prevents excessively short valve activations due to small ET corrections. |
+| **Maximum Runtime (Minutes)** | Caps ET adjustments to prevent over-watering. |
+| **Soak Cycles** | Optional; splits watering into multiple shorter cycles to improve infiltration. |
+| **Program Link** | Associates this zone with one or more Program schedules. |
+| **Manual Control** | Enables “Run Zone Now” and “Mark Zone Watered” actions from the driver. |
+
+---
+
+### 📈 Zone Data Outputs
+
+When the app runs, each zone publishes real-time data to the **WET-IT Data Driver** using the following attributes:
+
+| Attribute | Example | Description |
+|:--|:--|:--|
+| `zone#Name` | `zone1Name = "Front Lawn"` | Zone label |
+| `zone#Et` | `zone1Et = 0.18` | Current ET depletion (inches or mm) |
+| `zone#EtAdjustedTime` | `zone1EtAdjustedTime = 13.9` | Runtime (minutes) after ET & seasonal adjustment |
+| `zone#Seasonal` | `zone1Seasonal = 95` | Seasonal adjustment factor (%) |
+| `zone#BaseTime` | `zone1BaseTime = 15` | User-configured base runtime |
+| `zone#Status` | `zone1Status = "Idle"` | Current zone state (Idle / Running / Skipped) |
+
+---
+
+### 🪣 Soil Memory Example
+
+Each zone maintains its own soil balance:
+
+| Date | ET Loss (in) | Rain Gain (in) | Irrigation Gain (in) | Soil Balance (%) |
+|:--|:--|:--|:--|:--|
+| Jan 12 | 0.18 | 0.00 | 0.00 | 82 |
+| Jan 13 | 0.22 | 0.00 | 0.00 | 60 |
+| Jan 14 | 0.21 | 0.15 | 0.00 | 56 |
+| Jan 15 | 0.00 | 0.35 | 0.00 | 100 |
+
+When balance drops below the MAD threshold, WET-IT automatically schedules watering or flags the zone for manual attention.
+
+---
+
+### 💡 Best Practices
+
+- Assign realistic **precipitation rates** — nozzle data from manufacturer charts works best.  
+- Tune **Kc values** by observing plant performance; 0.8–0.9 suits lawns, 0.4–0.6 for shrubs.  
+- Enable **Soil Memory** for most zones except newly planted or potted areas.  
+- Avoid 100 % shaded zones in ET models unless separate weather data exist.  
+- Use **Soak Cycles** for sloped or compacted soil to prevent runoff.  
+
+---
+
+Next: [🪣 Soil Memory & ET Reset →](#-soil-memory-et-reset)
 
 
 
@@ -1559,11 +1655,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTYyMTc4MzM2MywxMTQ1ODA2NDI1LDEwMz
-ExNzY1NTEsMTM2OTYyODA1NiwxNzc2ODQ4MjM4LC01OTU1ODMx
-MTgsLTE5MTU0NDc0ODQsLTE4MTkzNDQ0MjQsLTEyMzY5ODA3Nj
-AsLTE5NjM3NDIxMTcsLTE1MTE1Mjg3OTQsMTEwNjAyNzE0Nywt
-MjAzODE1OTY0MSwtOTk4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNj
-M0ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAwNTYwLDEwNDUxMzQw
-NF19
+eyJoaXN0b3J5IjpbNDE5NDU2MzE3LDExNDU4MDY0MjUsMTAzMT
+E3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NTU4MzEx
+OCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4MDc2MC
+wtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0y
+MDM4MTU5NjQxLC05OTgxNDY1NDMsLTE2MjA5NTE2NzEsMTM2Mz
+Q4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1NjAsMTA0NTEzNDA0
+XX0=
 -->
