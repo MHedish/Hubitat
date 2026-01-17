@@ -1776,8 +1776,122 @@ The following appendices provide supporting information, definitions, and refere
 ### 🧮 Appendix A — Key Formulae
 
 **Evapotranspiration (ET₀) – Penman–Monteith (simplified):**
-ET₀ = [0.408 * Δ * (Rn − G) + γ * (900 / (T + 273)) * u₂ * (es − ea)] / [Δ + γ * (1 + 0.34 * u₂)]
+$$ET_0 = \frac{0.408\Delta(R_n - G) + \gamma\frac{900}{T+273}u_2(e_s - e_a)}{\Delta + \gamma(1+0.34u_2)}$$
 
+
+Where:
+
+| Symbol | Description |
+|:--|:--|
+| `ET₀` | Reference evapotranspiration (mm/day) |
+| `Δ` | Slope of vapor pressure curve (kPa/°C) |
+| `Rn` | Net radiation at crop surface (MJ/m²/day) |
+| `G` | Soil heat flux density (MJ/m²/day) |
+| `γ` | Psychrometric constant (kPa/°C) |
+| `T` | Mean daily air temperature (°C) |
+| `u₂` | Wind speed at 2 m height (m/s) |
+| `es − ea` | Vapor pressure deficit (kPa) |
+
+This formula forms the basis of WET-IT’s weather-driven irrigation model.
+
+---
+
+### 🌾 Appendix B — Crop Coefficients (Kc)
+
+| Plant Type | Typical Kc Range | Notes |
+|:--|:--:|:--|
+| Cool-Season Turfgrass | 0.80–0.95 | High water demand; use ET-based scheduling. |
+| Warm-Season Turfgrass | 0.60–0.80 | Adjusts lower during dormancy. |
+| Shrubs / Ornamentals | 0.40–0.70 | Moderate ET loss; deep but infrequent watering. |
+| Trees | 0.30–0.60 | Large root zone; infrequent irrigation. |
+| Annual Flowers / Vegetables | 0.70–1.00 | High ET during active growth. |
+
+WET-IT uses these as default Kc values when zone type is selected during setup.
+
+---
+
+### 🪣 Appendix C — Soil Types & Water Capacity
+
+| Soil Type | Available Water (in/ft) | Infiltration Rate (in/hr) | Notes |
+|:--|:--:|:--:|:--|
+| Sand | 0.5–1.0 | 1.0–2.0 | Fast drainage; water more often, less each time. |
+| Loamy Sand | 1.0–1.2 | 0.8–1.2 | Common for lawns; moderate capacity. |
+| Loam | 1.8–2.0 | 0.4–0.6 | Balanced soil; ideal for ET scheduling. |
+| Clay Loam | 2.0–2.5 | 0.2–0.4 | Slow infiltration; may require soak cycles. |
+| Clay | 2.5–3.0 | 0.1–0.2 | Retains water; water less often but longer. |
+
+These values inform the **Management Allowed Depletion (MAD)** and **ET runtime scaling**.
+
+---
+
+### ☀️ Appendix D — Optimal Watering Windows
+
+| Time of Day | Effectiveness | Comments |
+|:--|:--:|:--|
+| **Pre-Dawn / Sunrise** | ⭐⭐⭐⭐ | Best for efficiency and plant health. |
+| **Morning (8–10 AM)** | ⭐⭐⭐ | Acceptable; moderate evaporation. |
+| **Afternoon (12–4 PM)** | ⭐ | High evaporation; avoid if possible. |
+| **Evening (6–8 PM)** | ⭐⭐ | Adequate backup; risk of overnight fungus. |
+| **Night (After 9 PM)** | ❌ | Leaves remain wet overnight; not recommended. |
+
+WET-IT’s *End-by-Sunrise* scheduling mode ensures irrigation finishes within the optimal pre-dawn window.
+
+---
+
+### 🔍 Appendix E — Glossary
+
+| Term | Definition |
+|:--|:--|
+| **ET (Evapotranspiration)** | Combined water loss from soil and plant surfaces. |
+| **ET₀ (Reference ET)** | Baseline evapotranspiration under standard conditions. |
+| **ETc (Crop ET)** | ET adjusted for specific crop coefficient (Kc). |
+| **Kc (Crop Coefficient)** | Factor representing plant type and growth stage. |
+| **MAD (Management Allowed Depletion)** | Percent of available water that may be lost before irrigation. |
+| **Precipitation Rate** | Nozzle output rate (in/hr or mm/hr). |
+| **Rain Skip** | Automatic cancellation of watering based on forecast or observed rain. |
+| **Freeze Skip** | Automatic suspension of watering when temperatures approach freezing. |
+| **Wind Skip** | Delay or cancel irrigation during excessive wind. |
+| **Soil Memory** | Model tracking daily soil moisture balance between watering events. |
+| **Tempest PWS** | Personal Weather Station providing real-time local weather data. |
+
+---
+
+### 📚 Appendix F — References & Data Sources
+
+| Source | Description | Link |
+|:--|:--|:--|
+| **FAO Irrigation and Drainage Paper 56** | Penman–Monteith reference and ET computation standard. | [FAO56 PDF](https://www.fao.org/3/x0490e/x0490e00.htm) |
+| **EPA WaterSense Guidelines** | Federal guidance for efficient irrigation systems. | [EPA WaterSense](https://www.epa.gov/watersense/outdoor) |
+| **University of California Cooperative Extension (UCCE)** | Research on irrigation timing and efficiency. | [UCCE Research](https://ucanr.edu/) |
+| **Texas A&M AgriLife Extension** | Agricultural best practices for ET-based irrigation. | [AgriLife Water Resources](https://agrilifeextension.tamu.edu) |
+| **WeatherFlow Tempest API** | Hyper-local personal weather data integration. | [Tempest API](https://tempestwx.com) |
+| **Tomorrow.io Developer Portal** | High-resolution weather forecast and API documentation. | [Tomorrow.io API](https://developer.tomorrow.io) |
+| **OpenWeather 3.0 API** | Global forecast and radar-derived precipitation model. | [OpenWeather API](https://openweathermap.org/api) |
+| **NOAA/NWS API** | U.S. National Weather Service regional data source. | [NOAA API](https://www.weather.gov/documentation/services-web-api) |
+
+---
+
+### 🧩 Appendix G — Change Log Summary (v1.0.4.0)
+
+| Version | Date | Highlights |
+|:--|:--|:--|
+| **v1.0.0.0** | 2024-04-02 | Initial release — data provider only. |
+| **v1.0.2.0** | 2025-05-11 | Added multi-provider weather support and ET enhancements. |
+| **v1.0.3.0** | 2025-09-29 | Introduced partial soil memory and automation triggers. |
+| **v1.0.4.0** | 2026-01-16 | Major update: full internal scheduler, *End-by-Sunrise* logic, Tempest PWS integration, and hybrid weather engine. |
+
+---
+
+### 🧠 Appendix H — Acknowledgments
+
+WET-IT integrates open meteorological data and draws on research from the **FAO**, **EPA**, **UCCE**, and **AgriLife** programs.  
+Special thanks to the Hubitat community testers for early validation, debugging, and feature feedback that led to the Scheduler Edition.
+
+> *“Built by data nerds for water efficiency — because smart irrigation starts with smarter data.”*
+
+---
+
+Next: [🏁 End of Documentation](#-end-of-documentation)
 
 
 Model Parameters
@@ -2372,7 +2486,7 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjIwMzQyNjgwLDExNDU4MDY0MjUsMTAzMT
+eyJoaXN0b3J5IjpbMTc5MTYwODk1LDExNDU4MDY0MjUsMTAzMT
 E3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NTU4MzEx
 OCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4MDc2MC
 wtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0y
