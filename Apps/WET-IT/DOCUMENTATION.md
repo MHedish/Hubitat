@@ -454,36 +454,7 @@ In short, the radar station is a data collection tool, and the NOAA office is wh
 
 > 🧠 *`wxTimestamp` shows when the data was issued; `wxChecked` shows when it was polled.*
 
-## 📊 Driver Attribute Reference
 
-| Attribute | Type | Description |
-|:--|:--|:--|
-| `activeZone` | Number | Currently active zone |
-| `activeZoneName` | string | Friendly name of active zone |
-| `activeProgram` | Number | Currently active scheduled program |
-| `activeZoneName` | string | Friendly name of active program |
-| `activeAlerts` | string | Summary of active weather alerts |
-| `appInfo` | string | App version / metadata |
-| `datasetJson` | string | Comprehensive JSON for all zones |
-| `driverInfo` | string | Driver version / metadata |
-| `freezeAlert` | bool | True when forecast below threshold |
-| `freezeAlertText` | string | 'true' when forecast below threshold |
-| `freezeLowTemp` | number | Freeze warning threshold |
-| `rainAlert` | bool | True when 24-hour rain forecast above threshold *or* local water sensor is marked as wet |
-| `rainAlertText` | string | 'true' when 24-hour rain forecast above threshold *or* local water sensor is marked as wet|
-| `rainForecast` | number | 24-hour rain forecast |
-| `summaryText` | string | Human-readable ET summary |
-| `summaryTimestamp` | string | Last hybrid ET calculation |
-| `windAlert` | bool | True when wind forecast above threshold *or* personal weather station wind speed exceeds threshold |
-| `windAlertText` | string | 'true' when wind forecast above threshold *or* personal weather station wind speed exceeds threshold|
-| `windSpeed` | number | Forecasted wind speed |
-| `wxChecked` | string | Forecast poll/check time |
-| `wxLocation` | string | City/State/Forecast Office/Radar Station (US Only)|
-| `wxSource` | string | Active weather provider |
-| `wxTimestamp` | string | Forecast origin time |
-| `zone#Et` | number | ET adjustment (%) per zone |
-| `zone#Name` | string | Friendly name for each zone |
-| `zone#Seasonal` | number | Seasonal adjustment (%) per zone |
 
 ## 🌿 Plant Type Reference
 > Defines vegetation categories and corresponding crop coefficients (Kc).  
@@ -949,8 +920,9 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEyMzY5ODA3NjAsLTE5NjM3NDIxMTcsLT
-E1MTE1Mjg3OTQsMTEwNjAyNzE0NywtMjAzODE1OTY0MSwtOTk4
-MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0ODQ3ODIsLTk3MzUxNj
-E0MCwtMjg4OTAwNTYwLDEwNDUxMzQwNF19
+eyJoaXN0b3J5IjpbMTkxNjE2ODM1MCwtMTIzNjk4MDc2MCwtMT
+k2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0yMDM4
+MTU5NjQxLC05OTgxNDY1NDMsLTE2MjA5NTE2NzEsMTM2MzQ4ND
+c4MiwtOTczNTE2MTQwLC0yODg5MDA1NjAsMTA0NTEzNDA0XX0=
+
 -->
