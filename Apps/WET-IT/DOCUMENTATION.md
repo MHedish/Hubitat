@@ -1767,10 +1767,6 @@ This restores all functional data while rebuilding clean runtime tables.
 Next: [📗 Appendices & References →](#-appendices-references)
 
 
-
-
-## 🧩 Zone 
-
 Model Parameters
 
 | Field | Derived From | Influences |
@@ -2363,11 +2359,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTI3Njk4ODYzMCwxMTQ1ODA2NDI1LDEwMz
-ExNzY1NTEsMTM2OTYyODA1NiwxNzc2ODQ4MjM4LC01OTU1ODMx
-MTgsLTE5MTU0NDc0ODQsLTE4MTkzNDQ0MjQsLTEyMzY5ODA3Nj
-AsLTE5NjM3NDIxMTcsLTE1MTE1Mjg3OTQsMTEwNjAyNzE0Nywt
-MjAzODE1OTY0MSwtOTk4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNj
-M0ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAwNTYwLDEwNDUxMzQw
-NF19
+eyJoaXN0b3J5IjpbLTE3NjY2MDk4NDksMTE0NTgwNjQyNSwxMD
+MxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgz
+MTE4LC0xOTE1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNz
+YwLC0xOTYzNzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcs
+LTIwMzgxNTk2NDEsLTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMz
+YzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkwMDU2MCwxMDQ1MTM0
+MDRdfQ==
 -->
