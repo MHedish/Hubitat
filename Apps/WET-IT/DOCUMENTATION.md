@@ -524,20 +524,137 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 > ⚡ *“Legacy controllers gain adaptive intelligence when sunrise becomes the clock.”*
 
 
-## 🌦 Weather Providers
+
+---
+
+## 🌦 Weather Providers & Alerts
 <a id="-weather-providers"></a>
 
-WET-IT integrates multiple data sources to drive accurate **Evapotranspiration (ET)**, **forecast**, and **weather alert** modeling.  
-Each provider offers a slightly different data footprint; you may choose the one that best suits your location and hardware.
+WET-IT integrates multiple weather data sources to provide accurate, redundant inputs for **Evapotranspiration (ET)**, **forecast modeling**, and **alert logic**.  
+Users can select their preferred provider, or WET-IT can automatically fall back to another when conditions or data gaps are detected.
+
+Each source offers unique benefits depending on your climate, hardware, and accuracy needs.
+
+---
 
 ### ☁️ Supported Providers
 
-| Provider | API Key | Backup Option | Notes |
+| Provider | API Key | Source Type | Notes |
 |:--|:--:|:--:|:--|
-| **OpenWeather 3.0** | ✅ | NOAA | Hourly forecast and current-conditions model. Fast and reliable with global coverage. |
-| **Tomorrow.io** | ✅ | NOAA | High-resolution global model; offers ET₀ and wind metrics. Ideal for advanced accuracy. |
-| **NOAA NWS** | ❌ | Built-in | Local U.S. National Weather Service feed — no key required. Ideal as fallback. |
-| **Tempest PWS** | ✅ | NOAA | Uses your **WeatherFlow Tempest Personal Weather Station** for hyper-local data, including on-site temperature, rainfall, and wind. |
+| **NOAA / NWS** | ❌ | Regional (U.S.) | Baseline forecast and observed data. Reliable, free, and always available. |
+| **OpenWeather 3.0** | ✅ | Cloud | Global coverage with hourly forecast and precipitation models. Fast and consistent. |
+| **Tomorrow.io** | ✅ | Cloud | High-resolution global weather engine with hyperlocal forecast capability. Provides ET₀ and wind metrics natively. |
+| **🌪 Tempest PWS** | ✅ | Local Hardware | Hyper-local live data from your personal Tempest station. Feeds live rain, temperature, wind, UV, and pressure directly from your yard. |
+
+---
+
+### 🌀 Hybrid Weather Logic
+
+When multiple providers are configured, WET-IT dynamically merges data to create a **hybrid local model**:
+
+1. **Tempest PWS (Primary):**  
+   Always prioritized for live rain, wind, temperature, and UV.  
+   Data is considered *authoritative* for local microclimate readings.
+2. **Tomorrow.io / OpenWeather (Forecast Layer):**  
+   Supplies short-term (1–48 hr) forecast data and predictive rain/wind alerts.  
+   WET-IT uses this layer for *skip-ahead* logic (rain prediction).
+3. **NOAA NWS (Fallback & Validation):**  
+   Provides regional consistency and baseline validation for forecast data.  
+   Used as a safety fallback if APIs fail or data is incomplete.
+
+If a data source becomes unavailable, WET-IT automatically reverts to the next available provider without interrupting scheduled operations.
+
+---
+
+### 📈 Data Fusion Example
+
+| Data Point | Source Preference | Description |
+|:--|:--|:--|
+| **Temperature / Humidity** | Tempest → Tomorrow.io → OpenWeather → NOAA | Real-time + forecast averages |
+| **Wind Speed** | Tempest (live) → Tomorrow.io | Used for `windAlert` and skip logic |
+| **Rainfall (Observed)** | Tempest (live rain sensor) | Used to fill soil memory and skip watering |
+| **Rain Forecast** | Tomorrow.io → OpenWeather → NOAA | Used to pre-cancel upcoming programs |
+| **Solar Radiation / UV** | Tempest → Tomorrow.io | Feeds ET₀ and evapotranspiration modeling |
+| **ET₀ / ETc** | Derived from all above | Weighted Penman–Monteith model |
+| **Freeze Risk** | Tomorrow.io → NOAA | Used for `freezeAlert` skip logic |
+
+---
+
+### ⚡ Alert Integration
+
+WET-IT continuously publishes weather conditions and alert states to the **WET-IT Data** driver, making them available for dashboards, automations, and notifications.
+
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `freezeAlert` | `bool` | True when forecast or current temp ≤ freeze threshold |
+| `freezeAlertText` | `string` | Human-readable summary of freeze condition |
+| `rainAlert` | `bool` | True when observed or forecast rain exceeds threshold |
+| `rainAlertText` | `string` | Rain warning or forecast details |
+| `windAlert` | `bool` | True when sustained or gust speeds exceed limit |
+| `windAlertText` | `string` | Wind status or advisory description |
+| `rainForecast` | `number` | Predicted rainfall (mm or in) for next 24h |
+| `freezeLowTemp` | `number` | Lowest predicted temperature during upcoming window |
+| `windSpeed` | `number` | Live or forecast average wind speed |
+| `wxChecked` | `string` | Timestamp of last weather poll |
+| `wxSource` | `string` | Current provider used for this dataset |
+| `wxLocation` | `string` | Provider-specified location label |
+| `wxTimestamp` | `string` | Timestamp of latest fetched data |
+
+These attributes are used both for **internal skip logic** and **external automations**, ensuring dashboard consistency regardless of where logic executes.
+
+---
+
+### 🧭 Smart Weather Polling
+
+- **Automatic Refresh:** WET-IT updates all weather data daily (default 02:00 local).  
+- **On-Demand:** Manual refresh can be triggered via the driver’s *Refresh* command.  
+- **Adaptive Polling:** Frequency increases automatically during active irrigation seasons.  
+- **Failover Logic:** If one provider fails or returns invalid data, the system retries with a secondary provider transparently.  
+
+Weather updates trigger re-computation of ET values, soil memory, and adjustment percentages immediately.
+
+---
+
+### 🌤️ Using Tempest Data Locally
+
+When a **Tempest PWS** is linked:
+- Live rain instantly updates the soil bucket, reducing depletion.
+- Real-time wind speed governs skip events (e.g., “too windy to water”).  
+- UV and solar radiation feed directly into the ET₀ model for same-day accuracy.  
+- WET-IT automatically aligns Tempest device data with Hubitat’s event timeline, ensuring synchronized driver updates.
+
+Tempest effectively eliminates the “airport effect” — your irrigation is based on **your backyard weather**, not a station miles away.
+
+---
+
+### 🪣 ET & Weather Synchronization
+
+Every weather update recalculates ET₀, ETc, and seasonal adjustments.  
+This ensures the scheduler’s runtime logic always reflects the latest available conditions.
+
+| Event | Trigger | Action |
+|:--|:--|:--|
+| **Weather Refresh (Auto)** | Daily at 02:00 | Polls all configured providers |
+| **Weather Refresh (Manual)** | Via Driver → `Refresh()` | Forces full recompute |
+| **ET Recalc** | Any weather change | Recomputes ET₀ / ETc values |
+| **Alert Update** | Forecast or observed threshold exceeded | Sends alert and logs state change |
+
+This process guarantees that each day’s irrigation plan is fully informed by **the most recent local conditions**.
+
+---
+
+### 💡 Example Integration (Data Mode Users)
+
+Even if you’re using WET-IT only as a **data provider**, you can leverage these attributes to build automations such as:
+
+```groovy
+IF device.rainAlert == true THEN
+    Cancel all irrigation
+ELSE IF device.freezeAlert == true THEN
+    Delay next watering 24 hours
+ELSE
+    Adjust runtime by (device.rainForecast / 25.4)
+END IF
 
 ---
 
@@ -1205,10 +1322,10 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTQ5ODU5MDM1NSwxMDMxMTc2NTUxLDEzNj
-k2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3
-NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0xOTYzNzQyMT
-E3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNTk2NDEs
-LTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0NzgyLC05Nz
-M1MTYxNDAsLTI4ODkwMDU2MCwxMDQ1MTM0MDRdfQ==
+eyJoaXN0b3J5IjpbLTE0MzI3ODM4OTEsMTAzMTE3NjU1MSwxMz
+Y5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NTU4MzExOCwtMTkxNTQ0
+NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4MDc2MCwtMTk2Mzc0Mj
+ExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0yMDM4MTU5NjQx
+LC05OTgxNDY1NDMsLTE2MjA5NTE2NzEsMTM2MzQ4NDc4MiwtOT
+czNTE2MTQwLC0yODg5MDA1NjAsMTA0NTEzNDA0XX0=
 -->
