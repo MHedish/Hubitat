@@ -1521,6 +1521,20 @@ Example:
   ]
 }
 ```
+
+---
+
+### ⚙️ Integration Examples
+
+**Rule Machine Example**
+
+
+
+
+
+
+
+
 ## 🧩 Zone Model Parameters
 
 | Field | Derived From | Influences |
@@ -2113,7 +2127,7 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMzQzMzgxNDA4LDExNDU4MDY0MjUsMTAzMT
+eyJoaXN0b3J5IjpbMzUzOTEwMDI2LDExNDU4MDY0MjUsMTAzMT
 E3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NTU4MzEx
 OCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4MDc2MC
 wtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0y
