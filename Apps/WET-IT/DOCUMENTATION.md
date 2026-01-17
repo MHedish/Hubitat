@@ -182,9 +182,9 @@ Where:
 - **PR = precipitation rate** of the zone (in/hr or mm/hr)
 ----------
 
-# 📌 How Each Brand Implements These Methods
+## 📌 How Each Brand Implements These Methods
 
-## 🌱 **Rachio’s Method (Full Model – “Flex Daily”)**
+### 🌱 **Rachio’s Method (Full Model – “Flex Daily”)**
 
 Rachio Flex Daily =  
 **ET₀ → ETC → Soil Bucket → MAD → Required Depth → Runtime Calculation**
@@ -202,7 +202,7 @@ Rachio _subtracts forecast precipitation_ from future ET deficits and can delay 
 
 ----------
 
-## 🌤️ **Rain Bird’s Method**
+### 🌤️ **Rain Bird’s Method**
 
 Rain Bird depends heavily on model:
 
@@ -244,12 +244,59 @@ These are simple conditional checks—not formulaic.
     
 </details>
 
-
-
 Further reading:  
 - [Wikipedia: Evapotranspiration](https://en.wikipedia.org/wiki/Evapotranspiration)  
 - [USGS – ET & Water Cycle](https://www.usgs.gov/water-science-school/science/evapotranspiration-and-water-cycle)
 
+### 🌾 From Weather Data to Runtime
+
+Every day, WET-IT fuses live data from your selected provider — **NOAA**, **OpenWeather**, **Tomorrow.io**, or **Tempest PWS** — to compute:
+
+| Parameter | Meaning |
+|:--|:--|
+| **ET₀ / ETc** | Daily evapotranspiration and crop-specific loss |
+| **Rain Forecast** | Upcoming or observed rainfall |
+| **Wind / Freeze Alerts** | Auto-skip logic |
+| **Seasonal Factor** | Long-term scaling of runtime budgets |
+| **Soil Memory** | Persistent daily depletion tracking per zone |
+
+The system then calculates the **adjusted runtime** for each zone:
+
+$$Runtime_{today} = BaseTime × \frac{ET_c}{ET_{baseline}}$$
+
+If ET is 30 % above normal, WET-IT increases watering time 30 %.  
+If soil memory shows the zone still moist from recent rain, it may skip entirely.
+
+---
+
+### 🌄 Why “End by Sunrise” Matters
+
+Most irrigation systems can only **start at** a fixed time.  
+WET-IT adds a unique ability — to **“end by” sunrise** — automatically back-calculating when to start so watering finishes right as daylight begins.  
+This mirrors Rachio’s *Flex Daily* logic and provides:
+
+- 🌞 **Pre-dawn watering** — minimizes evaporation and wind drift  
+- 🌿 **Dry foliage at sunrise** — prevents fungus and disease  
+- 💧 **Optimal plant uptake** — watering aligns with morning photosynthesis  
+- ⚙️ **Automatic runtime compensation** — adjusts dynamically for longer or shorter ET days  
+
+> 🕐 *“WET-IT doesn’t just know when to start watering — it knows when you want it to finish.”*
+
+---
+
+### 📊 Control Philosophy
+
+| Mode | Adjustment Basis | Scheduling Source |
+|:--|:--|:--|
+| **Base Only** | Fixed time per zone | Manual or static |
+| **Seasonal Budget** | Monthly scaling | Internal or external |
+| **ET-Driven** | Live weather & soil model | Internal Scheduler (Sunrise / End-by) |
+
+This structure keeps WET-IT compatible with both **automation frameworks** and **fully autonomous scheduling**.
+
+---
+
+Next: [🌄 Sunrise & Program Scheduling →](#-program-scheduling)
 
 ## 🌄🌅 Sunrise/Sunset Scheduling for Legacy Controllers
 
@@ -1069,9 +1116,10 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOT
-E1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0xOTYz
-NzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNT
-k2NDEsLTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0Nzgy
-LC05NzM1MTYxNDAsLTI4ODkwMDU2MCwxMDQ1MTM0MDRdfQ==
+eyJoaXN0b3J5IjpbLTE3MTg4MzIyMDAsMTc3Njg0ODIzOCwtNT
+k1NTgzMTE4LC0xOTE1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2
+OTgwNzYwLC0xOTYzNzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMj
+cxNDcsLTIwMzgxNTk2NDEsLTk5ODE0NjU0MywtMTYyMDk1MTY3
+MSwxMzYzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkwMDU2MCwxMD
+Q1MTM0MDRdfQ==
 -->
