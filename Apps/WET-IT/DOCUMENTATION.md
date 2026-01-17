@@ -726,6 +726,71 @@ If a Tempest station is configured and the setting **“Use Tempest as Rain Sens
 - When all alerts clear, the scheduler resumes normal operation automatically.
 
 ---
+## 💨 Wind Protection Logic
+<a id="-wind-protection-logic"></a>
+
+WET-IT automatically monitors **forecasted and current wind speeds** and will skip irrigation programs when conditions exceed a user-defined threshold.  
+This prevents wasted water due to spray drift and uneven distribution, improving efficiency and uniformity.
+
+---
+
+### 🧩 Overview
+High winds can cause spray irrigation to **atomize or drift**, reducing the effective coverage area and leading to dry spots or overspray.  
+WET-IT’s wind protection logic mitigates this by continuously analyzing forecast wind speeds from your active weather provider.
+
+When the predicted or current wind speed meets or exceeds the configured threshold:
+- A **Wind Alert** (`windAlert = true`) is activated.
+- All scheduled irrigation programs are skipped until conditions stabilize.
+- The app records the event and includes it in the **Active Weather Alerts** summary.
+
+---
+
+### ⚙️ Configuration
+In the **🌦 Weather Configuration (Advanced)** section:
+- Select a **Wind Skip Threshold** (default: 20 mph / 12 kph).
+- Enable or disable **“💨 Skip programs during wind alerts.”**
+- Choose your preferred **wind units** (mph or kph), matching the app’s temperature unit setting.
+
+These thresholds are respected across all scheduled and manual runs.
+
+---
+
+### 🧠 Behavior & Recovery
+- Wind alerts are evaluated during every weather update and again before each scheduled program execution.
+- The alert automatically clears when forecast wind speeds drop below the user-defined threshold.
+- If wind remains above threshold for several consecutive updates, the app continues to skip irrigation until conditions normalize.
+- The system logs the most recent forecast speed and includes this data in the summary text (`Wind skip — 23 mph forecast`).
+
+---
+
+### 🧾 Published Attributes
+When wind protection is active, the WET-IT Data driver publishes:
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `windAlert` | Boolean | True when wind speeds exceed threshold |
+| `windSpeed` | Number | Forecast or observed maximum wind speed |
+| `windAlertText` | String | Human-readable alert summary (“Wind skip — 25 mph forecast”) |
+
+These attributes can be leveraged in dashboards, automations, and Rule Machine logic to coordinate other devices or notifications.
+
+---
+
+### 🧪 Diagnostics
+To verify operation:
+1. Run **🔄 Run Weather/ET Updates Now** to refresh wind data.
+2. Observe the **💨 Wind** section under **🚨 Active Weather Alerts**.
+3. Confirm that the `windAlert` and `windSpeed` attributes in the **WET-IT Data** driver match current conditions.
+4. Adjust threshold and units if you wish to fine-tune skip sensitivity.
+
+---
+
+### 📖 Related Sections
+- [Freeze Protection Logic](#-freeze-protection-logic)
+- [Rain Protection Logic](#-rain-protection-logic)
+- [Weather Providers](#-weather-providers)
+- [Developer & Diagnostic Tools](#-developer--diagnostic-tools)
+
+
 
 ### 🧾 Published Attributes
 When rain protection is active, the WET-IT Data driver publishes:
@@ -801,8 +866,8 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTI2Mjk4Njk4LC0xOTYzNzQyMTE3LC0xNT
-ExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNTk2NDEsLTk5ODE0
-NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxND
-AsLTI4ODkwMDU2MCwxMDQ1MTM0MDRdfQ==
+eyJoaXN0b3J5IjpbMTc1MjUzMDY2MCwtMTk2Mzc0MjExNywtMT
+UxMTUyODc5NCwxMTA2MDI3MTQ3LC0yMDM4MTU5NjQxLC05OTgx
+NDY1NDMsLTE2MjA5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MT
+QwLC0yODg5MDA1NjAsMTA0NTEzNDA0XX0=
 -->
