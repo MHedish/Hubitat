@@ -811,6 +811,64 @@ Inactive zones are automatically cleared to keep event logs concise.
   ]
 }
 ```
+This JSON mirrors the internal data model and can be parsed directly by Rule Machine, webCoRE, or external integrations.
+
+----------
+
+
+Command
+
+Parameters
+
+Description
+
+`initialize()`
+
+none
+
+Initializes the driver and logs current version
+
+`refresh()`
+
+none
+
+Requests an immediate weather update from the parent app
+
+`markZoneWatered(zone, percent)`
+
+number, number (optional)
+
+Clears ET data for a specific zone; optional % to partially refill soil memory
+
+`markAllZonesWatered()`
+
+none
+
+Resets all zones’ ET data
+
+`disableDebugLoggingNow()`
+
+none
+
+Turns off debug logging immediately
+
+----------
+
+### 🧠 Usage Tips
+
+-   Use **`datasetJson`** for advanced automations — it contains every numeric field the scheduler uses.
+    
+-   Use **attribute triggers** (e.g., `rainAlert == true`) for Rule Machine or Node-RED conditionals.
+    
+-   Keep logging enabled briefly when building automations — it helps verify event timing and skip logic.
+    
+-   All attributes update automatically when the app runs its nightly weather refresh.
+    
+
+----------
+
+Next: 🧩 App Configuration Reference →
+
 ## 🏢 NOAA Office vs 📡 Radar Station
 
 A  **NOAA office**  is a physical facility where personnel, such as forecasters, work to issue forecasts, warnings, and other hazard information. A  **radar station**  is a specific, uncrewed technical installation containing a radar system  (like the WSR-88D, also known as NEXRAD) that automatically scans the atmosphere and collects raw weather data.
@@ -1431,11 +1489,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEzOTUzNTkzNDMsMTE0NTgwNjQyNSwxMD
-MxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgz
-MTE4LC0xOTE1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNz
-YwLC0xOTYzNzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcs
-LTIwMzgxNTk2NDEsLTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMz
-YzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkwMDU2MCwxMDQ1MTM0
-MDRdfQ==
+eyJoaXN0b3J5IjpbOTY3NTk1NDkyLDExNDU4MDY0MjUsMTAzMT
+E3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NTU4MzEx
+OCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4MDc2MC
+wtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0y
+MDM4MTU5NjQxLC05OTgxNDY1NDMsLTE2MjA5NTE2NzEsMTM2Mz
+Q4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1NjAsMTA0NTEzNDA0
+XX0=
 -->
