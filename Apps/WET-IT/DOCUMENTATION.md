@@ -647,8 +647,8 @@ This process guarantees that each day’s irrigation plan is fully informed by *
 
 Even if you’re using WET-IT only as a **data provider**, you can leverage these attributes to build automations such as:
 
-```groovy
-IF device.rainAlert == true THEN
+
+>IF device.rainAlert == true THEN
     Cancel all irrigation
 ELSE IF device.freezeAlert == true THEN
     Delay next watering 24 hours
@@ -1322,10 +1322,10 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE0MzI3ODM4OTEsMTAzMTE3NjU1MSwxMz
-Y5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NTU4MzExOCwtMTkxNTQ0
-NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4MDc2MCwtMTk2Mzc0Mj
-ExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0yMDM4MTU5NjQx
-LC05OTgxNDY1NDMsLTE2MjA5NTE2NzEsMTM2MzQ4NDc4MiwtOT
-czNTE2MTQwLC0yODg5MDA1NjAsMTA0NTEzNDA0XX0=
+eyJoaXN0b3J5IjpbMTE0NTgwNjQyNSwxMDMxMTc2NTUxLDEzNj
+k2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3
+NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0xOTYzNzQyMT
+E3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNTk2NDEs
+LTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0NzgyLC05Nz
+M1MTYxNDAsLTI4ODkwMDU2MCwxMDQ1MTM0MDRdfQ==
 -->
