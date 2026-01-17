@@ -1527,6 +1527,28 @@ Example:
 ### ⚙️ Integration Examples
 
 **Rule Machine Example**
+>Trigger: Device Attribute -> rainAlertText = true  
+Action: Cancel Program "Lawn Morning"
+
+**Node-RED Example**
+>[WET-IT Data Device] → MQTT Out → Topic: irrigation/status → Payload: datasetJson
+>
+**Maker API Example**
+>GET http://[HUB_IP]/apps/api/[appID]/devices/[deviceID]?access_token=[TOKEN]
+>
+
+---
+
+### 💡 Tips
+
+- Always use **`datasetJson`** for automation logic; it ensures you’re using the same data WET-IT’s scheduler uses internally.  
+- Combine `rainAlert` and `freezeAlert` in Rule Machine to fully automate program skips.  
+- The JSON dataset is regenerated automatically after each weather refresh, manual watering event, or program completion.  
+- Use Hubitat’s built-in variable connectors to map ET and rainfall attributes directly into dashboards.  
+
+---
+
+Next: [🧑‍💻 Developer & Diagnostic Tools →](#-developer-diagnostic-tools)
 
 
 
@@ -1534,8 +1556,9 @@ Example:
 
 
 
+## 🧩 Zone 
 
-## 🧩 Zone Model Parameters
+Model Parameters
 
 | Field | Derived From | Influences |
 |:--|:--|:--|
@@ -2127,7 +2150,7 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMzUzOTEwMDI2LDExNDU4MDY0MjUsMTAzMT
+eyJoaXN0b3J5IjpbMTMyMjA1NTQ3LDExNDU4MDY0MjUsMTAzMT
 E3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NTU4MzEx
 OCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4MDc2MC
 wtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0y
