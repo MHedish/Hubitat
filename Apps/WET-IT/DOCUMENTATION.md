@@ -8,7 +8,7 @@
 
 WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.
 
-### 🆕Now with built-in Program Scheduling
+### 🆕 Now with built-in Program Scheduling
 
 It brings Rachio/Hydrawise-style intelligence entirely local — no cloud, no lag, no subscription, just physics-driven irrigation.
 
@@ -1022,9 +1022,9 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE4MTkzNDQ0MjQsLTEyMzY5ODA3NjAsLT
-E5NjM3NDIxMTcsLTE1MTE1Mjg3OTQsMTEwNjAyNzE0NywtMjAz
-ODE1OTY0MSwtOTk4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0OD
-Q3ODIsLTk3MzUxNjE0MCwtMjg4OTAwNTYwLDEwNDUxMzQwNF19
-
+eyJoaXN0b3J5IjpbLTE5MTU0NDc0ODQsLTE4MTkzNDQ0MjQsLT
+EyMzY5ODA3NjAsLTE5NjM3NDIxMTcsLTE1MTE1Mjg3OTQsMTEw
+NjAyNzE0NywtMjAzODE1OTY0MSwtOTk4MTQ2NTQzLC0xNjIwOT
+UxNjcxLDEzNjM0ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAwNTYw
+LDEwNDUxMzQwNF19
 -->
