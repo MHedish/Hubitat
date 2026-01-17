@@ -283,7 +283,6 @@ This mirrors Rachio’s *Flex Daily* logic and provides:
 > 🕐 *“WET-IT doesn’t just know when to start watering — it knows when you want it to finish.”*
 
 ---
----
 
 ## 📅️ Program Scheduling
 <a id="-program-scheduling"></a>
@@ -1228,10 +1227,10 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTAzMTE3NjU1MSwxMzY5NjI4MDU2LDE3Nz
-Y4NDgyMzgsLTU5NTU4MzExOCwtMTkxNTQ0NzQ4NCwtMTgxOTM0
-NDQyNCwtMTIzNjk4MDc2MCwtMTk2Mzc0MjExNywtMTUxMTUyOD
-c5NCwxMTA2MDI3MTQ3LC0yMDM4MTU5NjQxLC05OTgxNDY1NDMs
-LTE2MjA5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MTQwLC0yOD
-g5MDA1NjAsMTA0NTEzNDA0XX0=
+eyJoaXN0b3J5IjpbNzI3Nzc3NjEwLDEwMzExNzY1NTEsMTM2OT
+YyODA1NiwxNzc2ODQ4MjM4LC01OTU1ODMxMTgsLTE5MTU0NDc0
+ODQsLTE4MTkzNDQ0MjQsLTEyMzY5ODA3NjAsLTE5NjM3NDIxMT
+csLTE1MTE1Mjg3OTQsMTEwNjAyNzE0NywtMjAzODE1OTY0MSwt
+OTk4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0ODQ3ODIsLTk3Mz
+UxNjE0MCwtMjg4OTAwNTYwLDEwNDUxMzQwNF19
 -->
