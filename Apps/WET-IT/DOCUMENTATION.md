@@ -1652,27 +1652,119 @@ You can parse this JSON to feed dashboards, RESTful APIs, or other control syste
 -   Logs labeled **“ET calc”**, **“Runtime Adjust”**, or **“Weather Refresh”** show precise model steps.
 -   For rapid iteration, you can trigger multiple recalculations using `recalculateEt()` without waiting for polling intervals.
 -   No reboot is needed after changing weather providers — just run `refresh()`.
-  
 
 ----------
 
 ### 💡 Pro Tips
 
 -   Use **Node-RED or InfluxDB** to chart ET, rain, and runtime trends over time.
-    
 -   Combine WET-IT with **Hubitat dashboards** for live irrigation feedback.
-    
 -   Run WET-IT in **Data Provider mode** on one hub and consume its dataset via LAN or MQTT on another.
-    
 -   Backup your configuration using the built-in Import/Export JSON option before major edits.
-    
 -   Keep an eye on **Tempest firmware updates** — improved wind calibration enhances skip accuracy.
     
-
-----------
+---------
 
 Next: 📘 System Maintenance & Recovery →
 
+## 📘 System Maintenance & Recovery
+<a id="-system-maintenance-recovery"></a>
+
+Routine maintenance ensures WET-IT continues operating reliably through seasons, firmware updates, and configuration changes.  
+This section outlines safe procedures for backing up, restoring, and recovering your irrigation data.
+
+---
+
+### 💾 Backup & Restore
+
+| Action | Description |
+|:--|:--|
+| **Export Configuration** | Creates a JSON file containing all app and driver settings. Useful for migration, backup, or sharing. |
+| **Import Configuration** | Restores a previously saved configuration JSON into a clean WET-IT instance. |
+| **Export Dataset (datasetJson)** | Copies live ET, zone, and weather data for offline analysis or external automation. |
+| **Manual Log Capture** | Recommended before firmware upgrades to preserve diagnostic history. |
+
+> 🧠 *Tip: Keep at least one backup per season. ET coefficients and soil models evolve with your setup.*
+
+---
+
+### 🧹 Data Cleanup Tools
+
+| Tool | Description |
+|:--|:--|
+| **Clear Soil Memory** | Wipes all stored soil depletion values. Use when recalibrating zones or changing soil type. |
+| **Clear ET History** | Removes stored ET₀ and ETc records while preserving configuration. |
+| **Reset Seasonal Factors** | Resets seasonal adjustment curves to defaults. |
+| **Purge Log Data** | Clears internal event history and cached runtime reports. |
+| **Factory Reset (App)** | Completely wipes all app and driver state data. Use only if reconfiguring from scratch. |
+
+All cleanup operations can be performed safely — they never modify weather provider credentials or core system files.
+
+---
+
+### 🛠 Version Upgrade Workflow
+
+1. **Export Configuration** from your current version.  
+2. Install or update the **new app code** and **driver code** in Hubitat.  
+3. Re-open the WET-IT app to allow automatic migration of preferences.  
+4. Verify all zones, programs, and schedules have retained their settings.  
+5. Run **Refresh** to reinitialize weather and ET values.  
+6. Confirm correct operation in logs (`ProgramStarted`, `ET calc`, etc.).  
+
+> ⚙️ WET-IT automatically preserves soil memory, schedule states, and provider selections between minor upgrades.
+
+---
+
+### 🧯 Recovery Procedure
+
+If WET-IT becomes unresponsive or data appears inconsistent:
+
+1. Run **Clear Soil Memory** and **Recalculate ET**.  
+2. Verify **wxSource** and **wxChecked** attributes are updating.  
+3. If the driver is missing attributes, delete and re-create the **WET-IT Data** device.  
+4. Re-link driver to the parent app (automatic on next poll).  
+5. Check Hubitat logs for warnings such as `Parent/Child Sync` or `Weather Update Error`.  
+6. If problems persist, perform an **Export Configuration**, uninstall the app, reinstall, and **Import Configuration**.
+
+This restores all functional data while rebuilding clean runtime tables.
+
+---
+
+### 🔄 Scheduled Maintenance Tasks
+
+| Task | Frequency | Purpose |
+|:--|:--:|:--|
+| **Weather Refresh** | Daily (default 02:00) | Update forecast and ET₀. |
+| **ET Recalculation** | Daily + on-demand | Maintain accuracy. |
+| **Log Review** | Monthly | Identify unusual runtime or skip frequency. |
+| **Backup Config** | Quarterly | Protect against data loss. |
+| **Firmware / Code Update** | As released | Stay current with fixes and new providers. |
+
+---
+
+### ⚡ Common Recovery Scenarios
+
+| Symptom | Probable Cause | Recommended Action |
+|:--|:--|:--|
+| Weather data not updating | Provider API failure | Check `wxSource`, run `refresh()`, verify API key. |
+| ET values frozen | Missed daily schedule | Run `recalculateEt()` manually. |
+| Programs not starting | Soil memory or skip logic preventing run | Check `soilDeficit` and skip thresholds. |
+| Attributes missing in driver | Sync issue | Delete and re-add driver; app will repopulate attributes. |
+| Incorrect sunrise time | Hubitat location or timezone issue | Re-sync hub location and save again. |
+
+---
+
+### 💡 Best Practices
+
+- Perform a **Refresh** after any manual time or timezone change.  
+- Back up configurations before **Hubitat firmware updates**.  
+- Keep only one WET-IT app instance per irrigation controller to prevent conflicts.  
+- Document any changes to **ET parameters** or **nozzle rates** for long-term accuracy.  
+- Avoid frequent manual “Clear All” resets — the adaptive ET engine performs best with historical data continuity.
+
+---
+
+Next: [📗 Appendices & References →](#-appendices-references)
 
 
 
@@ -2271,7 +2363,7 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTU1MDQzNjY2MiwxMTQ1ODA2NDI1LDEwMz
+eyJoaXN0b3J5IjpbLTI3Njk4ODYzMCwxMTQ1ODA2NDI1LDEwMz
 ExNzY1NTEsMTM2OTYyODA1NiwxNzc2ODQ4MjM4LC01OTU1ODMx
 MTgsLTE5MTU0NDc0ODQsLTE4MTkzNDQ0MjQsLTEyMzY5ODA3Nj
 AsLTE5NjM3NDIxMTcsLTE1MTE1Mjg3OTQsMTEwNjAyNzE0Nywt
