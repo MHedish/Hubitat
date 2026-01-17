@@ -1060,6 +1060,200 @@ When balance drops below the MAD threshold, WET-IT automatically schedules water
 
 Next: [🪣 Soil Memory & ET Reset →](#-soil-memory-et-reset)
 
+## 🪣 Soil Memory & ET Reset
+<a id="-soil-memory-et-reset"></a>
+
+The **Soil Memory System** is one of WET-IT’s most powerful features, providing a realistic simulation of how water behaves in your soil between irrigation events.  
+It allows zones to “remember” previous rainfall, irrigation, and evapotranspiration (ET) losses — so watering decisions are based on actual conditions rather than a calendar.
+
+---
+
+### 🌱 Concept Overview
+
+Each zone maintains a running **soil water balance** updated daily using ET, rainfall, and irrigation data:
+
+>SoilBalance_today = SoilBalance_yesterday - ET_loss + Rain_gain + Irrigation_gain
+
+
+The balance is expressed as a percentage of available soil water (0–100 %), and when it falls below the **Management Allowed Depletion (MAD)** threshold, WET-IT triggers irrigation to replenish it.
+
+---
+
+### ⚙️ Key Soil Memory Parameters
+
+| Parameter | Description |
+|:--|:--|
+| **Enabled** | Toggles soil modeling per zone or globally. |
+| **MAD (%)** | The percentage of soil water that may be lost before watering begins. Typical range: 40–60 %. |
+| **Soil Capacity (in or mm)** | The total amount of water the soil can store per unit depth, derived from soil type. |
+| **Irrigation Efficiency (%)** | Fraction of applied water effectively stored in the root zone (default = 85 %). |
+| **Reset on Manual Watering** | When you manually mark a zone as watered, soil memory resets to 100 %. |
+| **Rain Integration** | Converts observed or Tempest-reported rainfall into equivalent soil replenishment. |
+
+---
+
+### 💧 How It Works
+
+1. **Daily ET Update** — The app subtracts ETc (crop-adjusted evapotranspiration) from each zone’s soil balance.  
+2. **Rainfall Credit** — Observed rainfall is added immediately after each weather update.  
+3. **Irrigation Credit** — When a zone runs, its applied water replenishes soil moisture based on efficiency.  
+4. **Threshold Trigger** — If soil moisture ≤ MAD, that zone is eligible for irrigation on the next program run.  
+5. **Skip Logic** — Zones above MAD automatically skip until depletion resumes.
+
+This algorithm ensures watering only occurs when the soil *actually needs it*, not simply because a schedule says so.
+
+---
+
+### 🧠 Reset & Maintenance Tools
+
+| Tool / Command | Description |
+|:--|:--|
+| **`markZoneWatered(zone, percent)`** | Resets soil memory for a single zone. Optionally specify a partial refill % (e.g., 50). |
+| **`markAllZonesWatered()`** | Resets all zones to 100 % soil moisture. |
+| **`recalculateEt()`** | Forces recalculation of ET values from the latest weather data. |
+| **`clearSoilMemory()`** | Clears all stored soil data (advanced use only). |
+
+Use these sparingly; the automatic logic will normally manage everything without manual resets.
+
+---
+
+### 🌦 Integration with Tempest & Rainfall
+
+When using a **Tempest PWS**, live rain data instantly updates soil memory without waiting for the daily refresh.  
+Rainfall measured by Tempest populates `rainGain` values in the driver and replenishes the soil balance for all zones.  
+Forecasted rain from cloud providers contributes to preemptive skip decisions but does not modify stored soil water until observed.
+
+---
+
+### 📈 Example Zone Water Balance
+
+| Date | ET Loss (in) | Rain Gain (in) | Irrigation Gain (in) | Soil Balance (%) | Action |
+|:--|:--|:--|:--|:--|:--|
+| Jan 10 | 0.18 | 0.00 | 0.00 | 85 | — |
+| Jan 11 | 0.21 | 0.00 | 0.00 | 63 | — |
+| Jan 12 | 0.19 | 0.25 | 0.00 | 92 | Rain Refill |
+| Jan 13 | 0.22 | 0.00 | 0.00 | 70 | — |
+| Jan 14 | 0.20 | 0.00 | 0.00 | 50 | Irrigate Next |
+
+---
+
+### 💡 Tips
+
+- **Do not disable Soil Memory** unless you are running purely fixed-time irrigation.  
+- Adjust **MAD** based on soil texture:  
+  - Sandy → lower MAD (30–40 %)  
+  - Loam → medium (50 %)  
+  - Clay → higher (60–70 %)  
+- If rainfall sensors overlap with Tempest, disable the redundant input to prevent double-counting.  
+- Use **Mark Zone Watered** after manual hose watering to keep soil data accurate.
+
+---
+
+Next: [🗓️ Program Scheduling Reference →](#-program-scheduling-reference)
+## 🗓️ Program Scheduling Reference
+<a id="-program-scheduling-reference"></a>
+
+Each **Program** defines a complete irrigation routine — including start time, days of operation, included zones, and skip logic.  
+Up to **16 independent programs** can be defined per WET-IT instance.
+
+Programs operate sequentially and can run automatically via the internal scheduler or be triggered externally in **Data Provider mode**.
+
+---
+
+### ⚙️ Program Parameters
+
+| Setting | Description |
+|:--|:--|
+| **Program Name** | Friendly identifier for each irrigation program (e.g., “Lawn AM”, “Garden Beds”). |
+| **Enabled** | Master toggle to include or exclude a program from scheduling. |
+| **Start Mode** | Select *Fixed Time*, *Start at Sunrise*, or *End by Sunrise*. |
+| **Start Time** | Manual time value used if *Fixed Time* is selected. |
+| **Days Mode** | Choose *Interval* (every N days) or *Weekly* (specific days). |
+| **Zones Included** | One or more zones controlled by this program. |
+| **Runtime Method** | *Base Only*, *Seasonal Budget*, or *ET-Based*. |
+| **Weather Skip Logic** | Enables freeze, wind, and rain skips. |
+| **Minimum Runtime (Seconds)** | Skips zones if adjusted time falls below this threshold. |
+| **Buffer Between Programs (Minutes)** | Delay before next program starts. Prevents valve overlap. |
+
+---
+
+### 🌄 Sunrise and End-by-Sunrise Logic
+
+WET-IT’s scheduler can begin watering **at sunrise** or calculate a start time so the program **ends by sunrise**.  
+This is particularly effective in climates with high daytime evaporation or water restrictions.
+
+| Mode | Behavior | Example |
+|:--|:--|:--|
+| **Start at Sunrise** | Begins watering when the sun rises. | Sunrise 6:40 AM → Start 6:40 AM |
+| **End by Sunrise** | Calculates start time so watering ends at sunrise. | Sunrise 6:40 AM, total runtime 32 min → Start 6:08 AM |
+
+Advantages:
+- 🌞 Minimizes evaporation losses  
+- 🌿 Keeps foliage dry by daylight, reducing fungus  
+- 💧 Aligns with plant uptake rhythm  
+- ⚙️ Dynamically adjusts as sunrise time changes through the season  
+
+> 🕐 *“WET-IT doesn’t just know when to start watering — it knows when you want it to finish.”*
+
+---
+
+### 🌤 Weather-Based Skip Controls
+
+| Condition | Parameter | Description |
+|:--|:--|:--|
+| **Freeze Skip** | Temperature ≤ threshold | Skips entire program if freeze risk detected. |
+| **Rain Skip** | Forecast or observed rain ≥ limit | Cancels or shortens affected runs. |
+| **Wind Skip** | Forecast wind speed ≥ threshold | Delays or cancels watering under high wind. |
+| **Soil Skip** | Soil memory above MAD threshold | Prevents unnecessary watering by zone. |
+
+Skip events appear in the driver and event logs as `ProgramSkipped` notifications, and attributes are updated for dashboard visibility.
+
+---
+
+### ⏱ Runtime Adjustments
+
+| Mode | Formula | Description |
+|:--|:--|:--|
+| **Base Only** | `Runtime = BaseTime` | Static run duration per zone. |
+| **Seasonal Budget** | `Runtime = BaseTime × SeasonalFactor` | Monthly or user-defined runtime scaling. |
+| **ET-Based** | `Runtime = BaseTime × (ETc ÷ ETbaseline)` | Real-time scaling from live ET data. |
+
+Each program’s total runtime is recalculated after every weather update or ET change.
+
+---
+
+### 📊 Logging & Diagnostics
+
+Every execution is logged in Hubitat’s event system and includes:
+
+| Log Entry | Description |
+|:--|:--|
+| `ProgramStarted` | Program and start time logged. |
+| `ZoneStarted` | Each zone start event with runtime. |
+| `ZoneSkipped` | Reason for skip (rain, freeze, soil). |
+| `ProgramCompleted` | Summary with total duration and completion time. |
+| `ProgramSkipped` | Logged when all zones are skipped. |
+
+The summary of each program execution is also published to the **WET-IT Data Driver** under the `summaryText` attribute.
+
+---
+
+### 💡 Tips
+
+- Use *End by Sunrise* for lawn and turf programs — it’s the most water-efficient mode.  
+- Keep freeze and rain skip thresholds aligned with local regulations.  
+- For long-duration programs, add a **Buffer** of 1–2 minutes between programs.  
+- Combine *ET-Based* programs with **Soil Memory** for a fully autonomous system.  
+- For testing, temporarily disable skip logic to validate schedule timing.
+
+---
+
+Next: [🌦 Weather & Alert Settings →](#-weather-alert-settings)
+
+
+
+
+
 
 
 
@@ -1655,11 +1849,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNDE5NDU2MzE3LDExNDU4MDY0MjUsMTAzMT
-E3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NTU4MzEx
-OCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4MDc2MC
-wtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0y
-MDM4MTU5NjQxLC05OTgxNDY1NDMsLTE2MjA5NTE2NzEsMTM2Mz
-Q4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1NjAsMTA0NTEzNDA0
-XX0=
+eyJoaXN0b3J5IjpbLTE0MTEyNDA1MzgsMTE0NTgwNjQyNSwxMD
+MxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgz
+MTE4LC0xOTE1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNz
+YwLC0xOTYzNzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcs
+LTIwMzgxNTk2NDEsLTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMz
+YzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkwMDU2MCwxMDQ1MTM0
+MDRdfQ==
 -->
