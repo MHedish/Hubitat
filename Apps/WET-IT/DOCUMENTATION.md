@@ -619,21 +619,72 @@ ET calculations are **time-based**, not daily resets. WET-IT determines soil dep
 
 ---
 
-## 🧊 Freeze Protection Logic
 
-WET-IT monitors forecast temperature values.  
-If the low temperature ≤ configured **Freeze Threshold**, these attributes update automatically:
+## ❄️ Freeze Protection Logic
+<a id="-freeze-protection-logic"></a>
 
+WET-IT automatically detects **forecast freeze or frost conditions** and can skip scheduled irrigation programs to prevent equipment damage and plant stress.  
+This feature operates independently of the primary weather provider once forecast data is cached.
+
+---
+
+### 🧩 Overview
+The freeze protection system evaluates current and forecasted temperatures using all available weather inputs.  
+If the projected low temperature is **at or below** your configured threshold, WET-IT will:
+
+- Activate the **Freeze Alert** flag (`freezeAlert = true`)  
+- Record the projected low (`freezeLowTemp`)  
+- Display an **🧊 Freeze Warning** banner in the app  
+- Skip program execution for all active schedules until temperatures recover  
+
+The alert state is preserved in `atomicState` and automatically synchronized to the child driver for dashboard visibility.
+
+---
+
+### ⚙️ Configuration
+In the app’s **🌦 Weather Configuration (Advanced)** section:
+- Select your preferred **temperature unit** (`°F` or `°C`).
+- Choose a **freeze threshold** from the drop-down list (default: 35°F / 1.5°C).
+- Enable or disable **“🧊 Skip programs during freeze alerts.”**
+
+When enabled, all scheduled or manually triggered irrigation events respect this condition.  
+Freeze protection is **always evaluated before valve activation** to ensure safety.
+
+---
+
+### 🧠 Behavior & Recovery
+- The freeze alert automatically clears when forecast temperatures rise above the configured threshold for 24 hours.
+- Manual runs are blocked while an active freeze alert exists unless explicitly overridden.
+- The app logs skip events and includes temperature details in `summaryText`.
+- Alert persistence ensures continuity after hub reboots or weather source changes.
+
+---
+
+### 🧾 Published Attributes
+When freeze protection is active, the WET-IT Data driver publishes:
 | Attribute | Type | Description |
 |:--|:--|:--|
-| `freezeAlert` | bool | True when freeze risk active |
-| `freezeAlertText` | string | 'true' when freeze risk active |
-| `freezeLowTemp` | number | Configured temperature threshold |
+| `freezeAlert` | Boolean | True when freeze/frost condition detected |
+| `freezeLowTemp` | Number | Projected lowest temperature (°F/°C) |
+| `freezeAlertText` | String | Human-readable alert summary (“Freeze Warning — Low 31°F”) |
 
-Automations can safely:  
-- Skip irrigation when freezeAlert = true  
-- Send notifications or trigger alerts  
-- Resume when safe temperature restored
+These attributes can be referenced in Rule Machine, dashboards, or custom automations to suppress external watering devices.
+
+---
+
+### 🧪 Diagnostics
+To verify operation:
+1. Run **🔄 Run Weather/ET Updates Now** to refresh forecast data.
+2. Observe alert status under **🚨 Active Weather Alerts**.
+3. Confirm `freezeAlert` and `freezeLowTemp` attributes in the **WET-IT Data** driver.
+
+---
+
+### 📖 Related Sections
+- [Weather Providers](#-weather-providers)
+- [Scheduling](#-scheduling)
+- [Developer & Diagnostic Tools](#-developer--diagnostic-tools)
+
 
 
 ## 🌧️ Rain Protection Logic
@@ -699,8 +750,8 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbODQxNzA3NjA2LC0xOTYzNzQyMTE3LC0xNT
-ExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNTk2NDEsLTk5ODE0
-NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxND
-AsLTI4ODkwMDU2MCwxMDQ1MTM0MDRdfQ==
+eyJoaXN0b3J5IjpbMTc0ODM3MDQ3NywtMTk2Mzc0MjExNywtMT
+UxMTUyODc5NCwxMTA2MDI3MTQ3LC0yMDM4MTU5NjQxLC05OTgx
+NDY1NDMsLTE2MjA5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MT
+QwLC0yODg5MDA1NjAsMTA0NTEzNDA0XX0=
 -->
