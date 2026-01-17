@@ -509,12 +509,41 @@ To keep this cycle accurate, you must call one of the following methods **whenev
 
 If these methods aren’t called, WET-IT assumes the zone hasn’t been watered, causing ET accumulation to continue indefinitely — which leads to inflated depletion and longer runtimes later.
 
+
 ## 💦 Valve Control
 <a id="-valve-control"></a>
-WET-IT supports both `capability.valve` and `capability.switch` devices for each irrigation zone.  
-Each zone can be manually tested, automatically controlled during program execution, or skipped if no device is assigned.  
-Valve operations are handled sequentially to manage water pressure and ensure deterministic runtimes.
 
+WET-IT supports both **`capability.valve`** and **`capability.switch`** devices for each irrigation zone.  
+Each zone can have one device assigned for direct activation and runtime tracking.
+
+### ⚙️ Overview
+- Every zone can be linked to a single valve or switch device.
+- Manual and automatic (program-based) activation are supported.
+- Valves are executed **sequentially** to maintain stable water pressure and ensure accurate flow timing.
+- Zones without an assigned valve are **automatically skipped** during scheduled runs.
+
+### 🧪 Manual Control
+Zones can be tested directly from the UI:
+- Tap **“Start Zone Test”** to manually open the assigned valve.
+- The app measures runtime and calculates completion percentage.
+- Tap **“Stop”** to end the test; WET-IT records the elapsed time for accurate ET adjustments.
+
+### 🛠 Runtime Logic
+- Active valves are tracked through `atomicState.manualZone`.
+- The system uses `controlValve()` and `closeZoneHandler()` to open, time, and close valves safely.
+- Includes protection against overlapping zone activations.
+- Manual runs respect **freeze, rain, and wind skips** when enabled.
+
+### 🔍 Attributes & Diagnostics
+When valves are controlled by the scheduler or manually:
+- **`activeZone`** and **`activeZoneName`** update in real time.
+- **`summaryText`** in the data driver includes the current valve and runtime status.
+- Diagnostic page tools display the latest valve state and execution logs.
+
+### 📖 Related Sections
+See also:
+- [Base Runtime Reference](#-base-runtime-reference)
+- [Scheduling](#-scheduling)
 
 
 
@@ -621,8 +650,8 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNjg2MDk2NjAwLC0xNTExNTI4Nzk0LDExMD
-YwMjcxNDcsLTIwMzgxNTk2NDEsLTk5ODE0NjU0MywtMTYyMDk1
-MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkwMDU2MC
-wxMDQ1MTM0MDRdfQ==
+eyJoaXN0b3J5IjpbLTE5NjM3NDIxMTcsLTE1MTE1Mjg3OTQsMT
+EwNjAyNzE0NywtMjAzODE1OTY0MSwtOTk4MTQ2NTQzLC0xNjIw
+OTUxNjcxLDEzNjM0ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAwNT
+YwLDEwNDUxMzQwNF19
 -->
