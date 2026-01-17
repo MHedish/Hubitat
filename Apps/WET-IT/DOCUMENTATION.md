@@ -701,7 +701,116 @@ The app computes and merges these metrics to calculate:
 - [Scheduling](#-scheduling)
 - [Developer & Diagnostic Tools](#-developer--diagnostic-tools)
 
+## 📊 Driver Attribute Reference
+<a id="-driver-attribute-reference"></a>
 
+The **WET-IT Data Driver** exposes a complete set of attributes and commands that mirror the app’s internal logic.  
+These values are published automatically whenever weather data, ET calculations, or scheduler states change.
+
+---
+
+### 🧩 Purpose
+
+The driver provides two key functions:
+
+1. **Dashboard Visibility** — every data point can be displayed directly in Hubitat dashboards.
+2. **Automation Access** — attributes can be used as Rule Machine variables, in Node-RED flows, or read via Maker API.
+
+---
+
+### 🌡️ Core Metadata
+
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `driverInfo` | string | Driver name, version, and build date |
+| `appInfo` | string | App version, weather source, and scheduling status |
+| `datasetJson` | string (JSON) | Full serialized ET and zone dataset for automations |
+| `summaryText` | string | One-line irrigation summary for dashboards |
+| `summaryTimestamp` | string | Time when summary was last updated |
+
+---
+
+### 🌦 Weather Attributes
+
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `wxSource` | string | Current active weather provider |
+| `wxLocation` | string | Provider-specified location label |
+| `wxTimestamp` | string | Timestamp of latest fetched data |
+| `wxChecked` | string | Timestamp of last weather poll |
+| `rainForecast` | number | Predicted rainfall for next 24 hours |
+| `freezeLowTemp` | number | Lowest forecast temperature |
+| `windSpeed` | number | Live or forecast average wind speed |
+| `rainAlert` | bool | True when observed or forecast rain exceeds threshold |
+| `rainAlertText` | string | Human-readable rain alert message |
+| `freezeAlert` | bool | True when forecast temp ≤ freeze threshold |
+| `freezeAlertText` | string | Human-readable freeze alert message |
+| `windAlert` | bool | True when forecast or observed wind ≥ threshold |
+| `windAlertText` | string | Human-readable wind alert message |
+
+---
+
+### 🌾 Active Program & Zone States
+
+| Attribute | Type | Description |
+|:--|:--|:--|
+| `activeProgram` | number | Program currently executing (if any) |
+| `activeProgramName` | string | Friendly name of the active program |
+| `activeZone` | number | Zone currently watering |
+| `activeZoneName` | string | Name of the active zone |
+| `activeAlerts` | string | Combined text of all active weather alerts |
+
+---
+
+### 💧 Zone Attributes (Auto-Declared)
+
+Each WET-IT installation supports up to **48 zones**, with the following attributes automatically generated:
+
+| Attribute Pattern | Example | Type | Description |
+|:--|:--|:--|:--|
+| `zone#Name` | `zone1Name` | string | Zone name label |
+| `zone#Et` | `zone1Et` | number | Daily ETc depletion (mm or in) |
+| `zone#Seasonal` | `zone1Seasonal` | number | Seasonal adjustment factor (%) |
+| `zone#BaseTime` | `zone1BaseTime` | number | User-configured base runtime (min) |
+| `zone#EtAdjustedTime` | `zone1EtAdjustedTime` | number | Current ET/Seasonally adjusted runtime (min) |
+
+Zone attributes update whenever ET, seasonal factors, or irrigation events occur.  
+Inactive zones are automatically cleared to keep event logs concise.
+
+---
+
+### 📘 Example `datasetJson` Structure
+
+```json
+{
+  "version": "1.0.4.0",
+  "timestamp": "2026-01-16T02:00:00Z",
+  "weather": {
+    "source": "Tempest",
+    "rainForecast": 0.12,
+    "windSpeed": 5.2,
+    "freezeLowTemp": 34
+  },
+  "zones": [
+    {
+      "id": 1,
+      "name": "Front Lawn",
+      "baseTime": 15,
+      "etBudgetPct": 93,
+      "etAdjustedTime": 13.9,
+      "soilDeficit": 0.18
+    },
+    {
+      "id": 2,
+      "name": "Garden Beds",
+      "baseTime": 10,
+      "etBudgetPct": 102,
+      "etAdjustedTime": 10.2,
+      "soilDeficit": 0.22
+    }
+  ]
+}
+```
 ## 🏢 NOAA Office vs 📡 Radar Station
 
 A  **NOAA office**  is a physical facility where personnel, such as forecasters, work to issue forecasts, warnings, and other hazard information. A  **radar station**  is a specific, uncrewed technical installation containing a radar system  (like the WSR-88D, also known as NEXRAD) that automatically scans the atmosphere and collects raw weather data.
@@ -1322,10 +1431,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTE0NTgwNjQyNSwxMDMxMTc2NTUxLDEzNj
-k2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3
-NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0xOTYzNzQyMT
-E3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNTk2NDEs
-LTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0NzgyLC05Nz
-M1MTYxNDAsLTI4ODkwMDU2MCwxMDQ1MTM0MDRdfQ==
+eyJoaXN0b3J5IjpbLTEzOTUzNTkzNDMsMTE0NTgwNjQyNSwxMD
+MxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgz
+MTE4LC0xOTE1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNz
+YwLC0xOTYzNzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcs
+LTIwMzgxNTk2NDEsLTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMz
+YzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkwMDU2MCwxMDQ1MTM0
+MDRdfQ==
 -->
