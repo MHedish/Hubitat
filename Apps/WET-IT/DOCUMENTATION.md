@@ -9,14 +9,60 @@
 
 WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.
 
-### 🆕 Now with built-in Program Scheduling
+---
 
-It brings Rachio/Hydrawise-style intelligence entirely local — no cloud, no lag, no subscription, just physics-driven irrigation.
+### 🧠 Overview
 
-You can choose between:
+**WET-IT** delivers **local-first, weather-aware irrigation intelligence** for Hubitat — combining **real-time evapotranspiration (ET)**, **seasonal water budgeting**, and **optional full-program scheduling**.  
+It runs entirely on your hub — **no cloud services, no subscription, no latency** — bringing commercial-grade irrigation logic (Rachio Flex Daily / Hydrawise ET / Rain Bird IQ) directly on-prem.
 
-* 💧 **Weather-Based Adjustment** – daily runtime tuning from live weather  
-* 🌱 **Smart Soil Moisture Tracking** – persistent soil memory that adjusts dynamically over time
+---
+
+### 🚀 What’s New in v1.0.4.0 — Scheduler Edition
+
+The original WET-IT engine was intentionally non-scheduling — designed to export ET and seasonal adjustments for external automations like webCoRE, Rule Machine, or Node-RED.
+
+This release adds an **integrated scheduler** with:
+
+- 🗓 **Up to 16 Programs**, each with:
+  - Fixed-time or Sunrise-based start (“Start at” or “End by Sunrise”)
+  - Individual zone selection and runtime logic  
+  - ET-, seasonal-, or fixed-time adjustment modes
+- 🧊 **Weather-intelligent skip logic** for rain, wind, and freeze events
+- 🧩 **Hybrid Mode** — seamlessly combines on-hub scheduling **and** external automation access through the same data driver
+- 💾 **Persistent soil-moisture memory** (Rachio-style depletion tracking)
+- 📊 **Unified JSON + attribute publishing** to the *WET-IT Data* driver
+- ⚙️ **Self-healing zone / program counts**, ensuring safe edits and consistency
+
+---
+
+### 🌦 New Weather Provider — Tempest PWS Integration
+
+v1.0.4.0 introduces **Tempest Personal Weather Station (PWS)** support, adding **hyper-local forecasting** and **real-time environmental data** to the ET model.
+
+| Provider | API Key Required | Local or Cloud | Distinct Advantages |
+|:--|:--:|:--:|:--|
+| **NOAA NWS** | ❌ | Local / Regional | Reliable baseline with no API key required |
+| **OpenWeather 3.0** | ✅ | Cloud | Global hourly forecasts |
+| **Tomorrow.io** | ✅ | Cloud | High-resolution, next-hour prediction |
+| **🌪 Tempest PWS** | ✅ | Local Hardware | Hyper-local wind, rain, temp & UV direct from your backyard |
+
+When enabled, Tempest data merges automatically with other sources — allowing **ET, freeze, wind, and rain skip logic** to react to conditions measured in your own yard, not the nearest airport.
+
+---
+
+### 💧 Two Operating Modes
+
+WET-IT can function as either a **data service** or a **complete controller**:
+
+| Mode | Description | Typical Use |
+|:--|:--|:--|
+| 🧮 **Data Model Only** | Publishes ET + Seasonal data for external automations. | Integrate with Rule Machine, webCoRE, Node-RED, or custom drivers. |
+| ⏱ **Full Scheduler Mode** | Runs programs autonomously inside Hubitat with ET-adjusted runtimes. | “Set-and-forget” operation similar to Rachio or Rain Bird IQ. |
+
+Both modes share the same data output, so dashboards and automations remain compatible regardless of configuration.
+
+---
 
 ## ☀️ Why Evapotranspiration Matters
 
@@ -1023,9 +1069,9 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTU5NTU4MzExOCwtMTkxNTQ0NzQ4NCwtMT
-gxOTM0NDQyNCwtMTIzNjk4MDc2MCwtMTk2Mzc0MjExNywtMTUx
-MTUyODc5NCwxMTA2MDI3MTQ3LC0yMDM4MTU5NjQxLC05OTgxND
-Y1NDMsLTE2MjA5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MTQw
-LC0yODg5MDA1NjAsMTA0NTEzNDA0XX0=
+eyJoaXN0b3J5IjpbLTYyODI2NjA1NywtNTk1NTgzMTE4LC0xOT
+E1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0xOTYz
+NzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNT
+k2NDEsLTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0Nzgy
+LC05NzM1MTYxNDAsLTI4ODkwMDU2MCwxMDQ1MTM0MDRdfQ==
 -->
