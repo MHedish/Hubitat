@@ -509,6 +509,12 @@ To keep this cycle accurate, you must call one of the following methods **whenev
 
 If these methods aren’t called, WET-IT assumes the zone hasn’t been watered, causing ET accumulation to continue indefinitely — which leads to inflated depletion and longer runtimes later.
 
+##----------
+
+## 💦Valve Control
+
+
+
 ### 🕒 Conceptual Flow
 
 ```
@@ -612,8 +618,8 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE1MTE1Mjg3OTQsMTEwNjAyNzE0NywtMj
-AzODE1OTY0MSwtOTk4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0
-ODQ3ODIsLTk3MzUxNjE0MCwtMjg4OTAwNTYwLDEwNDUxMzQwNF
-19
+eyJoaXN0b3J5IjpbNTU0MTE2MTgyLC0xNTExNTI4Nzk0LDExMD
+YwMjcxNDcsLTIwMzgxNTk2NDEsLTk5ODE0NjU0MywtMTYyMDk1
+MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkwMDU2MC
+wxMDQ1MTM0MDRdfQ==
 -->
