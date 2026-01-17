@@ -284,6 +284,9 @@ This mirrors Rachio’s *Flex Daily* logic and provides:
 
 ---
 
+
+---
+
 ## 📅️ Program Scheduling
 <a id="-program-scheduling"></a>
 
@@ -405,25 +408,40 @@ This architecture keeps WET-IT fully compatible with both **automation framework
 
 ---
 
-## 🌄🌅 Sunrise/Sunset Scheduling for Legacy Controllers
+### 🌅 Why Early Morning is Best
 
-Many legacy irrigation controllers only support **fixed clock-time scheduling**, such as 6:00 AM, which cannot adapt to seasonal daylight changes.  
-WET-IT provides **dynamic water budgets** that, when paired with Hubitat’s built-in **sunrise/sunset events**, allow these systems to act intelligently.
+The best time to water with sprinklers is **early morning, just before or around sunrise (around 5–9 AM)** — to minimize evaporation, allow deep root absorption before heat, and let leaves dry before nightfall, preventing fungus.  
+Avoid midday watering due to high evaporation and nighttime watering, which promotes disease.
 
-### 🤔 Why Sunrise Irrigation Matters
+<details>
+  <summary>Why Early Morning is Best</summary>
 
-Extensive agricultural and horticultural research shows that **pre-dawn or sunrise irrigation** provides the optimal balance of water efficiency and plant health:
+-   **Reduced [Evaporation](https://www.google.com/search?q=Evaporation):**  Cooler air and calmer winds mean less water is lost to the air, ensuring more reaches the roots.  
+-   **Plant Absorption:**  Water is available when plants are ready to absorb it as the sun rises, making it more efficient.  
+-   **Disease Prevention:**  Leaves dry as the sun warms up, preventing fungal issues that thrive on prolonged moisture overnight.  
+-   **Better [Water Pressure](https://www.google.com/search?q=Water+Pressure):**  Municipal pressure is often higher in the early morning.
 
-- 💧 **Lowest evaporative loss** – cooler air, higher humidity, and lower wind speeds mean more water reaches the soil.  
-- 🌿 **Better plant physiology** – plants absorb moisture as sunlight resumes photosynthesis.  
-- 🚫 **Reduced fungal risk** – watering too late in the evening leaves foliage wet overnight.  
-- 🌤 **Stable water pressure** – municipal demand is lowest before dawn.
+**Times to Avoid:**
 
-Numerous sources support this recommendation, including the **University of California Cooperative Extension**, **Texas A&M AgriLife**, and **EPA WaterSense** guidelines.
+-   **Midday (10 AM – 4 PM):**  High heat and sun cause rapid evaporation, wasting water.  
+-   **Night (After 6 PM):**  Leaves stay wet for too long, creating ideal conditions for mildew and rust.  
+
+**[Evening Watering](https://www.google.com/search?q=Evening+Watering)** (4 – 6 PM) is acceptable if morning isn’t possible but carries a slight fungal risk as temperatures drop overnight.
+
+</details>
 
 > 🌞 *“Sunrise irrigation aligns watering with nature’s rhythm — plants drink when the day begins, not when the day ends.”*
 
 ---
+
+### 🔧 Best Practices
+
+- Use **“End by Sunrise”** whenever possible — it delivers maximum efficiency.  
+- Enable **freeze/rain/wind** skip logic based on local conditions.  
+- If you own a **Tempest PWS**, enable its integration for hyper-local data.  
+- Maintain a **minimum runtime ≥ 60 s** for pressure stability.  
+- Leave a **1–2 minute buffer** between programs to avoid valve overlap.  
+- Keep the **WET-IT Data** driver installed even if scheduling is disabled — it remains the data backbone for dashboards and custom automations.
 
 Next: [🌦 Weather Providers & Alerts →](#-weather-providers)
 
@@ -504,46 +522,6 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 5. Next sunrise → Model recalculates and repeats
 
 > ⚡ *“Legacy controllers gain adaptive intelligence when sunrise becomes the clock.”*
-
-## 📅️ Program Scheduling
-
-- Internal scheduler automates irrigation events (up to 16 schedules)
-- Each schedule can be set to begin at a specific time of day *or* **begin** watering at sunrise *or* **end by** sunrise (based on the total adjusted runtime for all zones with the scheduled event.
-
-
-- The best time to water with sprinklers is  **early morning, just before or around sunrise (around 5-9 AM)**, to minimize evaporation, allow deep root absorption before heat, and let leaves dry before nightfall, preventing fungus; avoid midday due to high evaporation and nighttime watering, which promotes disease.
-<details>
-    <Summary>
-Why Early Morning is Best
-  </summary>
-
--   **Reduced  [Evaporation](https://www.google.com/search?q=Evaporation&rlz=1C1CHBF_enUS1042US1042&oq=sprinkler+water+at+sunrise+or+time+of+day&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRigATIHCAIQIRigATIHCAMQIRigATIHCAQQIRigATIHCAUQIRifBTIHCAYQIRifBTIHCAcQIRifBTIHCAgQIRiPAtIBCTEyODM0ajBqNKgCA7ACAfEFT0CiScNyTJo&sourceid=chrome&ie=UTF-8&ved=2ahUKEwjnn6DA_5CSAxXCMlkFHaJHEJ8QgK4QegQIAxAB):**  Cooler temperatures and calmer winds mean less water is lost to the air, ensuring more reaches the roots.
--   **Plant Absorption:**  Water is available when plants are ready to absorb it as the sun rises, making it more efficient.
--   **Disease Prevention:**  Leaves dry as the sun warms up, preventing fungal issues that thrive on prolonged moisture overnight.
--   **Better  [Water](https://www.google.com/search?q=Water&rlz=1C1CHBF_enUS1042US1042&oq=sprinkler+water+at+sunrise+or+time+of+day&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRigATIHCAIQIRigATIHCAMQIRigATIHCAQQIRigATIHCAUQIRifBTIHCAYQIRifBTIHCAcQIRifBTIHCAgQIRiPAtIBCTEyODM0ajBqNKgCA7ACAfEFT0CiScNyTJo&sourceid=chrome&ie=UTF-8&ved=2ahUKEwjnn6DA_5CSAxXCMlkFHaJHEJ8QgK4QegQIAxAF)  [Pressure](https://www.google.com/search?q=Pressure&rlz=1C1CHBF_enUS1042US1042&oq=sprinkler+water+at+sunrise+or+time+of+day&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRigATIHCAIQIRigATIHCAMQIRigATIHCAQQIRigATIHCAUQIRifBTIHCAYQIRifBTIHCAcQIRifBTIHCAgQIRiPAtIBCTEyODM0ajBqNKgCA7ACAfEFT0CiScNyTJo&sourceid=chrome&ie=UTF-8&ved=2ahUKEwjnn6DA_5CSAxXCMlkFHaJHEJ8QgK4QegQIAxAG):**  Municipal water pressure is often higher in the early morning.
-
-**Times to Avoid:**
-
--   **Midday (10 AM - 4 PM):**  High heat and sun cause rapid evaporation, wasting water.
--   **Night (After 6 PM):**  Leaves stay wet for too long, creating ideal conditions for fungal diseases like  [mildew](https://www.google.com/search?q=mildew&rlz=1C1CHBF_enUS1042US1042&oq=sprinkler+water+at+sunrise+or+time+of+day&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRigATIHCAIQIRigATIHCAMQIRigATIHCAQQIRigATIHCAUQIRifBTIHCAYQIRifBTIHCAcQIRifBTIHCAgQIRiPAtIBCTEyODM0ajBqNKgCA7ACAfEFT0CiScNyTJo&sourceid=chrome&ie=UTF-8&mstk=AUtExfBADlW7MA0nq8Q_m1yYuE6yg59tdzMOqx_B902_hGkqA7aVps7c-UMhNpdWJbKksS17Dwe8uiXX1-VcdhPuEO7VFneDYb3gDk2oPjo0wJlSwP5qc-IhGvjwV1VV2XoXquCSraB6Q6BANludM2ouW0p1mozj3sFj1y0gkRJN5jXrA4A&csui=3&ved=2ahUKEwjnn6DA_5CSAxXCMlkFHaJHEJ8QgK4QegQIBRAC)  and  [rust](https://www.google.com/search?q=rust&rlz=1C1CHBF_enUS1042US1042&oq=sprinkler+water+at+sunrise+or+time+of+day&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRigATIHCAIQIRigATIHCAMQIRigATIHCAQQIRigATIHCAUQIRifBTIHCAYQIRifBTIHCAcQIRifBTIHCAgQIRiPAtIBCTEyODM0ajBqNKgCA7ACAfEFT0CiScNyTJo&sourceid=chrome&ie=UTF-8&mstk=AUtExfBADlW7MA0nq8Q_m1yYuE6yg59tdzMOqx_B902_hGkqA7aVps7c-UMhNpdWJbKksS17Dwe8uiXX1-VcdhPuEO7VFneDYb3gDk2oPjo0wJlSwP5qc-IhGvjwV1VV2XoXquCSraB6Q6BANludM2ouW0p1mozj3sFj1y0gkRJN5jXrA4A&csui=3&ved=2ahUKEwjnn6DA_5CSAxXCMlkFHaJHEJ8QgK4QegQIBRAD).
-
-**[Evening Watering](https://www.google.com/search?q=Evening+Watering&rlz=1C1CHBF_enUS1042US1042&oq=sprinkler+water+at+sunrise+or+time+of+day&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIHCAEQIRigATIHCAIQIRigATIHCAMQIRigATIHCAQQIRigATIHCAUQIRifBTIHCAYQIRifBTIHCAcQIRifBTIHCAgQIRiPAtIBCTEyODM0ajBqNKgCA7ACAfEFT0CiScNyTJo&sourceid=chrome&ie=UTF-8&mstk=AUtExfBADlW7MA0nq8Q_m1yYuE6yg59tdzMOqx_B902_hGkqA7aVps7c-UMhNpdWJbKksS17Dwe8uiXX1-VcdhPuEO7VFneDYb3gDk2oPjo0wJlSwP5qc-IhGvjwV1VV2XoXquCSraB6Q6BANludM2ouW0p1mozj3sFj1y0gkRJN5jXrA4A&csui=3&ved=2ahUKEwjnn6DA_5CSAxXCMlkFHaJHEJ8QgK4QegQIBhAB)  (4-6 PM):**
-
-- This is a backup option if morning isn't possible, but it carries a slight risk of fungus as temperatures drop overnight.
-
-</details>
-
-## ⚙️ System Architecture
-
-```
-Weather API 🌦️ → ET₀ Calculation 🌡 → Soil Model 🌾 → Driver Attributes 📊 → Automations (Internal Scheduling / Rule Machine / webCoRE / Node-RED)
-```
-
-**App (WET-IT)** – performs calculations and weather polling  
-**Driver (WET-IT Data)** – exposes results for dashboards and automations  
-**Automations** – act based on the computed water budget percentages
-
-
 
 
 ## 🌦 Weather Providers
@@ -1227,10 +1205,10 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNzI3Nzc3NjEwLDEwMzExNzY1NTEsMTM2OT
-YyODA1NiwxNzc2ODQ4MjM4LC01OTU1ODMxMTgsLTE5MTU0NDc0
-ODQsLTE4MTkzNDQ0MjQsLTEyMzY5ODA3NjAsLTE5NjM3NDIxMT
-csLTE1MTE1Mjg3OTQsMTEwNjAyNzE0NywtMjAzODE1OTY0MSwt
-OTk4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0ODQ3ODIsLTk3Mz
-UxNjE0MCwtMjg4OTAwNTYwLDEwNDUxMzQwNF19
+eyJoaXN0b3J5IjpbMTQ5ODU5MDM1NSwxMDMxMTc2NTUxLDEzNj
+k2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3
+NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0xOTYzNzQyMT
+E3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNTk2NDEs
+LTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0NzgyLC05Nz
+M1MTYxNDAsLTI4ODkwMDU2MCwxMDQ1MTM0MDRdfQ==
 -->
