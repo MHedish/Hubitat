@@ -402,10 +402,6 @@ The app computes and merges these metrics to calculate:
 - [Developer & Diagnostic Tools](#-developer--diagnostic-tools)
 
 
-✅ Use **“Test Weather Now”** to validate configuration.  
-If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API calls fail.
-
-
 ## 🏢 NOAA Office vs 📡 Radar Station
 
 A  **NOAA office**  is a physical facility where personnel, such as forecasters, work to issue forecasts, warnings, and other hazard information. A  **radar station**  is a specific, uncrewed technical installation containing a radar system  (like the WSR-88D, also known as NEXRAD) that automatically scans the atmosphere and collects raw weather data.
@@ -703,8 +699,8 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTM4Mjg1MjE3NCwtMTk2Mzc0MjExNywtMT
-UxMTUyODc5NCwxMTA2MDI3MTQ3LC0yMDM4MTU5NjQxLC05OTgx
-NDY1NDMsLTE2MjA5NTE2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MT
-QwLC0yODg5MDA1NjAsMTA0NTEzNDA0XX0=
+eyJoaXN0b3J5IjpbLTE2NDcwMTgxMDUsLTE5NjM3NDIxMTcsLT
+E1MTE1Mjg3OTQsMTEwNjAyNzE0NywtMjAzODE1OTY0MSwtOTk4
+MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0ODQ3ODIsLTk3MzUxNj
+E0MCwtMjg4OTAwNTYwLDEwNDUxMzQwNF19
 -->
