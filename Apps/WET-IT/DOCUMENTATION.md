@@ -974,8 +974,8 @@ Each zone (1–48) provides:
 
 ### 💾 JSON Dataset Example
 The `datasetJson` attribute exposes all zone data as a single object:
-```json
-{
+
+> {
   "zones": {
     "zone1": {
       "name": "Front Lawn",
@@ -1022,7 +1022,7 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEyNTU5NzUzNDAsLTEyMzY5ODA3NjAsLT
+eyJoaXN0b3J5IjpbLTE4MTkzNDQ0MjQsLTEyMzY5ODA3NjAsLT
 E5NjM3NDIxMTcsLTE1MTE1Mjg3OTQsMTEwNjAyNzE0NywtMjAz
 ODE1OTY0MSwtOTk4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0OD
 Q3ODIsLTk3MzUxNjE0MCwtMjg4OTAwNTYwLDEwNDUxMzQwNF19
