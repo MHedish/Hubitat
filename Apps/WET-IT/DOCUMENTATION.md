@@ -71,8 +71,8 @@ It’s the foundation for precision irrigation, ensuring each zone receives just
 
 | Approach | Basis | Result |
 |:--|:--|:--|
-| 🕰 Fixed Schedule | Time + runtime | Over/under watering |
-| 📅 Seasonal Adjust | Calendar % | Better, but weather-blind |
+| 📅️ Fixed Schedule | Time + runtime | Over/under watering |
+| 🍃 Seasonal Adjust | Calendar % | Better, but weather-blind |
 | 🌦 ET-Based Control | Real weather + soil data | Adaptive precision |
 
 <details>
@@ -1069,7 +1069,7 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTExMDg5Njc0MiwtNTk1NTgzMTE4LC0xOT
+eyJoaXN0b3J5IjpbLTU2MTAxNDExOSwtNTk1NTgzMTE4LC0xOT
 E1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0xOTYz
 NzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNT
 k2NDEsLTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0Nzgy
