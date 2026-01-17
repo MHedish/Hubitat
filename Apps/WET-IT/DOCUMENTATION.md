@@ -1970,104 +1970,6 @@ To verify skip logic operation:
 Next: [🏁 End of Documentation](#-end-of-documentation)
 
 
-Model Parameters
-
-| Field | Derived From | Influences |
-|:--|:--|:--|
-| `soilType` | User input | Available water capacity |
-| `plantType` | User input | Kc + root depth + MAD |
-| `nozzleType` | User input | Precipitation rate |
-| `precipRateInHr` | Derived / override | Irrigation intensity |
-| `rootDepthIn` | Derived / override | Storage volume |
-| `kc` | Derived / override | Crop coefficient scaling |
-| `mad` | Derived / override | Allowed depletion (%) |
-
-
-## 🕒 Timestamp & Temporal Model
-
-| Attribute | Description | Updated When |
-|:--|:--|:--|
-| `wxTimestamp` | Forecast origin timestamp | Each forecast fetch |
-| `wxChecked` | Forecast poll/check timestamp | Every app poll or refresh |
-| `summaryTimestamp` | Time last ET summary calculated | Each hybrid run |
-| `zoneDepletionTs_x` | Zone-specific timestamp | When watering or ET applied |
-
-> 🧠 *`wxTimestamp` shows when the data was issued; `wxChecked` shows when it was polled.*
-
-
-
-## 🌿 Plant Type Reference
-> Defines vegetation categories and corresponding crop coefficients (Kc).  
-> Used to calculate evapotranspiration (ET₀ × Kc).
-
-| Plant Type | Description | Typical Kc Range | Example |
-|-------------|--------------|------------------|----------|
-| Turf (Cool Season) | Cool-climate grasses (fescue, rye) | 0.8–1.0 | Lawns, sports fields |
-| Turf (Warm Season) | Heat-tolerant grasses (Bermuda, zoysia) | 0.6–0.8 | Southern lawns |
-| Vegetables | Herbs, annuals, leafy crops | 0.7–0.9 | Herbs, wildflowers |
-| Shrubs | Woody ornamentals, perennials | 0.5–0.7 | Foundation plantings |
-| Trees | Mature trees, deep roots | 0.3–0.6 | Shade or fruit trees |
-
----
-
-## 🌾 Soil Type Reference
-> Controls soil moisture retention and depletion rate.
-
-| Soil Type | Field Capacity | Infiltration | Typical Depth | Comments |
-|------------|----------------|---------------|----------------|-----------|
-| Sand | Low | Fast | Shallow | Drains quickly, frequent watering |
-| Loamy Sand | Low–Medium | Medium–Fast | Shallow–Medium | Common baseline |
-| Loam | Medium | Medium | Moderate | Balanced texture |
-| Clay Loam | High | Slow | Deep | High retention, slow infiltration |
-| Clay | Very High | Very Slow | Deep | Rarely irrigated, risk of runoff |
-
-
-## 💧 Irrigation Method Reference
-> Defines the precipitation rate and efficiency of each irrigation type.  
-> Used to calculate zone runtime based on ET-derived water requirements.
-
-| Irrigation Method | Typical Rate (in/hr) | Efficiency | Application Depth | Description |
-|--------------------|----------------------|-------------|--------------------|--------------|
-| Spray | 1.5–2.0 | 60–70 % | Shallow–Moderate | Fixed spray heads with overlapping circular patterns. High precipitation rate, short runtime, prone to wind drift and runoff on slopes. |
-| Rotor | 0.4–0.8 | 70–80 % | Moderate–Deep | Gear-driven or impact rotors with slow rotation and broad coverage. Uniform application, less prone to runoff. |
-| MP Rotator | 0.4–0.6 | 75–85 % | Moderate–Deep | Multi-trajectory rotating stream nozzle; lower rate for improved uniformity and wind resistance. Excellent for mixed zones. |
-| Drip Emitter | 0.2–0.5 | 85–95 % | Targeted | Individual emitters at plant bases or rows. Extremely efficient, minimal evaporation or overspray. |
-| Drip Line | 0.3–0.6 | 85–95 % | Targeted | Continuous inline emitters spaced along tubing. Ideal for planters, beds, or long runs. |
-| Bubbler | 0.5–2.0 | 80–90 % | Localized | Flood-style emitters for tree wells or basins. High localized rate for deep watering of single plants. |
-
----
-
-💡 *The app converts the precipitation rate and efficiency into a runtime multiplier for each zone.  
-Lower-rate systems (e.g., MP Rotator, Drip) run longer but deliver more uniform moisture with less waste.*
-
-## 🕓 Base Runtime Reference
-> Establishes the **baseline irrigation duration** for each zone.  
-> Used with ET and seasonal budget percentages to calculate the final adjusted runtime.
-
-| Parameter | Unit | Description | Notes |
-|------------|------|-------------|-------|
-| Base Runtime | minutes / seconds | Defines the zone’s standard watering time under normal conditions. | Values **≤ 60** are interpreted as **minutes** and automatically converted to seconds. Values **> 60** are assumed to already be in seconds. |
-| Adjusted Runtime | seconds | Calculated automatically by WET-IT based on ET and seasonal adjustments. | Displayed in the Data Driver as `zoneXAdjustedTime`. |
-| ET Budget (%) | percent | Dynamic efficiency adjustment derived from evapotranspiration deficit or surplus. | Usually near 100 % for average weather; increases during hot, dry periods. |
-| Seasonal Budget (%) | percent | Optional manual or calendar-based adjustment applied after ET calculation. | Allows seasonal offsets for conservation or maintenance. |
----
-
-💡 *In practice:*  
-If a zone’s base runtime is **20 min (entered as 20)** and the ET budget is **85 %**,  the system converts this to **20 × 60 = 1,200 s**,  then multiplies by 0.85 → **1,020 s (≈ 17 min adjusted runtime).**
-
-### 🧠 State Persistence
-
-As of v1.0.0.0, weather alert data (freeze, rain, wind) is persisted in `atomicState` to maintain status consistency across hub reboots and service restarts.
-
-## 💧 Marking Zones as Watered – Resetting the ET Cycle
-
-WET-IT’s evapotranspiration (ET) model calculates how much water each zone *loses* since its **last watering event**.  
-To keep this cycle accurate, you must call one of the following methods **whenever irrigation completes**:
-
-- `markZoneWatered(zoneNumber)` → resets the ET baseline for a single zone  
-- `markAllZonesWatered()` → resets ET for every zone at once
-
-If these methods aren’t called, WET-IT assumes the zone hasn’t been watered, causing ET accumulation to continue indefinitely — which leads to inflated depletion and longer runtimes later.
 
 
 ## 💦 Valve Control
@@ -2562,11 +2464,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbODIwNDIyODcsMTc5MTYwODk1LDExNDU4MD
-Y0MjUsMTAzMTE3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgs
-LTU5NTU4MzExOCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMT
-IzNjk4MDc2MCwtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2
-MDI3MTQ3LC0yMDM4MTU5NjQxLC05OTgxNDY1NDMsLTE2MjA5NT
-E2NzEsMTM2MzQ4NDc4MiwtOTczNTE2MTQwLC0yODg5MDA1NjAs
-MTA0NTEzNDA0XX0=
+eyJoaXN0b3J5IjpbMjA4Njg3OTIwMSwxNzkxNjA4OTUsMTE0NT
+gwNjQyNSwxMDMxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Njg0ODIz
+OCwtNTk1NTgzMTE4LC0xOTE1NDQ3NDg0LC0xODE5MzQ0NDI0LC
+0xMjM2OTgwNzYwLC0xOTYzNzQyMTE3LC0xNTExNTI4Nzk0LDEx
+MDYwMjcxNDcsLTIwMzgxNTk2NDEsLTk5ODE0NjU0MywtMTYyMD
+k1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkwMDU2
+MCwxMDQ1MTM0MDRdfQ==
 -->
