@@ -509,9 +509,12 @@ To keep this cycle accurate, you must call one of the following methods **whenev
 
 If these methods aren’t called, WET-IT assumes the zone hasn’t been watered, causing ET accumulation to continue indefinitely — which leads to inflated depletion and longer runtimes later.
 
-##----------
+## 💦 Valve Control
+<a id="-valve-control"></a>
+WET-IT supports both `capability.valve` and `capability.switch` devices for each irrigation zone.  
+Each zone can be manually tested, automatically controlled during program execution, or skipped if no device is assigned.  
+Valve operations are handled sequentially to manage water pressure and ensure deterministic runtimes.
 
-## 💦Valve Control
 
 
 
@@ -618,7 +621,7 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNTU0MTE2MTgyLC0xNTExNTI4Nzk0LDExMD
+eyJoaXN0b3J5IjpbNjg2MDk2NjAwLC0xNTExNTI4Nzk0LDExMD
 YwMjcxNDcsLTIwMzgxNTk2NDEsLTk5ODE0NjU0MywtMTYyMDk1
 MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxNDAsLTI4ODkwMDU2MC
 wxMDQ1MTM0MDRdfQ==
