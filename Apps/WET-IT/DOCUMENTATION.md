@@ -387,7 +387,7 @@ The app computes and merges these metrics to calculate:
 
 ### 🧪 Testing & Verification
 
-✅ Use **“🌤 Test Weather Now”** in the app to:
+✅ Use **“🌤️ Test Weather Now”** in the app to:
 - Validate API key and connectivity.
 - Confirm provider response latency.
 - Display the last successful update in the diagnostic panel.
@@ -699,8 +699,8 @@ Automations can safely:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE2NDcwMTgxMDUsLTE5NjM3NDIxMTcsLT
-E1MTE1Mjg3OTQsMTEwNjAyNzE0NywtMjAzODE1OTY0MSwtOTk4
-MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0ODQ3ODIsLTk3MzUxNj
-E0MCwtMjg4OTAwNTYwLDEwNDUxMzQwNF19
+eyJoaXN0b3J5IjpbODQxNzA3NjA2LC0xOTYzNzQyMTE3LC0xNT
+ExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNTk2NDEsLTk5ODE0
+NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0NzgyLC05NzM1MTYxND
+AsLTI4ODkwMDU2MCwxMDQ1MTM0MDRdfQ==
 -->
