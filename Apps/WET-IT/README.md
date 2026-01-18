@@ -8,7 +8,7 @@
 
 **App Version:** 1.0.4.0
 **Driver Version:** 1.0.4.0
-**Release Date:** 2026-01-16
+**Release Date:** 2026-01-18
 
 ---
 
@@ -210,7 +210,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbODU3NDI2OTY3LDE2NDI1MjMxMDQsLTEyMz
+eyJoaXN0b3J5IjpbODMzOTAwNjI5LDE2NDI1MjMxMDQsLTEyMz
 UwNzc0MTgsLTE4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4
 MzA5LDEyMjYyNjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ
 ==
