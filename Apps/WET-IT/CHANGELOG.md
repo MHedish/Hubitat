@@ -134,10 +134,10 @@
 - Prepared for unified 1.0.4.x series by normalizing state handling and scheduler recovery behavior.
 
 ## ☀️ 1.4.0.0 — Production Release
-**App v1.4.0.0 / Driver v1.4.0.0 — Released 2026-01-16**
+**App v1.4.0.0 / Driver v1.4.0.0 — Released 2026-01-18**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTE3MjU4NzE5OSw1MjMwMjgyMywtMTE3ND
-IzMTkxNiwxMzgzMzgwNDQ2LDE3MjUyODQ1NjksLTEwMjk5Nzg0
-NywtODEyMDcyMzU4LDE4NDcwMzc4MDNdfQ==
+eyJoaXN0b3J5IjpbMTIzNDYyNjgxMywxMTcyNTg3MTk5LDUyMz
+AyODIzLC0xMTc0MjMxOTE2LDEzODMzODA0NDYsMTcyNTI4NDU2
+OSwtMTAyOTk3ODQ3LC04MTIwNzIzNTgsMTg0NzAzNzgwM119
 -->
