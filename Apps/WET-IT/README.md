@@ -142,10 +142,10 @@ If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API c
 
 ## 🧭 Configuration Flow
 
-1️⃣ **App Info** – Version, links, docs  
+1️⃣ **App Info** – Version, links, docs
 2️⃣ **Zone Setup** – Define zone count and characteristics
 3️⃣**🆕Program Scheduling** 🆕– Define your personal irrigation schedule, runtime adjustment method (i.e., Baseline, Seasonal, or ET) including advanced settings such as alert thresholds, minimum runtimes, et al.
-4️⃣ **ET & Seasonal Settings (Advanced)** – Tune ET₀ and scaling  
+4️⃣ **ET & Seasonal Settings (Advanced)** – Tune ET₀ and scaling
 5️⃣ **Weather Configuration** – Choose provider and API key(s)
 6️⃣ **Active Weather Alerts** – View Freeze/Frost, Rain, Wind alerts
 7️⃣ **Rain Sensor** – Choose any installed outdoor rain/moisture sensor to skip irrigation.  *Bonus: Tempest users can select their haptic rain sensor as well.*
@@ -286,8 +286,8 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIwNDUwODMxNDMsMjExNDYwNzM2MiwxNj
-QyNTIzMTA0LC0xMjM1MDc3NDE4LC0xODcwODQyNzcsMTM3OTQz
-NjI1MywtMTU2MjU1ODMwOSwxMjI2MjYxNzcyLDEzNzU1OTcxMi
-wyMTE5ODU4MjIzXX0=
+eyJoaXN0b3J5IjpbMjEyMjI0NDkyMSwtMjA0NTA4MzE0MywyMT
+E0NjA3MzYyLDE2NDI1MjMxMDQsLTEyMzUwNzc0MTgsLTE4NzA4
+NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4MzA5LDEyMjYyNjE3Nz
+IsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ==
 -->
