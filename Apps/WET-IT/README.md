@@ -140,15 +140,6 @@ If *Use NOAA as Backup* is enabled, WET-IT automatically retries NOAA when API c
 
 ---
 
-### ✅ Summary
-
-WET-IT performs full evapotranspiration and seasonal modeling directly on your Hubitat hub —  
-no cloud dependency, no external scheduler, and complete zone-level control.
-
-If you see “⚙️ Click [Done] to begin automatic initialization…”, simply press **Done** once and the bootstrap will complete within seconds.
-
----
-
 ## 🧭 Configuration Flow
 
 1️⃣ **App Info** – Version, links, docs  
@@ -162,7 +153,14 @@ If you see “⚙️ Click [Done] to begin automatic initialization…”, simpl
 9️⃣**Logging Tools** – Manage information and debug logging
 🔟**System Diagnostics** – Verify system, test weather, review location, and connection information
 
-## 🌦 Weather Provider Setup
+## 🧭 Configuration Reference
+
+WET-IT includes three primary configuration pages — **Zone Setup**, **Soil Settings**, and **Scheduling** — which define the foundation of irrigation behavior.  
+Each page affects how programs calculate run times, react to weather, and control hardware.
+
+---
+
+### 🌦 Weather Provider Setup
 
 | Provider | Requires Key | Documentation |
 |:--|:--:|:--|
@@ -176,23 +174,101 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 
 > Use **🌤 Test Weather Now** to confirm connectivity.
 
-## 🪴 Per-Zone Configuration
-| Category | Defines | Example Values |
-|:--|:--|:--|
-| **Soil Type** | Water-holding capacity | Sand · Loam · Clay |
-| **Plant Type** | Kc, MAD, Root Depth | Turf, Shrubs, Trees |
-| **Nozzle Type** | Precipitation rate | Spray 1.8 · Rotor 0.6 · Drip 0.2 |
-| **Advanced Overrides** | Precision tuning | Kc 0.4–1.2 · MAD 0.2–0.6 · Depth 3–24 in |
+---
 
-## 📅️ Program Scheduling
-| Category | Options | Notes |
-|:--|:--|:--|
-| **Start Time** | Time-of-Day, Sunrise | Specific Time, Start at Sunrise, End by Sunrise |
-| **Runtime Adjustment Method** | Base Only, Seasonal, ET | Seasonal and ET are determined by the total time required of all scheduled zones |
-| **Zones** | Select from the list of configured zones | Zones may be reused across schedules |
-| **Schedule Days** | Specific Days, Every N Days | Choose specific days of the week or a daily interval |
+### 🌱 Zone Setup
 
+> **Purpose:** Assign and configure individual irrigation zones (valves, relays, or switches).
 
+#### Inputs and Controls
+
+| Input | Type | Description | Example / Notes |
+|--------|------|--------------|----------------|
+| **Zone Name** | Text | Label for this irrigation zone. | e.g. “Front Lawn”, “Garden Beds”. |
+| **Zone Device** | Device Selector | Choose the physical switch/relay controlling this zone. | Required for operation. |
+| **Active** | Boolean | Enables or disables the zone. | Inactive zones are ignored in runtime and scheduling. |
+| **Soil Type** | Enum | Defines water retention/infiltration rate. | Clay, Loam, Sand. |
+| **Plant Type** | Enum | Determines ET coefficient for this zone. | Turf, Shrubs, Trees. |
+| **Nozzle Type** | Enum | Output rate classification. | Spray, Rotor, Drip. |
+| **Base Time Value** | Number | Base watering duration. | Toggle between minutes ↔ seconds. |
+| **Base Time Unit** | Toggle Button | Switches display between minutes and seconds. | Updates runtime math automatically. |
+| **Adjustment Mode Override** | Enum | Optional override for this zone’s runtime scaling. | Base, Seasonal, ET. |
+| **Advanced → Zone Debug Logging** | Boolean | Enables detailed per-zone action logs. | For troubleshooting only. |
+
+#### Behavior
+
+- Each active zone contributes to its assigned program’s total runtime.  
+- Changing any value recalculates program durations instantly.  
+- Deleting a zone fully removes its references from both `settings` and `atomicState`.  
+- Inactive zones remain defined but are excluded from runtime and schedules.
+
+---
+
+### 🌱 Soil Page
+
+> **Purpose:** Configure soil and environmental characteristics that affect moisture tracking and ET computation.
+
+#### Inputs and Controls
+
+| Input | Type | Description | Example / Notes |
+|--------|------|--------------|----------------|
+| **Soil Type** | Enum | Base soil composition for ET/retention model. | Clay, Loam, Sand. |
+| **Field Capacity** | Number (%) | Maximum water content before runoff occurs. | Typical: 30–45%. |
+| **Wilting Point** | Number (%) | Minimum moisture before stress. | Typical: 10–15%. |
+| **Root Depth** | Number (in/cm) | Depth used to calculate available water. | e.g. 6 in for turf. |
+| **Available Water Capacity (AWC)** | Calculated | Derived from soil type and depth. | Auto-calculated field. |
+| **Refill %** | Number (%) | Threshold that triggers watering. | Default: 50%. |
+| **Advanced → Use Moisture Sensor** | Boolean | Integrates physical moisture devices. | Overrides modeled ET data. |
+| **Advanced → Manual Reset** | Action Button | Resets soil moisture to full (100%). | Use after manual watering. |
+
+#### Behavior
+
+- ET and rainfall affect soil moisture between runs.  
+- Moisture sensors (if enabled) override model predictions.  
+- Soil configuration impacts every zone assigned to that soil type.  
+- Updates trigger recalculation of ET budgets and zone runtime scaling.
+
+---
+
+### ⏰ Program Schedule
+
+> **Purpose:** Define when and how each irrigation program runs.
+
+#### Inputs and Controls
+
+| Input | Type | Description | Example / Notes |
+|--------|------|--------------|----------------|
+| **Program Name** | Text | Display label for this program. | “Front Lawn” |
+| **Program Active** | Boolean | Enables or disables this program. | Inactive programs are ignored by scheduler. |
+| **Program Start Mode** | Enum | Determines how the start time is calculated. | *Time*, *Sunrise*, *End by Sunrise*. |
+| **Program Start Time** | Time | Start or target time, depending on mode. | Used when mode = Time. |
+| **Program End By** | Boolean | If true, watering ends *by* the specified time instead of starting at it. | Often used with Sunrise mode. |
+| **Program Days Mode** | Enum | Choose between *Weekly* or *Interval* scheduling. | Weekly or every N days. |
+| **Program Weekdays** | Multiselect | Active days of week (for Weekly mode). | Mon, Wed, Fri. |
+| **Program Interval** | Number | Interval in days (for Interval mode). | e.g. 3 → runs every 3 days. |
+| **Program Buffer Delay** | Number (minutes) | Minimum idle gap between automatic programs. | Prevents overlap. |
+| **Program Adjust Mode** | Enum | Runtime adjustment model. | Base, Seasonal, ET, Hybrid. |
+| **Program Skip (Rain/Freeze/Wind)** | Boolean | Enables skip logic for weather alerts. | Skips if conditions match. |
+| **Advanced → Check Inactive Programs** | Boolean | Includes inactive programs in conflict detection. | Optional diagnostic tool. |
+| **Advanced → Program Debug Logging** | Boolean | Adds detailed logs for schedule execution. | For testing only. |
+
+#### Behavior
+
+- Each program’s runtime is dynamically derived from active zones.  
+- Scheduler operates once per minute (`irrigationTick()`), checking all programs.  
+- End-by-Sunrise mode calculates the correct start time using total runtime.  
+- Conflicts and overlaps are automatically detected and logged.  
+- Skip logic (rain/freeze/wind) and buffer delay are enforced automatically.  
+- Manual program runs bypass skip checks but still observe hardware safety delays.
+
+---
+
+### 🧩 Integration Notes
+
+- Deleting a **zone** or **program** triggers full atomic cleanup to prevent orphan references.  
+- Any configuration change automatically recalculates program durations (`calcProgramDurations()`).  
+- Soil, weather, and ET integrations update live; no manual refresh is needed.  
+  
 ## 👥 Contributors
 
 **Author:** Marc Hedish (@MHedish)
