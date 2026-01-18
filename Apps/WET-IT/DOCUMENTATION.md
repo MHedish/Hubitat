@@ -45,7 +45,7 @@ v1.0.4.0 introduces **Tempest Personal Weather Station (PWS)** support, adding *
 |:--|:--:|:--:|:--|
 | **NOAA NWS** | ❌ | Local / Regional | Reliable baseline with no API key required |
 | **OpenWeather 3.0** | ✅ | Cloud | Global hourly forecasts |
-| **Tomorrow. io** | ✅ | Cloud | High-resolution, next-hour prediction |
+| **Tomorrow .io** | ✅ | Cloud | High-resolution, next-hour prediction |
 | **🌪 Tempest PWS** | ✅ | Local Hardware | Hyper-local wind, rain, temp & UV direct from your backyard |
 
 When enabled, Tempest data merges automatically with other sources — allowing **ET, freeze, wind, and rain skip logic** to react to conditions measured in your own yard, not the nearest airport.
@@ -2465,7 +2465,7 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTQxNTI2ODY3NywyMDg2ODc5MjAxLDE3OT
+eyJoaXN0b3J5IjpbMTMwODY3NjUxMywyMDg2ODc5MjAxLDE3OT
 E2MDg5NSwxMTQ1ODA2NDI1LDEwMzExNzY1NTEsMTM2OTYyODA1
 NiwxNzc2ODQ4MjM4LC01OTU1ODMxMTgsLTE5MTU0NDc0ODQsLT
 E4MTkzNDQ0MjQsLTEyMzY5ODA3NjAsLTE5NjM3NDIxMTcsLTE1
