@@ -13,13 +13,15 @@
 *  1.0.3.0  –– Added activeProgram attribute
 *  1.0.3.1  –– Added activeZoneName and activeProgramName attributes
 *  1.0.3.2  –– Added Actuator as a command for Rule Machine
+*  1.0.3.3  –– Added string attributes for alerts to accommodate RM/Dashboards
+*  1.0.4.0  –– First relase as a scheduler.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "1.0.3.2"
-@Field static final String DRIVER_MODIFIED = "2026-01-13"
+@Field static final String DRIVER_VERSION  = "1.0.4.0"
+@Field static final String DRIVER_MODIFIED = "2026-01-16"
 @Field static final int MAX_ZONES = 48
 
 metadata {
@@ -38,16 +40,20 @@ metadata {
         attribute "activeZoneName","string"
         attribute "activeProgram","number"
         attribute "activeProgramName","string"
+        attribute "activeAlerts","string"
         attribute "appInfo","string"
         attribute "datasetJson","string"
         attribute "driverInfo","string"
 		attribute "freezeAlert","bool"
+		attribute "freezeAlertText","string"
 		attribute "freezeLowTemp","number"
 		attribute "rainAlert","bool"
+		attribute "rainAlertText","string"
 		attribute "rainForecast","number"
         attribute "summaryText","string"
         attribute "summaryTimestamp","string"
 		attribute "windAlert","bool"
+		attribute "windAlertText","string"
 		attribute "windSpeed","number"
         attribute "wxChecked","string"
         attribute "wxLocation","string"
@@ -84,8 +90,8 @@ private logDebug(msg){if(logEnable)log.debug"[${DRIVER_NAME}] $msg"}
 private logInfo(msg){if(logEvents)log.info"[${DRIVER_NAME}] $msg"}
 private logWarn(msg){log.warn"[${DRIVER_NAME}] $msg"}
 private logError(msg){log.error"[${DRIVER_NAME}] $msg"}
-private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
-private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
+private emitEvent(n,def v,d=null,u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
+private emitChangedEvent(n,def v,d=null,u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 def autoDisableDebugLogging(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo"Debug logging disabled (auto)"}catch(e){logDebug"autoDisableDebugLogging(): ${e.message}"}}
 def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo"Debug logging disabled (manual)"}catch(e){logDebug"disableDebugLoggingNow(): ${e.message}"}}
 
