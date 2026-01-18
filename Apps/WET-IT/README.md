@@ -18,7 +18,7 @@
 It models how much water each irrigation zone *should* need based on real weather data and plant/soil parameters — ~~without directly scheduling watering.~~
 
 ***Now with full scheduling!***
-Supports up to 48 zones and 16 schedules.
+Supports up to 48 zones and 16 schedules!
 
 ### 🧩 Core Purpose
 
@@ -210,8 +210,8 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbODMzOTAwNjI5LDE2NDI1MjMxMDQsLTEyMz
-UwNzc0MTgsLTE4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4
-MzA5LDEyMjYyNjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ
-==
+eyJoaXN0b3J5IjpbMjExNDYwNzM2MiwxNjQyNTIzMTA0LC0xMj
+M1MDc3NDE4LC0xODcwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1
+ODMwOSwxMjI2MjYxNzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX
+0=
 -->
