@@ -11,6 +11,7 @@
 WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.
 
 ---
+
 ## 📘 Table of Contents
 
 1. [🧠 Overview](#-overview)
@@ -303,7 +304,6 @@ Each page affects how programs calculate run times, react to weather, and contro
 - Moisture sensors (if enabled) override model predictions.
 - Soil configuration impacts every zone assigned to that soil type.
 - Updates trigger recalculation of ET budgets and zone runtime scaling.
-
 
 ---
 
@@ -1403,8 +1403,7 @@ ET calculations are **time-based**, not daily resets. WET-IT determines soil dep
 
 ---
 
-## 🌧 Rain Protection Logic
-<a id="-rain-protection-logic"></a>
+## 🌧 Rain Protection Logic<a id="-rain-protection-logic"></a>
 
 WET-IT provides multiple layers of **rain protection** to prevent unnecessary irrigation during or before rainfall.  
 It combines **forecast-based skip logic**, **live sensor feedback**, and (optionally) **Tempest PWS rainfall data** for maximum reliability.
@@ -1441,8 +1440,7 @@ If a Tempest station is configured and the setting **“Use Tempest as Rain Sens
 - When all alerts clear, the scheduler resumes normal operation automatically.
 
 ---
-## 💨 Wind Protection Logic
-<a id="-wind-protection-logic"></a>
+## 💨 Wind Protection Logic<a id="-wind-protection-logic"></a>
 
 WET-IT automatically monitors **forecasted and current wind speeds** and will skip irrigation programs when conditions exceed a user-defined threshold.  
 This prevents wasted water due to spray drift and uneven distribution, improving efficiency and uniformity.
@@ -1490,8 +1488,7 @@ These attributes can be leveraged in dashboards, automations, and Rule Machine l
 
 ---
 
-## ⚠️ Active Weather Alerts
-<a id="-active-weather-alerts"></a>
+## ⚠️ Active Weather Alerts<a id="-active-weather-alerts"></a>
 
 WET-IT consolidates **Freeze**, **Rain**, and **Wind** alert data into a single **Active Weather Alerts** panel within the app UI.  
 This view provides a clear snapshot of current or forecasted conditions that could suspend irrigation programs.
@@ -1566,8 +1563,7 @@ Automations can safely:
 - Send notifications or trigger alerts  
 - Resume when forecasted winds will not affect irrigation
 
-## 📊 Data Publishing
-<a id="-data-publishing"></a>
+## 📊 Data Publishing<a id="-data-publishing"></a>
 
 WET-IT continuously publishes both **summary** and **per-zone data** to its child device — the **WET-IT Data driver**.  
 This allows dashboards, Rule Machine, and external systems to access live irrigation intelligence directly from Hubitat.
@@ -1623,11 +1619,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE0MTU4ODU0MDMsLTE4NjI0MjQ5OTcsLT
-Y3NjQ2ODQ1NywtMTY4MTc5NzYwMSwtNjI3OTQxMzQzLC0xNjM4
-OTQwMzk0LC0yMDYzODkxMDU0LC0yMzUwMjIyMzcsMTkwNzg3Mj
-YzMSw1NjE3NzkwMCwxMzA4Njc2NTEzLDIwODY4NzkyMDEsMTc5
-MTYwODk1LDExNDU4MDY0MjUsMTAzMTE3NjU1MSwxMzY5NjI4MD
-U2LDE3NzY4NDgyMzgsLTU5NTU4MzExOCwtMTkxNTQ0NzQ4NCwt
-MTgxOTM0NDQyNF19
+eyJoaXN0b3J5IjpbMjA3NjUxMzUwOSwtMTg2MjQyNDk5NywtNj
+c2NDY4NDU3LC0xNjgxNzk3NjAxLC02Mjc5NDEzNDMsLTE2Mzg5
+NDAzOTQsLTIwNjM4OTEwNTQsLTIzNTAyMjIzNywxOTA3ODcyNj
+MxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIwMSwxNzkx
+NjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2NTUxLDEzNjk2MjgwNT
+YsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3NDg0LC0x
+ODE5MzQ0NDI0XX0=
 -->
