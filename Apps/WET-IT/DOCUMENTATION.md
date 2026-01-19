@@ -326,10 +326,10 @@ Every WET-IT installation supports up to **16 independent programs**, each with:
 | **Name & Active Flag** | Friendly program name and on/off toggle |
 | **Program Start Mode** | Fixed Time ⏰, Start at Sunrise 🌅, or End by Sunrise 🌄 |
 | **Runtime Method** | Base Only, Seasonal %, or ET-Based |
-| **Days Mode** | Interval (Every N Days) or Weekly (M/W/F etc.) |
+| **Program Days Mode** | Interval (Every N Days) or Weekly (M/W/F etc.) |
 | **Zones** | Select one or more irrigation zones |
-| **Weather Skips** | Freeze ❄, Rain ☔, Wind 💨 avoidance logic |
-| **Minimum Runtime** | Skip if total adjusted time falls below threshold |
+| **Weather Skip Controls ** | Freeze ❄, Rain ☔, Wind 💨 avoidance logic |
+| **Minimum Runtime Threshold** | Prevents ultra-short runs that could cycle valves unnecessarily. |
 | **Buffer Delay** | Optional delay between consecutive programs (minutes) |
 
 Programs run zones sequentially for proper pressure balance and reliability.  
@@ -2446,7 +2446,7 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNDY3MTUzNTA3LC0xNjgxNzk3NjAxLC02Mj
+eyJoaXN0b3J5IjpbNjM1MzMwMDE4LC0xNjgxNzk3NjAxLC02Mj
 c5NDEzNDMsLTE2Mzg5NDAzOTQsLTIwNjM4OTEwNTQsLTIzNTAy
 MjIzNywxOTA3ODcyNjMxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMj
 A4Njg3OTIwMSwxNzkxNjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2
