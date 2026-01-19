@@ -1,9 +1,10 @@
+
 # 🌿 Weather-Enhanced Time-based Irrigation Tuning (WET-IT)
 
 ## Full Documentation
 *Comprehensive Technical & Integration Reference (App v1.0.4.0 / Driver v1.0.4.0)*
 
-![Platform](https://img.shields.io/badge/Platform-Hubitat-blue) 
+![Platform](https://img.shields.io/badge/Platform-Hubitat-blue)
 ![Version](https://img.shields.io/badge/Version-1.0.4.0-green?t=20251229)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
@@ -32,7 +33,7 @@ WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water
 
 ### 🧠 Overview
 
-**WET-IT** delivers **local-first, weather-aware irrigation intelligence** for Hubitat — combining **real-time evapotranspiration (ET)**, **seasonal water budgeting**, and **optional full-program scheduling**.  
+**WET-IT** delivers **local-first, weather-aware irrigation intelligence** for Hubitat — combining **real-time evapotranspiration (ET)**, **seasonal water budgeting**, and **optional full-program scheduling**.
 
 It runs entirely on your hub — **no cloud services, no subscription, no latency** — bringing commercial-grade irrigation logic (Rachio Flex Daily / Hydrawise ET / Rain Bird IQ) directly on-premises.
 
@@ -40,7 +41,7 @@ It runs entirely on your hub — **no cloud services, no subscription, no latenc
 
 ## ☀️ Why Evapotranspiration Matters
 
-Evapotranspiration (ET) is the combined water loss from **soil evaporation** and **plant transpiration**.  
+Evapotranspiration (ET) is the combined water loss from **soil evaporation** and **plant transpiration**.
 It’s the foundation for precision irrigation, ensuring each zone receives just the water it needs.
 
 | Approach | Basis | Result |
@@ -56,7 +57,7 @@ It’s the foundation for precision irrigation, ensuring each zone receives just
 
 ---
 
-🌧️ **The Actual Formulas Used (Industry Standard ET-Based Watering)**
+🌧️ **The Actual Formulas Used (Industry Standard ET-Based Watering)**<a id="-indus"></a>
 
 Both Rachio and Rain Bird rely on the **FAO-56 Penman–Monteith equation** to calculate **Reference Evapotranspiration (ET₀)** and then modify watering schedules based on:
 -   ET₀ (reference evapotranspiration)
@@ -117,7 +118,7 @@ $$Depletion_{today}​=Depletion_{yesterday}​+ETc​−Pe​−Irrigation$$
 Where:
 - **Pₑ** = effective precipitation (forecast or observed)
 
-Rain Bird controllers (ESP-ME3, LXME2, etc.) **do not** maintain a full soil-moisture bucket; they use ET-adjusted runtime.  
+Rain Bird controllers (ESP-ME3, LXME2, etc.) **do not** maintain a full soil-moisture bucket; they use ET-adjusted runtime.
 Rachio **does** maintain the soil bucket, filling and emptying it daily.
 
 ----------
@@ -160,7 +161,7 @@ Where:
 
 ### 🌱 **Rachio’s Method (Full Model – “Flex Daily”)**
 
-Rachio Flex Daily =  
+Rachio Flex Daily =
 **ET₀ → ETC → Soil Bucket → MAD → Required Depth → Runtime Calculation**
 
 They maintain day-by-day soil moisture:
@@ -215,11 +216,11 @@ $$Skip \text{ if windSpeed — ≥ userThreshold}$$
 $$Skip \text{ if forecastTemp ≤ freezeLimit}$$
 
 These are simple conditional checks—not formulaic.
-    
+
 </details>
 
-Further reading:  
-- [Wikipedia: Evapotranspiration](https://en.wikipedia.org/wiki/Evapotranspiration)  
+Further reading:
+- [Wikipedia: Evapotranspiration](https://en.wikipedia.org/wiki/Evapotranspiration)
 - [USGS – ET & Water Cycle](https://www.usgs.gov/water-science-school/science/evapotranspiration-and-water-cycle)
 
 ### 🌾 From Weather Data to Runtime
@@ -238,20 +239,20 @@ The system then calculates the **adjusted runtime** for each zone:
 
 $$Runtime_{today} = BaseTime × \frac{ET_c}{ET_{baseline}}$$
 
-If ET is 30% above normal, WET-IT increases watering time 30%.  
+If ET is 30% above normal, WET-IT increases watering time 30%.
 If soil memory shows the zone still moist from recent rain, it may skip entirely.
 
 ---
 
 ## 🧭 Configuration Pages Reference
 
-WET-IT includes three primary configuration pages — **Zone Setup**, **Soil Settings**, and **Scheduling** — which define the foundation of irrigation behavior.  
+WET-IT includes three primary configuration pages — **Zone Setup**, **Soil Settings**, and **Scheduling** — which define the foundation of irrigation behavior.
 
 Each page affects how programs calculate run times, react to weather, and control hardware.
 
 ---
 
-### 🔹 Zone Setup<a id="-zone-setup"></a>
+###  🌱 Zone Setup<a id="-zone-setup"></a>
 
 > **Purpose:** Assign and configure individual irrigation zones (valves, relays, or switches).
 
@@ -272,9 +273,9 @@ Each page affects how programs calculate run times, react to weather, and contro
 
 #### Behavior
 
-- Each active zone contributes to its assigned program’s total runtime.  
-- Changing any value recalculates program durations instantly.  
-- Deleting a zone fully removes its references from both `settings` and `atomicState`.  
+- Each active zone contributes to its assigned program’s total runtime.
+- Changing any value recalculates program durations instantly.
+- Deleting a zone fully removes its references from both `settings` and `atomicState`.
 - Inactive zones remain defined but are excluded from runtime and schedules.
 
 ---
@@ -298,9 +299,9 @@ Each page affects how programs calculate run times, react to weather, and contro
 
 #### Behavior
 
-- ET and rainfall affect soil moisture between runs.  
-- Moisture sensors (if enabled) override model predictions.  
-- Soil configuration impacts every zone assigned to that soil type.  
+- ET and rainfall affect soil moisture between runs.
+- Moisture sensors (if enabled) override model predictions.
+- Soil configuration impacts every zone assigned to that soil type.
 - Updates trigger recalculation of ET budgets and zone runtime scaling.
 
 
@@ -311,7 +312,7 @@ Each page affects how programs calculate run times, react to weather, and contro
 
 WET-IT brings **full irrigation control** to your Hubitat hub — while still serving as a data engine for external automations.
 
-Each **program** defines *when* and *how* zones water.  
+Each **program** defines *when* and *how* zones water.
 
 A program can operate at a **specific clock time**, **start at sunrise**, or uniquely, **end by sunrise** — ensuring irrigation completes just as daylight begins.
 
@@ -332,7 +333,7 @@ Every WET-IT installation supports up to **16 independent programs**, each with:
 | **Minimum Runtime Threshold** | Prevents ultra-short runs that could cycle valves unnecessarily. |
 | **Buffer Between Programs ** | Minimum time between consecutive programs (minutes) |
 
-Programs run zones sequentially for proper pressure balance and reliability.  
+Programs run zones sequentially for proper pressure balance and reliability.
 
 Sequential watering avoids conflicts, reduces surge, and ensures deterministic runtime control.
 
@@ -354,7 +355,7 @@ All skip events are logged and reflected in the *WET-IT Data* driver attributes 
 
 ---
 
-### ⏱ Runtime Calculation
+###  ⏱ Runtime Calculation
 
 Runtime per zone depends on your chosen **Adjustment Method**:
 
@@ -370,25 +371,25 @@ WET-IT automatically clamps runtimes to valid limits and logs all computations f
 
 ### 🧠 Smart Sequencing & Conflict Detection
 
-WET-IT detects overlapping program schedules automatically.  
-If two programs collide, the later start is delayed by your configured **Program Buffer Delay** (default = 1 minute).  
+WET-IT detects overlapping program schedules automatically.
+If two programs collide, the later start is delayed by your configured **Program Buffer Delay** (default = 1 minute).
 Detected overlaps are displayed in the UI as advisories.
 
 ---
 
 ### 🧩 Manual Control & Data Continuity
 
-Even with the internal scheduler active, WET-IT continues to function as a **data provider** for custom controllers, dashboards, and integrations.  
+Even with the internal scheduler active, WET-IT continues to function as a **data provider** for custom controllers, dashboards, and integrations.
 All computed ET, seasonal, alert, and summary data are published to the **WET-IT Data** child driver as both:
 
-- **Structured JSON** (`datasetJson`) for automation use  
-- **Individual attributes** for Hubitat dashboards or Rule Machine variables  
+- **Structured JSON** (`datasetJson`) for automation use
+- **Individual attributes** for Hubitat dashboards or Rule Machine variables
 
 You can still:
-- 🟢 Manually start / 🔴 stop any zone or program  
-- ⏱ View live countdown and clock-face status  
-- 💧 Mark Zone Watered to reset ET for a single zone  
-- 🧹 Mark All Zones Watered to reset all soil depletion  
+- 🟢 Manually start / 🔴 stop any zone or program
+- ⏱ View live countdown and clock-face status
+- 💧 Mark Zone Watered to reset ET for a single zone
+- 🧹 Mark All Zones Watered to reset all soil depletion
 
 These actions maintain full data integrity across both the scheduler and external automations.
 
@@ -408,16 +409,16 @@ This architecture keeps WET-IT fully compatible with both **automation framework
 
 ### 🌄 Why “End by Sunrise” Matters
 
-Most irrigation systems can only **start at** a fixed time.  
+Most irrigation systems can only **start at** a fixed time.
 
-WET-IT adds a unique ability — to **“end by” sunrise** — automatically back-calculating when to start so watering finishes right as daylight begins.  
+WET-IT adds a unique ability — to **“end by” sunrise** — automatically back-calculating when to start so watering finishes right as daylight begins.
 
 This mirrors Rachio’s *Flex Daily* logic and provides:
 
-- 🌞 **Pre-dawn watering** — minimizes evaporation and wind drift  
-- 🌿 **Dry foliage at sunrise** — prevents fungus and disease  
-- 💧 **Optimal plant uptake** — watering aligns with morning photosynthesis  
-- ⚙️ **Automatic runtime compensation** — adjusts dynamically for longer or shorter ET days  
+- 🌞 **Pre-dawn watering** — minimizes evaporation and wind drift
+- 🌿 **Dry foliage at sunrise** — prevents fungus and disease
+- 💧 **Optimal plant uptake** — watering aligns with morning photosynthesis
+- ⚙️ **Automatic runtime compensation** — adjusts dynamically for longer or shorter ET days
 
 > 🕐 *“WET-IT doesn’t just know when to start watering — it knows when you want it to finish.”*
 
@@ -425,21 +426,21 @@ This mirrors Rachio’s *Flex Daily* logic and provides:
 
 ### 🌅 Why Early Morning is Best
 
-The best time to water with sprinklers is **early morning, just before or around sunrise (around 5–9 AM)** — to minimize evaporation, allow deep root absorption before heat, and let leaves dry before nightfall, preventing fungus.  
+The best time to water with sprinklers is **early morning, just before or around sunrise (around 5–9 AM)** — to minimize evaporation, allow deep root absorption before heat, and let leaves dry before nightfall, preventing fungus.
 Avoid midday watering due to high evaporation and nighttime watering, which promotes disease.
 
 <details>
   <summary>Why Early Morning is Best</summary>
 
--   **Reduced [Evaporation](https://www.google.com/search?q=Evaporation):**  Cooler air and calmer winds mean less water is lost to the air, ensuring more reaches the roots.  
--   **Plant Absorption:**  Water is available when plants are ready to absorb it as the sun rises, making it more efficient.  
--   **Disease Prevention:**  Leaves dry as the sun warms up, preventing fungal issues that thrive on prolonged moisture overnight.  
+-   **Reduced [Evaporation](https://www.google.com/search?q=Evaporation):**  Cooler air and calmer winds mean less water is lost to the air, ensuring more reaches the roots.
+-   **Plant Absorption:**  Water is available when plants are ready to absorb it as the sun rises, making it more efficient.
+-   **Disease Prevention:**  Leaves dry as the sun warms up, preventing fungal issues that thrive on prolonged moisture overnight.
 -   **Better [Water Pressure](https://www.google.com/search?q=Water+Pressure):**  Municipal pressure is often higher in the early morning.
 
 **Times to Avoid:**
 
--   **Midday (10 AM – 4 PM):**  High heat and sun cause rapid evaporation, wasting water.  
--   **Night (After 6 PM):**  Leaves stay wet for too long, creating ideal conditions for mildew and rust.  
+-   **Midday (10 AM – 4 PM):**  High heat and sun cause rapid evaporation, wasting water.
+-   **Night (After 6 PM):**  Leaves stay wet for too long, creating ideal conditions for mildew and rust.
 
 **[Evening Watering](https://www.google.com/search?q=Evening+Watering)** (4 – 6 PM) is acceptable if morning isn’t possible but carries a slight fungal risk as temperatures drop overnight.
 
@@ -451,14 +452,12 @@ Avoid midday watering due to high evaporation and nighttime watering, which prom
 
 ### 🔧 Best Practices
 
-- Use **“End by Sunrise”** whenever possible — it delivers maximum efficiency.  
-- Enable **freeze/rain/wind** skip logic based on local conditions.  
-- If you own a **Tempest PWS**, enable its integration for hyper-local data.  
-- Maintain a **minimum runtime ≥ 60 s** for pressure stability.  
-- Leave a **1–2 minute buffer** between programs to avoid valve overlap.  
+- Use **“End by Sunrise”** whenever possible — it delivers maximum efficiency.
+- Enable **freeze/rain/wind** skip logic based on local conditions.
+- If you own a **Tempest PWS**, enable its integration for hyper-local data.
+- Maintain a **minimum runtime ≥ 60 s** for pressure stability.
+- Leave a **1–2 minute buffer** between programs to avoid valve overlap.
 - Keep the **WET-IT Data** driver installed even if scheduling is disabled — it remains the data backbone for dashboards and custom automations.
-
-Next: [🌦 Weather Providers & Alerts →](#-weather-providers)
 
 ---
 
@@ -468,7 +467,7 @@ WET-IT started as a data supplier-only project; keeping that in mind, it still s
 
 ### 🌄 Rule Machine Example (Dynamic Sunrise Trigger)
 
-**Trigger:** `Time occurs at Sunrise + 0 minutes`  
+**Trigger:** `Time occurs at Sunrise + 0 minutes`
 **Action Sequence:**
 ```groovy
 Set Variable wetitData = %device:WET-IT Data: datasetJson%
@@ -496,11 +495,11 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 
 ### ⚙️ Node-RED Example
 
-**Nodes:**  
-- Inject Node → `sunrise` (daily trigger)  
-- Hubitat Device Node → `WET-IT Data`  
-- JSON Node → Parse `datasetJson`  
-- Function Node:  
+**Nodes:**
+- Inject Node → `sunrise` (daily trigger)
+- Hubitat Device Node → `WET-IT Data`
+- JSON Node → Parse `datasetJson`
+- Function Node:
   ```javascript
   let pct = msg.payload.zones.zone1.etBudgetPct;
   let base = 15;
@@ -508,33 +507,31 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
   msg.payload = { zone: 1, runtime: runtime };
   return msg;
   ```
-- Delay Node → Wait for runtime duration  
-- Hubitat Command Node → `markZoneWatered(1)`  
+- Delay Node → Wait for runtime duration
+- Hubitat Command Node → `markZoneWatered(1)`
 
 **Optional Enhancements:**
-- Add `freezeAlert` check  
+- Add `freezeAlert` check
 - Append runtime log to InfluxDB or file output
 
 ---
 
 ### 🪴 Summary Flow Example
 
-1. 02:00 → WET-IT updates weather (`wxChecked`, `wxTimestamp`)  
-2. Sunrise → Rule Machine/webCoRE trigger runs irrigation  
-3. Runtime scaled by ET percentage (`etBudgetPct`)  
-4. Controller marks completion → WET-IT resets soil depletion  
+1. 02:00 → WET-IT updates weather (`wxChecked`, `wxTimestamp`)
+2. Sunrise → Rule Machine/webCoRE trigger runs irrigation
+3. Runtime scaled by ET percentage (`etBudgetPct`)
+4. Controller marks completion → WET-IT resets soil depletion
 5. Next sunrise → Model recalculates and repeats
 
 > ⚡ *“Legacy controllers gain adaptive intelligence when sunrise becomes the clock.”*
-
-
 
 ---
 
 ## 🌦️ Weather Providers & Alerts
 <a id="-weather-providers"></a>
 
-WET-IT integrates multiple weather data sources to provide accurate, redundant inputs for **Evapotranspiration (ET)**, **forecast modeling**, and **alert logic**.  
+WET-IT integrates multiple weather data sources to provide accurate, redundant inputs for **Evapotranspiration (ET)**, **forecast modeling**, and **alert logic**.
 Users can select their preferred provider, or WET-IT can automatically fall back to another when conditions or data gaps are detected.
 
 Each source offers unique benefits depending on your climate, hardware, and accuracy needs.
@@ -556,14 +553,14 @@ Each source offers unique benefits depending on your climate, hardware, and accu
 
 When multiple providers are configured, WET-IT dynamically merges data to create a **hybrid local model**:
 
-1. **Tempest PWS (Primary):**  
-   Always prioritized for live rain, wind, temperature, and UV.  
+1. **Tempest PWS (Primary):**
+   Always prioritized for live rain, wind, temperature, and UV.
    Data is considered *authoritative* for local microclimate readings.
-2. **Tomorrow.io / OpenWeather (Forecast Layer):**  
-   Supplies short-term (1–48 hr) forecast data and predictive rain/wind alerts.  
+2. **Tomorrow.io / OpenWeather (Forecast Layer):**
+   Supplies short-term (1–48 hr) forecast data and predictive rain/wind alerts.
    WET-IT uses this layer for *skip-ahead* logic (rain prediction).
-3. **NOAA NWS (Fallback & Validation):**  
-   Provides regional consistency and baseline validation for forecast data.  
+3. **NOAA NWS (Fallback & Validation):**
+   Provides regional consistency and baseline validation for forecast data.
    Used as a safety fallback if APIs fail or data is incomplete.
 
 If a data source becomes unavailable, WET-IT automatically reverts to the next available provider without interrupting scheduled operations.
@@ -608,12 +605,19 @@ These attributes are used both for **internal skip logic** and **external automa
 
 ---
 
+### 🆕Rain Sensor
+- Beginning with v1.0.4.0 users can select any local rain/moisture sensors installed to automatically skip scheduled irrigation events.
+- Tempest PWS users can also select their haptic rain sensor.
+- Rain sensors are checked just before each scheduled irrigation event.
+
+---
+
 ### 🧭 Smart Weather Polling
 
-- **Automatic Refresh:** WET-IT updates all weather data daily (default 02:00 local).  
-- **On-Demand:** Manual refresh can be triggered via the driver’s *Refresh* command.  
-- **Adaptive Polling:** Frequency increases automatically during active irrigation seasons.  
-- **Failover Logic:** If one provider fails or returns invalid data, the system retries with a secondary provider transparently.  
+- **Automatic Refresh:** WET-IT updates all weather data daily (default 02:00 local).
+- **On-Demand:** Manual refresh can be triggered via the driver’s *Refresh* command.
+- **Adaptive Polling:** Frequency increases automatically during active irrigation seasons.
+- **Failover Logic:** If one provider fails or returns invalid data, the system retries with a secondary provider transparently.
 
 Weather updates trigger re-computation of ET values, soil memory, and adjustment percentages immediately.
 
@@ -623,8 +627,8 @@ Weather updates trigger re-computation of ET values, soil memory, and adjustment
 
 When a **Tempest PWS** is linked:
 - Live rain instantly updates the soil bucket, reducing depletion.
-- Real-time wind speed governs skip events (e.g., “too windy to water”).  
-- UV and solar radiation feed directly into the ET₀ model for same-day accuracy.  
+- Real-time wind speed governs skip events (e.g., “too windy to water”).
+- UV and solar radiation feed directly into the ET₀ model for same-day accuracy.
 - WET-IT automatically aligns Tempest device data with Hubitat’s event timeline, ensuring synchronized driver updates.
 
 Tempest effectively eliminates the “airport effect” — your irrigation is based on **your backyard weather**, not a station miles away.
@@ -633,7 +637,7 @@ Tempest effectively eliminates the “airport effect” — your irrigation is b
 
 ### 🪣 ET & Weather Synchronization
 
-Every weather update recalculates ET₀, ETc, and seasonal adjustments.  
+Every weather update recalculates ET₀, ETc, and seasonal adjustments.
 This ensures the scheduler’s runtime logic always reflects the latest available conditions.
 
 | Event | Trigger | Action |
@@ -701,23 +705,6 @@ A  **NOAA office**  is a physical facility where personnel, such as forecasters,
 In short, the radar station is a data collection tool, and the NOAA office is where that data is interpreted and transformed into usable weather information.
 
 ---
-
-### 🧪 Testing & Verification
-
-✅ Use **“🌤️ Test Weather Now”** in the app to:
-- Validate API key and connectivity.
-- Confirm provider response latency.
-- Display the last successful update in the diagnostic panel.
-
-**Tip:** If you have both a Tempest and a cloud provider, select **Tempest** and enable **NOAA backup** for maximum coverage and precision.
-
----
-
-### 📖 Related Sections
-- [Freeze Protection Logic](#-freeze-protection-logic)
-- [Scheduling](#-scheduling)
-- [Developer & Diagnostic Tools](#-developer--diagnostic-tools)
-
 ## 📊 Driver Attribute Reference
 <a id="-driver-attribute-reference"></a>
 
@@ -853,9 +840,6 @@ This JSON mirrors the internal data model and can be parsed directly by Rule Mac
 
 ----------
 
-Next: 🧩 App Configuration Reference →
-
-
 ## 🧩 App Configuration Reference
 <a id="-app-configuration-reference"></a>
 
@@ -961,6 +945,37 @@ Zone parameters determine how evapotranspiration (ET), soil depletion, and runti
 | **Soil Memory Enabled** | Allows the zone to participate in daily soil depletion tracking and ET-based watering decisions. |
 
 ---
+### 💦 Valve Control
+<a id="-valve-control"></a>
+
+WET-IT supports both **`capability.valve`** and **`capability.switch`** devices for each irrigation zone.  
+Each zone can have one device assigned for direct activation and runtime tracking.
+
+### ⚙️ Overview
+- Every zone can be linked to a single valve or switch device.
+- Manual and automatic (program-based) activation are supported.
+- Valves are executed **sequentially** to maintain stable water pressure and ensure accurate flow timing.
+- Zones without an assigned valve are **automatically skipped** during scheduled runs.
+
+### 🧪 Manual Control
+Zones can be tested directly from the UI:
+- Tap **“Start Zone Test”** to manually open the assigned valve.
+- The app measures runtime and calculates completion percentage.
+- Tap **“Stop”** to end the test; WET-IT records the elapsed time for accurate ET adjustments.
+
+### 🛠 Runtime Logic
+- Active valves are tracked through `atomicState.manualZone`.
+- The system uses `controlValve()` and `closeZoneHandler()` to open, time, and close valves safely.
+- Includes protection against overlapping zone activations.
+- Manual runs respect **freeze, rain, and wind skips** when enabled.
+
+### 🔍 Attributes & Diagnostics
+When valves are controlled by the scheduler or manually:
+- **`activeZone`** and **`activeZoneName`** update in real time.
+- **`summaryText`** in the data driver includes the current valve and runtime status.
+- Diagnostic page tools display the latest valve state and execution logs.
+
+---
 
 ### 🧮 Advanced ET & Seasonal Settings
 
@@ -1025,8 +1040,6 @@ When balance drops below the MAD threshold, WET-IT automatically schedules water
 - Use **Soak Cycles** for sloped or compacted soil to prevent runoff.  
 
 ---
-
-Next: [🪣 Soil Memory & ET Reset →](#-soil-memory-et-reset)
 
 ## 🪣 Soil Memory & ET Reset
 <a id="-soil-memory-et-reset"></a>
@@ -1116,8 +1129,96 @@ Forecasted rain from cloud providers contributes to preemptive skip decisions bu
 - Use **Mark Zone Watered** after manual hose watering to keep soil data accurate.
 
 ---
+## 🧩 Zone Model Parameters
 
-Next: [🗓️ Program Scheduling Reference →](#-program-scheduling-reference)
+| Field | Derived From | Influences |
+|:--|:--|:--|
+| `soilType` | User input | Available water capacity |
+| `plantType` | User input | Kc + root depth + MAD |
+| `nozzleType` | User input | Precipitation rate |
+| `precipRateInHr` | Derived / override | Irrigation intensity |
+| `rootDepthIn` | Derived / override | Storage volume |
+| `kc` | Derived / override | Crop coefficient scaling |
+| `mad` | Derived / override | Allowed depletion (%) |
+
+
+## 🕒 Timestamp & Temporal Model
+
+| Attribute | Description | Updated When |
+|:--|:--|:--|
+| `wxTimestamp` | Forecast origin timestamp | Each forecast fetch |
+| `wxChecked` | Forecast poll/check timestamp | Every app poll or refresh |
+| `summaryTimestamp` | Time last ET summary calculated | Each hybrid run |
+| `zoneDepletionTs_x` | Zone-specific timestamp | When watering or ET applied |
+
+> 🧠 *`wxTimestamp` shows when the data was issued; `wxChecked` shows when it was polled.*
+
+
+
+## 🌿 Plant Type Reference
+<a id="-plant-type-reference></a>
+> Defines vegetation categories and corresponding crop coefficients (Kc).  
+> Used to calculate evapotranspiration (ET₀ × Kc).
+
+| Plant Type | Description | Typical Kc Range | Example |
+|-------------|--------------|------------------|----------|
+| Turf (Cool Season) | Cool-climate grasses (fescue, rye) | 0.8–1.0 | Lawns, sports fields |
+| Turf (Warm Season) | Heat-tolerant grasses (Bermuda, zoysia) | 0.6–0.8 | Southern lawns |
+| Vegetables | Herbs, annuals, leafy crops | 0.7–0.9 | Herbs, wildflowers |
+| Shrubs | Woody ornamentals, perennials | 0.5–0.7 | Foundation plantings |
+| Trees | Mature trees, deep roots | 0.3–0.6 | Shade or fruit trees |
+
+---
+
+## 🌾 Soil Type Reference
+<a id="-soil-type-reference"></a>
+> Controls soil moisture retention and depletion rate.
+
+| Soil Type | Field Capacity | Infiltration | Typical Depth | Comments |
+|------------|----------------|---------------|----------------|-----------|
+| Sand | Low | Fast | Shallow | Drains quickly, frequent watering |
+| Loamy Sand | Low–Medium | Medium–Fast | Shallow–Medium | Common baseline |
+| Loam | Medium | Medium | Moderate | Balanced texture |
+| Clay Loam | High | Slow | Deep | High retention, slow infiltration |
+| Clay | Very High | Very Slow | Deep | Rarely irrigated, risk of runoff |
+
+
+## 💧 Irrigation Method Reference
+<a id="-irrigation-method-reference></a>
+> Defines the precipitation rate and efficiency of each irrigation type.  
+> Used to calculate zone runtime based on ET-derived water requirements.
+
+| Irrigation Method | Typical Rate (in/hr) | Efficiency | Application Depth | Description |
+|--------------------|----------------------|-------------|--------------------|--------------|
+| Spray | 1.5–2.0 | 60–70 % | Shallow–Moderate | Fixed spray heads with overlapping circular patterns. High precipitation rate, short runtime, prone to wind drift and runoff on slopes. |
+| Rotor | 0.4–0.8 | 70–80 % | Moderate–Deep | Gear-driven or impact rotors with slow rotation and broad coverage. Uniform application, less prone to runoff. |
+| MP Rotator | 0.4–0.6 | 75–85 % | Moderate–Deep | Multi-trajectory rotating stream nozzle; lower rate for improved uniformity and wind resistance. Excellent for mixed zones. |
+| Drip Emitter | 0.2–0.5 | 85–95 % | Targeted | Individual emitters at plant bases or rows. Extremely efficient, minimal evaporation or overspray. |
+| Drip Line | 0.3–0.6 | 85–95 % | Targeted | Continuous inline emitters spaced along tubing. Ideal for planters, beds, or long runs. |
+| Bubbler | 0.5–2.0 | 80–90 % | Localized | Flood-style emitters for tree wells or basins. High localized rate for deep watering of single plants. |
+
+---
+
+💡 *The app converts the precipitation rate and efficiency into a runtime multiplier for each zone.  
+Lower-rate systems (e.g., MP Rotator, Drip) run longer but deliver more uniform moisture with less waste.*
+
+## 🕓 Base Runtime Reference
+<a id="-base-runtime-reference></a>
+> Establishes the **baseline irrigation duration** for each zone.  
+> Used with ET and seasonal budget percentages to calculate the final adjusted runtime.
+
+| Parameter | Unit | Description | Notes |
+|------------|------|-------------|-------|
+| Base Runtime | minutes / seconds | Defines the zone’s standard watering time under normal conditions. | Values **≤ 60** are interpreted as **minutes** and automatically converted to seconds. Values **> 60** are assumed to already be in seconds. |
+| Adjusted Runtime | seconds | Calculated automatically by WET-IT based on ET and seasonal adjustments. | Displayed in the Data Driver as `zoneXAdjustedTime`. |
+| ET Budget (%) | percent | Dynamic efficiency adjustment derived from evapotranspiration deficit or surplus. | Usually near 100 % for average weather; increases during hot, dry periods. |
+| Seasonal Budget (%) | percent | Optional manual or calendar-based adjustment applied after ET calculation. | Allows seasonal offsets for conservation or maintenance. |
+---
+
+💡 *In practice:*  
+If a zone’s base runtime is **20 min (entered as 20)** and the ET budget is **85 %**,  the system converts this to **20 × 60 = 1,200 s**,  then multiplies by 0.85 → **1,020 s (≈ 17 min adjusted runtime).**
+
+---
 
 ## 🗓️ Program Scheduling Reference
 <a id="-program-scheduling-reference"></a>
@@ -1274,60 +1375,11 @@ When triggered, alerts:
 ### 🧭 Provider Priority Logic
 
 1. **Tempest** (if connected) — live local readings for wind, rain, temperature, and UV.  
-2. **Tomorrow.io** — short-range forecast data with high temporal resolution.  
+2. **Tomorrow. io** — short-range forecast data with high temporal resolution.  
 3. **OpenWeather 3.0** — medium-range global forecast and radar-derived rain predictions.  
 4. **NOAA / NWS** — baseline source and fallback when cloud data are unavailable.
 
 This order ensures that WET-IT prioritizes **local and current** conditions over regional forecasts.
-
----
-
-### 📊 Alert Attributes Published
-
-| Attribute | Type | Example | Description |
-|:--|:--|:--|:--|
-| `rainAlert` | bool | `true` | True when rain exceeds threshold. |
-| `rainAlertText` | string | “Forecast: 0.25 in within 12h.” | Human-readable message. |
-| `freezeAlert` | bool | `true` | True when freeze condition detected. |
-| `freezeAlertText` | string | “Low 31°F predicted at 05:00.” | Freeze alert detail. |
-| `windAlert` | bool | `true` | “Wind 22 mph sustained.” | High-wind advisory. |
-| `wxChecked` | string | “2026-01-16T02:00:00Z” | Timestamp of last weather check. |
-| `wxSource` | string | “Tempest” | Provider currently in use. |
-| `wxLocation` | string | “Austin, TX” | Provider-reported location name. |
-| `wxTimestamp` | string | “2026-01-16T01:58:30Z” | Timestamp of fetched data. |
-
-These attributes are accessible to Rule Machine, Node-RED, webCoRE, and dashboards for custom automation logic.
-
----
-
-### 💡 Example Use Cases
-
-- **Smart Skip Rule**  
-
->IF (rainAlert == true OR freezeAlert == true) THEN  
-Cancel irrigation programs  
-ELSE IF (windAlert == true) THEN  
-Delay watering 2 hours  
-END IF
-
-
-- **Weather Dashboard Tile**  
-Display `wxSource`, `rainForecast`, and `freezeLowTemp` for a live weather overview.
-
-- **Voice Integration (Alexa / Google)**  
-Expose `summaryText` and `wxSource` attributes through the Maker API for voice status queries.
-
----
-
-### 🔔 Notification Options
-
-| Setting | Description |
-|:--|:--|
-| **Send Push Notification on Skip** | Sends Hubitat notification when a program is skipped due to weather. |
-| **Include Weather Summary** | Adds short condition summary in the notification message. |
-| **Send Alert on Provider Failure** | Notifies when primary provider is unreachable or returns invalid data. |
-
-Notifications use the Hubitat messaging system, allowing push or SMS outputs depending on your device configuration.
 
 ---
 
@@ -1341,339 +1393,7 @@ Notifications use the Hubitat messaging system, allowing push or SMS outputs dep
 
 ---
 
-Next: [📊 Driver Attribute Reference (Advanced Details) →](#-driver-attribute-reference-advanced)
-
-## 📊 Driver Attribute Reference (Advanced Details)
-<a id="-driver-attribute-reference-advanced"></a>
-
-The **WET-IT Data Driver** serves as the central hub for exposing all calculated, observed, and scheduled irrigation data.  
-These attributes allow dashboards, automations, and external applications to access every detail of WET-IT’s internal state.
-
----
-
-### 🧱 Core Data Groups
-
-WET-IT’s driver organizes data into logical groups:
-
-| Group | Description |
-|:--|:--|
-| **System Metadata** | Identifies version, source, and update times. |
-| **Weather & Alerts** | Live and forecast-based data inputs from selected providers. |
-| **Zone Data** | ET, seasonal, and soil information for each configured zone. |
-| **Program Data** | Current state of running or scheduled programs. |
-| **Summary Data** | Aggregated information for dashboards and notifications. |
-
----
-
-### 🧩 System Metadata
-
-| Attribute | Example | Description |
-|:--|:--|:--|
-| `driverInfo` | `WET-IT Data v1.0.4.0` | Version and build information. |
-| `appInfo` | `WET-IT App v1.0.4.0 (Scheduler Enabled)` | App status summary. |
-| `wxSource` | `Tempest` | Weather source currently in use. |
-| `wxChecked` | `2026-01-16 02:00` | Time of last successful weather update. |
-| `wxTimestamp` | `2026-01-16T02:00:00Z` | Raw ISO timestamp for integrations. |
-| `wxLocation` | `Austin, TX` | Location reported by provider. |
-| `summaryText` | `Lawn program ran 42 minutes; no skips.` | Dashboard summary line. |
-| `summaryTimestamp` | `2026-01-16T06:40:00Z` | Time the summary was updated. |
-
----
-
-### 🌦 Weather & Alert Attributes
-
-| Attribute | Type | Description |
-|:--|:--|:--|
-| `rainForecast` | number | Predicted rainfall (next 24 hours). |
-| `freezeLowTemp` | number | Lowest forecast temperature. |
-| `windSpeed` | number | Live or forecast wind speed. |
-| `rainAlert` | bool | True when rain exceeds threshold. |
-| `rainAlertText` | string | Text description of rain condition. |
-| `freezeAlert` | bool | True when freeze condition detected. |
-| `freezeAlertText` | string | Human-readable freeze status. |
-| `windAlert` | bool | True when high-wind condition detected. |
-| `windAlertText` | string | Human-readable wind description. |
-| `activeAlerts` | string | Combined string of active alerts (comma-separated). |
-
-All alerts update dynamically and are cleared automatically when conditions normalize.
-
----
-
-### 💧 Zone Attributes
-
-| Attribute | Example | Description |
-|:--|:--|:--|
-| `zone1Name` | `"Front Lawn"` | Name label for Zone 1. |
-| `zone1Et` | `0.22` | Current daily ET loss (in). |
-| `zone1EtAdjustedTime` | `14.1` | Runtime (min) adjusted for ET. |
-| `zone1Seasonal` | `98` | Seasonal adjustment factor (%). |
-| `zone1BaseTime` | `15` | Configured base runtime (min). |
-| `zone1Status` | `Running` | Zone state: Idle / Running / Skipped. |
-
-These attributes are dynamically created for each defined zone and update every cycle or program run.
-
----
-
-### 🗓 Program Attributes
-
-| Attribute | Example | Description |
-|:--|:--|:--|
-| `activeProgram` | `1` | Currently running program number. |
-| `activeProgramName` | `Lawn Morning` | Active program name. |
-| `activeZone` | `3` | Currently running zone number. |
-| `activeZoneName` | `Back Yard` | Active zone label. |
-| `programStatus` | `Running` | Overall program state (Idle / Running / Completed / Skipped). |
-| `lastProgramCompleted` | `Garden Beds` | Name of last program completed. |
-| `lastProgramTime` | `2026-01-16T06:45:00Z` | Completion timestamp. |
-
----
-
-### 🪣 Soil & ET Tracking Attributes
-
-| Attribute | Example | Description |
-|:--|:--|:--|
-| `etToday` | `0.22` | Current day ET₀ value. |
-| `etYesterday` | `0.26` | Previous day ET₀. |
-| `etBaseline` | `0.23` | Reference ET baseline. |
-| `etBudget` | `95` | Current ET runtime adjustment percentage. |
-| `soilDeficit` | `0.18` | Current soil moisture depletion (in). |
-| `soilMoisture` | `82` | Remaining available water (%) for active zone. |
-| `madThreshold` | `50` | Depletion percentage that triggers irrigation. |
-
----
-
-### 🧮 Derived & Computed Values
-
-| Attribute | Example | Description |
-|:--|:--|:--|
-| `etcToday` | `0.19` | Crop-adjusted ET for today. |
-| `etcYesterday` | `0.21` | Crop-adjusted ET for yesterday. |
-| `etcAverage7Day` | `0.20` | Rolling 7-day ET average. |
-| `seasonalFactor` | `102` | Seasonal runtime scaling (%). |
-| `rainTotal7Day` | `0.65` | Cumulative rainfall over past 7 days. |
-| `rainTotal30Day` | `1.91` | 30-day rainfall accumulation. |
-
----
-
-### 🧰 JSON Dataset (datasetJson)
-
-The `datasetJson` attribute exposes the complete current model for use by external systems (Rule Machine, Node-RED, APIs, etc.).
-
-Example:
-```json
-{
-  "version": "1.0.4.0",
-  "timestamp": "2026-01-16T02:00:00Z",
-  "weather": {
-    "source": "Tempest",
-    "rainForecast": 0.12,
-    "windSpeed": 5.2,
-    "freezeLowTemp": 34
-  },
-  "zones": [
-    {
-      "id": 1,
-      "name": "Front Lawn",
-      "baseTime": 15,
-      "etBudgetPct": 93,
-      "etAdjustedTime": 13.9,
-      "soilDeficit": 0.18
-    },
-    {
-      "id": 2,
-      "name": "Garden Beds",
-      "baseTime": 10,
-      "etBudgetPct": 102,
-      "etAdjustedTime": 10.2,
-      "soilDeficit": 0.22
-    }
-  ]
-}
-```
-
----
-
-### ⚙️ Integration Examples
-
-**Rule Machine Example**
->Trigger: Device Attribute -> rainAlertText = true  
-Action: Cancel Program "Lawn Morning"
-
-**Node-RED Example**
->[WET-IT Data Device] → MQTT Out → Topic: irrigation/status → Payload: datasetJson
->
-**Maker API Example**
->GET http://[HUB_IP]/apps/api/[appID]/devices/[deviceID]?access_token=[TOKEN]
->
-
----
-
-### 💡 Tips
-
-- Always use **`datasetJson`** for automation logic; it ensures you’re using the same data WET-IT’s scheduler uses internally.  
-- Combine `rainAlert` and `freezeAlert` in Rule Machine to fully automate program skips.  
-- The JSON dataset is regenerated automatically after each weather refresh, manual watering event, or program completion.  
-- Use Hubitat’s built-in variable connectors to map ET and rainfall attributes directly into dashboards.  
-
----
-
-Next: [🧑‍💻 Developer & Diagnostic Tools →](#-developer-diagnostic-tools)
-## 🧑‍💻 Developer & Diagnostic Tools
-<a id="-developer-diagnostic-tools"></a>
-
-WET-IT includes built-in diagnostic tools for developers, testers, and advanced users.  
-These tools expose internal variables, logs, and recalculation functions for verification and debugging.
-
----
-
-### 🧰 Diagnostic Commands
-
-| Command | Description |
-|:--|:--|
-| **`refresh()`** | Forces an immediate update of all weather sources and recalculates ET values. |
-| **`recalculateEt()`** | Recomputes ET₀ and ETc using existing weather data without polling new sources. |
-| **`markZoneWatered(zone, percent)`** | Manually resets soil memory for a specific zone. Optional percent value (0–100) allows partial refill. |
-| **`markAllZonesWatered()`** | Resets soil memory for all zones to 100%. |
-| **`clearSoilMemory()`** | Deletes all stored soil depletion data (advanced use only). |
-| **`disableDebugLoggingNow()`** | Immediately turns off debug logging to prevent log saturation. |
-
-All commands can be run directly from the driver device page or invoked programmatically through the Maker API.
-
----
-
-### 🪵 Logging Modes
-
-| Mode | Description |
-|:--|:--|
-| **Info Logging** | Default mode; logs key actions, weather updates, and schedule runs. |
-| **Debug Logging** | Adds detailed ET math, skip logic, and runtime adjustments to the logs. |
-| **Trace Logging** | (Developer only) Provides raw event and schedule traces for low-level troubleshooting. |
-| **Silent Mode** | Disables all logs except errors. Useful for production or high-frequency polling setups. |
-
-> ⚠️ **Tip:** Debug and trace logging automatically turn off after 30 minutes to reduce unnecessary log volume.
-
----
-
-### 📋 Verification Checklist
-
-Use this list to confirm correct installation and operation:
-
-1. ✅ **Driver Installed** — “WET-IT Data” driver created automatically by the app.  
-2. ✅ **Weather Provider Active** — `wxSource` attribute updates with correct provider name.  
-3. ✅ **ET Values Changing** — `etToday` and `etBudget` update after each weather poll.  
-4. ✅ **Zone Attributes Present** — `zone#Et`, `zone#BaseTime`, and `zone#EtAdjustedTime` visible in driver.  
-5. ✅ **Programs Running** — `activeProgram` and `summaryText` change during schedule events.  
-6. ✅ **Skip Events Triggering** — `rainAlert`, `windAlert`, or `freezeAlert` true when thresholds met.  
-
----
-
-### 🧠 Debugging ET Calculations
-
-If ET or runtime values seem incorrect:
-
-1. Check the **weather provider’s timestamp** (`wxTimestamp`) to confirm data freshness.  
-2. Verify **units** (Imperial vs Metric) are consistent with nozzle precipitation rate inputs.  
-3. Confirm **zone precipitation rates** are accurate — most sprinkler nozzles output between 0.4–1.0 in/hr.  
-4. Enable **Debug Logging** and review logs for `ET calc:` entries.  
-5. Compare `etBaseline` vs `etToday` — high differences indicate seasonal scaling adjustments.  
-
----
-
-### 🔍 Testing Skip Logic
-
-You can test weather skip conditions without changing live data:
-
-| Test Type | Method | Example |
-|:--|:--|:--|
-| **Freeze Skip** | Temporarily set `freezeLowTemp` below threshold. | `set freezeLowTemp = 30°F` |
-| **Rain Skip** | Manually adjust `rainForecast` above limit. | `set rainForecast = 0.25 in` |
-| **Wind Skip** | Set `windSpeed` above skip threshold. | `set windSpeed = 25 mph` |
-
-Each simulated change updates the skip logic engine immediately and logs the result.
-
----
-
-### 🌐 Maker API Integration
-
-Developers can access all driver attributes through Hubitat’s Maker API:
->GET http://[HUB_IP]/apps/api/[APP_ID]/devices/[DEVICE_ID]?access_token=[TOKEN]
-Example response snippet:
-```json
-{
-  "name": "WET-IT Data",
-  "label": "WET-IT Data Driver",
-  "attributes": [
-    {"name": "wxSource", "currentValue": "Tempest"},
-    {"name": "rainForecast", "currentValue": 0.15},
-    {"name": "etBudget", "currentValue": 94},
-    {"name": "activeProgramName", "currentValue": "Lawn Morning"}
-  ]
-}
-```
-You can parse this JSON to feed dashboards, RESTful APIs, or other control systems.
-
-----------
-
-### 🧩 Developer Notes
-
--   All numeric attributes are stored as strings for Hubitat compatibility; cast them to floats when performing calculations externally.
--   The app and driver communicate via parent-child messaging and synchronized state variables.
--   Logs labeled **“ET calc”**, **“Runtime Adjust”**, or **“Weather Refresh”** show precise model steps.
--   For rapid iteration, you can trigger multiple recalculations using `recalculateEt()` without waiting for polling intervals.
--   No reboot is needed after changing weather providers — just run `refresh()`.
-
-----------
-
-### 💡 Pro Tips
-
--   Use **Node-RED or InfluxDB** to chart ET, rain, and runtime trends over time.
--   Combine WET-IT with **Hubitat dashboards** for live irrigation feedback.
--   Run WET-IT in **Data Provider mode** on one hub and consume its dataset via LAN or MQTT on another.
--   Backup your configuration using the built-in Import/Export JSON option before major edits.
--   Keep an eye on **Tempest firmware updates** — improved wind calibration enhances skip accuracy.
-    
----------
-
-
-
-## 💦 Valve Control
-<a id="-valve-control"></a>
-
-WET-IT supports both **`capability.valve`** and **`capability.switch`** devices for each irrigation zone.  
-Each zone can have one device assigned for direct activation and runtime tracking.
-
-### ⚙️ Overview
-- Every zone can be linked to a single valve or switch device.
-- Manual and automatic (program-based) activation are supported.
-- Valves are executed **sequentially** to maintain stable water pressure and ensure accurate flow timing.
-- Zones without an assigned valve are **automatically skipped** during scheduled runs.
-
-### 🧪 Manual Control
-Zones can be tested directly from the UI:
-- Tap **“Start Zone Test”** to manually open the assigned valve.
-- The app measures runtime and calculates completion percentage.
-- Tap **“Stop”** to end the test; WET-IT records the elapsed time for accurate ET adjustments.
-
-### 🛠 Runtime Logic
-- Active valves are tracked through `atomicState.manualZone`.
-- The system uses `controlValve()` and `closeZoneHandler()` to open, time, and close valves safely.
-- Includes protection against overlapping zone activations.
-- Manual runs respect **freeze, rain, and wind skips** when enabled.
-
-### 🔍 Attributes & Diagnostics
-When valves are controlled by the scheduler or manually:
-- **`activeZone`** and **`activeZoneName`** update in real time.
-- **`summaryText`** in the data driver includes the current valve and runtime status.
-- Diagnostic page tools display the latest valve state and execution logs.
-
-### 📖 Related Sections
-See also:
-- [Base Runtime Reference](#-base-runtime-reference)
-- [Scheduling](#-scheduling)
-
-
-
-### 🕒 Conceptual Flow
+## 🕒 Conceptual Flow
 
 ```
 ┌─────────────┐    ┌──────────────┐    ┌───────────────┐    ┌────────────────┐
@@ -1695,75 +1415,6 @@ See also:
 ET calculations are **time-based**, not daily resets. WET-IT determines soil depletion by measuring how long it’s been since watering — making accurate resets essential for realistic modeling.
 
 ---
-
-
-## ❄️ Freeze Protection Logic
-<a id="-freeze-protection-logic"></a>
-
-WET-IT automatically detects **forecast freeze or frost conditions** and can skip scheduled irrigation programs to prevent equipment damage and plant stress.  
-This feature operates independently of the primary weather provider once forecast data is cached.
-
----
-
-### 🧩 Overview
-The freeze protection system evaluates current and forecasted temperatures using all available weather inputs.  
-If the projected low temperature is **at or below** your configured threshold, WET-IT will:
-
-- Activate the **Freeze Alert** flag (`freezeAlert = true`)  
-- Record the projected low (`freezeLowTemp`)  
-- Display an **🧊 Freeze Warning** banner in the app  
-- Skip program execution for all active schedules until temperatures recover  
-
-The alert state is preserved in `atomicState` and automatically synchronized to the child driver for dashboard visibility.
-
----
-
-### ⚙️ Configuration
-In the app’s **🌦 Weather Configuration (Advanced)** section:
-- Select your preferred **temperature unit** (`°F` or `°C`).
-- Choose a **freeze threshold** from the drop-down list (default: 35°F / 1.5°C).
-- Enable or disable **“🧊 Skip programs during freeze alerts.”**
-
-When enabled, all scheduled or manually triggered irrigation events respect this condition.  
-Freeze protection is **always evaluated before valve activation** to ensure safety.
-
----
-
-### 🧠 Behavior & Recovery
-- The freeze alert automatically clears when forecast temperatures rise above the configured threshold for 24 hours.
-- Manual runs are blocked while an active freeze alert exists unless explicitly overridden.
-- The app logs skip events and includes temperature details in `summaryText`.
-- Alert persistence ensures continuity after hub reboots or weather source changes.
-
----
-
-### 🧾 Published Attributes
-When freeze protection is active, the WET-IT Data driver publishes:
-| Attribute | Type | Description |
-|:--|:--|:--|
-| `freezeAlert` | Boolean | True when freeze/frost condition detected |
-| `freezeLowTemp` | Number | Projected lowest temperature (°F/°C) |
-| `freezeAlertText` | String | Human-readable alert summary (“Freeze Warning — Low 31°F”) |
-
-These attributes can be referenced in Rule Machine, dashboards, or custom automations to suppress external watering devices.
-
----
-
-### 🧪 Diagnostics
-To verify operation:
-1. Run **🔄 Run Weather/ET Updates Now** to refresh forecast data.
-2. Observe alert status under **🚨 Active Weather Alerts**.
-3. Confirm `freezeAlert` and `freezeLowTemp` attributes in the **WET-IT Data** driver.
-
----
-
-### 📖 Related Sections
-- [Weather Providers](#-weather-providers)
-- [Scheduling](#-scheduling)
-- [Developer & Diagnostic Tools](#-developer--diagnostic-tools)
-
-
-
 
 ## 🌧 Rain Protection Logic
 <a id="-rain-protection-logic"></a>
@@ -1897,43 +1548,6 @@ If both a freeze and rain event are active, the system reports **“Freeze Warni
 
 ---
 
-### 🧾 Published Attributes
-These driver attributes mirror the UI display and can be used in dashboards or automation logic:
-
-| Attribute | Type | Description |
-|:--|:--|:--|
-| `freezeAlert` | Boolean | True when freeze conditions exist |
-| `freezeLowTemp` | Number | Projected low temperature |
-| `rainAlert` | Boolean | True when rainfall meets skip criteria |
-| `rainForecast` | Number | Forecast rainfall total |
-| `windAlert` | Boolean | True when wind exceeds threshold |
-| `windSpeed` | Number | Forecast/observed wind speed |
-| `activeAlerts` | String | Combined alert summary text |
-| `summaryText` | String | Concise UI summary including active alert(s) and timestamp |
-| `summaryTimestamp` | String | Timestamp of the last update |
-
-These values allow full automation integration and display synchronization between the app and child driver.
-
----
-
-### 🧪 Diagnostics
-To test alert synchronization:
-1. Open **📑 Logging Tools & Diagnostics** in the app.  
-2. Tap **🔄 Run Weather/ET Updates Now** to force a refresh.  
-3. Review the **🚨 Active Weather Alerts** panel for current status.  
-4. Check the **WET-IT Data** driver to confirm that the same alerts and values are published.  
-5. Review hub logs for corresponding `[WET-IT]` messages confirming event emission.
-
----
-
-### 📖 Related Sections
-- [Freeze Protection Logic](#-freeze-protection-logic)
-- [Rain Protection Logic](#-rain-protection-logic)
-- [Wind Protection Logic](#-wind-protection-logic)
-- [Weather Providers](#-weather-providers)
-- [Developer & Diagnostic Tools](#-developer--diagnostic-tools)
-
-
 
 ### 🧪 Diagnostics
 To verify operation:
@@ -1944,45 +1558,9 @@ To verify operation:
 
 ---
 
-### 📖 Related Sections
-- [Freeze Protection Logic](#-freeze-protection-logic)
-- [Rain Protection Logic](#-rain-protection-logic)
-- [Weather Providers](#-weather-providers)
-- [Developer & Diagnostic Tools](#-developer--diagnostic-tools)
 
 
 
-### 🧾 Published Attributes
-When rain protection is active, the WET-IT Data driver publishes:
-| Attribute | Type | Description |
-|:--|:--|:--|
-| `rainAlert` | Boolean | True when rainfall forecast or sensors indicate wet conditions |
-| `rainForecast` | Number | Forecast rainfall (inches or millimeters) |
-| `rainAlertText` | String | Human-readable alert summary (“Rain skip — 0.18 in forecast”) |
-
-These attributes can be displayed on dashboards or used in Rule Machine to automate external controllers or notification routines.
-
----
-
-### 🧪 Diagnostics
-To verify operation:
-1. Run **🔄 Run Weather/ET Updates Now** to refresh forecast data.
-2. Observe the **Rain Alert** section in the app’s **🚨 Active Weather Alerts** panel.
-3. Inspect the `rainAlert`, `rainForecast`, and `rainAlertText` values in the **WET-IT Data** driver.
-4. If a rain sensor is configured, confirm that toggling it between *dry* and *wet* states updates the app’s alert status in real time.
-
----
-
-### 📖 Related Sections
-- [Freeze Protection Logic](#-freeze-protection-logic)
-- [Weather Providers](#-weather-providers)
-- [Developer & Diagnostic Tools](#-developer--diagnostic-tools)
-
-
-## 🆕Rain Sensor
-- Beginning with v1.0.4.0 users can select any local rain/moisture sensors installed to automatically skip scheduled irrigation events.
-- Tempest PWS users can also select their haptic rain sensor.
-- Rain sensors are checked just before each scheduled irrigation event.
 
 
 ## 💨 Wind Protection Logic
@@ -2001,15 +1579,13 @@ Automations can safely:
 - Send notifications or trigger alerts  
 - Resume when forecasted winds will not affect irrigation
 
-## 📊 Data Publishing & Attributes Reference
+## 📊 Data Publishing
 <a id="-data-publishing"></a>
-<a id="-driver-attribute-reference"></a>
 
 WET-IT continuously publishes both **summary** and **per-zone data** to its child device — the **WET-IT Data driver**.  
 This allows dashboards, Rule Machine, and external systems to access live irrigation intelligence directly from Hubitat.
 
 ---
-
 ### 🧩 Overview
 The app transmits three categories of data:
 1. **Summary Data** — Overall weather, alert, and timestamp information.  
@@ -2036,75 +1612,7 @@ Within **📊 Data Publishing** (app UI):
 
 ---
 
-### 🧾 Published Attributes
-#### **Core / System Attributes**
-| Attribute | Type | Description |
-|:--|:--|:--|
-| `appInfo` | String | Current app version and modification date |
-| `driverInfo` | String | Driver version and update date |
-| `summaryText` | String | Formatted human summary of current ET and alert status |
-| `summaryTimestamp` | String | ISO timestamp of last update |
-| `datasetJson` | JSON | Full ET/seasonal dataset for all zones |
-
-#### **Active Zone / Program Attributes**
-| Attribute | Type | Description |
-|:--|:--|:--|
-| `activeZone` | Number | Currently running zone number |
-| `activeZoneName` | String | Zone display name |
-| `activeProgram` | Number | Current running program index |
-| `activeProgramName` | String | Program display name |
-
-#### **Weather & Alert Attributes**
-| Attribute | Type | Description |
-|:--|:--|:--|
-| `wxSource` | String | Active weather provider name |
-| `wxTimestamp` | String | Forecast source timestamp |
-| `wxChecked` | String | Local time the data was last verified |
-| `wxLocation` | String | Source station or forecast location |
-| `freezeAlert`, `rainAlert`, `windAlert` | Boolean | True when corresponding alert is active |
-| `freezeLowTemp`, `rainForecast`, `windSpeed` | Number | Forecast values for skip criteria |
-| `activeAlerts` | String | Combined text summary of all current alerts |
-
-#### **Zone-Level Attributes**
-> Published only when “Publish individual zone attributes” is enabled.
-Each zone (1–48) provides:
-| Example Attribute | Type | Description |
-|:--|:--|:--|
-| `zone1Name` | String | Zone display name |
-| `zone1Et` | Number | Calculated ET budget for the zone |
-| `zone1Seasonal` | Number | Seasonal adjustment factor (%) |
-| `zone1BaseTime` | Number | Configured baseline runtime (seconds) |
-| `zone1EtAdjustedTime` | Number | Adjusted runtime (after ET & seasonal scaling) |
-
----
-
-### 💾 JSON Dataset Example
-The `datasetJson` attribute exposes all zone data as a single object:
-
-> {
-  "zones": {
-    "zone1": {
-      "name": "Front Lawn",
-      "baseTime": 900,
-      "etAdjustedTime": 768,
-      "etBudgetPct": 85,
-      "rainAlert": false
-    },
-    "zone2": {
-      "name": "Back Garden",
-      "baseTime": 600,
-      "etAdjustedTime": 510,
-      "etBudgetPct": 85,
-      "rainAlert": false
-    }
-  },
-  "timestamp": "2026-01-16T06:20:15Z",
-  "wxSource": "Tempest",
-  "summaryText": "ET update complete — 4 zones adjusted, no alerts active."
-}
-
-
-## 🔧 Developer & Diagnostic Tools
+### 🧪 Testing & Verification
 
 | Action | Purpose |
 |:--|:--|
@@ -2114,12 +1622,12 @@ The `datasetJson` attribute exposes all zone data as a single object:
 | 🔄 Run ET Calculations | Executes full hybrid model |
 | 🛑 Disable Debug Logging | Turns off verbose logs |
 
-**Internal Highlights:**
-- `emitEvent()` and `emitChangedEvent()` handle updates safely  
-- Log formatting standardized with `[WET-IT]` prefix  
-- Auto-disable debug after 30 min
-
 ---
+
+### 📖 Related Sections
+- [Freeze Protection Logic](#-freeze-protection-logic)
+- [Scheduling](#-scheduling)
+- [Developer & Diagnostic Tools](#-developer--diagnostic-tools)
 
 ## 📖 Related Documentation
 
@@ -2128,11 +1636,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE4NjI0MjQ5OTcsLTY3NjQ2ODQ1NywtMT
-Y4MTc5NzYwMSwtNjI3OTQxMzQzLC0xNjM4OTQwMzk0LC0yMDYz
-ODkxMDU0LC0yMzUwMjIyMzcsMTkwNzg3MjYzMSw1NjE3NzkwMC
-wxMzA4Njc2NTEzLDIwODY4NzkyMDEsMTc5MTYwODk1LDExNDU4
-MDY0MjUsMTAzMTE3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMz
-gsLTU5NTU4MzExOCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwt
-MTIzNjk4MDc2MF19
+eyJoaXN0b3J5IjpbMTE2MzE0MDM5NiwtMTg2MjQyNDk5NywtNj
+c2NDY4NDU3LC0xNjgxNzk3NjAxLC02Mjc5NDEzNDMsLTE2Mzg5
+NDAzOTQsLTIwNjM4OTEwNTQsLTIzNTAyMjIzNywxOTA3ODcyNj
+MxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIwMSwxNzkx
+NjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2NTUxLDEzNjk2MjgwNT
+YsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3NDg0LC0x
+ODE5MzQ0NDI0XX0=
 -->
