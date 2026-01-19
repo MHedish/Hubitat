@@ -205,7 +205,7 @@ Further reading:
 
 ### 🌾 From Weather Data to Runtime
 
-Every day, WET-IT fuses live data from your selected provider — **NOAA**, **OpenWeather**, **Tomorrow.io**, or **Tempest PWS** — to compute:
+Every day, WET-IT fuses live data from your selected provider — **NOAA**, **OpenWeather**, **Tomorrow. io**, or **Tempest PWS** — to compute:
 
 | Parameter | Meaning |
 |:--|:--|
@@ -2419,11 +2419,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNTg2MjczMjQwLDEzMDg2NzY1MTMsMjA4Nj
-g3OTIwMSwxNzkxNjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2NTUx
-LDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOT
-E1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0xOTYz
-NzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNT
-k2NDEsLTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0Nzgy
-LC05NzM1MTYxNDBdfQ==
+eyJoaXN0b3J5IjpbNTYxNzc5MDAsMTMwODY3NjUxMywyMDg2OD
+c5MjAxLDE3OTE2MDg5NSwxMTQ1ODA2NDI1LDEwMzExNzY1NTEs
+MTM2OTYyODA1NiwxNzc2ODQ4MjM4LC01OTU1ODMxMTgsLTE5MT
+U0NDc0ODQsLTE4MTkzNDQ0MjQsLTEyMzY5ODA3NjAsLTE5NjM3
+NDIxMTcsLTE1MTE1Mjg3OTQsMTEwNjAyNzE0NywtMjAzODE1OT
+Y0MSwtOTk4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0ODQ3ODIs
+LTk3MzUxNjE0MF19
 -->
