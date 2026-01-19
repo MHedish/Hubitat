@@ -829,7 +829,7 @@ Inactive zones are automatically cleared to keep event logs concise.
 This JSON mirrors the internal data model and can be parsed directly by Rule Machine, webCoRE, or external integrations.
 
 ----------
-## 🧭 Commands
+## 🧭 Device Commands
 
 | Command | Parameters | Description |
 |:--|:--|:--|
@@ -861,13 +861,6 @@ The WET-IT parent app manages all configuration parameters that define how the i
 These options control scheduling, weather sources, soil modeling, and automation behavior.
 
 ---
-
-
-
-
-
-
-
 
 ### ⚙️ General Settings
 
@@ -1184,7 +1177,7 @@ Advantages:
 
 ---
 
-### 🌤 Weather-Based Skip Controls
+### 🌦️ Weather-Based Skip Controls
 
 | Condition | Parameter | Description |
 |:--|:--|:--|
@@ -1197,7 +1190,7 @@ Skip events appear in the driver and event logs as `ProgramSkipped` notification
 
 ---
 
-### ⏱ Runtime Adjustments
+### ### ⏱ Runtime Adjustments
 
 | Mode | Formula | Description |
 |:--|:--|:--|
@@ -2451,11 +2444,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNzMyNDM1NjY1LC0xNjM4OTQwMzk0LC0yMD
-YzODkxMDU0LC0yMzUwMjIyMzcsMTkwNzg3MjYzMSw1NjE3Nzkw
-MCwxMzA4Njc2NTEzLDIwODY4NzkyMDEsMTc5MTYwODk1LDExND
-U4MDY0MjUsMTAzMTE3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgy
-MzgsLTU5NTU4MzExOCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNC
-wtMTIzNjk4MDc2MCwtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwx
-MTA2MDI3MTQ3XX0=
+eyJoaXN0b3J5IjpbLTYyNzk0MTM0MywtMTYzODk0MDM5NCwtMj
+A2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MDc4NzI2MzEsNTYxNzc5
+MDAsMTMwODY3NjUxMywyMDg2ODc5MjAxLDE3OTE2MDg5NSwxMT
+Q1ODA2NDI1LDEwMzExNzY1NTEsMTM2OTYyODA1NiwxNzc2ODQ4
+MjM4LC01OTU1ODMxMTgsLTE5MTU0NDc0ODQsLTE4MTkzNDQ0Mj
+QsLTEyMzY5ODA3NjAsLTE5NjM3NDIxMTcsLTE1MTE1Mjg3OTQs
+MTEwNjAyNzE0N119
 -->
