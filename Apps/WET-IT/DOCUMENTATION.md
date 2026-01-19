@@ -15,8 +15,8 @@ WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water
 
 1. [🧠 Overview](#-overview)
 2. [☀️ Why Evapotranspiration Matters](#-why-evapotranspiration-matters)
-	- [🌧️ The Actual Formulas Used (Industry Standard ET-Based Watering)]
-	- [Reference ET Formula (ET₀ – the global irrigation standard)]
+	- [🌧️ The Actual Formulas Used (Industry Standard ET-Based Watering)](#-industry-standart)
+	- [Reference ET Formula (ET₀ – the global irrigation standard)](#-ET Formula)
 3. [🌱 Zone Setup](#-zone-setup)
    - [🌱 Zone Configuration](#-zone-configuration)
    - [💦 Valve Control](#-valve-control)
@@ -57,7 +57,7 @@ It’s the foundation for precision irrigation, ensuring each zone receives just
 
 ---
 
-🌧️ **The Actual Formulas Used (Industry Standard ET-Based Watering)**<a id="-indus"></a>
+🌧️ **The Actual Formulas Used (Industry Standard ET-Based Watering)**<a id="-industry-standard"></a>
 
 Both Rachio and Rain Bird rely on the **FAO-56 Penman–Monteith equation** to calculate **Reference Evapotranspiration (ET₀)** and then modify watering schedules based on:
 -   ET₀ (reference evapotranspiration)
@@ -1636,7 +1636,7 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTE2MzE0MDM5NiwtMTg2MjQyNDk5NywtNj
+eyJoaXN0b3J5IjpbMTUxMjMyMDUwNiwtMTg2MjQyNDk5NywtNj
 c2NDY4NDU3LC0xNjgxNzk3NjAxLC02Mjc5NDEzNDMsLTE2Mzg5
 NDAzOTQsLTIwNjM4OTEwNTQsLTIzNTAyMjIzNywxOTA3ODcyNj
 MxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIwMSwxNzkx
