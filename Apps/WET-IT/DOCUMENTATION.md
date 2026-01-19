@@ -10,6 +10,25 @@
 WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.
 
 ---
+## 📘 Table of Contents
+
+1. [🧠 Overview](#-overview)
+2. [☀️ Why Evapotranspiration Matters](#-why-evapotranspiration-matters)
+	- [🌧️ The Actual Formulas Used (Industry Standard ET-Based Watering)]
+	- [Reference ET Formula (ET₀ – the global irrigation standard)]
+3. [🌱 Zone Setup](#-zone-setup)
+   - [🌱 Zone Configuration](#-zone-configuration)
+   - [💦 Valve Control](#-valve-control)
+   - [🌾 Soil Memory Management](#-soil-memory-management)
+4. [📅 Program Scheduling](#-program-scheduling)
+   - [📅 Program Configuration](#-program-configuration)
+5. [🌦️ Weather Configuration](#-weather-configuration)
+   - [🚨 Active Weather Alerts](#-weather-alerts)
+   - [☔ Rain Sensor](#-rain-sensor)
+6. [📊 Data Publishing](#-data-publishing)
+7. [⚙️ System Diagnostics](#-system-diagnostics)
+
+---
 
 ### 🧠 Overview
 
@@ -2457,11 +2476,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIwNjM4OTEwNTQsLTIzNTAyMjIzNywxOT
-A3ODcyNjMxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIw
-MSwxNzkxNjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2NTUxLDEzNj
-k2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3
-NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0xOTYzNzQyMT
-E3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNTk2NDEs
-LTk5ODE0NjU0M119
+eyJoaXN0b3J5IjpbLTE2Mzg5NDAzOTQsLTIwNjM4OTEwNTQsLT
+IzNTAyMjIzNywxOTA3ODcyNjMxLDU2MTc3OTAwLDEzMDg2NzY1
+MTMsMjA4Njg3OTIwMSwxNzkxNjA4OTUsMTE0NTgwNjQyNSwxMD
+MxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgz
+MTE4LC0xOTE1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNz
+YwLC0xOTYzNzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcs
+LTIwMzgxNTk2NDFdfQ==
 -->
