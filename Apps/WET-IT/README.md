@@ -43,6 +43,35 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 ---
 
 ### 🆕 v1.0.4.0 Updates🆕
+
+### 🌦️ New Weather Provider — Tempest PWS Integration
+
+v1.0.4.0 introduces **Tempest Personal Weather Station (PWS)** support, adding **hyper-local forecasting** and **real-time environmental data** to the ET model.
+
+| Provider | API Key Required | Local or Cloud | Distinct Advantages |
+|:--|:--:|:--:|:--|
+| **NOAA NWS** | ❌ | Local / Regional | Reliable baseline with no API key required |
+| **OpenWeather 3.0** | ✅ | Cloud | Global hourly forecasts |
+| **Tomorrow .io** | ✅ | Cloud | High-resolution, next-hour prediction |
+| **🌪 Tempest PWS** | ✅ | Local Hardware | Hyper-local wind, rain, temp & UV direct from your backyard |
+
+When enabled, Tempest data merges automatically with other sources — allowing **ET, freeze, wind, and rain skip logic** to react to conditions measured in your own yard, not the nearest airport.
+
+---
+
+### 💧 Two Operating Modes
+
+WET-IT can function as either a **data service** or a **complete controller**:
+
+| Mode | Description | Typical Use |
+|:--|:--|:--|
+| 🧮 **Data Model Only** | Publishes ET + Seasonal data for external automations. | Integrate with Rule Machine, webCoRE, Node-RED, or custom drivers. |
+| ⏱ **Full Scheduler Mode** | Runs programs autonomously inside Hubitat with ET-adjusted runtimes. | “Set-and-forget” operation similar to Rachio or Rain Bird IQ. |
+
+Both modes share the same data output, so dashboards and automations remain compatible regardless of configuration.
+
+---
+
 - Added a *comprehensive scheduler* supporting up to 48 zones and 16 programs.
 - Each program can be set for a specific **time-of-day** *or* to **begin by** or **end by** sunrise, accounting for variations in runtime due to ET or seasonal adjustments.
 - Program intervals can be set to daily, every other day, or up to once every 7 days.
@@ -290,8 +319,8 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE0Njk1NTc5OTgsNzA2MzY3ODUwLC0yMD
-Q1MDgzMTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMTIzNTA3
-NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMD
-ksMTIyNjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
+eyJoaXN0b3J5IjpbOTY0NzA5NTIwLDcwNjM2Nzg1MCwtMjA0NT
+A4MzE0MywyMTE0NjA3MzYyLDE2NDI1MjMxMDQsLTEyMzUwNzc0
+MTgsLTE4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4MzA5LD
+EyMjYyNjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ==
 -->
