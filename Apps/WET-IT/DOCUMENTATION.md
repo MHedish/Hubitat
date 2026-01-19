@@ -363,10 +363,6 @@ WET-IT automatically clamps runtimes to valid limits and logs all computations f
 
 ---
 
-
-
----
-
 ### 🧠 Smart Sequencing & Conflict Detection
 
 WET-IT detects overlapping program schedules automatically.  
@@ -2461,7 +2457,7 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIwNjg0NTk0ODUsLTIzNTAyMjIzNywxOT
+eyJoaXN0b3J5IjpbLTIwNjM4OTEwNTQsLTIzNTAyMjIzNywxOT
 A3ODcyNjMxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIw
 MSwxNzkxNjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2NTUxLDEzNj
 k2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3
