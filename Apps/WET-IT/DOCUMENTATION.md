@@ -662,7 +662,7 @@ END IF
 
 ### 🧭 Selection & Configuration
 
-In the app UI under **🌦 Weather Configuration**:
+In the app UI under **🌦️ Weather Configuration**:
 - Choose your primary **Weather Source**.
 - Enter your API key if required.
 - Optionally enable **“Use NOAA NWS as backup”** for redundancy.
@@ -670,6 +670,7 @@ In the app UI under **🌦 Weather Configuration**:
 If your selected provider is unavailable, WET-IT automatically retries using NOAA (when the option is enabled).
 
 ---
+
 ## 🏢 NOAA Office vs 📡 Radar Station
 
 A  **NOAA office**  is a physical facility where personnel, such as forecasters, work to issue forecasts, warnings, and other hazard information. A  **radar station**  is a specific, uncrewed technical installation containing a radar system  (like the WSR-88D, also known as NEXRAD) that automatically scans the atmosphere and collects raw weather data.
@@ -696,22 +697,6 @@ A  **NOAA office**  is a physical facility where personnel, such as forecasters,
 | **Location** | Can be anywhere, often in populated areas or co-located with universities | Located for optimal atmospheric coverage, often remote|
 
 In short, the radar station is a data collection tool, and the NOAA office is where that data is interpreted and transformed into usable weather information.
-
----
-
-### 🔄 Data Model
-
-Each provider contributes to a combined model:
-- **ET₀ (Reference Evapotranspiration)**  
-- **Rain Forecast & Accumulation**  
-- **Wind Speed & Alerts**  
-- **Temperature & Freeze Forecasts**  
-- **Solar Radiation** (Tempest and Tomorrow.io only)
-
-The app computes and merges these metrics to calculate:
-- Adjusted ET-based runtimes  
-- Freeze, rain, and wind skip logic  
-- Alert text for dashboards and automations  
 
 ---
 
@@ -760,7 +745,7 @@ The driver provides two key functions:
 
 ---
 
-### 🌦 Weather Attributes
+### 🌦️ Weather Attributes
 
 | Attribute | Type | Description |
 |:--|:--|:--|
@@ -2466,11 +2451,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjAxNDk1Mjg4MSwtMTYzODk0MDM5NCwtMj
-A2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MDc4NzI2MzEsNTYxNzc5
-MDAsMTMwODY3NjUxMywyMDg2ODc5MjAxLDE3OTE2MDg5NSwxMT
-Q1ODA2NDI1LDEwMzExNzY1NTEsMTM2OTYyODA1NiwxNzc2ODQ4
-MjM4LC01OTU1ODMxMTgsLTE5MTU0NDc0ODQsLTE4MTkzNDQ0Mj
-QsLTEyMzY5ODA3NjAsLTE5NjM3NDIxMTcsLTE1MTE1Mjg3OTQs
-MTEwNjAyNzE0N119
+eyJoaXN0b3J5IjpbNzMyNDM1NjY1LC0xNjM4OTQwMzk0LC0yMD
+YzODkxMDU0LC0yMzUwMjIyMzcsMTkwNzg3MjYzMSw1NjE3Nzkw
+MCwxMzA4Njc2NTEzLDIwODY4NzkyMDEsMTc5MTYwODk1LDExND
+U4MDY0MjUsMTAzMTE3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgy
+MzgsLTU5NTU4MzExOCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNC
+wtMTIzNjk4MDc2MCwtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwx
+MTA2MDI3MTQ3XX0=
 -->
