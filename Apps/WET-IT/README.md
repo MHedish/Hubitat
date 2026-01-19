@@ -63,7 +63,7 @@ v1.0.4.0 introduces **Tempest Personal Weather Station (PWS)** support, adding *
 | **NOAA NWS** | ❌ | Local / Regional | Reliable baseline with no API key required |
 | **OpenWeather 3.0** | ✅ | Cloud | Global hourly forecasts |
 | **Tomorrow .io** | ✅ | Cloud | High-resolution, next-hour prediction |
-| **🌪  Tempest PWS** | ✅ | Local Hardware | Hyper-local wind, rain, temp & UV direct from your backyard |
+| **Tempest PWS** | ✅ | Local Hardware | Hyper-local wind, rain, temp & UV direct from your backyard |
 
 When enabled, Tempest data merges automatically with other sources — allowing **ET, freeze, wind, and rain skip logic** to react to conditions measured in your yard, not the nearest airport.
 
@@ -319,7 +319,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE5OTYzNjQ3MjIsNzA2MzY3ODUwLC0yMD
+eyJoaXN0b3J5IjpbLTE3MDY0MDYzMDQsNzA2MzY3ODUwLC0yMD
 Q1MDgzMTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMTIzNTA3
 NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMD
 ksMTIyNjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
