@@ -307,8 +307,7 @@ Each page affects how programs calculate run times, react to weather, and contro
 
 ---
 
-## 📅️ Program Scheduling
-<a id="-program-scheduling"></a>
+## 📅️ Program Scheduling<a id="-program-scheduling"></a>
 
 WET-IT brings **full irrigation control** to your Hubitat hub — while still serving as a data engine for external automations.
 
@@ -528,8 +527,7 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 
 ---
 
-## 🌦️ Weather Providers & Alerts
-<a id="-weather-providers"></a>
+## 🌦️ Weather Providers & Alerts<a id="-weather-providers"></a>
 
 WET-IT integrates multiple weather data sources to provide accurate, redundant inputs for **Evapotranspiration (ET)**, **forecast modeling**, and **alert logic**.
 Users can select their preferred provider, or WET-IT can automatically fall back to another when conditions or data gaps are detected.
@@ -705,8 +703,7 @@ A  **NOAA office**  is a physical facility where personnel, such as forecasters,
 In short, the radar station is a data collection tool, and the NOAA office is where that data is interpreted and transformed into usable weather information.
 
 ---
-## 📊 Driver Attribute Reference
-<a id="-driver-attribute-reference"></a>
+## 📊 Driver Attribute Reference<a id="-driver-attribute-reference"></a>
 
 The **WET-IT Data Driver** exposes a complete set of attributes and commands that mirror the app’s internal logic.  
 These values are published automatically whenever weather data, ET calculations, or scheduler states change.
@@ -840,8 +837,7 @@ This JSON mirrors the internal data model and can be parsed directly by Rule Mac
 
 ----------
 
-## 🧩 App Configuration Reference
-<a id="-app-configuration-reference"></a>
+## 🧩 App Configuration Reference<a id="-app-configuration-reference"></a>
 
 The WET-IT parent app manages all configuration parameters that define how the irrigation model operates.  
 These options control scheduling, weather sources, soil modeling, and automation behavior.
@@ -922,8 +918,7 @@ These options control scheduling, weather sources, soil modeling, and automation
 
 Next: [🌾 Zone Configuration Reference →](#-zone-configuration-reference)
 
-## 🌾 Zone Configuration Reference
-<a id="-zone-configuration-reference"></a>
+## 🌾 Zone Configuration Reference<a id="-zone-configuration-reference"></a>
 
 Each irrigation **Zone** in WET-IT represents a physical valve or watering area such as turf, garden beds, shrubs, or trees.  
 Zone parameters determine how evapotranspiration (ET), soil depletion, and runtime adjustments are applied individually.
@@ -945,8 +940,7 @@ Zone parameters determine how evapotranspiration (ET), soil depletion, and runti
 | **Soil Memory Enabled** | Allows the zone to participate in daily soil depletion tracking and ET-based watering decisions. |
 
 ---
-### 💦 Valve Control
-<a id="-valve-control"></a>
+### 💦 Valve Control<a id="-valve-control"></a>
 
 WET-IT supports both **`capability.valve`** and **`capability.switch`** devices for each irrigation zone.  
 Each zone can have one device assigned for direct activation and runtime tracking.
@@ -1041,8 +1035,7 @@ When balance drops below the MAD threshold, WET-IT automatically schedules water
 
 ---
 
-## 🪣 Soil Memory & ET Reset
-<a id="-soil-memory-et-reset"></a>
+## 🪣 Soil Memory & ET Reset<a id="-soil-memory-et-reset"></a>
 
 The **Soil Memory System** is one of WET-IT’s most powerful features, providing a realistic simulation of how water behaves in your soil between irrigation events.  
 It allows zones to “remember” previous rainfall, irrigation, and evapotranspiration (ET) losses — so watering decisions are based on actual conditions rather than a calendar.
@@ -1155,8 +1148,7 @@ Forecasted rain from cloud providers contributes to preemptive skip decisions bu
 
 
 
-## 🌿 Plant Type Reference
-<a id="-plant-type-reference></a>
+## 🌿 Plant Type Reference<a id="-plant-type-reference></a>
 > Defines vegetation categories and corresponding crop coefficients (Kc).  
 > Used to calculate evapotranspiration (ET₀ × Kc).
 
@@ -1170,8 +1162,7 @@ Forecasted rain from cloud providers contributes to preemptive skip decisions bu
 
 ---
 
-## 🌾 Soil Type Reference
-<a id="-soil-type-reference"></a>
+## 🌾 Soil Type Reference<a id="-soil-type-reference"></a>
 > Controls soil moisture retention and depletion rate.
 
 | Soil Type | Field Capacity | Infiltration | Typical Depth | Comments |
@@ -1183,8 +1174,7 @@ Forecasted rain from cloud providers contributes to preemptive skip decisions bu
 | Clay | Very High | Very Slow | Deep | Rarely irrigated, risk of runoff |
 
 
-## 💧 Irrigation Method Reference
-<a id="-irrigation-method-reference></a>
+## 💧 Irrigation Method Reference<a id="-irrigation-method-reference></a>
 > Defines the precipitation rate and efficiency of each irrigation type.  
 > Used to calculate zone runtime based on ET-derived water requirements.
 
@@ -1202,8 +1192,7 @@ Forecasted rain from cloud providers contributes to preemptive skip decisions bu
 💡 *The app converts the precipitation rate and efficiency into a runtime multiplier for each zone.  
 Lower-rate systems (e.g., MP Rotator, Drip) run longer but deliver more uniform moisture with less waste.*
 
-## 🕓 Base Runtime Reference
-<a id="-base-runtime-reference></a>
+## 🕓 Base Runtime Reference<a id="-base-runtime-reference></a>
 > Establishes the **baseline irrigation duration** for each zone.  
 > Used with ET and seasonal budget percentages to calculate the final adjusted runtime.
 
@@ -1220,8 +1209,7 @@ If a zone’s base runtime is **20 min (entered as 20)** and the ET budget is **
 
 ---
 
-## 🗓️ Program Scheduling Reference
-<a id="-program-scheduling-reference"></a>
+## 🗓️ Program Scheduling Reference<a id="-program-scheduling-reference"></a>
 
 Each **Program** defines a complete irrigation routine — including start time, days of operation, included zones, and skip logic.  
 Up to **16 independent programs** can be defined per WET-IT instance.
@@ -1320,8 +1308,7 @@ The summary of each program execution is also published to the **WET-IT Data Dri
 
 Next: [🌦 Weather & Alert Settings →](#-weather-alert-settings)
 
-## 🌦 Weather & Alert Settings
-<a id="-weather-alert-settings"></a>
+## 🌦 Weather & Alert Settings<a id="-weather-alert-settings"></a>
 
 WET-IT’s weather and alert system enables dynamic watering decisions based on **forecast**, **live data**, and **safety conditions** such as freezing or wind.  
 These settings govern how environmental data from NOAA, OpenWeather, Tomorrow.io, or Tempest are interpreted to trigger skips, shorten runtimes, or adjust ET.
@@ -1636,11 +1623,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTg3NjExNTk1OSwtMTg2MjQyNDk5NywtNj
-c2NDY4NDU3LC0xNjgxNzk3NjAxLC02Mjc5NDEzNDMsLTE2Mzg5
-NDAzOTQsLTIwNjM4OTEwNTQsLTIzNTAyMjIzNywxOTA3ODcyNj
-MxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIwMSwxNzkx
-NjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2NTUxLDEzNjk2MjgwNT
-YsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3NDg0LC0x
-ODE5MzQ0NDI0XX0=
+eyJoaXN0b3J5IjpbLTE0MTU4ODU0MDMsLTE4NjI0MjQ5OTcsLT
+Y3NjQ2ODQ1NywtMTY4MTc5NzYwMSwtNjI3OTQxMzQzLC0xNjM4
+OTQwMzk0LC0yMDYzODkxMDU0LC0yMzUwMjIyMzcsMTkwNzg3Mj
+YzMSw1NjE3NzkwMCwxMzA4Njc2NTEzLDIwODY4NzkyMDEsMTc5
+MTYwODk1LDExNDU4MDY0MjUsMTAzMTE3NjU1MSwxMzY5NjI4MD
+U2LDE3NzY4NDgyMzgsLTU5NTU4MzExOCwtMTkxNTQ0NzQ4NCwt
+MTgxOTM0NDQyNF19
 -->
