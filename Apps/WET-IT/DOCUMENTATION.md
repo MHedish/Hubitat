@@ -243,21 +243,6 @@ If soil memory shows the zone still moist from recent rain, it may skip entirely
 
 ---
 
-### 🌄 Why “End by Sunrise” Matters
-
-Most irrigation systems can only **start at** a fixed time.  
-WET-IT adds a unique ability — to **“end by” sunrise** — automatically back-calculating when to start so watering finishes right as daylight begins.  
-This mirrors Rachio’s *Flex Daily* logic and provides:
-
-- 🌞 **Pre-dawn watering** — minimizes evaporation and wind drift  
-- 🌿 **Dry foliage at sunrise** — prevents fungus and disease  
-- 💧 **Optimal plant uptake** — watering aligns with morning photosynthesis  
-- ⚙️ **Automatic runtime compensation** — adjusts dynamically for longer or shorter ET days  
-
-> 🕐 *“WET-IT doesn’t just know when to start watering — it knows when you want it to finish.”*
-
----
-
 ## 🧭 Configuration Pages Reference
 
 WET-IT includes three primary configuration pages — **Zone Setup**, **Soil Settings**, and **Scheduling** — which define the foundation of irrigation behavior.  
@@ -417,6 +402,20 @@ These actions maintain full data integrity across both the scheduler and externa
 | **ET-Driven** | Live weather & soil model | Internal Scheduler (Sunrise / End-by) |
 
 This architecture keeps WET-IT fully compatible with both **automation frameworks** (Rule Machine, Node-RED, webCoRE) and **fully autonomous scheduling** — one engine, two use cases.
+
+---
+### 🌄 Why “End by Sunrise” Matters
+
+Most irrigation systems can only **start at** a fixed time.  
+WET-IT adds a unique ability — to **“end by” sunrise** — automatically back-calculating when to start so watering finishes right as daylight begins.  
+This mirrors Rachio’s *Flex Daily* logic and provides:
+
+- 🌞 **Pre-dawn watering** — minimizes evaporation and wind drift  
+- 🌿 **Dry foliage at sunrise** — prevents fungus and disease  
+- 💧 **Optimal plant uptake** — watering aligns with morning photosynthesis  
+- ⚙️ **Automatic runtime compensation** — adjusts dynamically for longer or shorter ET days  
+
+> 🕐 *“WET-IT doesn’t just know when to start watering — it knows when you want it to finish.”*
 
 ---
 
@@ -2476,11 +2475,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE2Mzg5NDAzOTQsLTIwNjM4OTEwNTQsLT
-IzNTAyMjIzNywxOTA3ODcyNjMxLDU2MTc3OTAwLDEzMDg2NzY1
-MTMsMjA4Njg3OTIwMSwxNzkxNjA4OTUsMTE0NTgwNjQyNSwxMD
-MxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgz
-MTE4LC0xOTE1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNz
-YwLC0xOTYzNzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcs
-LTIwMzgxNTk2NDFdfQ==
+eyJoaXN0b3J5IjpbNzgxMDY1NzE2LC0xNjM4OTQwMzk0LC0yMD
+YzODkxMDU0LC0yMzUwMjIyMzcsMTkwNzg3MjYzMSw1NjE3Nzkw
+MCwxMzA4Njc2NTEzLDIwODY4NzkyMDEsMTc5MTYwODk1LDExND
+U4MDY0MjUsMTAzMTE3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgy
+MzgsLTU5NTU4MzExOCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNC
+wtMTIzNjk4MDc2MCwtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwx
+MTA2MDI3MTQ3XX0=
 -->
