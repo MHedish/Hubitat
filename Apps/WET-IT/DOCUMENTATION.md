@@ -529,7 +529,7 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 
 ---
 
-## 🌦 Weather Providers & Alerts
+## 🌦️ Weather Providers & Alerts
 <a id="-weather-providers"></a>
 
 WET-IT integrates multiple weather data sources to provide accurate, redundant inputs for **Evapotranspiration (ET)**, **forecast modeling**, and **alert logic**.  
@@ -545,8 +545,8 @@ Each source offers unique benefits depending on your climate, hardware, and accu
 |:--|:--:|:--:|:--|
 | **NOAA / NWS** | ❌ | Regional (U.S.) | Baseline forecast and observed data. Reliable, free, and always available. |
 | **OpenWeather 3.0** | ✅ | Cloud | Global coverage with hourly forecast and precipitation models. Fast and consistent. |
-| **Tomorrow.io** | ✅ | Cloud | High-resolution global weather engine with hyperlocal forecast capability. Provides ET₀ and wind metrics natively. |
-| **🌪 Tempest PWS** | ✅ | Local Hardware | Hyper-local live data from your personal Tempest station. Feeds live rain, temperature, wind, UV, and pressure directly from your yard. |
+| **Tomorrow. io** | ✅ | Cloud | High-resolution global weather engine with hyperlocal forecast capability. Provides ET₀ and wind metrics natively. |
+| **Tempest PWS** | ✅ | Local Hardware | Hyper-local live data from your personal Tempest station. Feeds live rain, temperature, wind, UV, and pressure directly from your yard. |
 
 ---
 
@@ -2466,7 +2466,7 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTEzOTMzODQ3NCwtMTYzODk0MDM5NCwtMj
+eyJoaXN0b3J5IjpbMjAxNDk1Mjg4MSwtMTYzODk0MDM5NCwtMj
 A2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MDc4NzI2MzEsNTYxNzc5
 MDAsMTMwODY3NjUxMywyMDg2ODc5MjAxLDE3OTE2MDg5NSwxMT
 Q1ODA2NDI1LDEwMzExNzY1NTEsMTM2OTYyODA1NiwxNzc2ODQ4
