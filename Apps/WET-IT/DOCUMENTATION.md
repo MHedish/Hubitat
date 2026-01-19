@@ -309,9 +309,10 @@ Each page affects how programs calculate run times, react to weather, and contro
 ## 📅️ Program Scheduling
 <a id="-program-scheduling"></a>
 
-The Scheduler Edition of WET-IT brings **full irrigation control** to your Hubitat hub — while still serving as a data engine for external automations.
+WET-IT brings **full irrigation control** to your Hubitat hub — while still serving as a data engine for external automations.
 
 Each **program** defines *when* and *how* zones water.  
+
 A program can operate at a **specific clock time**, **start at sunrise**, or uniquely, **end by sunrise** — ensuring irrigation completes just as daylight begins.
 
 ---
@@ -2444,11 +2445,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTYyNzk0MTM0MywtMTYzODk0MDM5NCwtMj
-A2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MDc4NzI2MzEsNTYxNzc5
-MDAsMTMwODY3NjUxMywyMDg2ODc5MjAxLDE3OTE2MDg5NSwxMT
-Q1ODA2NDI1LDEwMzExNzY1NTEsMTM2OTYyODA1NiwxNzc2ODQ4
-MjM4LC01OTU1ODMxMTgsLTE5MTU0NDc0ODQsLTE4MTkzNDQ0Mj
-QsLTEyMzY5ODA3NjAsLTE5NjM3NDIxMTcsLTE1MTE1Mjg3OTQs
-MTEwNjAyNzE0N119
+eyJoaXN0b3J5IjpbODQ3MDA2NDUwLC02Mjc5NDEzNDMsLTE2Mz
+g5NDAzOTQsLTIwNjM4OTEwNTQsLTIzNTAyMjIzNywxOTA3ODcy
+NjMxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIwMSwxNz
+kxNjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2NTUxLDEzNjk2Mjgw
+NTYsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3NDg0LC
+0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0xOTYzNzQyMTE3LC0x
+NTExNTI4Nzk0XX0=
 -->
