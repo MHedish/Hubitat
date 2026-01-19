@@ -238,6 +238,7 @@ This mirrors Rachio’s *Flex Daily* logic and provides:
 > 🕐 *“WET-IT doesn’t just know when to start watering — it knows when you want it to finish.”*
 
 ---
+
 ## 🧭 Configuration Pages Reference
 
 WET-IT includes three primary configuration pages — **Zone Setup**, **Soil Settings**, and **Scheduling** — which define the foundation of irrigation behavior.  
@@ -270,6 +271,35 @@ Each page affects how programs calculate run times, react to weather, and contro
 - Changing any value recalculates program durations instantly.  
 - Deleting a zone fully removes its references from both `settings` and `atomicState`.  
 - Inactive zones remain defined but are excluded from runtime and schedules.
+
+---
+
+### 🌱 Soil Page <a id="-soil-page"></a>
+
+> **Purpose:** Configure soil and environmental characteristics that affect moisture tracking and ET computation.
+
+#### Inputs and Controls
+
+| Input | Type | Description | Example / Notes |
+|--------|------|--------------|----------------|
+| **Soil Type** | Enum | Base soil composition for ET/retention model. | Clay, Loam, Sand. |
+| **Field Capacity** | Number (%) | Maximum water content before runoff occurs. | Typical: 30–45%. |
+| **Wilting Point** | Number (%) | Minimum moisture before stress. | Typical: 10–15%. |
+| **Root Depth** | Number (in/cm) | Depth used to calculate available water. | e.g. 6 in for turf. |
+| **Available Water Capacity (AWC)** | Calculated | Derived from soil type and depth. | Auto-calculated field. |
+| **Refill %** | Number (%) | Threshold that triggers watering. | Default: 50%. |
+| **Advanced → Use Moisture Sensor** | Boolean | Integrates physical moisture devices. | Overrides modeled ET data. |
+| **Advanced → Manual Reset** | Action Button | Resets soil moisture to full (100%). | Use after manual watering. |
+
+#### Behavior
+
+- ET and rainfall affect soil moisture between runs.  
+- Moisture sensors (if enabled) override model predictions.  
+- Soil configuration impacts every zone assigned to that soil type.  
+- Updates trigger recalculation of ET budgets and zone runtime scaling.
+
+---
+
 
 ---
 
@@ -347,12 +377,7 @@ WET-IT automatically clamps runtimes to valid limits and logs all computations f
 
 ---
 
-### 💾 Soil Memory Integration
 
-When **Soil Memory** is enabled, each zone maintains a daily “moisture bucket.”  
-ET, rainfall, and irrigation update that bucket; watering occurs only when depletion exceeds the **Management Allowed Depletion (MAD)** threshold.
-
-This gives WET-IT the same behavioral model as **Rachio Flex Daily**, but fully local — no cloud, no polling delay, no external dependency.
 
 ---
 
@@ -2450,11 +2475,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTkwNzg3MjYzMSw1NjE3NzkwMCwxMzA4Nj
-c2NTEzLDIwODY4NzkyMDEsMTc5MTYwODk1LDExNDU4MDY0MjUs
-MTAzMTE3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NT
-U4MzExOCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4
-MDc2MCwtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MT
-Q3LC0yMDM4MTU5NjQxLC05OTgxNDY1NDMsLTE2MjA5NTE2NzEs
-MTM2MzQ4NDc4Ml19
+eyJoaXN0b3J5IjpbLTIzNTAyMjIzNywxOTA3ODcyNjMxLDU2MT
+c3OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIwMSwxNzkxNjA4OTUs
+MTE0NTgwNjQyNSwxMDMxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Nj
+g0ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3NDg0LC0xODE5MzQ0
+NDI0LC0xMjM2OTgwNzYwLC0xOTYzNzQyMTE3LC0xNTExNTI4Nz
+k0LDExMDYwMjcxNDcsLTIwMzgxNTk2NDEsLTk5ODE0NjU0Mywt
+MTYyMDk1MTY3MV19
 -->
