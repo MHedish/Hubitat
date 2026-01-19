@@ -219,7 +219,7 @@ The system then calculates the **adjusted runtime** for each zone:
 
 $$Runtime_{today} = BaseTime × \frac{ET_c}{ET_{baseline}}$$
 
-If ET is 30% above normal, WET-IT increases watering time 30 %.  
+If ET is 30% above normal, WET-IT increases watering time 30%.  
 If soil memory shows the zone still moist from recent rain, it may skip entirely.
 
 ---
@@ -2419,11 +2419,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTY1MjA5ODM1NiwxMzA4Njc2NTEzLDIwOD
-Y4NzkyMDEsMTc5MTYwODk1LDExNDU4MDY0MjUsMTAzMTE3NjU1
-MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NTU4MzExOCwtMT
-kxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4MDc2MCwtMTk2
-Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0yMDM4MT
-U5NjQxLC05OTgxNDY1NDMsLTE2MjA5NTE2NzEsMTM2MzQ4NDc4
-MiwtOTczNTE2MTQwXX0=
+eyJoaXN0b3J5IjpbNTg2MjczMjQwLDEzMDg2NzY1MTMsMjA4Nj
+g3OTIwMSwxNzkxNjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2NTUx
+LDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOT
+E1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0xOTYz
+NzQyMTE3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNT
+k2NDEsLTk5ODE0NjU0MywtMTYyMDk1MTY3MSwxMzYzNDg0Nzgy
+LC05NzM1MTYxNDBdfQ==
 -->
