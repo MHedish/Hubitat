@@ -462,7 +462,7 @@ Next: [🌦 Weather Providers & Alerts →](#-weather-providers)
 
 ## 🧩 Sunrise/Sunset Automation Templates
 
-We, it supplies real-time **ET budgets** and **timestamps** that can be combined with sunrise/sunset logic in Rule Machine, webCoRE, or Node-RED.
+WET-IT started as a data supplier-only project; Keepng that in mind, it still supplies real-time **ET budgets** and **timestamps** that can be combined with sunrise/sunset logic in Rule Machine, webCoRE, or Node-RED.
 
 ### 🌄 Rule Machine Example (Dynamic Sunrise Trigger)
 
@@ -512,17 +512,6 @@ Optional: Delay start 15–30 minutes if humidity or rain forecast is high.
 **Optional Enhancements:**
 - Add `freezeAlert` check  
 - Append runtime log to InfluxDB or file output
-
----
-
-### 📊 Benefits of Sunrise Scheduling
-
-| Benefit | Reason |
-|:--|:--|
-| 🌞 Lower Evaporation | Cool, calm morning air preserves applied water |
-| 🌿 Healthier Plants | Matches photosynthetic uptake cycles |
-| ❄️ Freeze Avoidance | Integrates temperature guardrails |
-| 💧 Efficiency | Adapts runtime to ET and rain conditions |
 
 ---
 
@@ -2477,11 +2466,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE2OTE0MzU4NzgsLTE2Mzg5NDAzOTQsLT
-IwNjM4OTEwNTQsLTIzNTAyMjIzNywxOTA3ODcyNjMxLDU2MTc3
-OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIwMSwxNzkxNjA4OTUsMT
-E0NTgwNjQyNSwxMDMxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Njg0
-ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3NDg0LC0xODE5MzQ0ND
-I0LC0xMjM2OTgwNzYwLC0xOTYzNzQyMTE3LC0xNTExNTI4Nzk0
-LDExMDYwMjcxNDddfQ==
+eyJoaXN0b3J5IjpbMTEzOTMzODQ3NCwtMTYzODk0MDM5NCwtMj
+A2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MDc4NzI2MzEsNTYxNzc5
+MDAsMTMwODY3NjUxMywyMDg2ODc5MjAxLDE3OTE2MDg5NSwxMT
+Q1ODA2NDI1LDEwMzExNzY1NTEsMTM2OTYyODA1NiwxNzc2ODQ4
+MjM4LC01OTU1ODMxMTgsLTE5MTU0NDc0ODQsLTE4MTkzNDQ0Mj
+QsLTEyMzY5ODA3NjAsLTE5NjM3NDIxMTcsLTE1MTE1Mjg3OTQs
+MTEwNjAyNzE0N119
 -->
