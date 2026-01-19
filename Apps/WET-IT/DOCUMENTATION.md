@@ -246,6 +246,7 @@ If soil memory shows the zone still moist from recent rain, it may skip entirely
 ## 🧭 Configuration Pages Reference
 
 WET-IT includes three primary configuration pages — **Zone Setup**, **Soil Settings**, and **Scheduling** — which define the foundation of irrigation behavior.  
+
 Each page affects how programs calculate run times, react to weather, and control hardware.
 
 ---
@@ -301,8 +302,6 @@ Each page affects how programs calculate run times, react to weather, and contro
 - Moisture sensors (if enabled) override model predictions.  
 - Soil configuration impacts every zone assigned to that soil type.  
 - Updates trigger recalculation of ET budgets and zone runtime scaling.
-
----
 
 
 ---
@@ -404,10 +403,13 @@ These actions maintain full data integrity across both the scheduler and externa
 This architecture keeps WET-IT fully compatible with both **automation frameworks** (Rule Machine, Node-RED, webCoRE) and **fully autonomous scheduling** — one engine, two use cases.
 
 ---
+
 ### 🌄 Why “End by Sunrise” Matters
 
 Most irrigation systems can only **start at** a fixed time.  
+
 WET-IT adds a unique ability — to **“end by” sunrise** — automatically back-calculating when to start so watering finishes right as daylight begins.  
+
 This mirrors Rachio’s *Flex Daily* logic and provides:
 
 - 🌞 **Pre-dawn watering** — minimizes evaporation and wind drift  
@@ -460,7 +462,7 @@ Next: [🌦 Weather Providers & Alerts →](#-weather-providers)
 
 ## 🧩 Sunrise/Sunset Automation Templates
 
-WET-IT does not directly schedule watering; instead, it supplies real-time **ET budgets** and **timestamps** that can be combined with sunrise/sunset logic in Rule Machine, webCoRE, or Node-RED.
+We, it supplies real-time **ET budgets** and **timestamps** that can be combined with sunrise/sunset logic in Rule Machine, webCoRE, or Node-RED.
 
 ### 🌄 Rule Machine Example (Dynamic Sunrise Trigger)
 
@@ -2475,11 +2477,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNzgxMDY1NzE2LC0xNjM4OTQwMzk0LC0yMD
-YzODkxMDU0LC0yMzUwMjIyMzcsMTkwNzg3MjYzMSw1NjE3Nzkw
-MCwxMzA4Njc2NTEzLDIwODY4NzkyMDEsMTc5MTYwODk1LDExND
-U4MDY0MjUsMTAzMTE3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgy
-MzgsLTU5NTU4MzExOCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNC
-wtMTIzNjk4MDc2MCwtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwx
-MTA2MDI3MTQ3XX0=
+eyJoaXN0b3J5IjpbLTE2OTE0MzU4NzgsLTE2Mzg5NDAzOTQsLT
+IwNjM4OTEwNTQsLTIzNTAyMjIzNywxOTA3ODcyNjMxLDU2MTc3
+OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIwMSwxNzkxNjA4OTUsMT
+E0NTgwNjQyNSwxMDMxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Njg0
+ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3NDg0LC0xODE5MzQ0ND
+I0LC0xMjM2OTgwNzYwLC0xOTYzNzQyMTE3LC0xNTExNTI4Nzk0
+LDExMDYwMjcxNDddfQ==
 -->
