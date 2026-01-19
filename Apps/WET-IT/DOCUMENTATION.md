@@ -330,9 +330,10 @@ Every WET-IT installation supports up to **16 independent programs**, each with:
 | **Zones** | Select one or more irrigation zones |
 | **Weather Skip Controls ** | Freeze ❄, Rain ☔, Wind 💨 avoidance logic |
 | **Minimum Runtime Threshold** | Prevents ultra-short runs that could cycle valves unnecessarily. |
-| **Buffer Delay** | Optional delay between consecutive programs (minutes) |
+| **Buffer Between Programs ** | Minimum time between consecutive programs (minutes) |
 
 Programs run zones sequentially for proper pressure balance and reliability.  
+
 Sequential watering avoids conflicts, reduces surge, and ensures deterministic runtime control.
 
 ---
@@ -874,20 +875,6 @@ These options control scheduling, weather sources, soil modeling, and automation
 | **Management Allowed Depletion (MAD)** | Percentage of soil water that can be lost before watering is required. Lower values water more often. |
 | **Default Precipitation Rate** | Nozzle output rate (in/hr or mm/hr) used for ET runtime calculations. |
 | **Base Runtime** | Default runtime used when ET or seasonal adjustments are disabled. |
-
----
-
-### 🕰️ Program Scheduling
-
-| Setting | Description |
-|:--|:--|
-| **Program Count** | Number of individual schedules (1–16) to define. |
-| **Program Start Mode** | Choose between *Fixed Time*, *Start at Sunrise*, or *End by Sunrise*. |
-| **Program Days Mode** | Interval (every N days) or weekly (e.g., M/W/F). |
-| **Weather Skip Controls** | Enable skip logic for Rain, Wind, and Freeze events. |
-| **Minimum Runtime Threshold** | Prevents ultra-short runs that could cycle valves unnecessarily. |
-| **Buffer Between Programs** | Delay (in minutes) to separate consecutive programs. |
-| **Soil Memory Integration** | Optionally link program logic to soil moisture depletion data. |
 
 ---
 
@@ -2446,11 +2433,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNjM1MzMwMDE4LC0xNjgxNzk3NjAxLC02Mj
-c5NDEzNDMsLTE2Mzg5NDAzOTQsLTIwNjM4OTEwNTQsLTIzNTAy
-MjIzNywxOTA3ODcyNjMxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMj
-A4Njg3OTIwMSwxNzkxNjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2
-NTUxLDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC
-0xOTE1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0x
-OTYzNzQyMTE3XX0=
+eyJoaXN0b3J5IjpbLTY3NjQ2ODQ1NywtMTY4MTc5NzYwMSwtNj
+I3OTQxMzQzLC0xNjM4OTQwMzk0LC0yMDYzODkxMDU0LC0yMzUw
+MjIyMzcsMTkwNzg3MjYzMSw1NjE3NzkwMCwxMzA4Njc2NTEzLD
+IwODY4NzkyMDEsMTc5MTYwODk1LDExNDU4MDY0MjUsMTAzMTE3
+NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NTU4MzExOC
+wtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4MDc2MCwt
+MTk2Mzc0MjExN119
 -->
