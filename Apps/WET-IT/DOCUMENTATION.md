@@ -238,7 +238,38 @@ This mirrors Rachio’s *Flex Daily* logic and provides:
 > 🕐 *“WET-IT doesn’t just know when to start watering — it knows when you want it to finish.”*
 
 ---
+## 🧭 Configuration Pages Reference
 
+WET-IT includes three primary configuration pages — **Zone Setup**, **Soil Settings**, and **Scheduling** — which define the foundation of irrigation behavior.  
+Each page affects how programs calculate run times, react to weather, and control hardware.
+
+---
+
+### 🔹 Zone Setup<a id="-zone-setup"></a>
+
+> **Purpose:** Assign and configure individual irrigation zones (valves, relays, or switches).
+
+#### Inputs and Controls
+
+| Input | Type | Description | Example / Notes |
+|--------|------|--------------|----------------|
+| **Zone Name** | Text | Label for this irrigation zone. | e.g. “Front Lawn”, “Garden Beds”. |
+| **Zone Device** | Device Selector | Choose the physical switch/relay controlling this zone. | Required for operation. |
+| **Active** | Boolean | Enables or disables the zone. | Inactive zones are ignored in runtime and scheduling. |
+| **Soil Type** | Enum | Defines water retention/infiltration rate. | Clay, Loam, Sand. |
+| **Plant Type** | Enum | Determines ET coefficient for this zone. | Turf, Shrubs, Trees. |
+| **Nozzle Type** | Enum | Output rate classification. | Spray, Rotor, Drip. |
+| **Base Time Value** | Number | Base watering duration. | Toggle between minutes ↔ seconds. |
+| **Base Time Unit** | Toggle Button | Switches display between minutes and seconds. | Updates runtime math automatically. |
+| **Adjustment Mode Override** | Enum | Optional override for this zone’s runtime scaling. | Base, Seasonal, ET. |
+| **Advanced → Zone Debug Logging** | Boolean | Enables detailed per-zone action logs. | For troubleshooting only. |
+
+#### Behavior
+
+- Each active zone contributes to its assigned program’s total runtime.  
+- Changing any value recalculates program durations instantly.  
+- Deleting a zone fully removes its references from both `settings` and `atomicState`.  
+- Inactive zones remain defined but are excluded from runtime and schedules.
 
 ---
 
@@ -2419,11 +2450,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNTYxNzc5MDAsMTMwODY3NjUxMywyMDg2OD
-c5MjAxLDE3OTE2MDg5NSwxMTQ1ODA2NDI1LDEwMzExNzY1NTEs
-MTM2OTYyODA1NiwxNzc2ODQ4MjM4LC01OTU1ODMxMTgsLTE5MT
-U0NDc0ODQsLTE4MTkzNDQ0MjQsLTEyMzY5ODA3NjAsLTE5NjM3
-NDIxMTcsLTE1MTE1Mjg3OTQsMTEwNjAyNzE0NywtMjAzODE1OT
-Y0MSwtOTk4MTQ2NTQzLC0xNjIwOTUxNjcxLDEzNjM0ODQ3ODIs
-LTk3MzUxNjE0MF19
+eyJoaXN0b3J5IjpbMTkwNzg3MjYzMSw1NjE3NzkwMCwxMzA4Nj
+c2NTEzLDIwODY4NzkyMDEsMTc5MTYwODk1LDExNDU4MDY0MjUs
+MTAzMTE3NjU1MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NT
+U4MzExOCwtMTkxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4
+MDc2MCwtMTk2Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MT
+Q3LC0yMDM4MTU5NjQxLC05OTgxNDY1NDMsLTE2MjA5NTE2NzEs
+MTM2MzQ4NDc4Ml19
 -->
