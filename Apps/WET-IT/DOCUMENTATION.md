@@ -324,7 +324,7 @@ Every WET-IT installation supports up to **16 independent programs**, each with:
 | Feature | Description |
 |:--|:--|
 | **Name & Active Flag** | Friendly program name and on/off toggle |
-| **Start Mode** | Fixed Time ⏰, Start at Sunrise 🌅, or End by Sunrise 🌄 |
+| **Program Start Mode** | Fixed Time ⏰, Start at Sunrise 🌅, or End by Sunrise 🌄 |
 | **Runtime Method** | Base Only, Seasonal %, or ET-Based |
 | **Days Mode** | Interval (Every N Days) or Weekly (M/W/F etc.) |
 | **Zones** | Select one or more irrigation zones |
@@ -2446,11 +2446,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE2ODE3OTc2MDEsLTYyNzk0MTM0MywtMT
-YzODk0MDM5NCwtMjA2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MDc4
-NzI2MzEsNTYxNzc5MDAsMTMwODY3NjUxMywyMDg2ODc5MjAxLD
-E3OTE2MDg5NSwxMTQ1ODA2NDI1LDEwMzExNzY1NTEsMTM2OTYy
-ODA1NiwxNzc2ODQ4MjM4LC01OTU1ODMxMTgsLTE5MTU0NDc0OD
-QsLTE4MTkzNDQ0MjQsLTEyMzY5ODA3NjAsLTE5NjM3NDIxMTcs
-LTE1MTE1Mjg3OTRdfQ==
+eyJoaXN0b3J5IjpbNDY3MTUzNTA3LC0xNjgxNzk3NjAxLC02Mj
+c5NDEzNDMsLTE2Mzg5NDAzOTQsLTIwNjM4OTEwNTQsLTIzNTAy
+MjIzNywxOTA3ODcyNjMxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMj
+A4Njg3OTIwMSwxNzkxNjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2
+NTUxLDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC
+0xOTE1NDQ3NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0x
+OTYzNzQyMTE3XX0=
 -->
