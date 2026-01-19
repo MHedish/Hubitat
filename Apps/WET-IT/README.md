@@ -55,7 +55,7 @@ v1.0.4.0 introduces **Tempest Personal Weather Station (PWS)** support, adding *
 | **Tomorrow .io** | ✅ | Cloud | High-resolution, next-hour prediction |
 | **🌪 Tempest PWS** | ✅ | Local Hardware | Hyper-local wind, rain, temp & UV direct from your backyard |
 
-When enabled, Tempest data merges automatically with other sources — allowing **ET, freeze, wind, and rain skip logic** to react to conditions measured in your own yard, not the nearest airport.
+When enabled, Tempest data merges automatically with other sources — allowing **ET, freeze, wind, and rain skip logic** to react to conditions measured in your yard, not the nearest airport.
 
 ---
 
@@ -72,15 +72,6 @@ Both modes share the same data output, so dashboards and automations remain comp
 
 ---
 
-- Added a *comprehensive scheduler* supporting up to 48 zones and 16 programs.
-- Each program can be set for a specific **time-of-day** *or* to **begin by** or **end by** sunrise, accounting for variations in runtime due to ET or seasonal adjustments.
-- Program intervals can be set to daily, every other day, or up to once every 7 days.
-- Wind/Rain/Freeze alerts will automatically skip irrigation based on user preferences.
-- User-selectable water sensors will automatically skip irrigation if wet.
-- For Tempest PWS users, the haptic rain sensor is also available as a live rain sensor.
-- Wind/Rain/Freeze events are reported in the app, device, and are checked immediately before a scheduled irrigation event.
-
----
 
 ## ⚙️ Installation
 
@@ -319,8 +310,8 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbOTY0NzA5NTIwLDcwNjM2Nzg1MCwtMjA0NT
-A4MzE0MywyMTE0NjA3MzYyLDE2NDI1MjMxMDQsLTEyMzUwNzc0
-MTgsLTE4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4MzA5LD
-EyMjYyNjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ==
+eyJoaXN0b3J5IjpbNjI3MTE1NDMsNzA2MzY3ODUwLC0yMDQ1MD
+gzMTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMTIzNTA3NzQx
+OCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMT
+IyNjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
 -->
