@@ -463,7 +463,7 @@ Next: [🌦 Weather Providers & Alerts →](#-weather-providers)
 
 ## 🧩 Sunrise/Sunset Automation Templates
 
-WET-IT started as a data supplier-only project; Keepng that in mind, it still supplies real-time **ET budgets** and **timestamps** that can be combined with sunrise/sunset logic in Rule Machine, webCoRE, or Node-RED.
+WET-IT started as a data supplier-only project; keeping that in mind, it still supplies real-time **ET budgets** and **timestamps** that can be combined with sunrise/sunset logic in Rule Machine, webCoRE, or Node-RED.
 
 ### 🌄 Rule Machine Example (Dynamic Sunrise Trigger)
 
@@ -778,7 +778,7 @@ The driver provides two key functions:
 
 ---
 
-### 💧 Zone Attributes (Auto-Declared)
+### 💧 Zone Attributes
 
 Each WET-IT installation supports up to **48 zones**, with the following attributes automatically generated:
 
@@ -830,7 +830,7 @@ Inactive zones are automatically cleared to keep event logs concise.
 This JSON mirrors the internal data model and can be parsed directly by Rule Machine, webCoRE, or external integrations.
 
 ----------
-## 🧭 Device Commands
+## 🧭 Device (WET-IT Data) Commands
 
 | Command | Parameters | Description |
 |:--|:--|:--|
@@ -2445,11 +2445,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbODQ3MDA2NDUwLC02Mjc5NDEzNDMsLTE2Mz
-g5NDAzOTQsLTIwNjM4OTEwNTQsLTIzNTAyMjIzNywxOTA3ODcy
-NjMxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIwMSwxNz
-kxNjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2NTUxLDEzNjk2Mjgw
-NTYsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3NDg0LC
-0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0xOTYzNzQyMTE3LC0x
-NTExNTI4Nzk0XX0=
+eyJoaXN0b3J5IjpbLTE3MTQyMzMxMDMsLTYyNzk0MTM0MywtMT
+YzODk0MDM5NCwtMjA2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MDc4
+NzI2MzEsNTYxNzc5MDAsMTMwODY3NjUxMywyMDg2ODc5MjAxLD
+E3OTE2MDg5NSwxMTQ1ODA2NDI1LDEwMzExNzY1NTEsMTM2OTYy
+ODA1NiwxNzc2ODQ4MjM4LC01OTU1ODMxMTgsLTE5MTU0NDc0OD
+QsLTE4MTkzNDQ0MjQsLTEyMzY5ODA3NjAsLTE5NjM3NDIxMTcs
+LTE1MTE1Mjg3OTRdfQ==
 -->
