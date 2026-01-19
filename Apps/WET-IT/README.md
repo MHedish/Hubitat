@@ -40,6 +40,8 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 - Hub location diagnostics and elapsed-time tracking
 - Lightweight and efficient — entirely local on Hubitat
 
+---
+
 ### 🆕 v1.0.4.0 Updates🆕
 - Added a *comprehensive scheduler* supporting up to 48 zones and 16 programs.
 - Each program can be set for a specific **time-of-day** *or* to **begin by** or **end by** sunrise, accounting for variations in runtime due to ET or seasonal adjustments.
@@ -48,6 +50,8 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 - User-selectable water sensors will automatically skip irrigation if wet.
 - For Tempest PWS users, the haptic rain sensor is also available as a live rain sensor.
 - Wind/Rain/Freeze events are reported in the app, device, and are checked immediately before a scheduled irrigation event.
+
+---
 
 ## ⚙️ Installation
 
@@ -286,8 +290,8 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNzA2MzY3ODUwLC0yMDQ1MDgzMTQzLDIxMT
-Q2MDczNjIsMTY0MjUyMzEwNCwtMTIzNTA3NzQxOCwtMTg3MDg0
-Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2MTc3Mi
-wxMzc1NTk3MTIsMjExOTg1ODIyM119
+eyJoaXN0b3J5IjpbLTE0Njk1NTc5OTgsNzA2MzY3ODUwLC0yMD
+Q1MDgzMTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMTIzNTA3
+NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMD
+ksMTIyNjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
 -->
