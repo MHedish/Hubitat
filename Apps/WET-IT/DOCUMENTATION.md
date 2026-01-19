@@ -19,52 +19,6 @@ It runs entirely on your hub — **no cloud services, no subscription, no latenc
 
 ---
 
-### 🚀 What’s New in v1.0.4.0 — *Scheduler Edition*
-
-The original WET-IT engine was intentionally non-scheduling — designed to export ET and seasonal adjustments for external automations like webCoRE, Rule Machine, or Node-RED.
-
-This release adds an **integrated scheduler** with:
-
-- 🗓 **Up to 16 Programs**, each with:
-  - Fixed-time or Sunrise-based start (“Start at” or “End by Sunrise”)
-  - Individual zone selection and runtime logic  
-  - ET-, seasonal-, or fixed-time adjustment modes
-- 🧊 **Weather-intelligent skip logic** for rain, wind, and freeze events
-- 🧩 **Hybrid Mode** — seamlessly combines on-hub scheduling **and** external automation access through the same data driver
-- 💾 **Persistent soil-moisture memory** (Rachio-style depletion tracking)
-- 📊 **Unified JSON + attribute publishing** to the *WET-IT Data* driver
-- ⚙️ **Self-healing zone / program counts**, ensuring safe edits and consistency
-
----
-
-### 🌦️ New Weather Provider — Tempest PWS Integration
-
-v1.0.4.0 introduces **Tempest Personal Weather Station (PWS)** support, adding **hyper-local forecasting** and **real-time environmental data** to the ET model.
-
-| Provider | API Key Required | Local or Cloud | Distinct Advantages |
-|:--|:--:|:--:|:--|
-| **NOAA NWS** | ❌ | Local / Regional | Reliable baseline with no API key required |
-| **OpenWeather 3.0** | ✅ | Cloud | Global hourly forecasts |
-| **Tomorrow .io** | ✅ | Cloud | High-resolution, next-hour prediction |
-| **🌪 Tempest PWS** | ✅ | Local Hardware | Hyper-local wind, rain, temp & UV direct from your backyard |
-
-When enabled, Tempest data merges automatically with other sources — allowing **ET, freeze, wind, and rain skip logic** to react to conditions measured in your own yard, not the nearest airport.
-
----
-
-### 💧 Two Operating Modes
-
-WET-IT can function as either a **data service** or a **complete controller**:
-
-| Mode | Description | Typical Use |
-|:--|:--|:--|
-| 🧮 **Data Model Only** | Publishes ET + Seasonal data for external automations. | Integrate with Rule Machine, webCoRE, Node-RED, or custom drivers. |
-| ⏱ **Full Scheduler Mode** | Runs programs autonomously inside Hubitat with ET-adjusted runtimes. | “Set-and-forget” operation similar to Rachio or Rain Bird IQ. |
-
-Both modes share the same data output, so dashboards and automations remain compatible regardless of configuration.
-
----
-
 ## ☀️ Why Evapotranspiration Matters
 
 Evapotranspiration (ET) is the combined water loss from **soil evaporation** and **plant transpiration**.  
@@ -2465,11 +2419,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTMwODY3NjUxMywyMDg2ODc5MjAxLDE3OT
-E2MDg5NSwxMTQ1ODA2NDI1LDEwMzExNzY1NTEsMTM2OTYyODA1
-NiwxNzc2ODQ4MjM4LC01OTU1ODMxMTgsLTE5MTU0NDc0ODQsLT
-E4MTkzNDQ0MjQsLTEyMzY5ODA3NjAsLTE5NjM3NDIxMTcsLTE1
-MTE1Mjg3OTQsMTEwNjAyNzE0NywtMjAzODE1OTY0MSwtOTk4MT
-Q2NTQzLC0xNjIwOTUxNjcxLDEzNjM0ODQ3ODIsLTk3MzUxNjE0
-MCwtMjg4OTAwNTYwXX0=
+eyJoaXN0b3J5IjpbLTY1MjA5ODM1NiwxMzA4Njc2NTEzLDIwOD
+Y4NzkyMDEsMTc5MTYwODk1LDExNDU4MDY0MjUsMTAzMTE3NjU1
+MSwxMzY5NjI4MDU2LDE3NzY4NDgyMzgsLTU5NTU4MzExOCwtMT
+kxNTQ0NzQ4NCwtMTgxOTM0NDQyNCwtMTIzNjk4MDc2MCwtMTk2
+Mzc0MjExNywtMTUxMTUyODc5NCwxMTA2MDI3MTQ3LC0yMDM4MT
+U5NjQxLC05OTgxNDY1NDMsLTE2MjA5NTE2NzEsMTM2MzQ4NDc4
+MiwtOTczNTE2MTQwXX0=
 -->
