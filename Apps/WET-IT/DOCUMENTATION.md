@@ -333,20 +333,6 @@ Sequential watering avoids conflicts, reduces surge, and ensures deterministic r
 
 ---
 
-### 🌄 Why “End by Sunrise” Matters
-
-Most irrigation systems can only **start at** a fixed time.  
-WET-IT adds a unique ability — to **“end by sunrise”** — automatically back-calculating when to start so watering finishes *right as daylight begins.*  
-This mirrors Rachio’s *Flex Daily* logic and provides:
-
-- 🌞 **Pre-dawn watering** — minimizes evaporation and wind drift  
-- 🌿 **Dry foliage at sunrise** — prevents fungus and disease  
-- 💧 **Optimal plant uptake** — watering aligns with morning photosynthesis  
-- ⚙️ **Automatic runtime compensation** — adjusts dynamically for longer or shorter ET days  
-
-> 🕐 *“WET-IT doesn’t just know when to start watering — it knows when you want it to finish.”*
-
----
 
 ### 🌤️ Weather Intelligence & Skip Logic
 
@@ -2475,11 +2461,11 @@ The `datasetJson` attribute exposes all zone data as a single object:
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIzNTAyMjIzNywxOTA3ODcyNjMxLDU2MT
-c3OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIwMSwxNzkxNjA4OTUs
-MTE0NTgwNjQyNSwxMDMxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Nj
-g0ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3NDg0LC0xODE5MzQ0
-NDI0LC0xMjM2OTgwNzYwLC0xOTYzNzQyMTE3LC0xNTExNTI4Nz
-k0LDExMDYwMjcxNDcsLTIwMzgxNTk2NDEsLTk5ODE0NjU0Mywt
-MTYyMDk1MTY3MV19
+eyJoaXN0b3J5IjpbLTIwNjg0NTk0ODUsLTIzNTAyMjIzNywxOT
+A3ODcyNjMxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIw
+MSwxNzkxNjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2NTUxLDEzNj
+k2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3
+NDg0LC0xODE5MzQ0NDI0LC0xMjM2OTgwNzYwLC0xOTYzNzQyMT
+E3LC0xNTExNTI4Nzk0LDExMDYwMjcxNDcsLTIwMzgxNTk2NDEs
+LTk5ODE0NjU0M119
 -->
