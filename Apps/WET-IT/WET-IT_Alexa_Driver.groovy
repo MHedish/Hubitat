@@ -7,8 +7,7 @@
 *  Child driver for WET-IT app.  Exposes program control to Alex devices.
 *
 *  Changelog:
-*  0.0.0.0  –– Initial internal
-
+*  0.0.1.0  –– Initial internal
 */
 
 import groovy.transform.Field
@@ -27,8 +26,8 @@ metadata {
     ) {
 
         capability "Actuator"
-		    capability "Refresh"
-		    capability "Valve"
+		capability "Refresh"
+		capability "Valve"
 
         attribute "programNumber","number"
         attribute "programName","string"
@@ -36,12 +35,12 @@ metadata {
 
         command "initialize"
         command "disableDebugLoggingNow"
-		    command "runProgram",["NUMBER"]
-		    command "stopProgram"
-		    command "runZone",["NUMBER"]
-		    command "stopZone",["NUMBER"]
+		command "runProgram",["NUMBER"]
+		command "stopProgram"
+		command "runZone",["NUMBER"]
+		command "stopZone",["NUMBER"]
+
     }
-  
     preferences{
         input("docBlock","hidden",title: driverDocBlock())
         input("logEnable","bool",title:"Enable Debug Logging",description:"Auto-off after 30 minutes.",defaultValue:false)
