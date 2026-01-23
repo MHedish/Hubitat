@@ -10,13 +10,15 @@
 *  0.0.1.0   –– Initial internal
 *  0.0.1.1   –– Refined on/off mapping, corrected close() logic
 *  0.0.1.2   –– Verified Echo naming
+*  0.0.1.3   –– Added Switch capability and event for Echo feedback
+*  0.0.1.4   –– Removed unused methods and commands.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Echo"
-@Field static final String DRIVER_VERSION  = "0.0.1.2"
-@Field static final String DRIVER_MODIFIED = "2026-01-22"
+@Field static final String DRIVER_VERSION  = "0.0.1.4"
+@Field static final String DRIVER_MODIFIED = "2026-01-23"
 
 metadata {
     definition(
@@ -27,8 +29,8 @@ metadata {
         importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/WET-IT_Echo_Driver.groovy"
     ) {
         capability "Actuator"
-        capability "Refresh"
         capability "Valve"
+        capability "Switch"
 
         attribute "programNumber","number"
         attribute "programName","string"
@@ -36,10 +38,6 @@ metadata {
 
         command "initialize"
         command "disableDebugLoggingNow"
-        command "runProgram",["NUMBER"]
-        command "stopProgram"
-        command "runZone",["NUMBER"]
-        command "stopZone",["NUMBER"]
     }
 
     preferences {
@@ -64,29 +62,26 @@ def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.upda
 /* =============================== Lifecycle =============================== */
 def installed(){logInfo"Installed: ${driverInfoString()}";initialize()}
 def updated(){logInfo"Updated: ${driverInfoString()}";initialize()}
-def initialize(){emitEvent("driverInfo",driverInfoString());unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)}
-def refresh(){logInfo"Manual refresh invoked";parent?.refreshProgramStatus(device.currentValue("programNumber"))}
+def initialize(){emitEvent("driverInfo",driverInfoString());unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)
+	try{def p=(device.deviceNetworkId.tokenize('_')[-1])as Integer
+		atomicState.program=p;logDebug"initialize(): Program ${p} bound to ${device.deviceNetworkId}"
+	}catch(e){logWarn"initialize(): ${e.message}"}}
 
 /* ============================= Core Commands ============================= */
 def open(){
-    def p=(device.currentValue("programNumber")?:0) as Integer
-    logInfo"Echo request: open (run program ${p})"
+    def p=atomicState.program?:0
     parent?.runProgram([program:p,manual:true])
     emitChangedEvent("valve","open","Program ${p} active")
+    emitChangedEvent("switch","on","Program ${p} active")
 }
 
 def close(){
-    def p=(device.currentValue("programNumber")?:0) as Integer
-    logInfo"Echo request: close (stop program ${p})"
+    def p=atomicState.program?:0
     parent?.stopActiveProgram()
     emitChangedEvent("valve","closed","Program ${p} stopped")
+    emitChangedEvent("switch","off","Program ${p} stopped")
 }
 
-def on(){logDebug"On called";open()}
-def off(){logDebug"Off called";close()}
+def on(){logDebug"On called"; open()}
 
-/* ============================ Direct Commands ============================ */
-def runProgram(p){try{logInfo"runProgram(${p})";parent?.runProgram([program:p,manual:true])}catch(e){logWarn"runProgram(${p}): ${e.message}"}}
-def stopProgram(){try{logInfo"stopProgram()";parent?.stopActiveProgram()}catch(e){logWarn"stopProgram(): ${e.message}"}}
-def runZone(z){try{logInfo"runZone(${z})";parent?.startZoneManually([zone:z])}catch(e){logWarn"runZone(${z}): ${e.message}"}}
-def stopZone(z){try{logInfo"stopZone(${z})";parent?.stopZoneManually([zone:z])}catch(e){logWarn"stopZone(${z}): ${e.message}"}}
+def off(){logDebug"Off called"; close()}
