@@ -338,7 +338,7 @@ Sequential watering avoids conflicts, reduces surge, and ensures deterministic r
 
 ---
 
-## 🔊 Voice Control<a id="-voice-control"></a>
+### 🔊 Voice Control<a id="-voice-control"></a>
 
 WET-IT supports voice control through Hubitat's built-in **Amazon Echo Skill** by exposing a virtual Echo child device for each irrigation program.
 
@@ -366,7 +366,7 @@ Each Echo device represents a **single irrigation program**, not a physical valv
 
 ---
 
-## 🌊 Cycle & Soak
+### 🌊 Cycle & Soak
 
 Cycle & Soak allows irrigation to be applied in multiple shorter cycles instead of a single continuous run, improving absorption and reducing runoff.
 
@@ -1666,7 +1666,7 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE5NTI4NTc4MzAsMjA3NjUxMzUwOSwtMT
+eyJoaXN0b3J5IjpbLTEzNDk3MzUzOTgsMjA3NjUxMzUwOSwtMT
 g2MjQyNDk5NywtNjc2NDY4NDU3LC0xNjgxNzk3NjAxLC02Mjc5
 NDEzNDMsLTE2Mzg5NDAzOTQsLTIwNjM4OTEwNTQsLTIzNTAyMj
 IzNywxOTA3ODcyNjMxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMjA4
