@@ -1282,6 +1282,26 @@ Programs operate sequentially and can run automatically via the internal schedul
 
 ---
 
+### 🌧️ Saturation Skip
+
+Saturation Skip automatically prevents irrigation when sufficient moisture is already present based on recent watering activity and calculated depletion.
+
+When active:
+
+- Programs or zones may be **skipped automatically**
+- Skip decisions are based on accumulated moisture and depletion tracking
+- Normal operation resumes once depletion thresholds are reached
+
+### Key Points
+
+- Saturation Skip operates fully automatically
+- Manual program runs override saturation protection
+- Skip decisions are logged for transparency and diagnostics
+
+This feature helps conserve water while maintaining consistent and intelligent irrigation behavior.
+
+---
+
 ### 🌄 Sunrise and End-by-Sunrise Logic
 
 WET-IT’s scheduler can begin watering **at sunrise** or calculate a start time so the program **ends by sunrise**.  
@@ -1666,11 +1686,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEzNDk3MzUzOTgsMjA3NjUxMzUwOSwtMT
-g2MjQyNDk5NywtNjc2NDY4NDU3LC0xNjgxNzk3NjAxLC02Mjc5
-NDEzNDMsLTE2Mzg5NDAzOTQsLTIwNjM4OTEwNTQsLTIzNTAyMj
-IzNywxOTA3ODcyNjMxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMjA4
-Njg3OTIwMSwxNzkxNjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2NT
-UxLDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0x
-OTE1NDQ3NDg0XX0=
+eyJoaXN0b3J5IjpbLTE5MzE1NjU4MjUsLTEzNDk3MzUzOTgsMj
+A3NjUxMzUwOSwtMTg2MjQyNDk5NywtNjc2NDY4NDU3LC0xNjgx
+Nzk3NjAxLC02Mjc5NDEzNDMsLTE2Mzg5NDAzOTQsLTIwNjM4OT
+EwNTQsLTIzNTAyMjIzNywxOTA3ODcyNjMxLDU2MTc3OTAwLDEz
+MDg2NzY1MTMsMjA4Njg3OTIwMSwxNzkxNjA4OTUsMTE0NTgwNj
+QyNSwxMDMxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwt
+NTk1NTgzMTE4XX0=
 -->
