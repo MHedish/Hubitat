@@ -338,6 +338,34 @@ Sequential watering avoids conflicts, reduces surge, and ensures deterministic r
 
 ---
 
+## 🔊 Voice Control
+
+WET-IT supports voice control through Hubitat's built-in **Amazon Echo Skill** by exposing a virtual Echo child device for each irrigation program.
+
+When enabled for a program:
+
+- A dedicated **WET-IT Echo** child device is created 
+- The device appears in the Amazon Alexa app as a controllable on/off device
+- Turning the device **ON** starts the associated program
+- Turning the device **OFF** stops the active program
+
+Each Echo device represents a **single irrigation program**, not a physical valve.
+
+### Naming & Discovery
+
+- Echo device labels are derived from the program’s friendly name
+- When you update the program name, that change automatically cascades to the child device
+- An optional `WET-IT` prefix can be enabled per program to avoid name collisions with other smart devices
+- After enabling this setting for a program, be sure to enable the new child device in the **Amazon Echo Skill**
+
+### Notes
+
+- Echo devices are created and removed automatically based on program settings
+- Device state is authoritative and reflects whether the program is actively running
+- Voice control is optional and does not affect scheduled, automatic, or weather-driven operation
+
+---
+
 
 ### 🌤️ Weather Intelligence & Skip Logic
 
@@ -1619,11 +1647,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjA3NjUxMzUwOSwtMTg2MjQyNDk5NywtNj
-c2NDY4NDU3LC0xNjgxNzk3NjAxLC02Mjc5NDEzNDMsLTE2Mzg5
-NDAzOTQsLTIwNjM4OTEwNTQsLTIzNTAyMjIzNywxOTA3ODcyNj
-MxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIwMSwxNzkx
-NjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2NTUxLDEzNjk2MjgwNT
-YsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0xOTE1NDQ3NDg0LC0x
-ODE5MzQ0NDI0XX0=
+eyJoaXN0b3J5IjpbLTg4Njg5NDEyNywyMDc2NTEzNTA5LC0xOD
+YyNDI0OTk3LC02NzY0Njg0NTcsLTE2ODE3OTc2MDEsLTYyNzk0
+MTM0MywtMTYzODk0MDM5NCwtMjA2Mzg5MTA1NCwtMjM1MDIyMj
+M3LDE5MDc4NzI2MzEsNTYxNzc5MDAsMTMwODY3NjUxMywyMDg2
+ODc5MjAxLDE3OTE2MDg5NSwxMTQ1ODA2NDI1LDEwMzExNzY1NT
+EsMTM2OTYyODA1NiwxNzc2ODQ4MjM4LC01OTU1ODMxMTgsLTE5
+MTU0NDc0ODRdfQ==
 -->
