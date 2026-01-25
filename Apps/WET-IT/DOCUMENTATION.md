@@ -366,6 +366,25 @@ Each Echo device represents a **single irrigation program**, not a physical valv
 
 ---
 
+## 🌊 Cycle & Soak
+
+Cycle & Soak allows irrigation to be applied in multiple shorter cycles instead of a single continuous run, improving absorption and reducing runoff.
+
+When enabled:
+
+- Each zone’s runtime is divided into multiple watering cycles
+- A configurable soak period is inserted between cycles
+- Total watering duration remains unchanged
+
+### Benefits
+
+- Reduces runoff on slopes or compacted soil
+- Improves water penetration into the root zone
+- Increases overall irrigation efficiency
+
+Cycle & Soak is applied automatically during program execution once configured.
+
+---
 
 ### 🌤️ Weather Intelligence & Skip Logic
 
@@ -1647,11 +1666,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTIxNDQ2NzU0MSwyMDc2NTEzNTA5LC0xOD
-YyNDI0OTk3LC02NzY0Njg0NTcsLTE2ODE3OTc2MDEsLTYyNzk0
-MTM0MywtMTYzODk0MDM5NCwtMjA2Mzg5MTA1NCwtMjM1MDIyMj
-M3LDE5MDc4NzI2MzEsNTYxNzc5MDAsMTMwODY3NjUxMywyMDg2
-ODc5MjAxLDE3OTE2MDg5NSwxMTQ1ODA2NDI1LDEwMzExNzY1NT
-EsMTM2OTYyODA1NiwxNzc2ODQ4MjM4LC01OTU1ODMxMTgsLTE5
-MTU0NDc0ODRdfQ==
+eyJoaXN0b3J5IjpbLTE5NTI4NTc4MzAsMjA3NjUxMzUwOSwtMT
+g2MjQyNDk5NywtNjc2NDY4NDU3LC0xNjgxNzk3NjAxLC02Mjc5
+NDEzNDMsLTE2Mzg5NDAzOTQsLTIwNjM4OTEwNTQsLTIzNTAyMj
+IzNywxOTA3ODcyNjMxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMjA4
+Njg3OTIwMSwxNzkxNjA4OTUsMTE0NTgwNjQyNSwxMDMxMTc2NT
+UxLDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwtNTk1NTgzMTE4LC0x
+OTE1NDQ3NDg0XX0=
 -->
