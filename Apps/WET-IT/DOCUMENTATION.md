@@ -650,6 +650,13 @@ These attributes are used both for **internal skip logic** and **external automa
 
 ---
 
+### 🌐 Location Data Attribution
+
+WET-IT may perform one-time reverse geocoding to determine regional data availability.
+Reverse geocoding is provided by Geoapify. Map data © OpenStreetMap contributors.
+
+---
+
 ### 🆕Rain Sensor
 - Beginning with v1.0.4.0 users can select any local rain/moisture sensors installed to automatically skip scheduled irrigation events.
 - Tempest PWS users can also select their haptic rain sensor.
@@ -1686,11 +1693,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE5MzE1NjU4MjUsLTEzNDk3MzUzOTgsMj
-A3NjUxMzUwOSwtMTg2MjQyNDk5NywtNjc2NDY4NDU3LC0xNjgx
-Nzk3NjAxLC02Mjc5NDEzNDMsLTE2Mzg5NDAzOTQsLTIwNjM4OT
-EwNTQsLTIzNTAyMjIzNywxOTA3ODcyNjMxLDU2MTc3OTAwLDEz
-MDg2NzY1MTMsMjA4Njg3OTIwMSwxNzkxNjA4OTUsMTE0NTgwNj
-QyNSwxMDMxMTc2NTUxLDEzNjk2MjgwNTYsMTc3Njg0ODIzOCwt
-NTk1NTgzMTE4XX0=
+eyJoaXN0b3J5IjpbLTIxMDUxMDc5OSwtMTkzMTU2NTgyNSwtMT
+M0OTczNTM5OCwyMDc2NTEzNTA5LC0xODYyNDI0OTk3LC02NzY0
+Njg0NTcsLTE2ODE3OTc2MDEsLTYyNzk0MTM0MywtMTYzODk0MD
+M5NCwtMjA2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MDc4NzI2MzEs
+NTYxNzc5MDAsMTMwODY3NjUxMywyMDg2ODc5MjAxLDE3OTE2MD
+g5NSwxMTQ1ODA2NDI1LDEwMzExNzY1NTEsMTM2OTYyODA1Niwx
+Nzc2ODQ4MjM4XX0=
 -->
