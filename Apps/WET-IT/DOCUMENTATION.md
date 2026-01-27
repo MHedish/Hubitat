@@ -650,7 +650,7 @@ These attributes are used both for **internal skip logic** and **external automa
 
 ---
 
-### 🌐 Location Data Attribution
+### 🗺️ Location Data Attribution
 
 WET-IT may perform one-time reverse geocoding to determine regional data availability.
 Reverse geocoding is provided by Geoapify. Map data © OpenStreetMap contributors.
@@ -1693,11 +1693,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIxMDUxMDc5OSwtMTkzMTU2NTgyNSwtMT
-M0OTczNTM5OCwyMDc2NTEzNTA5LC0xODYyNDI0OTk3LC02NzY0
-Njg0NTcsLTE2ODE3OTc2MDEsLTYyNzk0MTM0MywtMTYzODk0MD
-M5NCwtMjA2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MDc4NzI2MzEs
-NTYxNzc5MDAsMTMwODY3NjUxMywyMDg2ODc5MjAxLDE3OTE2MD
-g5NSwxMTQ1ODA2NDI1LDEwMzExNzY1NTEsMTM2OTYyODA1Niwx
-Nzc2ODQ4MjM4XX0=
+eyJoaXN0b3J5IjpbMTE2MTA5MzcxNywtMjEwNTEwNzk5LC0xOT
+MxNTY1ODI1LC0xMzQ5NzM1Mzk4LDIwNzY1MTM1MDksLTE4NjI0
+MjQ5OTcsLTY3NjQ2ODQ1NywtMTY4MTc5NzYwMSwtNjI3OTQxMz
+QzLC0xNjM4OTQwMzk0LC0yMDYzODkxMDU0LC0yMzUwMjIyMzcs
+MTkwNzg3MjYzMSw1NjE3NzkwMCwxMzA4Njc2NTEzLDIwODY4Nz
+kyMDEsMTc5MTYwODk1LDExNDU4MDY0MjUsMTAzMTE3NjU1MSwx
+MzY5NjI4MDU2XX0=
 -->
