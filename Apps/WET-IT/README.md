@@ -307,6 +307,9 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 **Author:** Marc Hedish (@MHedish)
 **Documentation:** ChatGPT (OpenAI)
 **Special Thanks:** JimB and aaiyar for allowing me to use their Tempest PWS for testing
+**Location Data Attribution:**
+WET-IT may perform one-time reverse geocoding to determine regional data availability.
+Reverse geocoding is provided by Geoapify. Map data © OpenStreetMap contributors.
 **Platform:** [Hubitat Elevation](https://hubitat.com)
 
 ## 🔍 Learn More
@@ -319,8 +322,9 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE3MDY0MDYzMDQsNzA2MzY3ODUwLC0yMD
-Q1MDgzMTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMTIzNTA3
-NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMD
-ksMTIyNjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
+eyJoaXN0b3J5IjpbMTQzNDIyODAyLC0xNzA2NDA2MzA0LDcwNj
+M2Nzg1MCwtMjA0NTA4MzE0MywyMTE0NjA3MzYyLDE2NDI1MjMx
+MDQsLTEyMzUwNzc0MTgsLTE4NzA4NDI3NywxMzc5NDM2MjUzLC
+0xNTYyNTU4MzA5LDEyMjYyNjE3NzIsMTM3NTU5NzEyLDIxMTk4
+NTgyMjNdfQ==
 -->
