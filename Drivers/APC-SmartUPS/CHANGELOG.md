@@ -53,3 +53,11 @@
 - Hybrid `state` / `atomicState` lifecycle separation for precise session control.  
 - Eliminated watchdog recursion and `deferredCommand` residue.  
 - Deterministic Telnet recovery, consistent finalization.
+
+**1.0.2.3 — 1.0.2.5 — Internal**  
+- Moved to atomicState variables.
+- Added internal logging to help determine lock state during watchdog.
+
+**1.0.2.6 — Stable Core Release**  
+- Resolved watchdog lock state
+- Changed mutex for sendUPSCommand()
