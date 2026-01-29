@@ -1,10 +1,10 @@
 {
   "packageName": "APC SmartUPS Status",
   "author": "Marc Hedish",
-  "version": "1.0.2.2",
+  "version": "1.0.2.6",
   "minimumHEVersion": "2.3.0",
-  "dateReleased": "2026-01-11",
-  "releaseNotes": "Stable release — High-performance driver for APC Smart-UPS with Network Management Cards (NMC). Uses a deterministic Telnet lifecycle and transient in-memory context for sub-5-second telemetry without race conditions or timeouts.\n\nv1.0.2.0 — Improved watchdog logic and deferred command handling; reduced reconnoiter loop risk.\nv1.0.2.1 — Fixed checkUPSClock() null reference.\nv1.0.2.2 — Stable Core Release: Refined watchdog recovery.",
+  "dateReleased": "2026-01-25",
+  "releaseNotes": "Stable release — High-performance driver for APC Smart-UPS with Network Management Cards (NMC). Uses a deterministic Telnet lifecycle and transient in-memory context for sub-5-second telemetry without race conditions or timeouts.\n\nv1.0.2.0 — Improved watchdog logic and deferred command handling; reduced reconnoiter loop risk.\nv1.0.2.1 — Fixed checkUPSClock() null reference.\nv1.0.2.6 — Stable Core Release: Changed watchdog mutex to resolve lockup condition.",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/README.md",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/CHANGELOG.md",
   "tags": ["UPS","APC","Smart-UPS","Integrations","Monitoring","Hubitat","Tools & Utilities"],
@@ -15,7 +15,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/APC-SmartUPS/APC-SmartUPS-Status.groovy",
       "required": true,
-      "version": "1.0.2.2"
+      "version": "1.0.2.6"
     }
   ]
 }
