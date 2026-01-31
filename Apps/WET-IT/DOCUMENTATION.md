@@ -353,6 +353,8 @@ Each Echo device represents a **single irrigation program**, not a physical valv
 
 ### Naming & Discovery
 
+- Respecting Hubitat's security model, WET-IT cannot automatically determine if you have the **Amazon Echo Skill** enabled.
+- After enabling this setting for a program, be sure to enable the new child device in the **Amazon Echo Skill**
 - Echo device labels are derived from the program’s friendly name
 - When you update the program name, that change automatically cascades to the child device
 - An optional `WET-IT` prefix can be enabled per program to avoid name collisions with other smart devices
@@ -1691,11 +1693,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjI5MTYxOTksLTEwMjU2NjQ2MTUsLTIxMD
-UxMDc5OSwtMTkzMTU2NTgyNSwtMTM0OTczNTM5OCwyMDc2NTEz
-NTA5LC0xODYyNDI0OTk3LC02NzY0Njg0NTcsLTE2ODE3OTc2MD
-EsLTYyNzk0MTM0MywtMTYzODk0MDM5NCwtMjA2Mzg5MTA1NCwt
-MjM1MDIyMjM3LDE5MDc4NzI2MzEsNTYxNzc5MDAsMTMwODY3Nj
-UxMywyMDg2ODc5MjAxLDE3OTE2MDg5NSwxMTQ1ODA2NDI1LDEw
-MzExNzY1NTFdfQ==
+eyJoaXN0b3J5IjpbMjkxOTkxMjE3LC0xMDI1NjY0NjE1LC0yMT
+A1MTA3OTksLTE5MzE1NjU4MjUsLTEzNDk3MzUzOTgsMjA3NjUx
+MzUwOSwtMTg2MjQyNDk5NywtNjc2NDY4NDU3LC0xNjgxNzk3Nj
+AxLC02Mjc5NDEzNDMsLTE2Mzg5NDAzOTQsLTIwNjM4OTEwNTQs
+LTIzNTAyMjIzNywxOTA3ODcyNjMxLDU2MTc3OTAwLDEzMDg2Nz
+Y1MTMsMjA4Njg3OTIwMSwxNzkxNjA4OTUsMTE0NTgwNjQyNSwx
+MDMxMTc2NTUxXX0=
 -->
