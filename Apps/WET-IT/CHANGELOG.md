@@ -133,11 +133,12 @@
 - Improved runtime logs, diagnostics, and version self-reporting.
 - Prepared for unified 1.0.4.x series by normalizing state handling and scheduler recovery behavior.
 
-## ☀️ 1.4.0.0 — Production Release
-**App v1.4.0.0 / Driver v1.4.0.0 — Released 2026-01-18**
+## ☀️ 1.0.4.0 — Production Release
+**App v1.0.4.0 / Driver v1.0.4.0 — Released 2026-01-18**
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTIzNDYyNjgxMywxMTcyNTg3MTk5LDUyMz
-AyODIzLC0xMTc0MjMxOTE2LDEzODMzODA0NDYsMTcyNTI4NDU2
-OSwtMTAyOTk3ODQ3LC04MTIwNzIzNTgsMTg0NzAzNzgwM119
+eyJoaXN0b3J5IjpbLTE5MjY0NTEyMywxMjM0NjI2ODEzLDExNz
+I1ODcxOTksNTIzMDI4MjMsLTExNzQyMzE5MTYsMTM4MzM4MDQ0
+NiwxNzI1Mjg0NTY5LC0xMDI5OTc4NDcsLTgxMjA3MjM1OCwxOD
+Q3MDM3ODAzXX0=
 -->
