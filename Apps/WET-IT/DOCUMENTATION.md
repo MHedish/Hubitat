@@ -657,11 +657,10 @@ WET-IT is fully location-aware. All weather forecasting, evapotranspiration (ET)
 ### How Location Is Determined
 
 - WET-IT uses the hub’s configured latitude and longitude as the authoritative source.
-- A centralized geolocation cache (`state.geo`) stores:
+- A centralized geolocation cache stores:
   - Latitude / longitude
   - Country and ISO-3166-2 subdivision
   - Regional capability flags (e.g., NOAA, USDA availability)
-  - Optional regional metadata (e.g., flag)
 
 ### Intelligent Caching & Cost Control
 
@@ -677,7 +676,7 @@ WET-IT is fully location-aware. All weather forecasting, evapotranspiration (ET)
 If a change in hub location is detected:
 - WET-IT logs the previous and current coordinates
 - Regional data (weather source eligibility, ISO subdivision, etc.) is refreshed
-- If soil memory is enabled, WET-IT warns that existing soil depletion data may no longer be valid and recommends a manual reset
+- If soil memory is enabled, WET-IT will warn that existing soil depletion data may no longer be valid and recommend a manual reset
 
 This ensures ET and irrigation decisions remain scientifically consistent after relocation.
 
@@ -1735,11 +1734,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTA4NjY5NjM5OSwyOTE5OTEyMTcsLTEwMj
-U2NjQ2MTUsLTIxMDUxMDc5OSwtMTkzMTU2NTgyNSwtMTM0OTcz
-NTM5OCwyMDc2NTEzNTA5LC0xODYyNDI0OTk3LC02NzY0Njg0NT
-csLTE2ODE3OTc2MDEsLTYyNzk0MTM0MywtMTYzODk0MDM5NCwt
-MjA2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MDc4NzI2MzEsNTYxNz
-c5MDAsMTMwODY3NjUxMywyMDg2ODc5MjAxLDE3OTE2MDg5NSwx
-MTQ1ODA2NDI1XX0=
+eyJoaXN0b3J5IjpbLTEzODIzMzY0NTIsMjkxOTkxMjE3LC0xMD
+I1NjY0NjE1LC0yMTA1MTA3OTksLTE5MzE1NjU4MjUsLTEzNDk3
+MzUzOTgsMjA3NjUxMzUwOSwtMTg2MjQyNDk5NywtNjc2NDY4ND
+U3LC0xNjgxNzk3NjAxLC02Mjc5NDEzNDMsLTE2Mzg5NDAzOTQs
+LTIwNjM4OTEwNTQsLTIzNTAyMjIzNywxOTA3ODcyNjMxLDU2MT
+c3OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIwMSwxNzkxNjA4OTUs
+MTE0NTgwNjQyNV19
 -->
