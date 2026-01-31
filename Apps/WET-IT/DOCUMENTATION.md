@@ -676,13 +676,13 @@ WET-IT is fully location-aware. All weather forecasting, evapotranspiration (ET)
 If a change in hub location is detected:
 - WET-IT logs the previous and current coordinates
 - Regional data (weather source eligibility, ISO subdivision, etc.) is refreshed
-- If soil memory is enabled, WET-IT will warn that existing soil depletion data may no longer be valid and recommend a manual reset
+- If soil memory is enabled, WET-IT will warn that existing soil depletion data may no longer be valid and recommend a manual reset.
 
-This ensures ET and irrigation decisions remain scientifically consistent after relocation.
+This is to ensure ET and irrigation decisions remain scientifically consistent after relocation.
 
 ### Weather & ET Dependency
 
-All weather forecasts used by WET-IT (NOAA, OpenWeather, Tomorrow.io, Tempest) are **location-specific** and directly influence:
+All weather forecasts used by WET-IT (NOAA, OpenWeather, Tomorrow.i o, Tempest) are **location-specific** and directly influence:
 - Rain, freeze, and wind alerts
 - ET₀ calculations
 - Seasonal and hybrid irrigation budgets
@@ -692,8 +692,7 @@ Accurate location data is therefore foundational to correct system behavior.
 
 ### 🗺️ Location Data Attribution
 
-WET-IT may perform one-time reverse geocoding to determine regional data availability and jurisdictional context.  
-Reverse geocoding is provided by **Geoapify**. Map data © **OpenStreetMap contributors**.
+WET-IT may perform one-time reverse geocoding to determine regional data availability and jurisdictional context.  Reverse geocoding is provided by Geoapify. Map data © OpenStreetMap contributors.
 
 
 ---
@@ -1734,11 +1733,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEzODIzMzY0NTIsMjkxOTkxMjE3LC0xMD
-I1NjY0NjE1LC0yMTA1MTA3OTksLTE5MzE1NjU4MjUsLTEzNDk3
-MzUzOTgsMjA3NjUxMzUwOSwtMTg2MjQyNDk5NywtNjc2NDY4ND
-U3LC0xNjgxNzk3NjAxLC02Mjc5NDEzNDMsLTE2Mzg5NDAzOTQs
-LTIwNjM4OTEwNTQsLTIzNTAyMjIzNywxOTA3ODcyNjMxLDU2MT
-c3OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIwMSwxNzkxNjA4OTUs
-MTE0NTgwNjQyNV19
+eyJoaXN0b3J5IjpbODc2NDc5NjIyLDI5MTk5MTIxNywtMTAyNT
+Y2NDYxNSwtMjEwNTEwNzk5LC0xOTMxNTY1ODI1LC0xMzQ5NzM1
+Mzk4LDIwNzY1MTM1MDksLTE4NjI0MjQ5OTcsLTY3NjQ2ODQ1Ny
+wtMTY4MTc5NzYwMSwtNjI3OTQxMzQzLC0xNjM4OTQwMzk0LC0y
+MDYzODkxMDU0LC0yMzUwMjIyMzcsMTkwNzg3MjYzMSw1NjE3Nz
+kwMCwxMzA4Njc2NTEzLDIwODY4NzkyMDEsMTc5MTYwODk1LDEx
+NDU4MDY0MjVdfQ==
 -->
