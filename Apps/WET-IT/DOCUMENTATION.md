@@ -652,7 +652,7 @@ These attributes are used both for **internal skip logic** and **external automa
 
 ## 🌎 Location Awareness & Geospatial Intelligence
 
-WET-IT is fully location-aware. All weather forecasting, evapotranspiration (ET), seasonal modeling, and soil calculations are **explicitly dependent on geographic location**.
+WET-IT is fully location-aware. All weather forecasting, evapotranspiration (ET), seasonal modeling, and soil calculations are **explicitly dependent upon geographic location**.
 
 ### How Location Is Determined
 
@@ -682,7 +682,7 @@ This is to ensure ET and irrigation decisions remain scientifically consistent a
 
 ### Weather & ET Dependency
 
-All weather forecasts used by WET-IT (NOAA, OpenWeather, Tomorrow.i o, Tempest) are **location-specific** and directly influence:
+All weather forecasts used by WET-IT (NOAA, OpenWeather, Tomorrow.io, Tempest) are **location-specific** and directly influence
 - Rain, freeze, and wind alerts
 - ET₀ calculations
 - Seasonal and hybrid irrigation budgets
@@ -1733,11 +1733,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbODc2NDc5NjIyLDI5MTk5MTIxNywtMTAyNT
-Y2NDYxNSwtMjEwNTEwNzk5LC0xOTMxNTY1ODI1LC0xMzQ5NzM1
-Mzk4LDIwNzY1MTM1MDksLTE4NjI0MjQ5OTcsLTY3NjQ2ODQ1Ny
-wtMTY4MTc5NzYwMSwtNjI3OTQxMzQzLC0xNjM4OTQwMzk0LC0y
-MDYzODkxMDU0LC0yMzUwMjIyMzcsMTkwNzg3MjYzMSw1NjE3Nz
-kwMCwxMzA4Njc2NTEzLDIwODY4NzkyMDEsMTc5MTYwODk1LDEx
-NDU4MDY0MjVdfQ==
+eyJoaXN0b3J5IjpbMTUwNzM4NTU5OSwyOTE5OTEyMTcsLTEwMj
+U2NjQ2MTUsLTIxMDUxMDc5OSwtMTkzMTU2NTgyNSwtMTM0OTcz
+NTM5OCwyMDc2NTEzNTA5LC0xODYyNDI0OTk3LC02NzY0Njg0NT
+csLTE2ODE3OTc2MDEsLTYyNzk0MTM0MywtMTYzODk0MDM5NCwt
+MjA2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MDc4NzI2MzEsNTYxNz
+c5MDAsMTMwODY3NjUxMywyMDg2ODc5MjAxLDE3OTE2MDg5NSwx
+MTQ1ODA2NDI1XX0=
 -->
