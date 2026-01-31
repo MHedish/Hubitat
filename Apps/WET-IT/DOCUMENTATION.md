@@ -361,7 +361,6 @@ Each Echo device represents a **single irrigation program**, not a physical valv
 ### Notes
 
 - Echo devices are created and removed automatically based on program settings
-- Device state is authoritative and reflects whether the program is actively running
 - Voice control is optional and does not affect scheduled, automatic, or weather-driven operation
 
 ---
@@ -1693,11 +1692,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTE2MTA5MzcxNywtMjEwNTEwNzk5LC0xOT
-MxNTY1ODI1LC0xMzQ5NzM1Mzk4LDIwNzY1MTM1MDksLTE4NjI0
-MjQ5OTcsLTY3NjQ2ODQ1NywtMTY4MTc5NzYwMSwtNjI3OTQxMz
-QzLC0xNjM4OTQwMzk0LC0yMDYzODkxMDU0LC0yMzUwMjIyMzcs
-MTkwNzg3MjYzMSw1NjE3NzkwMCwxMzA4Njc2NTEzLDIwODY4Nz
-kyMDEsMTc5MTYwODk1LDExNDU4MDY0MjUsMTAzMTE3NjU1MSwx
-MzY5NjI4MDU2XX0=
+eyJoaXN0b3J5IjpbLTEwMjU2NjQ2MTUsLTIxMDUxMDc5OSwtMT
+kzMTU2NTgyNSwtMTM0OTczNTM5OCwyMDc2NTEzNTA5LC0xODYy
+NDI0OTk3LC02NzY0Njg0NTcsLTE2ODE3OTc2MDEsLTYyNzk0MT
+M0MywtMTYzODk0MDM5NCwtMjA2Mzg5MTA1NCwtMjM1MDIyMjM3
+LDE5MDc4NzI2MzEsNTYxNzc5MDAsMTMwODY3NjUxMywyMDg2OD
+c5MjAxLDE3OTE2MDg5NSwxMTQ1ODA2NDI1LDEwMzExNzY1NTEs
+MTM2OTYyODA1Nl19
 -->
