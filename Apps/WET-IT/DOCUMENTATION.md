@@ -650,10 +650,52 @@ These attributes are used both for **internal skip logic** and **external automa
 
 ---
 
+## 🌎 Location Awareness & Geospatial Intelligence
+
+WET-IT is fully location-aware. All weather forecasting, evapotranspiration (ET), seasonal modeling, and soil calculations are **explicitly dependent on geographic location**.
+
+### How Location Is Determined
+
+- WET-IT uses the hub’s configured latitude and longitude as the authoritative source.
+- A centralized geolocation cache (`state.geo`) stores:
+  - Latitude / longitude
+  - Country and ISO-3166-2 subdivision
+  - Regional capability flags (e.g., NOAA, USDA availability)
+  - Optional regional metadata (e.g., flag)
+
+### Intelligent Caching & Cost Control
+
+- Reverse geocoding and regional probes are **cached** and not repeated unnecessarily.
+- Location resolution is refreshed only when:
+  - The hub’s latitude or longitude changes
+  - Required regional data is missing or incomplete
+  - The user manually runs **Verify System**
+- Normal app lifecycle events (open, close, initialize) do **not** trigger external geolocation lookups.
+
+### Relocation Detection
+
+If a change in hub location is detected:
+- WET-IT logs the previous and current coordinates
+- Regional data (weather source eligibility, ISO subdivision, etc.) is refreshed
+- If soil memory is enabled, WET-IT warns that existing soil depletion data may no longer be valid and recommends a manual reset
+
+This ensures ET and irrigation decisions remain scientifically consistent after relocation.
+
+### Weather & ET Dependency
+
+All weather forecasts used by WET-IT (NOAA, OpenWeather, Tomorrow.io, Tempest) are **location-specific** and directly influence:
+- Rain, freeze, and wind alerts
+- ET₀ calculations
+- Seasonal and hybrid irrigation budgets
+- Saturation and skip logic
+
+Accurate location data is therefore foundational to correct system behavior.
+
 ### 🗺️ Location Data Attribution
 
-WET-IT may perform one-time reverse geocoding to determine regional data availability.
-Reverse geocoding is provided by Geoapify. Map data © OpenStreetMap contributors.
+WET-IT may perform one-time reverse geocoding to determine regional data availability and jurisdictional context.  
+Reverse geocoding is provided by **Geoapify**. Map data © **OpenStreetMap contributors**.
+
 
 ---
 
@@ -1693,11 +1735,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjkxOTkxMjE3LC0xMDI1NjY0NjE1LC0yMT
-A1MTA3OTksLTE5MzE1NjU4MjUsLTEzNDk3MzUzOTgsMjA3NjUx
-MzUwOSwtMTg2MjQyNDk5NywtNjc2NDY4NDU3LC0xNjgxNzk3Nj
-AxLC02Mjc5NDEzNDMsLTE2Mzg5NDAzOTQsLTIwNjM4OTEwNTQs
-LTIzNTAyMjIzNywxOTA3ODcyNjMxLDU2MTc3OTAwLDEzMDg2Nz
-Y1MTMsMjA4Njg3OTIwMSwxNzkxNjA4OTUsMTE0NTgwNjQyNSwx
-MDMxMTc2NTUxXX0=
+eyJoaXN0b3J5IjpbMTA4NjY5NjM5OSwyOTE5OTEyMTcsLTEwMj
+U2NjQ2MTUsLTIxMDUxMDc5OSwtMTkzMTU2NTgyNSwtMTM0OTcz
+NTM5OCwyMDc2NTEzNTA5LC0xODYyNDI0OTk3LC02NzY0Njg0NT
+csLTE2ODE3OTc2MDEsLTYyNzk0MTM0MywtMTYzODk0MDM5NCwt
+MjA2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MDc4NzI2MzEsNTYxNz
+c5MDAsMTMwODY3NjUxMywyMDg2ODc5MjAxLDE3OTE2MDg5NSwx
+MTQ1ODA2NDI1XX0=
 -->
