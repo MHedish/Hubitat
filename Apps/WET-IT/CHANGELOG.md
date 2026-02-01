@@ -153,37 +153,41 @@
     -   Robust cleanup of orphaned and probe devices
 -   Hardened **scheduler reliability**:
     -   Guards against simultaneous program execution
-
     -   Correct handling of partial zone completion and ET recovery
-        
     -   Refined irrigation tick logic to prevent repeat skips
-        
 -   Major **weather system expansion and cleanup**:
-    
     -   Added **Open-Meteo** as a first-class, global weather provider
-        
-    -   Normalized multi-provider behavior (NOAA, OpenWeather, Tomorrow.io, Tempest)
-        
+    -   Normalized multi-provider behavior (NOAA, Open-Meteo, OpenWeather, Tomorrow. io, Tempest)
     -   Corrected legacy weather backup logic and enforced user-controlled fallback policy
-        
     -   Explicitly separated **weather observations** from **forecast / ET-authoritative data**
-        
 -   Introduced **forecast failure detection and escalation**:
-    
     -   Tracks consecutive primary-source forecast misses
-        
     -   Annotates diagnostics for stale forecasts
-        
     -   Optional system notifications for diurnal forecast loss
-        
     -   User-controlled policy to suspend program scheduling when forecast authority is lost
-        
 -   Improved diagnostics, verification, and notification consistency across app and driver.
-    
 -   Removed legacy and deprecated weather logic; completed consistency pass on geo, ET, and weather data flow.
 
+## ☀️ 1.1.0.0 — Public Release
+
+**App v1.1.0.0 / Driver v1.1.0.0**
+
+-   Version bump for public release.
+    
+-   Consolidates all soil, scheduling, weather, and notification enhancements from the 1.0.5.x–1.0.11.x series.
+    
+-   Marks completion of:
+    
+    -   Deterministic scheduler architecture
+        
+    -   Hardened, policy-driven weather handling
+        
+    -   Fully separated observation vs. ET forecast data paths
+        
+-   Documentation and changelog updated to reflect current system behavior and design guarantees.
+
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTcwMzMwMjUwNSwtMTkyNjQ1MTIzLDEyMz
+eyJoaXN0b3J5IjpbLTI3NDk2NDU3NiwtMTkyNjQ1MTIzLDEyMz
 Q2MjY4MTMsMTE3MjU4NzE5OSw1MjMwMjgyMywtMTE3NDIzMTkx
 NiwxMzgzMzgwNDQ2LDE3MjUyODQ1NjksLTEwMjk5Nzg0NywtOD
 EyMDcyMzU4LDE4NDcwMzc4MDNdfQ==
