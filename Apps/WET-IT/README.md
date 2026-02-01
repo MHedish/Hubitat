@@ -45,16 +45,17 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 ### 🆕 v1.1.0.0 Updates🆕
 
 ### 🚀 What’s New in v1.1.0.0*
+
 - Open-Meteo weather source
+	- Global 
 - Soak & Cycle
 - Saturation Skip
 - Automatic soil type determination (US Only)
 - ISO 3166-2 location awareness
 	- More than just lat/lon location detection, ISO 3166-2 allows WET-IT to know specifically which cloud services are available for *your* location.
-- Improved weather provider backup logic with alerting
-	- All weather providers can use Open-Meteo as a backup for alerts and observations.
+- Improved weather provider backup logic with alerting.
+	- All weather providers can use Open-Meteo as a backup for alerts and observations.  Open-Meteo users, within the US and its territories, can use NOAA as a backup to Open-Meteo.
 	- If your primary weather provider is unavailable long enough to affect ET calculations, WET-IT will notify you and *optionally* stop all program scheduling until you choose a different provider and reset the ET Soil Memory.
-- For Tempest PWS users, the haptic rain sensor is also available as a live rain sensor.
 
 ---
 
@@ -327,7 +328,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNTIzMzU4MTk4LDY4NDc4ODQ5MiwxNDk3ND
+eyJoaXN0b3J5IjpbOTM0NTU1ODQ4LDY4NDc4ODQ5MiwxNDk3ND
 k4MjA5LC0xNzA2NDA2MzA0LDcwNjM2Nzg1MCwtMjA0NTA4MzE0
 MywyMTE0NjA3MzYyLDE2NDI1MjMxMDQsLTEyMzUwNzc0MTgsLT
 E4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4MzA5LDEyMjYy
