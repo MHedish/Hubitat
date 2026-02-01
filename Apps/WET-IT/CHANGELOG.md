@@ -171,24 +171,17 @@
 ## ☀️ 1.1.0.0 — Public Release
 
 **App v1.1.0.0 / Driver v1.1.0.0**
-
 -   Version bump for public release.
-    
 -   Consolidates all soil, scheduling, weather, and notification enhancements from the 1.0.5.x–1.0.11.x series.
-    
 -   Marks completion of:
-    
     -   Deterministic scheduler architecture
-        
     -   Hardened, policy-driven weather handling
-        
     -   Fully separated observation vs. ET forecast data paths
-        
 -   Documentation and changelog updated to reflect current system behavior and design guarantees.
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTI3NDk2NDU3NiwtMTkyNjQ1MTIzLDEyMz
-Q2MjY4MTMsMTE3MjU4NzE5OSw1MjMwMjgyMywtMTE3NDIzMTkx
-NiwxMzgzMzgwNDQ2LDE3MjUyODQ1NjksLTEwMjk5Nzg0NywtOD
-EyMDcyMzU4LDE4NDcwMzc4MDNdfQ==
+eyJoaXN0b3J5IjpbLTE3MjUxMjE4NzgsLTE5MjY0NTEyMywxMj
+M0NjI2ODEzLDExNzI1ODcxOTksNTIzMDI4MjMsLTExNzQyMzE5
+MTYsMTM4MzM4MDQ0NiwxNzI1Mjg0NTY5LC0xMDI5OTc4NDcsLT
+gxMjA3MjM1OCwxODQ3MDM3ODAzXX0=
 -->
