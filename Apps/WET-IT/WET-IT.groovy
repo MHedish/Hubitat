@@ -7,68 +7,72 @@
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  1.0.0.0   –– Initial Public Release
-*  1.0.0.1   –– Added href links to headings.
-*  1.0.0.2   –– Added href links to titles.
-*  1.0.0.3   –– Reordered freeze alert emission in publishZoneData()
-*  1.0.1.0   –– Added baseTime and adjustedTime attributes
-*  1.0.2.0   –– Added device (valve/switch) control
-*  1.0.2.1   –– Added baseTimeUnit and simplified input for baseTime
-*  1.0.2.2   –– Updated Zone Test buttons to be dynamically enabled/disabled.
-*  1.0.2.3   –– Updated data input widths; updated unit selection (minutes/seconds) for zone base time.
-*  1.0.3.0   –– Begin integrating scheduler.
-*  1.0.3.1   –– Implemented CRON based scheduling; Normalized zoneDepletion_zone${z} -> zoneDepletion_${z}" and zoneDepletionTs_zone${z} -> zoneDepletionTs_${z}
-*  1.0.3.2   –– Added update to child of running program.
-*  1.0.3.3   –– Resolved 1.0.3.1 update; ensured atomic.state vs state for zone memory.
-*  1.0.3.4   –– Updated copyProgram1ToAll() to guard against null values.
-*  1.0.3.5   –– Reverted
-*  1.0.3.6   –– Updated valve controls to handle zone param.
-*  1.0.3.7   –– Reverted
-*  1.0.3.8   –– Moved to single cron scheduler.
-*  1.0.3.9   –– Updated runProgram(), controlValve(), closeZoneHandler() to allow for zones with no devices and to log actual work.
-*  1.0.3.10  –– Fixed et/seasonal data source.
-*  1.0.3.11  –– Updated start/stop test to manual start/stop; calculates pct watered based on actual manual runtime.
-*  1.0.3.12  –– Added rain sensor device.
-*  1.0.3.13  –– Added "start at" vs "end by" to sunrise scheduling.
-*  1.0.3.14  –– Reverted.
-*  1.0.3.15  –– Reverted.
-*  1.0.3.16  –– Updated all three wx providers to correct wind alert forecasts.
-*  1.0.3.17  –– Corrected "end by" sunrise logic; Added wx alert control to runProgram()
-*  1.0.3.18  –– Added logic to disable all scheduling and individual program schedules.
-*  1.0.3.19  –– Reverted.
-*  1.0.3.20  –– Added the ability to delete programs.
-*  1.0.3.21  –– Reverted.
-*  1.0.3.22  –– Reverted.
-*  1.0.3.23  –– Rebuilt zone management: added full shift-down logic in deleteZone(); ensured persistence integrity; restored working copyZone1ToAll().
-*  1.0.3.24  –– Mirrored zone logic for programs: added shift-down handling in deleteProgram() and deterministic typing in copyProgram1ToAll().
-*  1.0.3.25  –– Added validation and self-healing logic for zoneCount and programCount to prevent invalid (zero or negative) values; automatically restores the last valid count or clamps to MAX_* limits.  Unified behavior and UI consistency between Zone and Program configuration pages.
-*  1.0.3.26  –– Added program-level minimum runtime validation to runProgram() and irrigationTick() for consistency; prevents under-threshold program execution.
-*  1.0.3.27  –– Restored sequential zone execution; programs now run zones one-at-a-time via closeZoneHandler() for proper pressure management and deterministic runtime.
-*  1.0.3.28  –– Added string attributes for alerts to accommodate RM and dashboards; Added alert text to summaryText.
-*  1.0.3.29  –– Fixed winDef value.
-*  1.0.3.30  –– Fixed abend for zone deletion.
-*  1.0.3.31  –– Fixed UI issued when deleting zones and programs; fixed null time in copyProgram1ToAll(); guarded against deleting program while program or zone is running.
-*  1.0.3.32  –– Added program start/stop/timing; corrected program time calculation.
-*  1.0.3.33  –– UI improvements; Introduced schedule conflict detection; fixed housekeeping routines for zones and programs.
-*  1.0.3.34  –– Added Tempest personal weather station as wx provider.
-*  1.0.3.35  –– UI cleanup; documentation links; added real-time weather refresh in runProgram() for live Tempest/rain skip logic.
-*  1.0.3.36  –– Updated attribute lists for deleteProgram() and deleteZone(); quieted logWarn for collisions.
-*  1.0.4.0   –– Fixed runtime nulls & orphaned zone references; Hardened program conflict + runtime math; Clean zone delete w/ full atomic cleanup; Scheduler and ET paths validated
+*  1.0.0.0 – 1.0.4.0 See https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/CHANGELOG.md
+*  1.0.5.0   –– Added automatic soil type detection via USDA – Lat/Lon determination of soil type, US Only. SoilGrids is beta and unreliable.  Will add when stable.
+*  1.0.5.1   –– Added copy USDA default to all.
+*  1.0.5.2   –– Reverted.
+*  1.0.5.3   –– Added soilOptionsUi()
+*  1.0.6.0   –– Added "Saturation Skip" logic: Evaluates each ET-adjusted program and skips it if all zones are already at or above their calculated field capacity.
+*  1.0.7.0   –– Begin Soak & Cycle; corrected global atomicState.saturationSkipPrograms clearing.
+*  1.0.7.1   –– Reverted.
+*  1.0.7.2   –– Added per-program cycle splitting and soak delay logic to improve infiltration and prevent runoff. Fully integrated with ET and Saturation Skip systems.
+*  1.0.8.0   –– Added bi-directional program/zone start/stop and time reporting with child driver; Fixed removal of zone${z}Et in cleanupUnusedChildData(); renamed updateClockEmoji() to updateClockState()
+*  1.0.8.1   –– Updated childEmitChangedEvent()
+*  1.0.9.0   –– Echo voice integration via Hubitat's built-in Amazon Echo Skill.
+*  1.0.9.1   –– Additional child device reporting, rename child device dynamically.
+*  1.0.9.2   –– Echo child device verification and program name sync complete.
+*  1.0.9.3   –– Rename Alex to Echo
+*  1.0.9.4   –– Reworked echoSync and echoVerify
+*  1.0.9.5   –– Established child driver version checking.
+*  1.0.9.6   –– Fixed hardcoded prefix in verifyEchoChildren
+*  1.0.9.7   –– Updated detectSettingsChange() to call syncEchoChildren() if any echo settings exist.
+*  1.0.9.8   –– Initialize Echo child valve/switch state.
+*  1.0.9.9   –– Updated child driver version and presence control.
+*  1.0.9.10  –– Fixed checkChildDriver()
+*  1.0.9.11  –– Fixed checkChildDriver() leaving orphan devices.
+*  1.0.9.12  –– Added ping() as No-Op to force version update in child devices.
+*  1.0.9.13  –– Added cleanupProbeDevices() to ensure we cleanup probe orphans.
+*  1.0.10.0  –– Incorporated "soak & cycle" into "end by time/sunrise" feature.
+*  1.0.10.1  –– Moved soak & cycle to program based instead of zone based.
+*  1.0.10.2  –– Removed runCycleSoak(), handleCycleEnd(), resumeCycleSoak(), runZoneCycle()
+*  1.0.10.3  –– Refactored irrigationTick() to prevent recurring skips of the same program.
+*  1.0.10.4  –– Added ISO 3166-2 location.
+*  1.0.10.5  –– Refactored to use state.geo.lat and state.geo.lon
+*  1.0.10.6  –– Added explicit USDA SDA capability check.
+*  1.0.10.7  –– Reverted.
+*  1.0.10.8  –– Reverted.
+*  1.0.10.9  –– Reverted.
+*  1.0.10.10 –– Fixed partial Et rest for partial zone completion.
+*  1.0.10.11 –– Added ISO 3166-2 iconography
+*  1.0.11.0  –– Implemented parent/child success/failure for program and zones.
+*  1.0.11.1  –– Various improvements to child/echo responses; added guard against running multiple programs simultaneously.
+*  1.0.11.2  –– Corrected data child runProgram null param.
+*  1.0.11.3  –– Updated fetchGeo() and verifySystem() to original intent to only update if lat/lon changes.
+*  1.0.11.4  –– Removed legacy getRainForecastInches()
+*  1.0.11.5  –– Added Open-Meteo as wx provider.
+*  1.0.11.6  –– Corrected wx provider backup bool. Previous was legacy code and was not implemented.
+*  1.0.11.7  –– Fixed backup wx source gate at forecast retrieval; enabled system wide notification for wx forecast failure; separated wx observations from ET data.
+*  1.1.0.0   –– Version bump for public release.
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="1.0.4.0"
-@Field static final String APP_MODIFIED="2026-01-18"
-@Field static final String REPO_ROOT = "https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT"
-@Field static final String RAW_ROOT  = "https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT"
+@Field static final String APP_VERSION="1.1.0.0"
+@Field static final String APP_MODIFIED="2026-02-01"
+@Field static final String REPO_ROOT="https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT"
+@Field static final String RAW_ROOT="https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT"
+@Field static final String LAT="N2IwYzNmYTU5OTQ1NGYwNW"
+@Field static final String LON="FjZTEyODI5ZTBlNTI0YTQ="
 @Field static final int MAX_ZONES=48
 @Field static final int MAX_PROGRAMS=16
 @Field static def cachedChild=null
 @Field static Integer cachedZoneCount=null
-@Field static Map<String,Date>astroCache=[:]
+@Field static final Map CHILD_DRIVERS=[
+    data:[name:"WET-IT Data",minVer:"1.1.0.0",required:true],
+    echo:[name:"WET-IT Echo",minVer:"1.1.0.0",required:false]
+]
 
 definition(
     name:"WET-IT",
@@ -101,21 +105,23 @@ private logError(msg){log.error"[${APP_NAME}] $msg"}
 private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
 private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=app.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 private childEmitEvent(dev,n,v,d=null,u=null,boolean f=false){try{dev.emitEvent(n,v,d,u,f)}catch(e){logWarn"childEmitEvent(): ${e.message}"}}
-private childEmitChangedEvent(dev,n,v,d=null,u=null,boolean f=false){try{dev.emitChangedEvent(n,v,d,u,true)}catch(e){logWarn"childEmitChangedEvent(): ${e.message}"}}
+private childEmitChangedEvent(dev,n,v,d=null,u=null,boolean f=false){try{dev.emitChangedEvent(n,v,d,u,f)}catch(e){logWarn"childEmitChangedEvent(): ${e.message}"}}
 private getDataChild(boolean fresh=false){def dni="wetit_data_${app.id}";if(fresh||!cachedChild||!getChildDevice(dni))cachedChild=ensureDataDevice();return cachedChild}
+private getEchoChild(Integer p,boolean fresh=false){def dni="wetit_echo_${app.id}_${p}";def d=getChildDevice(dni);return(d?:null)}
 private autoDisableDebugLogging(){try{unschedule("autoDisableDebugLogging");atomicState.logEnable=false;app.updateSetting("logEnable",[type:"bool",value:false]);logInfo"Debug logging disabled (auto)"}catch(e){logDebug"autoDisableDebugLogging(): ${e.message}"}}
 def disableDebugLoggingNow(){try{unschedule("autoDisableDebugLogging");atomicState.logEnable=false;app.updateSetting("logEnable",[type:"bool",value:false]);logInfo"Debug logging disabled (manual)"}catch(e){logDebug"disableDebugLoggingNow(): ${e.message}"}}
 
 /* ---------- Preferences & Main Page ---------- */
 def mainPage(){
 	getZoneCountCached(true)
-    dynamicPage(name:"mainPage",install:true,uninstall:true){
+    dynamicPage(name:"mainPage",refreshInterval:(atomicState.booted)?0:5,install:true,uninstall:true){
         /* ---------- 1️ Header / App Info ---------- */
         section(){
         paragraph"<div style='text-align:right;margin-top:4px;margin-bottom:4px;font-size:smaller;'><a href='${REPO_ROOT}/DOCUMENTATION.md' target='_blank' style='color:#1E90FF;text-decoration:none;'>📘 View Full Documentation</a><br><span style='opacity:0.7;'>v${APP_VERSION} (${APP_MODIFIED})</span></div>"
         paragraph"<div style='text-align:center;'><img src='${RAW_ROOT}/images/Logo.png' width='200'></div>"
         paragraph"<div style='text-align:center;'><h2>Weather-Enhanced Time-based Irrigation Tuning (WET-IT)</h2></div>"
         paragraph"<div style='max-width:66%;margin:6px auto;padding:8px 10px;text-align:center;'>WET-IT brings <i>local-first, Rachio/Hydrawise/Orbit-style intelligence</i> to any irrigation controller — running professional evapotranspiration (ET) and soil-moisture modeling directly inside your Hubitat hub.</div>"
+        if(!atomicState.booted)paragraph"<div style='text-align:center;color:red;'><h3>${atomicState.tempDiagMsg}</h3></div>"
         }
 		def title="${!atomicState.bootstrap?"<span style='color:darkgreen;font-weight:bold;'>☝️Begin Here – </span>":""}Main Page Overview"
 		if(!settings.hideHelp)includeHelpSection(
@@ -133,7 +139,11 @@ def mainPage(){
 		)
 		section(){paragraph"<hr style='margin-top:2px;margin-bottom:2px;'>"}
         /* -------------------- 2️ Zone Setup -------------------- */
-		if(!settings.hideHelp)includeHelpSection(
+		if(!settings.hideHelp){
+			def soilHelp=state.geo?.usda?
+		    "<li><b>🌎️ Get Default Soil Type</b> – Retrieves the soil type for your area based on the USDA Soil Data Access (SDA) Soil Survey Geographic Database (SSURGO).</li>":
+		    "<li><b>🌎️ Get Default Soil Type</b> – <i>Currently unavailable outside the United States</i>.</li>"
+		includeHelpSection(
 			"Zone Setup Help",
 			"<p>The <b>Zone Setup</b> section defines how many zones your irrigation system manages and provides quick access to per-zone configuration.</p>"+
 			"<ul>"+
@@ -141,6 +151,7 @@ def mainPage(){
 			"<li><b>Configured Zones</b> – Tap to open individual zone configuration pages (name, device, soil, plant, and nozzle types).</li>"+
 			"<li><b><font color='red'>[Disabled]</font></b> – Indicates a zone is inactive and will be skipped by the scheduler until re-enabled.</li>"+
 			"<li><b>📋 Copy Zone Settings</b> – Duplicates configuration from one zone to all others for rapid setup.</li>"+
+			soilHelp+
 			"</ul>"+
 			"<p>Below the zone directory, the advanced <b>Evapotranspiration & Seasonal Settings</b> control how WET-IT models water loss and seasonal scaling.</p>"+
 			"<ul>"+
@@ -150,9 +161,22 @@ def mainPage(){
 			"<li><b>Seasonal Adjustment Factor</b> – Scales watering intensity through the year. A value of <code>1.00</code> means no adjustment; <code>0.8</code> reduces watering by 20%; <code>1.2</code> increases it by 20%.</li>"+
 			"</ul>"+
 			"<p>Changes in this section affect how WET-IT calculates runtime, water budgeting, and weather-based adjustments across all programs.</p>"
-		)
+		)}
         buildZoneDirectory()
-
+		if(state.geo?.usda){
+			section(){
+			paragraph"🌎️ Get Default Soil Type<br><small>Detects soil type automatically using USDA Soil Data Access (SDA) based on the Hub’s current location.</small>"
+			input"btnGetSoilType","button",title:"📡 Get Soil Type from USDA",width:3
+			if(atomicState.defaultSoilType){def btnTitle=settings.usdaCopyConfirm?"⚠️ Confirm Copy (Cannot be Undone)":"📋 Copy USDA Soil Type (${atomicState.defaultSoilType}) to all ${cachedZoneCount} Zones"
+			    input"btnCopyUsdaSoil","button",title:btnTitle,width:4
+			    if(settings.usdaCopyConfirm){
+			        input"btnCancelUsdaCopy","button",title:"❌ Cancel"
+			        paragraph"<b>Note</b>: <i>This will overwrite all zone soil types to ${atomicState.defaultSoilType}.</i>"
+				    }
+				}
+			if(atomicState.usdaSoilMsg)paragraph atomicState.usdaSoilMsg;atomicState.remove("usdaSoilMsg")
+			}
+		}
         /* ---------- 3️ Evapotranspiration & Seasonal Settings ---------- */
 		section("🍂 Evapotranspiration & Seasonal Settings (Advanced)",hideable:true,hidden:true){
 	    input"useSoilMemory","bool",title:"Enable Soil Moisture Tracking (Rachio / Hydrawise / Orbit style)<br><small>Persistent daily soil depletion for each zone (requires Hubitat storage).</small>",defaultValue:true,submitOnChange:true
@@ -185,7 +209,8 @@ def mainPage(){
 			"<li><b>🧊️ Skip During Freeze Alerts</b> – Automatically pauses irrigation when freeze conditions are detected.</li>"+
 			"<li><b>☔ Skip During Rain Alerts</b> – Skips programs when a rain event is active or rain sensor reports wet.</li>"+
 			"<li><b>💨 Skip During Wind Alerts</b> – Prevents watering under high-wind conditions to reduce drift and waste.</li>"+
-			"<li><b>Include Inactive Programs in Conflict Check</b> – When enabled, even disabled programs are analyzed for scheduling overlaps. Useful when planning future programs.</li>" +
+			"<li><b>🌧️ Enable Saturation Skip</b> – When active, WET-IT evaluates each ET-adjusted program and skips it if all zones are already at or above their calculated field capacity. Uses real-time ET and precipitation forecasts to prevent over-watering.</li>"+
+			"<li><b>Include Inactive Programs in Conflict Check</b> – When enabled, even disabled programs are analyzed for scheduling overlaps. Useful when planning future programs.</li>"+
 			"</ul>"+
 			"<p>Changes here directly affect how WET-IT calculates run order, timing windows, and weather safety overrides across all irrigation cycles.</p>"
 		)
@@ -200,15 +225,20 @@ def mainPage(){
 		input"progSkipRain","bool",title:"☔ Skip programs during rain alerts.",width:4,defaultValue:true
 		input"progSkipWind","bool",title:"💨 Skip programs during wind alerts.",width:4,defaultValue:true
 		paragraph""
+	    input"useSaturationSkip","bool",title:"Enable Saturation Skip<br><small>Skip watering when modeled soil moisture is above field capacity (based on forecast precipitation & ET balance).</small>",defaultValue:false
+	    if(!settings.useSaturationSkip&&atomicState.saturationSkipPrograms){atomicState.remove("saturationSkipPrograms");logDebug"⚙️ Saturation Skip deactivated → state cleared"}
 		input"progCheckInactive","bool",title:"Include inactive programs when checking for schedule conflicts?",defaultValue:true
 		}
 
 		/* ---------- 5️ Weather Configuration ---------- */
  		section(){paragraph"<hr style='margin-top:8px;margin-bottom:2px;border:0;border-top:1px solid #ccc;opacity:0.5;'>"}
         section(){paragraph htmlHeadingLink("🌦️","Weather Configuration","${REPO_ROOT}/DOCUMENTATION.md#-weather-configuration","#4682B4")}
-		if(!settings.hideHelp)includeHelpSection("Weather & ET Configuration Help",
+		if(!settings.hideHelp){
+		def noaaHelp=state.geo?.noaa?"<p><b>Weather Source</b> – Choose data provider (Open Weather, Open-Meteo, Tomorrow.io, Tempest, or NOAA).<br>":"<p><b>Weather Source</b> – Choose data provider (Open Weather, Open-Meteo, Tomorrow.io, or Tempest).<br>"
+		includeHelpSection(
+		"Weather & ET Configuration Help",
 		"<p><b>Weather & ET Settings</b> control how environmental data adjusts runtime and skip logic.</p>"+
-		"<p><b>Weather Source</b> – Choose data provider (Open Weather, Tomorrow.io, Tempest, or NOAA).<br>"+
+		noaaHelp+
 		"The ${htmlHeButton('🌤️ Test Weather Now')} verifies API Key and connectivity for selected source. It does <i>not</i> update the weather or alert information.</p>"+
 		"<p><b>Weather Configuration (Advanced)</b></p>"+
 		"<ul>"+
@@ -218,31 +248,21 @@ def mainPage(){
 		"<li><b>Wind Skip Threshold</b> – Triggers skip irrigation if forecast wind speed ≥ threshold.</li>"+
 		"</ul>"+
 		"<p><b>Active Weather Alerts</b> – As alerts are triggered they appear here along with the current value.</p>"+
-		"<p>Weather and ET updates occur automatically every two hours or on demand by clicking ${htmlHeButton('🔄 Run Weather/ET Updates Now')}.</p>")
+		"<p>Weather and ET updates occur automatically every two hours or on demand by clicking ${htmlHeButton('🔄 Run Weather/ET Updates Now')}.</p>"
+		)}
         section(){
-		    input"weatherSource","enum",title:"Select Weather Source",
-		        options:["openweather":"OpenWeather (API Key Required)",
-						 "tempest":"Tempest PWS (API Key Required)",
-		                 "tomorrow":"Tomorrow.io (API Key Required)",
-		                 "noaa":"NOAA (No API Key Required)"],
-		        defaultValue:"noaa",width:4,required:true,submitOnChange:true
-		    if(settings.weatherSource=="openweather"){
-		        input"owmApiKey","text",title:"OpenWeather API Key",width:4,required:true,submitOnChange:true
-		        input"useNoaaBackup","bool",title:"Use NOAA NWS as backup if OpenWeather unavailable",defaultValue:true
-		    }
-		    if(settings.weatherSource=="tempest"){
-		        input"tpwsApiKey","text",title:"Tempest API Key",width:4,required:true,submitOnChange:true
-		        input"useNoaaBackup","bool",title:"Use NOAA NWS as backup if Tempest unavailable",defaultValue:true
-		    }
-		    if(settings.weatherSource=="tomorrow"){
-		        input"tioApiKey","text",title:"Tomorrow.io API Key",width:4,required:true,submitOnChange:true
-		        input"useNoaaBackup","bool",title:"Use NOAA NWS as backup if Tomorrow.io unavailable",defaultValue:true
-		    }
-		    input"btnTestWx","button",title:"🌤️ Test Weather Now",
-		        description:"Verifies connectivity for the selected weather source."
-		    paragraph"<b>Note</b>: OpenWeather, Tempest, and Tomorrow.io each require their own API key. NOAA does not require an API key and can serve as a backup source when enabled."
-			if(atomicState.tempApiMsg) paragraph "<b>Last API Test:</b> ${atomicState.tempApiMsg}";atomicState.remove("tempApiMsg")
-        }
+		    def key=" (API Key Required)",noKey=" (No API Key Required)"
+		    def wxLabel=["noaa":"NOAA","openmeteo":"Open-Meteo","openweather":"OpenWeather","tempest":"Tempest PWS","tomorrow":"Tomorrow.io"]
+		    if(state.geo?.noaa){input"weatherSource","enum",title:"Select Weather Source",options:["noaa":wxLabel.noaa+noKey,"openmeteo":wxLabel.openmeteo+noKey,"openweather":wxLabel.openweather+key,"tempest":wxLabel.tempest+key,"tomorrow":wxLabel.tomorrow+key],defaultValue:"openmeteo",width:4,required:true,submitOnChange:true}
+		    else{input"weatherSource","enum",title:"Select Weather Source",options:["openmeteo":wxLabel.openmeteo+noKey,"openweather":wxLabel.openweather+key,"tempest":wxLabel.tempest+key,"tomorrow":wxLabel.tomorrow+key],defaultValue:"openmeteo",width:4,required:true,submitOnChange:true}
+		    if(settings.weatherSource=="openweather")input"owmApiKey","text",title:"OpenWeather API Key",width:4,required:true,submitOnChange:true
+		    if(settings.weatherSource=="tempest")input"tpwsApiKey","text",title:"Tempest API Key",width:4,required:true,submitOnChange:true
+		    if(settings.weatherSource=="tomorrow")input"tioApiKey","text",title:"Tomorrow.io API Key",width:4,required:true,submitOnChange:true
+		    if(settings.weatherSource in["openweather","tempest","tomorrow","noaa"]||(settings.weatherSource=="openmeteo"&&state.geo?.noaa))input"useWxSourceBackup","bool",title:(settings.weatherSource=="openmeteo"?"Use NOAA NWS as backup if ${wxLabel.openmeteo} is unavailable":"Use ${wxLabel.openmeteo} as backup if ${wxLabel[settings.weatherSource]} is unavailable"),defaultValue:true
+		    input"btnTestWx","button",title:"🌤️ Test Weather Now",description:"Verifies connectivity for the selected weather source."
+		    paragraph"<b>Note</b>: OpenWeather, Tempest, and Tomorrow.io require API keys. "+(state.geo?.noaa?"NOAA and Open-Meteo do ":"Open-Meteo does ")+"not require an API key."
+		    if(atomicState.tempApiMsg){paragraph"<b>Last API Test:</b> ${atomicState.tempApiMsg}";atomicState.remove("tempApiMsg")}
+		}
 		section("🌦️ Weather Configuration (Advanced)",hideable:true,hidden:true){
 		    input"tempUnits","enum",title:"Temperature Units<br><small>&nbsp;</small>",options:["F","C"],width:4,defaultValue:location.temperatureScale,submitOnChange:true
 		    def unit=(settings.tempUnits?:"F")as String
@@ -262,6 +282,7 @@ def mainPage(){
 		    def windVal=settings.windSkipThreshold?.toString()
 		    if(!windVal||!windOpts.contains(windVal))app.updateSetting("windSkipThreshold",[value:windDef,type:"enum"])
 		    input"windSkipThreshold","enum",title:"Wind Skip Threshold (${windUnit})<br><small>Trigger skip irrigation if forecast wind speed ≥ threshold.</small>",width:4,options:windOpts,defaultValue:windDef,submitOnChange:false
+			input"suspendOnStaleForecast","bool",title:"Suspend program scheduling if weather forecast is stale<br><small>If enabled, and diurnal forecast data is stale (more than six missed attempts), all program scheduling will be suspended until <i>manually</i> re-enabled.</small>",defaultValue:false,submitOnChange:false
 		}
         section(){
             paragraph htmlHeadingLink("🚨","Active Weather Alerts","${REPO_ROOT}/DOCUMENTATION.md#-weather-alerts","#4682B4")
@@ -308,31 +329,35 @@ def mainPage(){
 		    input"logEnable","bool",title:"Enable Debug Logging<br><small>Auto-off after 30 minutes.</small>",width:3,defaultValue:false,submitOnChange:true
             input"btnDisableDebug","button",title:"🛑 Disable Debug Logging Now",width:3,disabled:(!logEnable)
 		    input"hideHelp","bool",title:"Hide On-screen Tooltips",defaultValue:false,submitOnChange:true
+			input"enableNotifications","bool",title:"Enable System Notifications",defaultValue:true,submitOnChange:true
             paragraph"<hr style='margin-top:8px;margin-bottom:2px;border:0;border-top:1px solid #ccc;opacity:0.5;'>"
 		}
         section(){
 			paragraph htmlHeadingLink("⚙️","System Diagnostics","${REPO_ROOT}/DOCUMENTATION.md#-system-diagnostics","#1E90FF")
             paragraph"Utilities for testing and verification."
             input"btnVerifyChild","button",title: "☑️ Verify Data Child Device",width:4
+            def anyEchoEnabled=settings.find{k,v->k.startsWith("programEchoEnabled_")&&v==true};if(anyEchoEnabled){input"btnVerifyEcho","button",title: "☑️ Verify Echo Child Devices",width:4}
             input"btnVerifySystem","button",title: "✅ Verify System Integrity",width:4
             input"btnRunWeatherUpdate","button",title: "🔄 Run Weather/ET Updates Now",width:4
 			paragraph""
 			if(atomicState.tempDiagMsg)paragraph "<b>Last Diagnostic:</b> ${atomicState.tempDiagMsg}";atomicState.tempDiagMsg="&nbsp;"
 			def c=getDataChild(true);def loc=c?.currentValue('wxLocation');paragraph "🌦️ ${loc?loc+' ':''}Weather → Forecast (${c?.currentValue('wxSource')?:'n/a'}): ${c?.currentValue('wxTimestamp')?:'n/a'}, Checked: ${c?.currentValue('wxChecked')?:'n/a'}"
-			def s=getCurrentSeasons(location.latitude);paragraph "🍃 Current Seasons → Astronomical: <b>${s.currentSeasonA}</b>, Meteorological: <b>${s.currentSeasonM}</b>"
-            paragraph "📍 Hub Location: ${location.name?:'Unknown'} (${location.latitude}, ${location.longitude})"
+			def s=getCurrentSeasons(state.geo?.lat);paragraph "🍃 Current Seasons → Astronomical: <b>${s.currentSeasonA}</b>, Meteorological: <b>${s.currentSeasonM}</b>"
+			def iso=state.geo?.iso;def flag=state.geo?.flag?.url;def isoDecorated=(iso&&flag)?"${iso} <img src='${flag}'style='height:28px;vertical-align:bottom;margin-left:4px'>":(iso?:'')
+            paragraph"📍 Hub Location — ${location.name ?: 'Unknown'}: (${state.geo?.lat}, ${state.geo?.lon}) — ${isoDecorated}"
 			paragraph "<i>Ensure hub time zone and location are correct for accurate ET calculations.</i>"
+			if(state.geo?.iso)paragraph"<p style='opacity: 0.75;'><small>Reverse geocoding powered by <a href='https://www.geoapify.com/' target='_blank'>Geoapify</a>. Map data © <a href='https://www.openstreetmap.org/copyright' target='_blank'>OpenStreetMap contributors</a>.</small></p>"
         }
 		/* ---------- 7️ About / Version Info (Footer) ---------- */
         section(){
-            paragraph "<hr><div style='text-align:center; font-size:90%;'><b>${APP_NAME}</b> v${APP_VERSION} (${APP_MODIFIED})<br>© 2025 Marc Hedish – Licensed under Apache 2.0<br><a href='https://github.com/MHedish/Hubitat' target='_blank'>GitHub Repository</a></div>"
+            paragraph "<hr><div style='text-align:center; font-size:90%;'><b>${APP_NAME}</b> v${APP_VERSION} (${APP_MODIFIED})<br>© 2026 Marc Hedish – Licensed under Apache 2.0<br><a href='https://github.com/MHedish/Hubitat' target='_blank'>GitHub Repository</a></div>"
         }
         detectSettingsChange("mainPage")
     }
 }
 
 /* ---------- Zone Page Framework ---------- */
-def soilOptions(){["Sand","Loamy Sand","Sandy Loam","Loam","Clay Loam","Silty Clay","Clay"]}
+def soilOptionsUi(){def list=["Sand","Loamy Sand","Sandy Loam","Loam","Clay Loam","Silty Clay","Clay"];def d=atomicState?.defaultSoilType;def m=[:];list.each{s->m[s]=(s==d)?"${s} (USDA Default)":s};return m}
 def plantOptions(){["Cool Season Turf","Warm Season Turf","Shrubs","Trees","Groundcover","Annuals","Vegetables","Native Low Water"]}
 def nozzleOptions(){["Spray","Rotor","MP Rotator","Drip Emitter","Drip Line","Bubbler"]}
 def summaryForZone(z){def soil=settings["soil_${z}"]?:"Loam";def plant=settings["plant_${z}"]?:"Cool Season Turf";def noz=settings["nozzle_${z}"]?:"Spray";def baseVal=settings["baseTimeValue_${z}"]?:0;def baseUnit=settings["baseTimeUnit_${z}"]?:"s";return "Base Runtime: ${baseVal}${baseUnit}, Soil: ${soil}, Plant: ${plant}, Nozzle: ${noz}"}
@@ -384,7 +409,9 @@ private buildProgramDirectory(){
             	if(!settings["programActive_${p}"])app.updateSetting("programActive_${p}",[value:"false",type:"bool"])
                 def pName=(settings["programName_${p}"]?.trim())?:"Program ${p}"
 				def active=(settings["programActive_${p}"]?.toString()=="true")
-				def titleTxt=active?pName:"${pName} – <font color='red'>[Disabled]</font>"
+				def skipped=(atomicState.saturationSkipPrograms?.contains(p))
+				def titleTxt=pName;if(settings["useCycleSoak_${p}"])titleTxt+=" – <font color='darkgreen'>[Cycle & Soak]</font>"
+				if(!active)titleTxt+=" – <font color='red'>[Disabled]</font>";else if(skipped)titleTxt+=" – <font color='blue'>[Saturation Skip]</font>"
                 href page:"schedulePage",params:[program:p],title:titleTxt,description:summaryForProgram(p),state:"complete"
             }
         }
@@ -422,13 +449,13 @@ def zonePage(params){
 			input"name_${z}","text",title:"Zone Name (optional)<br><small>Friendly name for this zone.</small>",width:4,required:false
 			input"zoneActive_${z}","bool",title:"Zone Active?",defaultValue:true,submitOnChange:true
 			paragraph ""
-            input "baseTimeValue_${z}","number",title:"${htmlTitleLink('Base Runtime',"${REPO_ROOT}/DOCUMENTATION.md#-base-runtime-reference","#A0522D")}<br><small>Enter the normal irrigation time for this zone (0–360).</small>",range:"0..360", width:4,required:false,submitOnChange:true
+            input"baseTimeValue_${z}","number",title:"${htmlTitleLink('Base Runtime',"${REPO_ROOT}/DOCUMENTATION.md#-base-runtime-reference","#A0522D")}<br><small>Enter the normal irrigation time for this zone (0–360).</small>",range:"0..360", width:4,required:false,submitOnChange:true
 			def unit=settings["baseTimeUnit_${z}"]?:"min";def val=settings["baseTimeValue_${z}"]?:0;def totalSeconds=(unit=="min")?(val*60):val
 			def hh=(int)(totalSeconds/3600);def mm=(int)((totalSeconds%3600)/60);def ss=(int)(totalSeconds%60)
 			def formatted=sprintf("%02d:%02d:%02d", hh, mm, ss);def label=(unit=="min")?"🕒 Minutes":"⏱️ Seconds"
-			input "btnToggleUnit_${z}","button",title:"${label}<br><p style='font-size:2.0em;'><b>${formatted}</b></p>",width:2
+			input"btnToggleUnit_${z}","button",title:"${label}<br><p style='font-size:2.0em;'><b>${formatted}</b></p>",width:2
 			paragraph ""
-            input"soil_${z}","enum",title:"${htmlTitleLink('Soil Type',"${REPO_ROOT}/DOCUMENTATION.md#-soil-type-reference","#A0522D")}<br><small>Determines water holding capacity.</small>",options:soilOptions(),defaultValue:"Loam",width:4
+            input"soil_${z}","enum",title:"${htmlTitleLink('Soil Type',"${REPO_ROOT}/DOCUMENTATION.md#-soil-type-reference","#A0522D")}<br><small>Determines water holding capacity.</small>",options:soilOptionsUi(),defaultValue:atomicState.defaultSoilType?:"Loam",width:4
             input"plant_${z}","enum",title:"${htmlTitleLink('Plant Type',"${REPO_ROOT}/DOCUMENTATION.md#-plant-type-reference","#2E8B57")}<br><small>Sets crop coefficient (Kc).</small>",options:plantOptions(),defaultValue:"Cool Season Turf",width:4
             input"nozzle_${z}","enum",title:"${htmlTitleLink('Irrigation Method',"${REPO_ROOT}/DOCUMENTATION.md#-irrigation-method-reference","#4682B4")}<br><small>Determines precipitation rate.</small>",options:nozzleOptions(),defaultValue:"Spray",width:4
         }
@@ -473,22 +500,25 @@ def schedulePage(params){
 	if(atomicState.returnToMain in ["programs","zones"]){atomicState.remove("returnToMain");return mainPage()}
 	dynamicPage(name:"schedulePage",refreshInterval:(atomicState.programClock?.program==p||atomicState.manualZone)?5:null,install:false,uninstall:false){
 		section(){paragraph htmlHeadingLink("📅️","Program ${p} Configuration","${REPO_ROOT}/DOCUMENTATION.md#-program-configuration","#4682B4")}
-		if(!settings.hideHelp)includeHelpSection("Program Scheduling Help",
+		if(!settings.hideHelp)includeHelpSection("Program Configuration Help",
 			"<p><b>Programs</b> define when and how irrigation runs automatically. Each program can control multiple zones and follow different scheduling modes.</p>" +
-			"<ul>" +
-			"<li><b>Program Name</b> – Optional friendly name. Defaults to <b>Program xx</b> if blank</li>" +
-			"<li><b>Program Active?</b> – Enable or disable the zone.</li>" +
-			"<li><b>Start Time</b> – Choose between <i>Fixed Time</i> or <i>Sunrise-based</i> scheduling.</li>" +
-			"<li><b>End By</b> – For sunrise or time-based programs, back-calculate start time so watering finishes by the target time.</li>" +
-			"<li><b>Days Mode</b> – Run <i>Weekly</i> (specific days) or <i>Interval</i> (every N days).</li>" +
-			"<li><b>Zones</b> – Select which zones belong to this program.</li>" +
-			"<li><b>Adjust Mode</b> – Apply <i>None</i>, <i>Seasonal</i>, or <i>ET-based</i> runtime adjustments.</li>" +
-			"<li><b>Program Buffer</b> – Minimum cooldown (minutes) between consecutive program runs.</li>" +
-			"<li><b>Active</b> – Toggle whether this program participates in scheduling.</li>" +
-			"</ul>" +
-			"<b>Manual Control</b> – Activate the current program for testing or manual watering." +
-			"<p><b>Danger Zone</b> – Delete the current program. Be careful, this cannot be undone.  Press ${htmlHeButton('Done')} to return to the zone menu.</p>" +
-			"<p>When <b>End By</b> is enabled, WET-IT calculates a start time offset by total runtime. This ensures irrigation finishes before sunrise or a fixed target time.</p>")
+			"<ul>"+
+			"<li><b>Program Name</b> – Optional friendly name. Defaults to <b>Program xx</b> if blank</li>"+
+			"<li><b>Program Active?</b> – Enable or disable the zone.</li>"+
+			"<li><b>Start Time</b> – Choose between <i>Fixed Time</i> or <i>Sunrise-based</i> scheduling.</li>"+
+			"<li><b>End By</b> – For sunrise or time-based programs, back-calculate start time so watering finishes by the target time.</li>"+
+			"<li><b>Days Mode</b> – Run <i>Weekly</i> (specific days) or <i>Interval</i> (every N days).</li>"+
+			"<li><b>Zones</b> – Select which zones belong to this program.</li>"+
+			"<li><b>Adjust Mode</b> – Apply <i>None</i>, <i>Seasonal</i>, or <i>ET-based</i> runtime adjustments.</li>"+
+			"<li><b>Program Buffer</b> – Minimum cooldown (minutes) between consecutive program runs.</li>"+
+			"<li><b>Active</b> – Toggle whether this program participates in scheduling.</li>"+
+			"<li><b>Smart Cycle & Soak</b> – Splits long runtimes into smaller cycles with soak intervals between. Improves infiltration and reduces runoff. Adjustable cycles and pause duration per program.</li>"+
+			"<li><b>Echo Integration</b> – Enable to create an Echo-controllable device for this program. Once added, it can be added in the Hubitat Echo Skill for voice commands like “Allegra, start Program 2.” Disable to remove the Echo device.</li>"+
+			"</ul>"+
+			"<b>Manual Control</b> – Activate the current program for testing or manual watering."+
+			"<p><b>Danger Zone</b> – Delete the current program. Be careful, this cannot be undone.  Press ${htmlHeButton('Done')} to return to the zone menu.</p>"+
+			"<p>When <b>End By</b> is enabled, WET-IT calculates a start time offset by total runtime. This ensures irrigation finishes before sunrise or a fixed target time. "+
+			"When <b>Smart Cycle & Soak</b> <i>and</i> <b>End By</b> are both enabled, WET-IT estimates additional wall-clock time for soak pauses when calculating start times. Actual completion time may vary slightly depending on zone runtimes and cycle behavior.</p>")
 		section(){
 			input"programName_${p}","text",title:"Friendly name for this program (optional)",width:4,required:false
 			input"programActive_${p}","bool",title:"Program Active?",defaultValue:false
@@ -504,7 +534,25 @@ def schedulePage(params){
 			}
 			else if(settings["programStartMode_${p}"]=="sunrise"){
 				input"programEndBy_${p}","bool",title:"End by sunrise instead of start at sunrise?",defaultValue:false,submitOnChange:true
+				if(settings["useCycleSoak_${p}"]){paragraph "<b>Note</b>: With <span style='color:#008B8B'>Cycle & Soak</span> enabled, sunrise end-times are approximate."}
 			}
+			if(settings["programAdjustMode_${p}"]?.toLowerCase()!="et"&&atomicState.saturationSkipPrograms){atomicState.saturationSkipPrograms.removeAll{it==p};logDebug"🧩 Program ${p} no longer ET-based → Saturation Skip cleared"}
+		}
+		section(){
+			paragraph htmlHeading("🌊 Smart Cycle & Soak","#008B8B")
+			if(!settings.hideHelp)paragraph "<small>Splits long runtimes into smaller cycles with soak intervals between runs. Improves infiltration and reduces runoff.</small>"
+			input"useCycleSoak_${p}","bool",title:"Use Smart Cycle & Soak for this program",defaultValue:false,submitOnChange:true
+			if(settings["useCycleSoak_${p}"]){
+				input"cycleCount_${p}","number",title:"Number of Cycles<br><small>Default: 3 Range: (2–5)</small>",defaultValue:3,range:"2..5",required:true,width:4
+				input"cyclePauseMin_${p}","number",title:"Pause Between Cycles (minutes)<br><small>Default: 5 Range: (5–60)</small>",defaultValue:15,range:"5..60",required:true,width:4
+				paragraph"<b>Note:</b> Cycles are auto-limited so each watering period remains ≥ minimum program runtime (${settings.progMinTime?:60}s)."
+			}
+		}
+		section(){
+			paragraph htmlHeading("🔊️ Echo Voice Integration","#00A7CE")
+			if(!settings.hideHelp)paragraph "<small>Creates a dedicated Echo device for this program, enabling voice control. Disable to remove it automatically.</small>"
+			input"programEchoEnabled_${p}","bool",title: "Enable Echo integration for this program",width:4,defaultValue:false,submitOnChange:true
+			def echoEnabled=settings["programEchoEnabled_${p}"]?:false;if(echoEnabled){input"useEchoPrefix_${p}","bool",title:"Prefix Echo device with '${APP_NAME}' ?<br><small>(e.g. <b>WET-IT Program 1</b> vs <b>Program 1</b>)",width:4,defaultValue:true,submitOnChange:true}
 		}
 		section(){
 			paragraph htmlHeading("🌱 Zones","#2E8B57")
@@ -577,6 +625,10 @@ def appButtonHandler(String btn){
 	if(btn=="btnCancelCopy"){app.updateSetting("copyConfirm",[value:false,type:"bool"]);app.updateSetting("copyStatusMsg",[value:"",type:"string"]);return}
 	if(btn=="btnCopyPrograms"){if(!settings.copyProgConfirm){app.updateSetting("copyProgConfirm",[value:true,type:"bool"]);app.updateSetting("copyProgMsg",[value:"",type:"string"]);return};copyProgram1ToAll();app.updateSetting("copyProgConfirm",[value:false,type:"bool"]);app.updateSetting("copyProgMsg",[value:"✅ Program 1 settings copied to all programs",type:"string"]);app.updateSetting("tempCopyProgClear",[value:"1",type:"string"]);return}
 	if(btn=="btnCancelProgCopy"){app.updateSetting("copyProgConfirm",[value:false,type:"bool"]);app.updateSetting("copyProgMsg",[value:"",type:"string"]);return}
+	if(btn=="btnVerifyEcho")try{def ok=verifyEchoChildren();atomicState.tempDiagMsg=ok?"✅ Echo devices verified successfully.":"⚠️ Echo devices verified with warnings.";(ok?logInfo("✅ Echo devices verified successfully."):logWarn("⚠️ Echo devices verified with warnings."))}catch(e){atomicState.tempDiagMsg="⚠️ Echo verification failed: ${e.message}";logWarn"btnVerifyEcho: ${e.message}"}
+    if(btn=="btnGetSoilType"){getSoilTypeFromUSDA();return}
+	if(btn=="btnCancelUsdaCopy"){app.updateSetting("usdaCopyConfirm",[value:false,type:"bool"]);atomicState.usdaSoilMsg="";return}
+	if(btn=="btnCopyUsdaSoil"){if(!settings.usdaCopyConfirm){app.updateSetting("usdaCopyConfirm",[value:true,type:"bool"]);return};def soil=atomicState?.defaultSoilType?.trim();def valid=["Sand","Loamy Sand","Sandy Loam","Loam","Clay Loam","Silty Clay","Clay"];if(soil&&valid.contains(soil)){(1..cachedZoneCount).each{z->app.updateSetting("soil_${z}",[value:soil,type:"enum"])};app.clearSetting("usdaCopyConfirm");atomicState.usdaSoilMsg="✅ All zone soil types set to ${soil} (USDA default).";logInfo"${atomicState.usdaSoilMsg}"}else{atomicState.usdaSoilMsg="⚠️ Invalid USDA soil type '${soil?:'unknown'}'; copy aborted.";logWarn"${atomicState.usdaSoilMsg}"};return}
 	if(btn.startsWith("btnDeleteZone_")){Integer z=(btn-"btnDeleteZone_")as Integer;def a=atomicState.activeProgram;if(a&&a.zones*.id?.contains(z)){def pname=a.name?:("Program ${a.program}");atomicState.lastZoneMsg="<b>⚠️ Cannot delete Zone ${z} — part of ${pname} currently running.</b> Stop program before deleting.";return};if(!settings["deleteZoneConfirm_${z}"]){app.updateSetting("deleteZoneConfirm_${z}",[value:true,type:"bool"]);return};deleteZone(z);app.removeSetting("deleteZoneConfirm_${z}");atomicState.lastZoneMsg="<b>✅ Zone ${z} deleted successfully.</b> Press ${htmlHeButton('Done')} to return to the zone list.";return}
 	if(btn.startsWith("btnCancelDeleteZone_")){Integer z=(btn-"btnCancelDeleteZone_")as Integer;app.updateSetting("deleteZoneConfirm_${z}",[value:false,type:"bool"]);return}
 	if(btn.startsWith("btnDeleteProgram_")){Integer p=(btn-"btnDeleteProgram_")as Integer;if(atomicState.activeProgram||atomicState.manualZone){def pname=settings["programName_${p}"]?:"Program ${p}";def running=atomicState.activeProgram?("Program ${atomicState.activeProgram.program}:${atomicState.activeProgram.name}"):"a manual zone";atomicState.lastProgramMsg="<b>⚠️ Cannot delete ${pname} while ${running} is running.</b> Stop all active programs/zones before deleting.";return};if(!settings["deleteProgConfirm_${p}"]){app.updateSetting("deleteProgConfirm_${p}",[value:true,type:"bool"]);return};deleteProgram(p);app.removeSetting("deleteProgConfirm_${p}");atomicState.lastProgramMsg="<b>✅ Program deleted successfully.</b> Press ${htmlHeButton('Done')} to return to the program list or continue editing ${settings["programName_${p}"]?:'Program '+p}.";return}
@@ -593,12 +645,12 @@ def appButtonHandler(String btn){
     if(btn=="btnDisableDebug"){disableDebugLoggingNow();return}
     if(btn=="btnRunWeatherUpdate"){def wx=fetchWeather(true);if(wx?.failed){def msg="❌ Unable to retrieve weather update (${wx.source})";logWarn msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return};runWeatherUpdate();def msg=getDataChild(true)?.currentValue("summaryText")?:'⚠️ No ET summary available';logInfo"ET run completed: ${msg}";app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
 	if(btn=="btnVerifyChild"){def ok=verifyDataChild();def msg=ok?"✅ Data child verified successfully.":"⚠️ Data child verification failed. Check logs.";logInfo msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
-	if(btn=="btnVerifySystem"){def ok=verifySystem();def msg=ok?"✅ System verification passed.":"⚠️ System verification failed. See logs for details.";logInfo msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
+	if(btn=="btnVerifySystem"){def ok=verifySystem(true);def msg=ok?"✅ System verification passed.":"⚠️ System verification failed. See logs for details.";logInfo msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
 	if(btn.startsWith("btnToggleUnit_")){def z=(btn-"btnToggleUnit_")as Integer;def current=settings["baseTimeUnit_${z}"]?:"min";def newUnit=(current=="min")?"s":"min";app.updateSetting("baseTimeUnit_${z}",[value:newUnit,type:"enum"]);return}
 	if(btn.startsWith("manualProgram_")){Integer p=(btn-"manualProgram_")as Integer;runProgram([program:p,manual:true])}
 	if(btn=="btnTestWx"){
 	    logInfo"Manual weather API test requested"
-	    BigDecimal lat=(location?.latitude?:0G).setScale(1,BigDecimal.ROUND_HALF_UP);BigDecimal lon=(location?.longitude?:0G).setScale(1,BigDecimal.ROUND_HALF_UP)
+	    lat=(state.geo?.lat).setScale(1,BigDecimal.ROUND_HALF_UP);lon=(state.geo?.lon).setScale(1,BigDecimal.ROUND_HALF_UP)
 	    logDebug"Testing coordinates: ${lat}, ${lon}"
 	    def src=settings.weatherSource?:'openweather';def msg="❌ Weather test failed"
 	    try{
@@ -640,15 +692,19 @@ def appButtonHandler(String btn){
 	                    msg=(r.status==200&&r.data?.timelines)?"✅ Tomorrow.io API key validated successfully":"❌ Tomorrow.io API key invalid or no data"
 	                };break
 	            case"noaa":
-	                httpGet([uri:"https://api.weather.gov/points/${lat},${lon}",
-	                         headers:["User-Agent":"Hubitat-WET-IT"]]){
-	                    r->
-	                    if(r.status!=200){msg="❌ NOAA: HTTP ${r.status} error";return}
+	                httpGet([uri:"https://api.weather.gov/points/${lat},${lon}",headers:["User-Agent":"Hubitat-WET-IT"]]){
+	                    r->if(r.status!=200){msg="❌ NOAA: HTTP ${r.status} error";return}
 	                    def txt=r?.data?.text?:r?.getData()?.toString()?:'';def j=new groovy.json.JsonSlurper().parseText(txt)
 	                    def p=j?.properties;boolean ok=(p?.forecast||p?.forecastHourly||p?.forecastGridData)
 	                    msg=(r.status==200&&ok)?"✅ NOAA service reachable and responding (Grid ${p?.gridId}/${p?.gridX},${p?.gridY})":"❌ NOAA endpoint reachable but no forecast data links found"
 	                };break
-	            default: msg="⚠️ Unknown weather source selected"
+	            case"openmeteo":
+    				httpGet([uri:"https://api.open-meteo.com/v1/forecast",query:[latitude:lat,longitude:lon,daily:"temperature_2m_max,temperature_2m_min,precipitation_sum",temperature_unit:"fahrenheit",windspeed_unit:"mph",precipitation_unit:"inch",timezone:"auto"]]){
+        				r->if(r.status!=200){msg="❌ Open-Meteo: HTTP ${r.status} error";return}
+        				def d=r?.data?.daily;boolean ok=(d?.temperature_2m_max&&d?.temperature_2m_min&&d?.precipitation_sum)
+        				msg=(ok)?"✅ Open-Meteo reachable — daily forecast data verified":"❌ Open-Meteo reachable but daily forecast data missing"
+    				};break
+    	            default: msg="⚠️ Unknown weather source selected"
 	        }
 	    }catch(e){msg="❌ ${src.toUpperCase()} API test failed: ${e.message}"}
 	    logInfo msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempApiMsg=msg;return
@@ -740,6 +796,65 @@ private void resetAllSoilMemory(){
         }
         updateSoilMemory();logInfo"resetAllSoilMemory(): Cleared all zone depletion records"
     }catch(e){logWarn"resetAllSoilMemory(): ${e}"}
+}
+
+// USDA → WET-IT texture normalization
+def mapSoilTextureToClass(String texture){
+    if(!texture)return"Loam"
+    def t=texture.toLowerCase().trim()
+    switch(true){
+        case{t=="sand"||t.contains("coarse sand")||t.contains("fine sand")}:return"Sand"
+        case{t.contains("loamy sand")||t.contains("sandy loam")||t.contains("fine sandy loam")}:return"Loamy Sand"
+        case{t.contains("loam")||t.contains("silt loam")||t.contains("silty clay loam")||t.contains("sandy clay loam")}:return"Loam"
+        case{t.contains("clay loam")||t.contains("silty clay")||t.contains("sandy clay")}:return"Clay Loam"
+        case{t=="clay"||t.contains("heavy clay")||t.contains("vertisol")}:return"Clay"
+        default:return"Loam"
+    }
+}
+
+def getSoilData(lat, lon) {
+    def d=0.0001;def poly="POLYGON((${lon-d} ${lat-d},${lon+d} ${lat-d},${lon+d} ${lat+d},${lon-d} ${lat+d},${lon-d} ${lat-d}))"
+    def query = """
+        SELECT TOP 1
+          mapunit.musym,
+          mapunit.muname,
+          component.compname,
+          component.hydgrp,
+          chtexturegrp.texdesc
+        FROM mapunit
+          INNER JOIN component ON component.mukey = mapunit.mukey
+          INNER JOIN chorizon ON chorizon.cokey = component.cokey
+          INNER JOIN chtexturegrp ON chtexturegrp.chkey = chorizon.chkey
+        WHERE mapunit.mukey IN (
+          SELECT mukey FROM SDA_Get_Mukey_from_intersection_with_WktWgs84('${poly}')
+        )
+    """
+    def params=[uri: "https://sdmdataaccess.nrcs.usda.gov/tabular/post.rest",contentType: "application/x-www-form-urlencoded",body: [query: query],timeout: 20]
+    try {
+        def respText=''
+        httpPost(params){r->;def t=r?.data;def tn=t?.class?.name?:'';respText=(tn.contains('InputStream')||tn.contains('Reader'))?t?.getText('UTF-8'):t?.toString()}
+        if (!respText){logWarn "getSoilData(): empty SDA response for (${lat},${lon})";return null}
+        // Trim garbage and extract only the <Table> element
+        respText=respText.substring(respText.indexOf("<"));def m=respText=~ /(?s)<Table>(.*?)<\/Table>/
+        if (!m.find()){logWarn "getSoilData(): no <Table> block in SDA response";return null}
+        def tableXML="<Table>${m.group(1)}</Table>";tableXML=tableXML.replaceAll(/&(?![a-zA-Z]+;|#\d+;)/, '&amp;')
+        def xml=new XmlSlurper(false, false).parseText(tableXML);def musym=xml?.musym?.text()?:''
+        def muname=xml?.muname?.text()?:'';def compname=xml?.compname?.text()?:''
+        def hydgrp=xml?.hydgrp?.text()?:'';def texdesc=xml?.texdesc?.text()?:''
+        if (!texdesc&&!muname){logWarn "getSoilData(): no soil data for (${lat},${lon})";return null}
+        return [musym:musym,muname:muname,compname:compname,hydgrp:hydgrp,textureRaw:texdesc,textureMapped:mapSoilTextureToClass(texdesc)]
+    }catch(e){logWarn "getSoilData() SDA error: ${e.message}";return null}
+}
+
+def getSoilTypeFromUSDA(){
+    def lat=state.geo?.lat;def lon=state.geo?.lon
+    if(!lat||!lon){atomicState.usdaSoilMsg="⚠️ Hub coordinates unavailable.";logWarn"${atomicState.usdaSoilMsg}";return}
+    def sda=getSoilData(lat,lon)
+    if(!sda||!sda.textureMapped){atomicState.usdaSoilMsg="⚠️ No USDA data returned for (${lat},${lon})";logWarn"${atomicState.usdaSoilMsg}";return}
+    def mapped=sda.textureMapped;def raw=sda.textureRaw?:"n/a";def hyd=sda.hydgrp?:"n/a";def awc=sda.awc?:etAwcForSoil(mapped)
+    atomicState.defaultSoilType=mapped;atomicState.defaultAwc=awc;atomicState.defaultHydgrp=hyd
+    atomicState.usdaSoilMsg="✅ USDA soil detected: ${mapped} (USDA: ${raw}, Group ${hyd}, AWC=${awc})"
+    logInfo"${atomicState.usdaSoilMsg}"
 }
 
 private void deleteZone(Integer z){
@@ -869,16 +984,25 @@ private void checkProgramConflicts(){
 }
 
 /* ---------- Lifecycle ---------- */
-def installed(){logInfo"Installed: ${appInfoString()}";runIn(2,"bootstrap")}
+def installed(){logInfo"Installed: ${appInfoString()}";atomicState.tempDiagMsg="Please wait. Boot sequence in progress.";atomicState.booted=false;runIn(2,"bootstrap")}
 def updated(){logInfo"Updated: ${appInfoString()}";atomicState.logEnable=settings.logEnable?:false;fetchWxLocation();initialize()}
 def initialize(){logInfo"Initializing: ${appInfoString()}";unschedule("autoDisableDebugLogging");if(atomicState.logEnable)runIn(1800,"autoDisableDebugLogging")
+	def r=checkChildDriver("data");if(!r.ok){logError"❌ ${r.reason}";return}
     if(!verifyDataChild()){logWarn"initialize(): ❌ Cannot continue; data child missing or invalid";return}
     def child=getDataChild()
+	if(atomicState.activeProgram||atomicState.manualZone){
+	    logWarn"🩹 Recovery: hub reboot during irrigation — forcing safe shutdown"
+	    try{stopActiveProgram([:])}catch(e){};["manualZone","manualZoneStart","manualZoneDuration","programClock","activeProgram"].each{atomicState.remove(it)}
+	}
     try{
         child.updateZoneAttributes(cachedZoneCount);logInfo"✅ Verified/updated zone attributes (${cachedZoneCount} zones)"
         if(!child.currentValue("wxSource"))childEmitChangedEvent(child,"wxSource","Not yet fetched","Initial weather source state")
         childEmitEvent(child,"appInfo",appInfoString(),"App version published",null,true)
-		childEmitEvent(child,"driverinfo","${child.currentValue("driverInfo")}","Driver version published",null,true)
+		childEmitEvent(child,"driverInfo","${child.currentValue("driverInfo")}","Driver version published",null,true)
+		getChildDevices()?.findAll{it.typeName=="WET-IT Echo"}?.each{ec->
+		    childEmitEvent(ec,"appInfo",appInfoString(),"App version published",null,true)
+		    childEmitEvent(ec,"driverInfo","${ec.currentValue("driverInfo")}","Driver version published",null,true)
+		}
         if(!verifySystem())logWarn"⚠️ System verification reported issues"
         else logInfo"✅ System verification clean"
         cleanupUnusedChildData();cleanupUnusedZoneSettings();cleanupUnusedProgramSettings()
@@ -889,13 +1013,14 @@ def initialize(){logInfo"Initializing: ${appInfoString()}";unschedule("autoDisab
 		atomicState.remove("activeProgramLast")
 	}
     calcProgramDurations('initialize')
-    if(!owmApiKey&&!tioApiKey&&weatherSource!="noaa")logWarn"⚠️ Not fully configured; no valid API key or weather source"
-    runIn(5,"runWeatherUpdate");scheduleWeatherUpdates();startIrrigationTicker()
+    if(!owmApiKey&&!tioApiKey&&!tpwsApiKey&&!(weatherSource in ["noaa","openmeteo"]))logWarn"⚠️ Not fully configured; no valid API key or weather source"
+    runIn(5,"runWeatherUpdate");scheduleWeatherUpdates();startIrrigationTicker();atomicState.booted=true
 }
 
 private bootstrap(){
     logEvents=true;logInfo"bootstrap(): running greenfield bootstrap sequence"
-    if(!settings.weatherSource){app.updateSetting("weatherSource",[type:"enum",value:"noaa"]);logInfo"bootstrap(): weatherSource not set — defaulted to NOAA"}
+	state.geo=state.geo?:[:];if(state.geo.lat==null||state.geo.lon==null){state.geo.lat=location?.latitude;state.geo.lon=location?.longitude;logInfo"bootstrap(): seeding lat/lon from hub location"}
+    if(!settings.weatherSource){app.updateSetting("weatherSource",[type:"enum",value:"openmeteo"]);logInfo"bootstrap(): weatherSource not set — defaulted to Open-Meteo"}
     String src=settings.weatherSource.toLowerCase()
     def c=getDataChild(true);if(!c){logWarn"bootstrap(): ❌ unable to verify or create data child";return}
     logInfo"Initializing system — verifying forecast connectivity to ${src.toUpperCase()}...."
@@ -908,7 +1033,7 @@ private bootstrap(){
 	logInfo"ET run completed: ${msg}"
 	app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"])
 	logInfo"Verifying System..."
-    verifySystem()
+    verifySystem(true)
     logInfo"bootstrap(): ✅ Installation completed for ${appInfoString()}"
     logEvents=false;initialize()
 }
@@ -921,7 +1046,8 @@ private scheduleWeatherUpdates(){
     catch(ex7){try{schedule(cron6,"runWeatherUpdate");used=cron6}catch(ex6){logError"scheduleWeatherUpdates(): failed to schedule (${ex6.message})"}}
     if(used){
         def t=(0..22).step(2).collect{String.format("%02d:%02d",it,mOff)}.join(',')
-        logInfo"⏰ Weather/ET updates scheduled every 2 hours (${t}) using CRON '${used}'"
+        logInfo"⏰ Weather/ET updates scheduled every 2 hours"
+        logDebug"⏰ Weather/ET updates scheduled every 2 hours (${t}) using CRON '${used}'"
     }else logWarn"No compatible CRON format accepted; verify Hubitat version."
 }
 
@@ -946,13 +1072,14 @@ def ensureDataDevice(){
 }
 
 def verifyDataChild(){
-    def dni="wetit_data_${app.id}";def reg=getChildDevice(dni)
-    if(!reg){logWarn"❌ No child device found (DNI=${dni})";return false}
-    if(!cachedChild){cachedChild=reg;logWarn"verifyDataChild(): ⚠️ Cache was empty; now repointed to ${reg.displayName}";return true}
-    if(cachedChild.deviceNetworkId!=reg.deviceNetworkId){
-        logWarn"⚠️ Cache mismatch (cached=${cachedChild.deviceNetworkId}, found=${reg.deviceNetworkId}); cache reset"
-        cachedChild=reg;return true}
-    logInfo"✅ Child device verified (${reg.displayName}, DNI=${reg.deviceNetworkId})";return true
+    def dni="wetit_data_${app.id}";def c=getChildDevice(dni)
+    if(!c){logWarn"❌ No child device found (DNI=${dni})";return false}
+    c.ping()
+    if(!cachedChild){cachedChild=c;logDebug"verifyDataChild(): ⚠️ Cache was empty; now repointed to ${c.displayName}";return true}
+    if(cachedChild.deviceNetworkId!=c.deviceNetworkId){
+        logWarn"⚠️ Cache mismatch (cached=${cachedChild.deviceNetworkId}, found=${c.deviceNetworkId}); cache reset"
+        cachedChild=c;return true}
+    logDebug"✅ Child device verified (${c.displayName}, DNI=${c.deviceNetworkId})";return true
 }
 
 private cleanupUnusedChildData(){
@@ -963,12 +1090,26 @@ private cleanupUnusedChildData(){
     }
     if(!settings.publishAttributes){
         (1..(cachedZoneCount?:0)).each{z->
-            ["zone${z}Name","zone${z}ET","zone${z}Seasonal","zone${z}BaseTime","zone${z}EtAdjustedTime"].each{n->
+            ["zone${z}Name","zone${z}Et","zone${z}Seasonal","zone${z}BaseTime","zone${z}EtAdjustedTime"].each{n->
                 try{c.deleteCurrentState(n)}catch(e){logDebug"cleanupUnusedChildData(): ${n} missing or already removed (${e.message})"}
             }
         }
     }
     logDebug"cleanupUnusedChildData(): removed unused child attributes per publish settings"
+}
+
+private Map checkChildDriver(String key){
+    def cd=CHILD_DRIVERS[key];def r=[ok:true,reason:null];if(!cd)return r
+    def dni="__probe__${app.id}_${key}"
+    try{addChildDevice("MHedish",cd.name,dni,[label:"probe",isComponent:false])}
+    catch(e){r.ok=false;r.reason="Missing driver: ${cd.name}";return r}
+    try{deleteChildDevice(dni)}catch(ignore){}
+    def dev=null
+    if(key=="data")dev=getChildDevice("wetit_data_${app.id}")
+    else dev=getChildDevices()?.find{it.deviceNetworkId?.startsWith("wetit_echo_${app.id}_")}
+    def dv=dev?.currentValue("driverVersion")
+    if(dv&&!verGate(dv,cd.minVer)){r.ok=false;r.reason="${cd.name} out of date: is (${dv}, need ${cd.minVer})"}
+    return r
 }
 
 private void cleanupUnusedZoneSettings(){
@@ -985,13 +1126,16 @@ private void cleanupUnusedProgramSettings(){
 	stale.each{app.removeSetting(it)};logInfo"🧹 Removed ${stale.size()} stale program settings (>${pCount})"
 }
 
+private cleanupProbeDevices(){getChildDevices()?.findAll{it.deviceNetworkId?.startsWith("__probe__${app.id}_")}?.each{try{deleteChildDevice(it.deviceNetworkId)}catch(ignore){}}}
 private Integer getZoneCountCached(boolean refresh=false){if(refresh||cachedZoneCount==null)cachedZoneCount=(settings.zoneCount?:4)as Integer;return cachedZoneCount}
+private String getGeoapifyKey(){try{return new String((LAT+LON).decodeBase64())}catch(e){logDebug "Geo key unavailable";return null}}
+private boolean verGate(String cur,String min){if(!cur)return false;def ca=cur.tokenize('.')*.toInteger(),ma=min.tokenize('.')*.toInteger();int l=Math.max(ca.size(),ma.size());for(int i=0;i<l;i++){int cv=i<ca.size()?ca[i]:0,mv=i<ma.size()?ma[i]:0;if(cv!=mv)return cv>mv};true}
 
-def verifySystem(){
-    logInfo"Running full system verification..."
+private boolean verifySystem(boolean force=false){
+    logInfo"🔬 Running full system verification..."
     def verified=verifyDataChild();if(!verified){logWarn"❌ Data child missing or invalid";return false}
-    def child=getDataChild();def issues=[]
-    ["summaryText","summaryTimestamp","wxLocation","wxSource","wxTimestamp","driverInfo","appInfo"].each{
+    def child=getDataChild();def issues=[];def pc=(settings.programCount?:1)
+    ["driverInfo","driverVersion","summaryText","summaryTimestamp","wxChecked","wxLocation","wxSource","wxTimestamp"].each{
         if(!child.hasAttribute(it))issues<<"missing ${it}"
     }
     (1..cachedZoneCount).each{
@@ -1002,59 +1146,73 @@ def verifySystem(){
 	    atomicState."zoneDepletionTs_${it}"=(atomicState."zoneDepletionTs_${it}"?:"—")
 	}
 	logInfo"✅ Attributes verified for ${cachedZoneCount} zones"
-	(1..(settings.programCount?:1)).each{p->
+	(1..(pc)).each{p->
 	    if(!settings["programStartTime_${p}"])app.updateSetting("programStartTime_${p}",[value:"00:00",type:"time"])
 	    if(!settings["programActive_${p}"])app.updateSetting("programActive_${p}",[value:"false",type:"bool"])
 	}
-	logInfo"✅ Parameters verified for ${programCount} programs"
+	logInfo"✅ Parameters verified for ${pc} programs"
+	if(settings.find{k,v->k.startsWith("programEchoEnabled_")&&v}){def r=checkChildDriver("echo");if(!r.ok)issues<<r.reason}
+	def kids=getChildDevices()?:[];logDebug"Child Devices: ${kids}"
+  	kids.each{k->
+	    def dv=k.currentValue("driverVersion");logDebug"Child: (${k}) Driver Version: (${dv})"
+	    def cd=child_drivers.find{_,v->v.name==k.typeName}?.value
+	    if(!cd)return
+	    if(!dv)issues<<"${cd.name} driver too old (no driverVersion published)"
+	    else if(!verGate(dv,cd.minVer))issues<<"${cd.name} driver out of date (${dv}, need ${cd.minVer})"
+	}
+	if(settings.find{k,v->k.startsWith("programEchoEnabled_")&&v}){try{verifyEchoChildren();logInfo"✅ Echo child devices verified"}catch(e){logWarn"verifySystem(): Echo verify failed ${e.message}";issues<<"Echo verification failed (${e.message})"}}
+	cleanupProbeDevices()
+	if(!fetchGeo(force))issues<<"Unable to populate geolocation cache"else logInfo"✅ Geolocation cache verified."
     def wx=child.currentValue("wxSource")?:'Unknown'
     if(wx in ['Unknown','Not yet fetched',''])issues<<"invalid weather source (${wx})"
-    if(issues){
-        issues.each{logWarn"verifySystem(): ⚠️ ${it}"};logInfo"❌ Issues detected during system verification"
-        return false
-    }
+    if(issues){issues.each{logWarn"System Verification: ⚠️ ${it}"};logInfo"❌ Issues detected during system verification";return false}
     logInfo"✅ System check passed";return true
 }
 
 /* ---------- Weather & ET Engine ---------- */
 private Map fetchWeather(boolean force=false){
-    String src=(settings.weatherSource?:'openweather').toLowerCase();String unit=(settings.tempUnits?:'F')
-    Map wx=null
+    String src=(settings.weatherSource?:'openmeteo').toLowerCase();boolean allowBackup=settings.useWxSourceBackup
+    Map wx=null;String fb=null;boolean obsOnly=false
     try{
         switch(src){
-            case 'openweather':
-                wx=fetchWeatherOwm(force)
-                if(!wx){logWarn"fetchWeather(): OpenWeather failed, attempting NOAA fallback...";wx=fetchWeatherNoaa(force);if(wx)wx<<[source:"OpenWeather→NOAA fallback"]}
-                else wx<<[source:"OpenWeather 3.0"];break
-            case 'tomorrow':
-                wx=fetchWeatherTomorrow(force)
-                if(!wx){logWarn"fetchWeather(): Tomorrow.io failed, attempting NOAA fallback...";wx=fetchWeatherNoaa(force);if(wx)wx<<[source:"Tomorrow→NOAA fallback"]}
-                else wx<<[source:"Tomorrow.io"];break
-            case 'tempest':
-                wx=fetchWeatherTempest(force)
-                if(!wx){logWarn"fetchWeather(): Tempest failed, attempting NOAA fallback...";wx=fetchWeatherNoaa(force);if(wx)wx<<[source:"Tempest→NOAA fallback"]}
-                else wx<<[source:"Tempest"];break
-            case 'noaa':
-                wx=fetchWeatherNoaa(force);if(wx)wx<<[source:"NOAA NWS"];break
-            default:
-                logWarn"fetchWeather(): Unknown weather source '${src}', defaulting to OpenWeather"
-                wx=fetchWeatherOwm(force)
-                if(!wx){logWarn"fetchWeather(): Default OpenWeather failed, attempting NOAA fallback...";wx=fetchWeatherNoaa(force);if(wx)wx<<[source:"Default→NOAA fallback"]}
-                else wx<<[source:"OpenWeather 3.0"]
+            case 'openweather': wx=fetchWeatherOwm(force);fb='openmeteo';break
+            case 'tomorrow': wx=fetchWeatherTomorrow(force);fb='openmeteo';break
+            case 'tempest': wx=fetchWeatherTempest(force);fb='openmeteo';break
+            case 'noaa': wx=fetchWeatherNoaa(force);fb='openmeteo';break
+            case 'openmeteo': wx=fetchWeatherOpenMeteo(force);fb=(state.geo?.noaa?'noaa':null);break
         }
+        if(!wx&&allowBackup&&fb){
+            logWarn"fetchWeather(): ${src} failed — attempting ${fb} fallback"
+            wx=(fb=='noaa'?fetchWeatherNoaa(force):fetchWeatherOpenMeteo(force))
+            if(wx){wx<<[source:"${src} → ${fb} fallback"];obsOnly=true}
+        }else if(wx)wx<<[source:src]
     }catch(e){wx=[:];logWarn"fetchWeather(): ${src.toUpperCase()} fetch failed — ${e.message}"}
-    if(!wx||wx.isEmpty()){logWarn"fetchWeather(): ❌ ${src.toUpperCase()} fetch failed — no data returned";wx=[:];return [failed:true,source:src.toUpperCase()]}
-    def nowStr=new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone)
-    atomicState.wxChecked=nowStr
+    if((!wx||wx.failed)&&!force){
+        atomicState.forecastMissCount=(atomicState.forecastMissCount?:0)+1;logWarn"fetchWeather(): forecast authority lost. Missed (${atomicState.forecastMissCount}) forecast requests"
+        if(atomicState.forecastMissCount>=6){
+            atomicState.tempDiagMsg="⚠️ Forecast unavailable beyond diurnal variance. ET is stale."
+            if(settings.enableNotifications)sendLocationEvent(name:"wet-it alert",value:"Forecast (${src}) unavailable beyond diurnal variance. Program scheduling suspended.","APP_NOTIFICATION",isStateChange:true)
+            if(settings.suspendOnStaleForecast){logWarn"fetchWeather(): program scheduling suspended by user policy";settings.schedulingActive=false}
+        }else if(atomicState.forecastMissCount>=3)
+            atomicState.tempDiagMsg="⚠️ Forecast data stale for multiple cycles; ET continuing on last known forecast."
+    }else if(wx&&!wx.failed)atomicState.forecastMissCount=0
+    if(!wx||wx.isEmpty()){logWarn"fetchWeather(): ❌ ${src.toUpperCase()} fetch failed — no data returned";return [failed:true,source:src.toUpperCase()]}
+    def nowStr=new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone);atomicState.wxChecked=nowStr
+    if(obsOnly){
+        atomicState.wxSource=wx.source;atomicState.lastWxUpdateTs=now();fetchWxLocation()
+        def c=getDataChild()
+        if(c&&atomicState.wxSource){
+            childEmitChangedEvent(c,"wxSource",atomicState.wxSource,"Weather provider updated",null,true)
+            childEmitChangedEvent(c,"wxChecked",atomicState.wxChecked,"Weather check timestamp updated",null,true)
+            childEmitChangedEvent(c,"wxLocation",atomicState.wxLocation,"Weather location updated",null,true)
+        }
+        return wx
+    }
     def lastWx=state.lastWeather;def providerTs=wx?.providerTs?:null
-    def changed=(!lastWx)||providerTs!=atomicState.wxTimestamp||
-        (Math.abs((wx.tMaxF?:0)-(lastWx.tMaxF?:0))>0.5)||
-        (Math.abs((wx.tMinF?:0)-(lastWx.tMinF?:0))>0.5)||
-        (Math.abs((wx.rainIn?:0)-(lastWx.rainIn?:0))>0.001)
+    def changed=(!lastWx)||providerTs!=atomicState.wxTimestamp||(Math.abs((wx.tMaxF?:0)-(lastWx.tMaxF?:0))>0.5)||(Math.abs((wx.tMinF?:0)-(lastWx.tMinF?:0))>0.5)||(Math.abs((wx.rainIn?:0)-(lastWx.rainIn?:0))>0.001)
     if(changed&&providerTs){atomicState.wxTimestamp=providerTs;logInfo"fetchWeather(): Updated wxTimestamp=${providerTs} (${wx.source})"}
     else logDebug"fetchWeather(): Weather unchanged; wxTimestamp held (${atomicState.wxTimestamp})"
-    atomicState.wxSource=wx.source;atomicState.lastWxUpdateTs=now()
-    fetchWxLocation()
+    atomicState.wxSource=wx.source;atomicState.lastWxUpdateTs=now();fetchWxLocation()
     def c=getDataChild()
     if(c&&atomicState.wxSource){
         childEmitChangedEvent(c,"wxSource",atomicState.wxSource,"Weather provider updated",null,true)
@@ -1062,14 +1220,12 @@ private Map fetchWeather(boolean force=false){
         childEmitChangedEvent(c,"wxChecked",atomicState.wxChecked,"Weather check timestamp updated",null,true)
         childEmitChangedEvent(c,"wxLocation",atomicState.wxLocation,"Weather location updated",null,true)
     }
-    if(wx)state.lastWeather=wx
-    return wx?:[:]
+    state.lastWeather=wx;atomicState.lastWeather=wx;return wx
 }
 
 private Map fetchWeatherOwm(boolean force=false){
     if(!owmApiKey){logWarn"fetchWeatherOwm(): Missing API key";return null}
-    String unit=(settings.tempUnits?:'F')
-    BigDecimal lat=location?.latitude?:0G,lon=location?.longitude?:0G
+    String unit=(settings.tempUnits?:'F');def lat=state.geo?.lat;def lon=state.geo?.lon
     def p=[uri:"https://api.openweathermap.org/data/3.0/onecall",query:[lat:lat,lon:lon,exclude:"minutely,hourly,alerts",units:"imperial",appid:owmApiKey]]
     try{
         def r=[:]
@@ -1083,15 +1239,14 @@ private Map fetchWeatherOwm(boolean force=false){
             BigDecimal rainMm=(d.rain?:0)as BigDecimal,rainIn=etMmToIn(rainMm)
             BigDecimal windSpeedF=(resp.data?.current?.wind_speed?:0)as BigDecimal
             String windDir=(resp.data?.current?.wind_deg?:'')?.toString()
-            r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,windSpeed:windSpeedF,windDir:windDir,unit:unit,providerTs:providerTs]
+            r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,windSpeed:windSpeedF,windDir:windDir,windUnit:'mph',unit:unit,providerTs:providerTs]
             childEmitChangedEvent(getDataChild(),"wxSource","OpenWeather 3.0","OpenWeather 3.0: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rainIn=${rainIn}, wind=${windSpeedF}${unit=='C'?'kph':'mph'}")
         };return r
     }catch(e){logError"fetchWeatherOwm(): ${e.message}";return null}
 }
 
 private Map fetchWeatherNoaa(boolean force=false){
-    String unit=(settings.tempUnits?:'F')
-    BigDecimal lat=location?.latitude?:0G,lon=location?.longitude?:0G
+    String unit=(settings.tempUnits?:'F');def lat=state.geo?.lat;def lon=state.geo?.lon
     String url="https://api.weather.gov/points/${lat},${lon}"
     try{
         def gridUrl=null
@@ -1116,7 +1271,7 @@ private Map fetchWeatherNoaa(boolean force=false){
             BigDecimal tMinC=(p.minTemperature?.values?.getAt(0)?.value?:tMaxC)as BigDecimal
             BigDecimal tMaxF=convTemp(tMaxC,'C','F'),tMinF=convTemp(tMinC,'C','F')
             BigDecimal tMax=convTemp(tMaxC,'C',unit),tMin=convTemp(tMinC,'C',unit)
-            BigDecimal rainMm=0;if(p?.quantitativePrecipitation?.values){def vals=p.quantitativePrecipitation.values;def now=new Date();def cutoff=now+(24*60*60*1000);vals.each{v->try{def vs=Date.parse("yyyy-MM-dd'T'HH:mm:ssX",v.validTime.split('/')[0]);if(vs<=cutoff&&v.value!=null)rainMm+=(v.value as BigDecimal)}catch(ignored){}}}
+            BigDecimal rainMm=0;if(p?.quantitativePrecipitation?.values){def vals=p.quantitativePrecipitation.values;def now=new Date();def cutoff=now+(24*60*60*1000);vals.each{v->try{def vs=Date.parse("yyyy-MM-dd'T'HH:mm:ssX",v.validTime.split('/')[0]);if(vs>=now&&vs<=cutoff&&v.value!=null)rainMm+=(v.value as BigDecimal)}catch(ignored){}}}
             BigDecimal rainIn=etMmToIn(rainMm)
             String windSpeed='';String windDir=''
             try{
@@ -1141,8 +1296,7 @@ private Map fetchWeatherNoaa(boolean force=false){
 
 private Map fetchWeatherTomorrow(boolean force=false){
     if(!tioApiKey){logWarn"fetchWeatherTomorrow(): Missing API key";return null}
-    String unit=(settings.tempUnits?:'F')
-    BigDecimal lat=location?.latitude?:0G,lon=location?.longitude?:0G
+    String unit=(settings.tempUnits?:'F');def lat=state.geo?.lat;def lon=state.geo?.lon
     def p=[uri:"https://api.tomorrow.io/v4/weather/forecast",query:[location:"${lat},${lon}",apikey:tioApiKey,units:"imperial",timesteps:"1d,1h"],headers:["User-Agent":"Hubitat-WET-IT"]]
     try{
         def r=[:]
@@ -1162,7 +1316,7 @@ private Map fetchWeatherTomorrow(boolean force=false){
                 if(!near)near=hourly[0]
                 def hv=near?.values?:[:];windSpeedF=(hv.windSpeed?:hv.windSpeedAvg?:hv.windSpeedMax?:0)as BigDecimal;windDir=(hv.windDirection?:hv.windDirectionAvg?:'')?.toString()
             }else logWarn"fetchWeatherTomorrow(): Missing hourly timeline"
-            r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,windSpeed:windSpeedF,windDir:windDir,unit:unit,providerTs:providerTs]
+            r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,windSpeed:windSpeedF,windDir:windDir,windUnit:'mph',unit:unit,providerTs:providerTs]
             childEmitChangedEvent(getDataChild(),"wxSource","Tomorrow.io","Tomorrow.io: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rainIn=${rainIn}, wind=${windSpeedF}${unit=='C'?'kph':'mph'}")
         };return r
     }catch(e){logError"fetchWeatherTomorrow(): ${e.message}";return null}
@@ -1170,11 +1324,9 @@ private Map fetchWeatherTomorrow(boolean force=false){
 
 private Map fetchWeatherTempest(boolean force=false){
     if(!tpwsApiKey){logWarn"fetchWeatherTempest(): Missing API key";return null}
-    String unit=(settings.tempUnits?:'F')
-    BigDecimal lat=location?.latitude?:0G,lon=location?.longitude?:0G
+    String unit=(settings.tempUnits?:'F');def lat=state.geo?.lat;def lon=state.geo?.lon
     try{
-        def r=[:]
-        def sParams=[uri:"https://swd.weatherflow.com/swd/rest/stations",query:[token:tpwsApiKey],headers:["User-Agent":"Hubitat-WET-IT"]]
+        def r=[:];def sParams=[uri:"https://swd.weatherflow.com/swd/rest/stations",query:[token:tpwsApiKey],headers:["User-Agent":"Hubitat-WET-IT"]]
         httpGet(sParams){resp->
             if(resp?.status!=200||!resp?.data?.stations){logWarn"fetchWeatherTempest(): HTTP ${resp?.status}, invalid station data";return}
             def station=resp.data.stations[0];if(!station){logWarn"fetchWeatherTempest(): No stations available";return}
@@ -1193,15 +1345,87 @@ private Map fetchWeatherTempest(boolean force=false){
                 BigDecimal tMax=convTemp(tMaxF,'F',unit),tMin=convTemp(tMinF,'F',unit)
                 BigDecimal rainMm=(o.precip_accum_local_day?:0)as BigDecimal
                 BigDecimal rainIn=etMmToIn(rainMm)
-                BigDecimal windSpeedMs=(o.wind_avg?:0)as BigDecimal
-                BigDecimal windSpeedF=(unit=='C'?windSpeedMs*3.6:windSpeedMs*2.237)
-                String windDir=(o.wind_direction?:'')?.toString()
-                String ts=o.timestamp?new Date((o.timestamp as Long)*1000L).format("yyyy-MM-dd HH:mm:ss",location.timeZone):null
-                r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,windSpeed:windSpeedF,windDir:windDir,unit:unit,providerTs:ts]
-                childEmitChangedEvent(getDataChild(),"wxSource","Tempest","Tempest: t=${tF}°F, rainIn=${rainIn}, wind=${windSpeedF}${unit=='C'?'kph':'mph'}")
+                BigDecimal windSpeed=((o.wind_avg?:0)as BigDecimal)*2.237
+				String windDir=(o.wind_direction?:'')?.toString()
+				String ts=o.timestamp?new Date((o.timestamp as Long)*1000L).format("yyyy-MM-dd HH:mm:ss",location.timeZone):null
+				r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,windSpeed:windSpeed,windUnit:'mph',windDir:windDir,unit:unit,providerTs:ts]
+                childEmitChangedEvent(getDataChild(),"wxSource","Tempest","Tempest: t=${tF}°F, rainIn=${rainIn}, wind=${r.windSpeed.setScale(1,BigDecimal.ROUND_HALF_UP)}${unit=='C'?'kph':'mph'}")
             }
         };return r
     }catch(e){logError"fetchWeatherTempest(): ${e.message}";return null}
+}
+
+private Map fetchWeatherOpenMeteo(boolean force=false){
+    def lat=state.geo?.lat;def lon=state.geo?.lon
+    if(lat==null||lon==null){logWarn"fetchWeatherOpenMeteo(): Missing lat/lon";return null}
+    String unit=(settings.tempUnits?:'F')
+    try{
+        def r=[:];def p=[uri:"https://api.open-meteo.com/v1/forecast",query:[latitude:lat,longitude:lon,daily:"temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max",temperature_unit:(unit=='C'?'celsius':'fahrenheit'),windspeed_unit:(unit=='C'?'kph':'mph'),precipitation_unit:(unit=='C'?'mm':'inch'),timezone:"auto"]]
+        httpGet(p){resp->
+            if(resp?.status!=200||!resp?.data?.daily){logWarn"fetchWeatherOpenMeteo(): HTTP ${resp?.status}, invalid data";return}
+            def d=resp.data.daily;def idx=0
+            BigDecimal tMax=(d.temperature_2m_max?.getAt(idx)?:0)as BigDecimal
+            BigDecimal tMin=(d.temperature_2m_min?.getAt(idx)?:tMax)as BigDecimal
+            BigDecimal rain=(d.precipitation_sum?.getAt(idx)?:0)as BigDecimal
+            BigDecimal wind=(d.windspeed_10m_max?.getAt(idx)?:0)as BigDecimal
+            BigDecimal tMaxF=(unit=='C')?convTemp(tMax,'C','F'):tMax
+            BigDecimal tMinF=(unit=='C')?convTemp(tMin,'C','F'):tMin
+            String ts=d.time?.getAt(idx)?Date.parse("yyyy-MM-dd",d.time[idx]).format("yyyy-MM-dd HH:mm:ss",location.timeZone):null
+            r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:(unit=='C'?etMmToIn(rain):rain),windSpeed:wind,windDir:"",unit:unit,providerTs:ts]
+            childEmitChangedEvent(getDataChild(),"wxSource","Open-Meteo","Open-Meteo: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rain=${rain}${unit=='C'?'mm':'in'}, wind=${wind}${unit=='C'?'kph':'mph'}")}
+        return r
+    }catch(e){logError"fetchWeatherOpenMeteo(): ${e.message}";return null}
+}
+
+private boolean fetchGeo(boolean force=false){
+    def lat=location.latitude,lon=location.longitude;state.geo=state.geo?:[:]
+    boolean sameLoc=(state.geo.lat==lat&&state.geo.lon==lon);boolean hasCore=state.geo.country||state.geo.iso;boolean hasFlag=state.geo.flag?.url
+	if(!force&&sameLoc&&hasCore&&hasFlag){logDebug"fetchGeo(): cached geo valid — ${lat},${lon} skipping refresh";return true}
+    if(!sameLoc){logInfo"🌎 Relocation Detected – Previous: ${state.geo.lat}, ${state.geo.lon} Current: ${lat}, ${lon}";if(useSoilMemory)logWarn"⚠️ Recommend resetting soil memory – ⚙️ Zone Setup | Evapotranspiration & Seasonal Setting (Advanced) | Manage Soil Memory | Reset All Soil Memory"}
+    boolean geoOk=false;state.geo=[lat:lat,lon:lon];def key=getGeoapifyKey();if(!key)return false
+    try{
+        httpGet([uri:"https://api.geoapify.com/v1/geocode/reverse",query:[lat:lat,lon:lon,format:"json",apiKey:key]]){
+            r->def res=r?.data?.results?.getAt(0)
+            if(res?.country_code){state.geo<<[country:res.country_code,iso:res.iso3166_2,ts:now()];geoOk=true}
+            else if(r?.data?.error)logDebug "Geoapify unavailable: ${r.data.error}"
+        }
+    }catch(e){logDebug "Geoapify lookup failed: ${e.message}";return false}
+	if(state.geo?.iso){
+		def iso=state.geo.iso
+		try{
+			httpGet(
+				uri:"https://iso3166-2-api.vercel.app/api/subdivision/${iso}",contentType:"application/json"){
+				r->def flag=r?.data?.values()?.first()?.values()?.first()?.flag
+				if(flag){state.geo.flag=[url:flag,ts:now(),iso:iso]}
+				else{state.geo.flag=null}
+			}
+		}catch(e){state.geo.flag=null}
+		logInfo "🗺️ ISO: ${iso} Flag: ${state.geo?.flag?.url?'Found':'Not Found'}"
+	}
+	try{
+	    httpGet([uri:"https://api.weather.gov/points/${lat},${lon}",headers:["User-Agent":"Hubitat-WET-IT"]]){
+	        r->if(r.status!=200){state.geo.noaa=false;return}
+	        def txt=r?.data?.text?:r?.getData()?.toString()?:'';def j=new groovy.json.JsonSlurper().parseText(txt);def p=j?.properties
+	        state.geo.noaa=(p?.forecast||p?.forecastHourly||p?.forecastGridData)?true:false
+	    }
+	}catch(e){logDebug "NOAA probe failed: ${e.message}";state.geo.noaa=false}
+	try{
+	    def body=[
+	        query:
+	        """
+	        SELECT TOP 1 mukey
+	        FROM SDA_Get_Mukey_from_intersection_with_WktWgs84(
+	            'POINT(${lon} ${lat})'
+	        )
+	        """,
+	        format:"JSON"
+	    ]
+	    httpPost([uri:"https://sdmdataaccess.sc.egov.usda.gov/tabular/post.rest",body:body,contentType:"application/json"]){
+	        r->def rows=r?.data?.Table;state.geo.usda=rows&&rows.size()>0
+	        if(!state.geo.usda)logDebug "USDA SDA unavailable for location (${lat},${lon})"
+	    }
+	}catch(e){logDebug "USDA SDA probe failed: ${e.message}";state.geo.usda=false}
+    return geoOk
 }
 
 private Map detectFreezeAlert(Map wx){
@@ -1233,7 +1457,7 @@ private Map detectWindAlert(Map wx){
     String unit=(settings.tempUnits?:'F');String alertText="None";boolean alert=false
     BigDecimal threshold=(settings.windSkipThreshold?:(unit=='C'?20.0:12.0))as BigDecimal
     def raw=wx?.windSpeed;BigDecimal wind=0
-    if(raw instanceof Number){wind=raw as BigDecimal;if(unit!='C'&&wind<60)wind*=2.237}
+    if(raw instanceof Number){wind=raw as BigDecimal}
     else if(raw instanceof String){
         def s=(""+raw).toLowerCase();def m=s=~/([\d.]+)\s*(mph|kph|km\/h|mps|m\/s)?/
         if(m.find()){
@@ -1247,9 +1471,7 @@ private Map detectWindAlert(Map wx){
 }
 
 private runWeatherUpdate(){
-    if(!owmApiKey&&!tioApiKey&&(settings.weatherSource!="noaa")){
-        logWarn"runWeatherUpdate(): No valid API key or source configured; aborting";return
-    }
+    if(!owmApiKey&&!tioApiKey&&!tpwsApiKey&&!(weatherSource in ["noaa","openmeteo"])){logWarn"runWeatherUpdate(): No valid API key or source configured; aborting";return}
     if(!verifyDataChild()){logWarn"runWeatherUpdate(): cannot continue, child invalid";return}
 	def c=getDataChild(true)
     Integer zoneCount=(cachedZoneCount?:settings?.zoneCount?:0)as Integer
@@ -1266,7 +1488,7 @@ private runWeatherUpdate(){
     if(wx.providerTs){atomicState.wxTimestamp=wx.providerTs}
     Map sun=getSunriseAndSunset();Date sr=sun?.sunrise;Date ss=sun?.sunset
     Long dayLen=(sr&&ss)?((ss.time-sr.time)/1000L):null
-    BigDecimal lat=location.latitude;int jDay=Calendar.getInstance(location.timeZone).get(Calendar.DAY_OF_YEAR)
+    BigDecimal lat=state.geo?.lat;int jDay=Calendar.getInstance(location.timeZone).get(Calendar.DAY_OF_YEAR)
     BigDecimal baseline=(settings.baselineEt0Inches?:0.18)as BigDecimal
     Map env=[tMaxF:wx.tMaxF,tMinF:wx.tMinF,rainIn:wx.rainIn,latDeg:lat,julianDay:jDay,dayLengthSec:dayLen,baselineEt0:baseline]
     logInfo"Running hybrid ET+Seasonal model for ${zoneCount} zones"
@@ -1280,6 +1502,19 @@ private runWeatherUpdate(){
     Map seasonalResults=etComputeZoneBudgets(env,zoneList,"seasonal")
     Map hybridResults=[:];zoneList.each{z->def id=z.id;hybridResults[id]=[etBudgetPct:etResults[id]?.budgetPct?:0,seasonalBudgetPct:seasonalResults[id]?.budgetPct?:0]}
     publishZoneData(hybridResults)
+	if(!settings.useSaturationSkip&&atomicState.saturationSkipPrograms){atomicState.remove("saturationSkipPrograms")}
+	if(settings.useSaturationSkip){
+	    def saturatedPrograms=[]
+	    (1..(settings.programCount?:0)).each{p->
+	        def progZones=(atomicState."programRuntime_${p}"?.zones?:[])
+	        if(settings["programAdjustMode_${p}"]?.toLowerCase()=="et"&&progZones && progZones.every{z->isSoilSaturated(z)}){
+	            logInfo"🌧️ Saturation Skip: Program ${p} (${settings["programName_${p}"]?:'Unnamed Program'}) at/above field capacity"
+	            saturatedPrograms<<p
+	        }
+	    }
+	    atomicState.saturationSkipPrograms=saturatedPrograms
+	    logDebug"runWeatherUpdate(): Saturation Skip analysis complete (${saturatedPrograms.size()} programs flagged)"
+	}
 }
 
 private Map getCurrentSeasons(BigDecimal lat){
@@ -1294,35 +1529,32 @@ private Map getCurrentSeasons(BigDecimal lat){
 }
 
 private void fetchWxLocation(){
-    try{
-        String src=(settings.weatherSource?:'noaa').toLowerCase()
-        if(src=='tempest'&&atomicState.tpwsLocation){
-            def s=atomicState.tpwsLocation;def t="Tempest Station '${s.name?:'Unnamed'}' (${s.lat?:'?'}, ${s.lon?:'?'})"
-            atomicState.wxLocation=t;childEmitChangedEvent(getDataChild(),"wxLocation",t,"Weather forecast location (Tempest)");return
-        }
-        def url="https://api.weather.gov/points/${location.latitude},${location.longitude}"
-        httpGet([uri:url,headers:["User-Agent":"Hubitat-WET-IT","Accept":"application/geo+json","Accept-Encoding":"identity"]]){resp->
-            def data;if(resp?.data instanceof Map)data=resp.data
-            else if(resp?.data?.respondsTo("read"))data=new groovy.json.JsonSlurper().parse(resp.data)
-            else data=new groovy.json.JsonSlurper().parseText(resp?.data?.toString()?:'{}')
-            def p=data?.properties;if(!p&&data?."@graph")p=data."@graph"?.find{it?.properties}?.properties
-            if(!p)return
-            def wx=p?.gridId?:p?.cwa?:'';def rd=p?.radarStation?:''
-            def r=p?.relativeLocation?.properties;def c=r?.city;def s=r?.state
-            def t
-            if(c&&s){
-                if(wx&&rd)t="${c}, ${s} (${wx}/${rd})"
-                else if(wx)t="${c}, ${s} (${wx})"
-                else if(rd)t="${c}, ${s} (${rd})"
-                else t="${c}, ${s}"
-            }else if(wx&&rd)t="${wx}/${rd}"
-            else if(wx)t="${wx}"
-            else if(rd)t="${rd}"
-            else t=''
-            atomicState.wxLocation=t
-            childEmitChangedEvent(getDataChild(),"wxLocation",t,"Weather forecast location")
-        }
-    }catch(e){logDebug"fetchWxLocation(): ${e.message}"}
+	try{
+		String src=(settings.weatherSource?:'noaa').toLowerCase()
+		if(src=='tempest'&&atomicState.tpwsLocation){
+			def s=atomicState.tpwsLocation;def t="Tempest Station '${s.name?:'Unnamed'}' (${s.lat?:'?'}, ${s.lon?:'?'})"
+			atomicState.wxLocation=t;childEmitChangedEvent(getDataChild(),"wxLocation",t,"Weather forecast location (Tempest)");return
+		}
+		if(state.geo?.noaa){
+			def url="https://api.weather.gov/points/${state.geo.lat},${state.geo.lon}"
+			httpGet([uri:url,headers:["User-Agent":"Hubitat-WET-IT","Accept":"application/geo+json","Accept-Encoding":"identity"]]){resp->
+				def data=resp?.data instanceof Map?resp.data:
+					resp?.data?.respondsTo("read")?new groovy.json.JsonSlurper().parse(resp.data):
+					new groovy.json.JsonSlurper().parseText(resp?.data?.toString()?:'{}')
+				def p=data?.properties?:data?."@graph"?.find{it?.properties}?.properties
+				if(!p)return
+				def wx=p?.gridId?:p?.cwa?:'';def rd=p?.radarStation?:''
+				def r=p?.relativeLocation?.properties;def c=r?.city;def s=r?.state
+				def t=c&&s?
+					(wx&&rd?"${c}, ${s} (${wx}/${rd})":wx?"${c}, ${s} (${wx})":rd?"${c}, ${s} (${rd})":"${c}, ${s}"):
+					wx&&rd?"${wx}/${rd}":wx?wx:rd?rd:''
+				atomicState.wxLocation=t
+				childEmitChangedEvent(getDataChild(),"wxLocation",t,"Weather forecast location (NOAA)")
+			}
+			return
+		}
+		if(state.geo?.iso){def t=state.geo.iso;atomicState.wxLocation=t;childEmitChangedEvent(getDataChild(),"wxLocation",t,"Weather forecast location (ISO)")}
+	}catch(e){logDebug"fetchWxLocation(): ${e.message}"}
 }
 
 /* ---------- Event Publishing ---------- */
@@ -1441,10 +1673,7 @@ private adjustSoilDepletion(){
 private zoneWateredHandler(evt){
     try{
         def val=evt.value?.toString()?:''
-        if(val=='all'){
-            logInfo"zoneWateredHandler(): all zones watered → clearing ET deficits"
-            resetAllSoilMemory();updateSoilMemory();return
-        }
+        if(val=='all'){logInfo"zoneWateredHandler(): all zones watered → clearing ET deficits";resetAllSoilMemory();updateSoilMemory();return}
         def parts=val.tokenize(":");def z=(parts[0]?:0)as Integer
         BigDecimal pct=(parts.size()>1?(parts[1]?:1.0)as BigDecimal:1.0)
         pct=Math.min(Math.max(pct,0.0G),1.0G)
@@ -1482,9 +1711,7 @@ private Map etComputeZoneBudgets(Map env,List<Map> zones,String method){
             boolean shouldWater=etShouldIrrigate(newDepletion,zoneCfg)
             budgetPct=etCalcBudgetFromDepletion(newDepletion,zoneCfg)
             if(settings.useSoilMemory){
-                def key="zoneDepletion_${zId}"
-                atomicState[key]=newDepletion
-                atomicState[tsKey]=nowStr
+                def key="zoneDepletion_${zId}";atomicState[key]=newDepletion;atomicState[tsKey]=nowStr
                 logDebug"Zone ${zId}: +${String.format('%.3f',incrementalEt)}in ET (new=${String.format('%.3f',newDepletion)}/${String.format('%.3f',taw)}) Δt=${String.format('%.1f',elapsedMin)}m"
             }
         }else{budgetPct=etCalcSeasonalBudget(et0In,rainIn,baseEt0,5G,200G);newDepletion=null}
@@ -1492,6 +1719,16 @@ private Map etComputeZoneBudgets(Map env,List<Map> zones,String method){
     }
     atomicState.etLastCalcTs=nowStr;logDebug"etComputeZoneBudgets(): per-zone Δt applied; ref=${nowStr}"
     calcProgramDurations('etComputeZoneBudgets');return result
+}
+
+def isSoilSaturated(z){
+	try{
+		def zid=(z instanceof Map)?z.id:(z as Integer);def soil=settings["soil_${zid}"]?:atomicState?.defaultSoilType?:'Loam'
+		def awc=etAwcForSoil(soil)?:etAwcForSoil(atomicState?.defaultSoilType?:'Loam')
+		def dep=(atomicState."zoneDepletion_${zid}"?:0.0)as BigDecimal;def rainPast=(atomicState?.lastWeather?.rainIn?:0.0)as BigDecimal
+		def moist=((1-dep)*awc)+rainPast
+		return moist >=awc*0.95
+	}catch(e){logWarn "isSoilSaturated(${z}) → ${e.message}";return false}
 }
 
 /* ---------- Valve Control ---------- */
@@ -1504,103 +1741,111 @@ private Boolean controlValve(Map data){
 		if(action in ["open","on"]){
 			if(dev.hasCommand("open"))dev.open()
 			else if(dev.hasCommand("on"))dev.on()
-			if(c){
-				childEmitChangedEvent(c,"activeZone",z,"Zone ${z} active",null,true);childEmitChangedEvent(c,"activeZoneName",zoneName,"${zoneName} active",null,true)
-			}
+			if(c){childEmitChangedEvent(c,"activeZone",z,"Zone ${z} active",null,true);childEmitChangedEvent(c,"activeZoneName",zoneName,"${zoneName} active",null,true)}
 			logInfo"${dev.displayName} activated: (${z}, ${action})";return true
 		}else if(action in ["close","off"]){
 			if(dev.hasCommand("close"))dev.close()
 			else if(dev.hasCommand("off"))dev.off()
-			if(c){
-				childEmitChangedEvent(c,"activeZone",0,"No active zone",null,true);childEmitChangedEvent(c,"activeZoneName","idle","No active zone",null,true)
-			}
+			if(c){c.updateZoneTimes(0L,0L);childEmitChangedEvent(c,"activeZone",0,"No active zone",null,true);childEmitChangedEvent(c,"activeZoneName","idle","No active zone",null,true)}
 			logInfo"${dev.displayName} deactivated: (${z}, ${action})";return true
 		}else{logWarn"controlValve(${z}): invalid action '${action}'";return false}
 	}catch(e){logWarn"controlValve(${z},${action}): ${e.message}";return false}
 }
 
 private void closeZoneHandler(Map data){
-	Integer z=data.zone as Integer;Integer p=data.program as Integer;BigDecimal frac=data.frac?:1.0
-	def ap=atomicState.activeProgram;if(!ap){controlValve([zone:z,action:"close"]);return}
-	controlValve([zone:z,action:"close"]);zoneWateredHandler([value:"${z}:${frac}"])
-	logInfo"Program(${p}): Zone ${z} complete"
-	ap.index++;atomicState.activeProgram=ap
-	if(ap.index<ap.zones.size()){startNextZone()}else{endProgram(ap)}
+	Integer z=data.zone as Integer;Integer p=data.program as Integer;Integer rt=(data.rt?:0)as Integer
+	def ap=atomicState.activeProgram;controlValve([zone:z,action:"close"]);if(!ap)return
+	def pr=atomicState."programRuntime_${p}";Integer planned=pr?.zones?.find{it.id==z}?.duration?:rt
+	BigDecimal frac=(planned>0)?(rt/planned.toBigDecimal()):1.0
+	if(frac>1.0)frac=1.0
+	zoneWateredHandler([value:"${z}:${frac}"]);logInfo"Program(${p}): Zone ${z} complete (${Math.round(frac*100)}%)"
+	ap.index++;atomicState.activeProgram=ap;startNextZone()
 }
 
 private void startNextZone(){
 	def ap=atomicState.activeProgram;if(!ap)return
-	Integer idx=ap.index;def zList=ap.zones
+	ap.cycle=ap.cycle?:1
+	ap.cycles=ap.cycles?:((settings["useCycleSoak_${ap.program}"]?(settings["cycleCount_${ap.program}"]?:1):1)as Integer)
+	ap.soak=ap.soak?:((settings["cyclePauseMin_${ap.program}"]?:0)as Integer)*60
+	def zList=ap.zones;Integer idx=ap.index?:0
 	if(idx>=zList.size()){
-		logInfo"Program(${ap.program}): All active zones complete (${zList.size()}/${zList.size()})";atomicState.remove("activeProgram");return
+		if(ap.cycle<ap.cycles){
+			ap.cycle++;ap.index=0;atomicState.activeProgram=ap
+			if(ap.soak>0){logInfo"💤 Program ${ap.program}: Soak period (${ap.soak/60} min) before next cycle";runIn(ap.soak,"startNextZone");return}
+		}else{endProgram(ap);return}
 	}
-	def z=zList[idx]
+	def z=zList[ap.index]
 	if(!settings["zoneActive_${z.id}"]){
-	    logInfo"⛔ Program(${ap.program}) ${ap.name}: Zone ${z.id} skipped (disabled in settings)";ap.index++;atomicState.activeProgram=ap;startNextZone();return
+		logInfo"⛔ Program(${ap.program}) ${ap.name}: Zone ${z.id} skipped (disabled)"
+		ap.index++;atomicState.activeProgram=ap;startNextZone();return
 	}
-	atomicState.activeProgramLast=[program:ap.program,zone:z.id,start:new Date().time,total:zList.size()]
+	Integer rt=z.duration;logInfo"💦 Program ${ap.program}: Zone ${z.id} Cycle ${ap.cycle}/${ap.cycles} (${rt}s)";runZone(ap,z,rt)
+}
+
+private void runZone(ap,z,time){
 	def ok=controlValve([zone:z.id,action:"open"])
 	if(ok){
-		logInfo"Running Program ${ap.program} (${ap.name}): Zone ${z.id} → final=${z.duration}s"
-		runIn(z.duration,"closeZoneHandler",[data:[zone:z.id,program:ap.program,frac:z.frac,total:ap.total,fired:(idx+1)]])
+		logInfo"Running Program ${ap.program} (${ap.name}): Zone ${z.id} → ${time}s"
+		runIn(time,"closeZoneHandler",[data:[zone:z.id,program:ap.program,rt:time]])
 	}else{
-		logWarn"Program(${ap.program}): Zone ${z.id} skipped (no device)"
-		ap.index++;atomicState.activeProgram=ap;startNextZone()
+		logWarn"Program(${ap.program}): Zone ${z.id} skipped (no device)";ap.index++;atomicState.activeProgram=ap;startNextZone()
 	}
 }
 
 private startZoneManually(Map data){
-	Integer z=data.zone
+	Boolean fromChild=data?.child==true;Integer z=data.zone
 	def baseVal=(settings["baseTimeValue_${z}"]?:0)as Integer
 	def baseUnit=settings["baseTimeUnit_${z}"]?:'min'
 	Integer baseTime=(baseUnit=='min')?(baseVal*60):baseVal
-	if(!baseTime){logWarn"startZoneManually(${z}): No base time configured";return}
-	controlValve([zone:z,action:"open"])
+	if(!baseTime){logWarn"startZoneManually(${z}): No base time configured";if(fromChild)return false;return}
+	if(!controlValve([zone:z,action:"open"])){if(fromChild)return false;return}
 	atomicState.manualZone=z;atomicState.manualZoneStart=new Date().time
 	atomicState.manualZoneDuration=baseTime;atomicState.clockIndex=0
-	updateClockEmoji(true)// start emoji loop
-	runIn(baseTime,"stopZoneManually",[data:[zone:z,start:new Date().time]])
+	updateClockState(true)
+	runIn(baseTime,"stopZoneManually",[data:[zone:z,start:new Date().time,child:fromChild]])
 	logInfo"🟢 Started Zone ${z} manual run for ${baseTime}s"
+	if(fromChild)return true
 }
 
 private stopZoneManually(Map data){
-	Integer z=data.zone;Long started=data.start?:0L
+	Boolean fromChild=data?.child==true;Integer z=data.zone;Long started=data.start?:0L
+	if(!z||!started){logWarn"stopZoneManually(): Missing zone or start time";if(fromChild)return false;return}
 	Long elapsed=(new Date().time-started)/1000L
 	def baseVal=(settings["baseTimeValue_${z}"]?:0)as Integer
 	def baseUnit=settings["baseTimeUnit_${z}"]?:'min'
 	Integer baseTime=(baseUnit=='min')?(baseVal*60):baseVal
 	def frac=baseTime?Math.min(1.0,elapsed/baseTime.toDouble()):1.0
-	controlValve([zone:z,action:"close"])
+	if(!controlValve([zone:z,action:"close"])){if(fromChild)return false;return}
 	logInfo"🔴 Zone ${z} ran ${Math.round(elapsed)}s (${Math.round(frac*100)}%)"
 	closeZoneHandler([zone:z,frac:frac,program:0])
 	atomicState.manualZone=null;atomicState.manualZoneStart=null;atomicState.manualZoneDuration=null
 	atomicState.clockFace="🕛";atomicState.countdown=""
+	if(fromChild)return true
 }
 
-private updateClockEmoji(Boolean first=false){
+private updateClockState(Boolean first=false){
     def faces=["🕛","🕚","🕙","🕘","🕗","🕖","🕕","🕔","🕓","🕒","🕑","🕐"]
     Integer i=((atomicState.clockIndex?:0)+1)%faces.size()
-    atomicState.clockIndex=i;atomicState.clockFace = faces[i]
+    atomicState.clockIndex=i;atomicState.clockFace=faces[i]
+    def c=getDataChild()
     if(atomicState.manualZone){
         Long elapsed=(new Date().time-(atomicState.manualZoneStart?:0L))/1000L
         Long remaining=Math.max(0L,(atomicState.manualZoneDuration?:0L)-elapsed)
         Integer min=(remaining/60L)as Integer;Integer sec=(remaining%60L)as Integer
         atomicState.countdown=String.format("%d:%02d",min,sec)
-        if (remaining>0||first)runIn(5,"updateClockEmoji")
+        if(c)c.updateZoneTimes(elapsed,remaining)
+        if(remaining>0||first)runIn(5,"updateClockState")
         return
     }
+
     if(atomicState.programClock){
         def pc=atomicState.programClock
         Long elapsed=(new Date().time-(pc.start?:0L))/1000L
         Long remaining=Math.max(0L,(pc.duration?:0L)-elapsed)
         Integer min=(remaining/60L)as Integer;Integer sec=(remaining%60L)as Integer
         atomicState.countdown=String.format("%d:%02d",min,sec)
-        if(remaining>0||first)runIn(5,"updateClockEmoji")
-        else {
-            atomicState.clockFace="🕛"
-            atomicState.countdown=""
-            atomicState.remove("programClock")
-        }
+        if(c)c.updateProgramTimes(elapsed,remaining)
+        if(remaining>0||first)runIn(5,"updateClockState")
         return
     }
     atomicState.clockFace="🕛";atomicState.countdown=""
@@ -1626,82 +1871,110 @@ private summaryForProgram(Integer p){
 }
 
 /* ---------- Irrigation Program Scheduler ---------- */
-private void startIrrigationTicker(){logDebug "Starting unified per-minute scheduler";schedule("0 * * ? * * *","irrigationTick")}
+private void startIrrigationTicker(){logDebug "Starting per-minute irrigation scheduler";schedule("0 * * ? * * *","irrigationTick")}
 private boolean isSameMinute(Date a,Date b){return a.format("HH:mm") == b.format("HH:mm")}
 
 private void irrigationTick(){
 	try{
 		if(settings.schedulingActive?.toString()!="true"){logDebug"⛔ Scheduling inactive — skipping tick";return}
+		atomicState.saturationSkipPrograms=atomicState.saturationSkipPrograms?.findAll{it<=settings.programCount}
 		def now=new Date();Integer pCount=(settings.programCount?:0)as Integer;if(pCount<1)return
 		def sunrise=getSunriseAndSunset().sunrise
 		(1..pCount).each{Integer p->
 			def name=settings["programName_${p}"]?:"Program ${p}"
-			if(settings["programActive_${p}"]?.toString()!="true"){logDebug"Program ${p} (${name}) inactive";return}
+			if(settings["programActive_${p}"]?.toString()!="true")return
 			def pr=atomicState."programRuntime_${p}"
-			Integer total=(pr instanceof Map)?(pr.total?:0):(pr instanceof Number?pr:0)
-			if(total<=0){logDebug"Program ${p} (${name}) skipped — invalid runtime";return}
-			def startMode=(settings["programStartMode_${p}"]?:'time').toLowerCase()
-			def endBy=(settings["programEndBy_${p}"]?:false)
-			def minTime=(settings.progMinTime?:60)as Integer
-			if(total<minTime){logInfo"⛔ ${name} skipped — runtime ${total}s < min ${minTime}s";return}
+			Integer total=(pr instanceof Map)?(pr.total?:0):(pr instanceof Number?pr:0);if(total<=0)return
+			Integer soakAdj=0
+			if(settings["useCycleSoak_${p}"]){
+				Integer c=(settings["cycleCount_${p}"]?:1)as Integer;Integer s=(settings["cyclePauseMin_${p}"]?:0)as Integer
+				if(c>1&&s>0)soakAdj=(c-1)*s*60
+			}
+			def startMode=(settings["programStartMode_${p}"]?:'time').toLowerCase();def endBy=(settings["programEndBy_${p}"]?:false)
+			Date target
 			if(startMode=="time"){
 				def raw=settings["programStartTime_${p}"];if(!raw)return
 				def startTime=toDateTime(raw)
-				if(!endBy){
-					if(isSameMinute(now,startTime)){logInfo"🚀 ${name} start=${startTime.format('HH:mm')}";runProgram([program:p])}
-				}else{
-					def target=new Date(startTime.time-(total*1000L))
-					if(isSameMinute(now,target)){logInfo"⏰ ${name} endby=${startTime.format('HH:mm')}";runProgram([program:p])}
-				}
+				target=endBy?new Date(startTime.time-((total+soakAdj)*1000L)):startTime
 			}else if(startMode=="sunrise"){
-				if(!endBy){
-					if(isSameMinute(now,sunrise)){logInfo"☀️ ${name} start=sunrise";runProgram([program:p])}
-				}else{
-					def target=new Date(sunrise.time-(total*1000L))
-					if(isSameMinute(now,target)){logInfo"☀️ ${name} endby=sunrise";runProgram([program:p])}
-				}
-			}
+				target=endBy?new Date(sunrise.time-((total+soakAdj)*1000L)):sunrise
+			}else return
+			if(!isSameMinute(now,target))return
+			Integer minTime=(settings.progMinTime?:60)as Integer
+			if(total<minTime){logInfo"⛔ ${name} skipped — runtime ${total}s < min ${minTime}s";return}
+			if((atomicState.saturationSkipPrograms?:[]).contains(p)){logInfo"🌧️ ${name} skipped — all zones at/above field capacity (Saturation Skip)";return}
+			logInfo(endBy
+				?(startMode=="sunrise"?"☀️ ${name} endby=sunrise":"⏰ ${name} endby=${target.format('HH:mm')}")
+				:(startMode=="sunrise"?"☀️ ${name} start=sunrise":"🚀 ${name} start=${target.format('HH:mm')}")
+			)
+			runProgram([program:p,scheduled:true])
 		}
 	}catch(e){logError"irrigationTick(): ${e.message}"}
 }
 
-private Integer calcProgramRuntime(Integer p){
-	def zones=(settings["programZones_${p}"]?:[])as List
-	Integer total=0
-	def adjMode=(settings["programAdjustMode_${p}"]?:'none').toLowerCase()
-	zones.each{Integer z->
-		// skip deleted or inactive zones
-		if(!settings.containsKey("zoneActive_${z}")||settings["zoneActive_${z}"]?.toString()!='true')return
-		def baseVal=(settings["baseTimeValue_${z}"]instanceof Number)?settings["baseTimeValue_${z}"]:0
-		def baseUnit=(settings["baseTimeUnit_${z}"]?:'min').toString().toLowerCase()
-		def baseTime=(baseUnit=='min')?(baseVal*60):baseVal
-		def seasonalPct=(atomicState.lastSeasonal?."${z}"?.seasonalBudgetPct?:100)as BigDecimal
-		def etTime=(atomicState.lastEt?."${z}"?.adjustedTime?:baseTime)as BigDecimal
-		if(adjMode=='seasonal')baseTime=(baseTime*(seasonalPct/100)).toInteger()
-		else if(adjMode=='et')baseTime=etTime.toInteger()
-		total+=baseTime
-	}
-	def data=[total:total,zones:zones,adjMode:adjMode]
-	atomicState."programRuntime_${p}"=data
-	logDebug"calcProgramRuntime(${p}): total=${total}s, zones=${zones}, mode=${adjMode}"
-	return total
+private void syncEchoChildren(){
+    try{
+        if(!app?.id){logWarn"syncEchoChildren(): app.id unavailable";return}
+        Integer pc=(settings.programCount?:0)as Integer
+        (1..pc).each{p->
+            def ena=settings["programEchoEnabled_${p}"]?:false;def pref=settings["useEchoPrefix_${p}"]!=false
+            def pName=settings["programName_${p}"]?.trim()?:"Program ${p}";def label=pref?"${APP_NAME} ${pName}":pName
+            def c=getEchoChild(p)
+            logDebug"syncEchoChildren(): ena: (${ena})  $pref: (${pref})  pname: (${pName})  label: (${label})"
+            if(ena&&!c){
+				def r=checkChildDriver("echo");if(!r.ok){logWarn"⚠️ ${r.reason}";return}
+                addChildDevice("MHedish","WET-IT Echo","wetit_echo_${app.id}_${p}",[name:"${APP_NAME} (Program ${p})",label:label,isComponent:true,completedSetup:true])
+				def ec=getEchoChild(p);def on=(atomicState.activeProgram==p)
+                childEmitEvent(ec,"switch",on?"on":"off","Echo child device installed");childEmitEvent(ec,"valve",on?"open":"closed",null)
+                logInfo"Created Echo child for Program ${p} (${label})"
+            }else if(ena&&c&&c.label!=label){
+                c.label=label;logInfo"Updated Echo child label for Program ${p} → '${label}'"
+            }else if(!ena&&c){
+                deleteChildDevice(c.deviceNetworkId);logInfo"Removed Echo child for Program ${p}"
+            }
+        }
+    }catch(e){logWarn"syncEchoChildren(): ${e.message}"}
 }
 
-/* ---------- PROGRAM EXECUTION ---------- */
+def verifyEchoChildren(){
+    logDebug"verifyEchoChildren(): begin"
+    def ok=true;Integer pc=(settings.programCount?:0)as Integer
+    (1..pc).each{p->
+        def ena=settings["programEchoEnabled_${p}"]?:false;def pref=settings["useEchoPrefix_${p}"]!=false
+        def pName=settings["programName_${p}"]?.trim()?:"Program ${p}"
+        def usePrefix=pref?"${APP_NAME} ${pName}":pName;def c=getEchoChild(p)
+        logDebug"verifyEchoChildren(): ena: (${ena}) pName: (${pName}) DNI: (${c}) pref: (${pref})"
+        if(ena&&!c){logWarn"verifyEchoChildren(): ⚠️ Missing Echo child for Program ${p} (${pName})";ok=false}
+        else if(!ena&&c){logWarn"verifyEchoChildren(): ⚠️ Echo child exists for disabled Program ${p} (${pName})";ok=false}
+        else if(c){
+            c.ping()
+            if(c.label!=usePrefix){logWarn"verifyEchoChildren(): ⚠️ Echo label mismatch for Program ${p} (${c.label})";ok=false}
+        }
+    }
+    if(!ok)logWarn"⚠️ Echo verification warnings"
+    logDebug"✅ Verify Echo children complete";return ok
+}
+
+/* ---------- Program Execution ---------- */
 def runProgram(Map data){
-	if(data?.data)data=data.data
-	Integer p=data.program;Boolean manual=data.manual?:false
+	if(!data){logWarn"runProgram() called with no parameters.";return false}
+	Integer p=data.program;if(p<1||p>settings.programCount){logWarn"runProgram() Invalid program number: ${p}";return false}
+	Boolean scheduled=data.scheduled==true;Boolean manual=data.manual==true;Boolean fromChild=data.child==true;Boolean fromEcho=data.echo==true
 	def mode=settings["programDaysMode_${p}"]?:'weekly';def name=settings["programName_${p}"]?:"Program ${p}"
 	def today=new Date();def df=new java.text.SimpleDateFormat("yyyy-MM-dd");def weekday=today.format("EEE")
-	def last=state.lastRun?.get(p);def canRun=false
-	if(mode=='weekly'){
-		def allowed=settings["programWeekdays_${p}"]?:[];canRun=allowed.contains(weekday)
-	}else if(mode=='interval'){
-		Integer interval=(settings["programInterval_${p}"]?:2)as Integer
-		if(!last)canRun=true
-		else{def then=df.parse(last);def diff=(today.time-then.time)/(1000*60*60*24);canRun=diff>=interval}
+	def last=state.lastRun?.get(p);def canRun=false;def src=scheduled?"[Scheduled]":manual?"[Manual]":fromEcho?"[Echo]":fromChild?"[fromChild]":"[Unknown]"
+	def ap=atomicState.activeProgram
+	if(ap){
+		if(ap.program==p){logInfo"Program ${p} (${name}) already active — ${src} acknowledged";return (fromChild||fromEcho)?true:null}
+		else{logWarn"⛔ Program ${p} (${name}) requested while Program ${ap.program} (${ap.name}) is active — rejected (${src})";return (fromChild||fromEcho)?false:null}
 	}
-	if(!canRun&&!manual){logInfo"runProgram(${p}): Skipped – not scheduled for today (${weekday})";return}
+	if(mode=='weekly'){def allowed=settings["programWeekdays_${p}"]?:[];canRun=allowed.contains(weekday)}
+	else if(mode=='interval'){
+	    Integer interval=(settings["programInterval_${p}"]?:2)as Integer
+	    if(!last)canRun=true
+	    else{Integer diff=(df.parse(today.format('yyyy-MM-dd')).time-df.parse(last).time)/(86400000L);canRun=diff>=interval}
+	}
+	if(!canRun&&!manual&&!fromChild&&!fromEcho){logInfo"runProgram(${p}): Skipped – not scheduled for today (${weekday})";return}
 	if(!atomicState.lastWxUpdateTs||((now()-atomicState.lastWxUpdateTs)/60000)>=5)try{runWeatherUpdate()}catch(e){logWarn "Weather refresh failed during Program ${p} (${name}) → ${e}"}
 	if((settings.rainSensorDevices&&settings.rainAttribute)||settings.useTempestRain){
 	    def wetList=[]
@@ -1715,60 +1988,76 @@ def runProgram(Map data){
 	        def rain=atomicState.lastWeather?.rainIn?:0;def rate=atomicState.lastWeather?.rainRateInHr?:0
 	        if(rain>0||rate>0){wetList<<"Tempest";logDebug"Tempest rain sensor active → rain=${rain}in rate=${rate}/hr"}
 	    }
-	    if(wetList&&!manual){logInfo"Program ${p} (${name}) skipped due to rain sensor(s) reporting wet → ${wetList.join(', ')}";return}
+	    if(wetList&&!manual&&!fromChild&&!fromEcho){logInfo"Program ${p} (${name}) skipped due to rain sensor(s) reporting wet → ${wetList.join(', ')}";return}
 	}
-	if(atomicState.freezeAlert){if(manual)logWarn"🧊️ Program ${p} (${name}) Freeze Alert active — manual override"else if(!settings.progSkipFreeze)logWarn"🧊️ Program ${p} (${name}) Freeze Alert active — automatic override from settings"else{logWarn"🧊️ Program ${p} (${name}) skipped due to freeze alert";return}}
-	if(atomicState.rainAlert){if(manual)logWarn"☔️ Program ${p} (${name}) Rain Alert active — manual override"else if(!settings.progSkipRain)logWarn"☔️ Program ${p} (${name}) Rain Alert active — automatic override from settings"else{logWarn"☔️ Program ${p} (${name}) skipped due to rain alert";return}}
-	if(atomicState.windAlert){if(manual)logWarn"💨 Program ${p} (${name}) Wind Alert active — manual override"else if(!settings.progSkipWind)logWarn"💨 Program ${p} (${name}) Wind Alert active — automatic override from settings"else{logWarn"💨 Program ${p} (${name}) skipped due to wind alert";return}}
+	if(atomicState.freezeAlert){if(manual||fromChild||fromEcho)logWarn"🧊️ Program ${p} (${name}) Freeze Alert active — ${src} manual override"else if(!settings.progSkipFreeze)logWarn"🧊️ Program ${p} (${name}) Freeze Alert active — automatic override from settings"else{logWarn"🧊️ Program ${p} (${name}) skipped due to freeze alert";return}}
+	if(atomicState.rainAlert){if(manual||fromChild||fromEcho)logWarn"☔️ Program ${p} (${name}) Rain Alert active — ${src} manual override"else if(!settings.progSkipRain)logWarn"☔️ Program ${p} (${name}) Rain Alert active — automatic override from settings"else{logWarn"☔️ Program ${p} (${name}) skipped due to rain alert";return}}
+	if(atomicState.windAlert){if(manual||fromChild||fromEcho)logWarn"💨 Program ${p} (${name}) Wind Alert active — ${src} manual override"else if(!settings.progSkipWind)logWarn"💨 Program ${p} (${name}) Wind Alert active — automatic override from settings"else{logWarn"💨 Program ${p} (${name}) skipped due to wind alert";return}}
 	def lastEnd=atomicState.lastProgramEnd?:0L
-	if(!manual&&lastEnd){
+	if(!manual&&!fromChild&&!fromEcho&&lastEnd){
 		Long elapsed=((new Date().time-lastEnd)/60000L);Integer buffer=settings.progBufferDelay
 		def lastStr=new Date(lastEnd).format("yyyy-MM-dd HH:mm:ss",location.timeZone)
 		def lastWasManual=(atomicState.lastManualEnd&&atomicState.lastManualEnd==lastEnd)
 		logDebug"Program buffer check - progBuffer=${buffer} min | LastEnd=${lastStr} | Elapsed=${elapsed} min | lastWasManual=${lastWasManual}"
-		if(!lastWasManual && buffer>0 && elapsed<buffer){logWarn"⏳ Program ${p} (${name}) skipped — previous scheduled run ended ${elapsed} min ago (Buffer=${buffer} min enforced)";return}
+		if(!lastWasManual&&buffer>0&&elapsed<buffer){logWarn"⏳ Program ${p} (${name}) skipped — previous scheduled run ended ${elapsed} min ago (Buffer=${buffer} min enforced)";return}
 	}
 	state.lastRun=state.lastRun?:[:];state.lastRun[p]=df.format(today)
 	def progData=atomicState."programRuntime_${p}"?:[:]
-	if(!progData.total){logWarn"⛔ Program ${p} (${name}) cannot start — missing precomputed runtime data";return}
+	if(!progData.total){
+		if(fromChild){def c=getDataChild();if(c)childEmitChangedEvent(c,"valve","close","⛔ Program ${p} (${name}) cannot start — missing precomputed runtime data",null,true)}
+		logWarn"⛔ Program ${p} (${name}) (${src}) cannot start — missing precomputed runtime data";return false
+	}
 	Integer totalRuntime=progData.total?:0;def zoneList=progData.zones?:[];def adjMode=progData.adjMode?:'none'
-	if(!zoneList){logWarn"${name}: No active zones (no devices assigned)";return}
-	if(totalRuntime<(settings.progMinTime?:60)){logWarn"⛔ Program ${p} (${name}) skipped — total runtime ${totalRuntime}s < minimum ${settings.progMinTime}s";return}
+	if(!zoneList){
+		if(fromChild){def c=getDataChild();if(c)childEmitChangedEvent(c,"valve","close","${name}: No active zones (no devices assigned)",null,true);return false}
+		logWarn"${name} (${src}): No active zones (no devices assigned)";return false
+	}
+	if(totalRuntime<(settings.progMinTime?:60)){
+		if(fromChild){def c=getDataChild();if(c)childEmitChangedEvent(c,"valve","close","${name}: ⛔ Program ${p} (${name}) skipped — total runtime ${totalRuntime}s < minimum ${settings.progMinTime}s",null,true);return false}
+		logWarn"⛔ Program ${p} (${name}) (${src}) skipped — total runtime ${totalRuntime}s < minimum ${settings.progMinTime}s";return false
+	}
 	logInfo"Starting ${name}: (adjustment: ${adjMode}, ${zoneList.size()} active zones)"
 	atomicState.programClock=[program:p,name:name,start:new Date().time,duration:totalRuntime,index:0]
-	atomicState.clockIndex=0;updateClockEmoji(true)
+	atomicState.clockIndex=0;updateClockState(true)
 	def c=getDataChild();childEmitChangedEvent(c,"activeProgram",p,"Program ${p} active",null,true);childEmitChangedEvent(c,"activeProgramName","${name}","${name} active",null,true)
-	atomicState.activeProgram=[program:p,name:name,adjMode:adjMode,zones:zoneList,index:0,manual:manual,total:zoneList.size()];startNextZone()
+	def ec=getEchoChild(p);if(ec)childEmitChangedEvent(ec,"valve","open","Program ${p} active",null,true)
+    atomicState.activeProgram=[program:p,name:name,adjMode:adjMode,zones:zoneList,index:0,manual:manual,total:zoneList.size()];startNextZone();if(fromChild||fromEcho)return true
 }
 
 private void endProgram(ap){
-	Integer p=ap.program;def endTs=new Date();atomicState.lastProgramEnd=endTs.time
-	if(ap.manual)atomicState.lastManualEnd=atomicState.lastProgramEnd
-	else atomicState.remove("lastManualEnd")
-	atomicState.remove("programClock");atomicState.clockFace="🕛";atomicState.countdown=""
-	def c=getDataChild()
-	childEmitChangedEvent(c,"activeProgram",0,"No active program",null,true)
-	childEmitChangedEvent(c,"activeProgramName","idle","No active program",null,true)
-	logInfo"Program(${p}): All active zones complete (${ap.zones.size()}/${ap.zones.size()})"
-	logDebug"Program(${p}) end recorded at ${endTs.format('yyyy-MM-dd HH:mm:ss',location.timeZone)} manual=${ap.manual}"
-	atomicState.remove("activeProgram")
+    Integer p=ap.program;def endTs=new Date();atomicState.lastProgramEnd=endTs.time
+    if(ap.manual)atomicState.lastManualEnd=atomicState.lastProgramEnd
+    else atomicState.remove("lastManualEnd")
+    atomicState.remove("programClock");atomicState.clockFace="🕛";atomicState.countdown=""
+    def c=getDataChild();if(c)c.updateProgramTimes(0L,0L)
+    childEmitChangedEvent(c,"activeProgram",0,"No active program",null,true)
+    childEmitChangedEvent(c,"activeProgramName","idle","No active program",null,true)
+    def ec=getEchoChild(p);if(ec){childEmitChangedEvent(ec,"valve","closed","Program ${p} stopped",null,true);childEmitChangedEvent(ec,"switch","off","Program ${p} stopped",null,true)}
+    logInfo"Program(${p}): All active zones complete (${ap.zones.size()}/${ap.zones.size()})"
+    logDebug"Program(${p}) end recorded at ${endTs.format('yyyy-MM-dd HH:mm:ss',location.timeZone)} manual=${ap.manual}"
+    if(atomicState.saturationSkipPrograms)atomicState.saturationSkipPrograms.removeAll{it==p}
+    atomicState.remove("activeProgram")
 }
 
-private void stopActiveProgram(){
+private Boolean stopActiveProgram(Map data=null){
+	Boolean fromChild=data?.child==true;Boolean fromEcho=data?.echo==true
 	def ap=atomicState.activeProgram
-	if(!ap){logWarn"stopActiveProgram(): No active program to stop";return}
+	if(!ap){
+		if(fromChild||fromEcho){logDebug"stopActiveProgram(): No active program to stop";return true}
+		logWarn"stopActiveProgram(): No active program to stop";return
+		}
 	logInfo"🔴 Manually stopping Program ${ap.program} (${ap.name})"
 	if(ap?.index<ap.zones?.size()){
 		def z=ap.zones[ap.index]
 		if(z?.id){
 			logInfo"🔴 Closing active Zone ${z.id} before ending program"
-			controlValve([zone:z.id,action:"close"])
+			if(!controlValve([zone:z.id,action:"close"])){if(fromChild||fromEcho)return false;return}
 		}
 	}
-	atomicState.programClock=null;atomicState.clockFace="🕛";atomicState.countdown="";endProgram(ap)
+	atomicState.programClock=null;atomicState.clockFace="🕛";atomicState.countdown=""
+	endProgram(ap);if(fromChild||fromEcho)return true
 }
 
-// Central authority for runtime recalculation
 private void calcProgramDurations(String reason='manual'){
     def zoneDataset=atomicState.zoneDataset?:[]
     Integer pCount=(settings.programCount?:0)as Integer
@@ -1803,6 +2092,7 @@ private void detectSettingsChange(String page){
 			atomicState.lastSettingsHash=newHash;state.lastSettingsHash=newHash
 			settings.each{k,v->if(k.startsWith("programInterval_")&&v instanceof String)settings[k]=v.toInteger()}
 			calcProgramDurations(page);if(page=="zonePage")atomicState.bootstrap=true;if(page=="schedulePage")checkProgramConflicts()
+			def anyEchoEnabled=settings.find{k,v->k.startsWith("programEchoEnabled_")&&v==true};if(anyEchoEnabled)syncEchoChildren()
 			logDebug"detectSettingsChange(): configuration change detected on ${page}, recalculated program durations."
 		}
 	}catch(e){logWarn"detectSettingsChange(${page}): ${e.message}"}
