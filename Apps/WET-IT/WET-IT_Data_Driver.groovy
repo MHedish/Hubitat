@@ -15,13 +15,23 @@
 *  1.0.3.2  –– Added Actuator as a command for Rule Machine
 *  1.0.3.3  –– Added string attributes for alerts to accommodate RM/Dashboards
 *  1.0.4.0  –– First relase as a scheduler.
+*  1.0.5.0  –– Integrating API control.
+*  1.0.5.1  –– UpdatedchildEmitChangedEvent()
+*  1.0.5.2  –– Added zone and program commands.
+*  1.0.5.3  –– Remove appInfo attribute
+*  1.0.5.4  –– Added driverVersion attribute and emit.
+*  1.0.5.5  –– Added ping() as no-op.
+*  1.0.5.6  –– Updated ping() to emitChangedEvent.
+*  1.0.5.7  –– Fixed program/zone ending
+*  1.0.6.0  –– Implemented parent/child success/failure for program and zones.
+*  1.1.0.0  –– Version bump for public release.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "1.0.4.0"
-@Field static final String DRIVER_MODIFIED = "2026-01-16"
+@Field static final String DRIVER_VERSION  = "1.1.0.0"
+@Field static final String DRIVER_MODIFIED = "2026-02-01"
 @Field static final int MAX_ZONES = 48
 
 metadata {
@@ -41,13 +51,17 @@ metadata {
         attribute "activeProgram","number"
         attribute "activeProgramName","string"
         attribute "activeAlerts","string"
-        attribute "appInfo","string"
         attribute "datasetJson","string"
         attribute "driverInfo","string"
+		attribute "driverVersion","string"
 		attribute "freezeAlert","bool"
 		attribute "freezeAlertText","string"
 		attribute "freezeLowTemp","number"
 		attribute "rainAlert","bool"
+		attribute "programElapsed","number"
+		attribute "programElapsedText","string"
+		attribute "programRemaining","number"
+		attribute "programRemainingText","string"
 		attribute "rainAlertText","string"
 		attribute "rainForecast","number"
         attribute "summaryText","string"
@@ -67,6 +81,11 @@ metadata {
             attribute "zone${it}BaseTime","number"
             attribute "zone${it}EtAdjustedTime","number"
         }
+        attribute "zoneElapsed","number"
+		attribute "zoneElapsedText","string"
+		attribute "zoneRemaining","number"
+		attribute "zoneRemainingText","string"
+
 
         command "initialize"
         command "disableDebugLoggingNow"
@@ -75,6 +94,12 @@ metadata {
 				[name:"Mark Zone Watered",description:"Clears ET data for this specific zone.",type:"NUMBER",required:true],
 		        [name:"Percentage",description:"(1-100)",type:"NUMBER",constraints:[1..100],required:false]
 				]
+
+		command "runProgram",["NUMBER"]
+		command "stopProgram"
+		command "runZone",["NUMBER"]
+		command "stopZone",["NUMBER"]
+
     }
     preferences{
         input("docBlock","hidden",title: driverDocBlock())
@@ -91,17 +116,48 @@ private logInfo(msg){if(logEvents)log.info"[${DRIVER_NAME}] $msg"}
 private logWarn(msg){log.warn"[${DRIVER_NAME}] $msg"}
 private logError(msg){log.error"[${DRIVER_NAME}] $msg"}
 private emitEvent(n,def v,d=null,u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
-private emitChangedEvent(n,def v,d=null,u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
+private emitChangedEvent(n,def v,d=null,u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 def autoDisableDebugLogging(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo"Debug logging disabled (auto)"}catch(e){logDebug"autoDisableDebugLogging(): ${e.message}"}}
 def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo"Debug logging disabled (manual)"}catch(e){logDebug"disableDebugLoggingNow(): ${e.message}"}}
+def ping(){emitChangedEvent("driverVersion",DRIVER_VERSION)}
 
 /* =============================== Lifecycle =============================== */
 def installed(){logInfo"Installed: ${driverInfoString()}";initialize()}
 def updated(){logInfo"Updated: ${driverInfoString()}";initialize()}
-def initialize(){emitEvent("driverInfo",driverInfoString());unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)}
+def initialize(){emitEvent("driverInfo",driverInfoString());emitEvent("driverVersion",DRIVER_VERSION);unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)}
 def refresh(){parent.runWeatherUpdate();logInfo"Manual refresh: summary=${device.currentValue("summaryText")}, timestamp=${device.currentValue("summaryTimestamp")}"}
 
 /* ============================= Core Commands ============================= */
+private String formatTime(Long s){Long m=(s/60L)as Long;Long r=(s%60L)as Long;return String.format("%d:%02d",m,r)}
+
+def runProgram(p){
+	logDebug"runProgram(${p})";boolean ok=false
+	try{ok=parent?.runProgram([program:p,child:true])==true}
+	catch(e){logWarn"runProgram(${p}): ${e.message}"}
+	if(!ok)emitEvent("switch","off","runProgram(${p}) failed",null,true)
+}
+
+def stopProgram(){
+	logDebug"stopProgram()";boolean ok=false
+	try{ok=parent?.stopActiveProgram([child:true])==true}
+	catch(e){logWarn"stopProgram(): ${e.message}"}
+	if(!ok)logWarn"stopProgram() failed"
+}
+
+def runZone(z){
+	logDebug"runZone(${z})";boolean ok=false
+	try{ok=parent?.startZoneManually([zone:z,child:true])==true}
+	catch(e){logWarn"runZone(${z}): ${e.message}"}
+	if(!ok)emitEvent("switch","off","runZone(${z}) failed",null,true)
+}
+
+def stopZone(z){
+	logDebug"stopZone(${z})";boolean ok=false
+	try{ok=parent?.stopZoneManually([zone:z,child:true])==true}
+	catch(e){logWarn"stopZone(${z}): ${e.message}"}
+	if(!ok)logWarn"stopZone(${z}) failed"
+}
+
 private updateZoneAttributes(Number zCount){
     zCount=zCount?.toInteger()?:0
     try{
@@ -132,4 +188,14 @@ def markAllZonesWatered(){
         logDebug"markAllZonesWatered(): all zones watering complete"
         parent.zoneWateredHandler([value:"all"])
     }catch(e){logWarn"markAllZonesWatered(): ${e}"}
+}
+
+def updateProgramTimes(Long elapsed, Long remaining){
+    emitChangedEvent("programElapsed",elapsed,null,null,true);emitChangedEvent("programRemaining",remaining,null,null,true)
+    emitChangedEvent("programElapsedText",formatTime(elapsed),null,null,true);emitChangedEvent("programRemainingText",formatTime(remaining),null,null,true)
+}
+
+def updateZoneTimes(Long elapsed, Long remaining){
+    emitChangedEvent("zoneElapsed",elapsed,null,null,true);emitChangedEvent("zoneRemaining",remaining,null,null,true)
+    emitChangedEvent("zoneElapsedText",formatTime(elapsed),null,null,true);emitChangedEvent("zoneRemainingText",formatTime(remaining),null,null,true)
 }
