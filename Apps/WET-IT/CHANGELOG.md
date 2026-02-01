@@ -136,9 +136,55 @@
 ## ☀️ 1.0.4.0 — Production Release
 **App v1.0.4.0 / Driver v1.0.4.0 — Released 2026-01-18**
 
+## 🌤️ 1.0.5.0–1.0.11.x — Soil Intelligence, Scheduling Maturity & Weather Hardening
+
+**App v1.0.5.0–1.0.11.7 / Driver v1.0.5.x–1.0.11.x — January–February 2026**
+-   Introduced **automatic soil type detection** using USDA datasets (US-only), with improved geolocation handling and ISO 3166-2 regional awareness.
+-   Expanded **soil configuration UI**, including reusable soil defaults and improved zone-level soil management.
+-   Added **Saturation Skip** logic — automatically skips ET-adjusted programs when all zones are at or above calculated field capacity.
+-   Implemented full **Soak & Cycle** support:
+    -   Per-program cycle splitting and soak delays
+    -   Integrated with ET, Saturation Skip, and end-by-time/sunrise scheduling
+    -   Improved infiltration modeling and runoff prevention
+-   Completed **bi-directional scheduling state reporting** between app and child driver (program/zone start, stop, and timing).
+-   Added comprehensive **Amazon Echo integration**:
+    -   Voice control via Hubitat Echo Skill
+    -   Dynamic child device naming, verification, and version enforcement
+    -   Robust cleanup of orphaned and probe devices
+-   Hardened **scheduler reliability**:
+    -   Guards against simultaneous program execution
+
+    -   Correct handling of partial zone completion and ET recovery
+        
+    -   Refined irrigation tick logic to prevent repeat skips
+        
+-   Major **weather system expansion and cleanup**:
+    
+    -   Added **Open-Meteo** as a first-class, global weather provider
+        
+    -   Normalized multi-provider behavior (NOAA, OpenWeather, Tomorrow.io, Tempest)
+        
+    -   Corrected legacy weather backup logic and enforced user-controlled fallback policy
+        
+    -   Explicitly separated **weather observations** from **forecast / ET-authoritative data**
+        
+-   Introduced **forecast failure detection and escalation**:
+    
+    -   Tracks consecutive primary-source forecast misses
+        
+    -   Annotates diagnostics for stale forecasts
+        
+    -   Optional system notifications for diurnal forecast loss
+        
+    -   User-controlled policy to suspend program scheduling when forecast authority is lost
+        
+-   Improved diagnostics, verification, and notification consistency across app and driver.
+    
+-   Removed legacy and deprecated weather logic; completed consistency pass on geo, ET, and weather data flow.
+
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE5MjY0NTEyMywxMjM0NjI2ODEzLDExNz
-I1ODcxOTksNTIzMDI4MjMsLTExNzQyMzE5MTYsMTM4MzM4MDQ0
-NiwxNzI1Mjg0NTY5LC0xMDI5OTc4NDcsLTgxMjA3MjM1OCwxOD
-Q3MDM3ODAzXX0=
+eyJoaXN0b3J5IjpbMTcwMzMwMjUwNSwtMTkyNjQ1MTIzLDEyMz
+Q2MjY4MTMsMTE3MjU4NzE5OSw1MjMwMjgyMywtMTE3NDIzMTkx
+NiwxMzgzMzgwNDQ2LDE3MjUyODQ1NjksLTEwMjk5Nzg0NywtOD
+EyMDcyMzU4LDE4NDcwMzc4MDNdfQ==
 -->
