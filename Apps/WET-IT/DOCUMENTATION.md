@@ -1369,7 +1369,25 @@ Advantages:
 
 ---
 
+### 🌍 Automatic Soil Detection
 
+WET-IT can automatically determine soil type for zones in the United States using the USDA Soil Survey.
+
+**How it works:**
+1. App uses hub's latitude/longitude
+2. Queries USDA Soil Data Access (SDA) API
+3. Returns soil texture and hydrologic group
+4. Maps USDA texture to WET-IT soil types
+
+**Configuration:**
+- Navigate to Zone Setup → Advanced
+- Click "Detect Soil Type from USDA"
+- Review detected soil type 
+- Optionally override if local conditions differ
+
+**Availability:** US locations only. International users must select soil type manually.
+
+---
 
 ### 🌦️ Weather-Based Skip Controls
 
@@ -1735,11 +1753,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTUwMTk5MDM2MywxNTA3Mzg1NTk5LDI5MT
-k5MTIxNywtMTAyNTY2NDYxNSwtMjEwNTEwNzk5LC0xOTMxNTY1
-ODI1LC0xMzQ5NzM1Mzk4LDIwNzY1MTM1MDksLTE4NjI0MjQ5OT
-csLTY3NjQ2ODQ1NywtMTY4MTc5NzYwMSwtNjI3OTQxMzQzLC0x
-NjM4OTQwMzk0LC0yMDYzODkxMDU0LC0yMzUwMjIyMzcsMTkwNz
-g3MjYzMSw1NjE3NzkwMCwxMzA4Njc2NTEzLDIwODY4NzkyMDEs
-MTc5MTYwODk1XX0=
+eyJoaXN0b3J5IjpbLTE2OTIzMzY4MTMsMTUwNzM4NTU5OSwyOT
+E5OTEyMTcsLTEwMjU2NjQ2MTUsLTIxMDUxMDc5OSwtMTkzMTU2
+NTgyNSwtMTM0OTczNTM5OCwyMDc2NTEzNTA5LC0xODYyNDI0OT
+k3LC02NzY0Njg0NTcsLTE2ODE3OTc2MDEsLTYyNzk0MTM0Mywt
+MTYzODk0MDM5NCwtMjA2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MD
+c4NzI2MzEsNTYxNzc5MDAsMTMwODY3NjUxMywyMDg2ODc5MjAx
+LDE3OTE2MDg5NV19
 -->
