@@ -12,13 +12,19 @@
 *  0.0.1.2   –– Verified Echo naming
 *  0.0.1.3   –– Added Switch capability and event for Echo feedback
 *  0.0.1.4   –– Removed unused methods and commands.
+*  0.0.1.5   –– Added driverVersion attribute and emit.
+*  0.0.1.6   –– Added probe guard.
+*  0.0.1.7   –– Added ping() as no-op.
+*  0.0.1.8   –– Updated ping() to emitChangedEvent.
+*  0.0.2.0   –– Implemented parent/child success/failure for programs.
+*  1.1.0.0   –– Version bump for public release.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Echo"
-@Field static final String DRIVER_VERSION  = "0.0.1.4"
-@Field static final String DRIVER_MODIFIED = "2026-01-23"
+@Field static final String DRIVER_VERSION  = "1.1.0.0"
+@Field static final String DRIVER_MODIFIED = "2026-02-01"
 
 metadata {
     definition(
@@ -32,6 +38,8 @@ metadata {
         capability "Valve"
         capability "Switch"
 
+        attribute "driverInfo","string"
+		attribute "driverVersion","string"
         attribute "programNumber","number"
         attribute "programName","string"
         attribute "valve","string"
@@ -58,28 +66,36 @@ private emitEvent(n,def v,d=null,u=null,boolean f=false){sendEvent(name:n,value:
 private emitChangedEvent(n,def v,d=null,u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}}
 def autoDisableDebugLogging(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo"Debug logging disabled (auto)"}catch(e){logDebug"autoDisableDebugLogging(): ${e.message}"}}
 def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo"Debug logging disabled (manual)"}catch(e){logDebug"disableDebugLoggingNow(): ${e.message}"}}
+def ping(){emitChangedEvent("driverVersion",DRIVER_VERSION)}
 
 /* =============================== Lifecycle =============================== */
-def installed(){logInfo"Installed: ${driverInfoString()}";initialize()}
+def installed(){logInfo"Installed: ${driverInfoString()}";try{def t=device.deviceNetworkId.tokenize('_')[-1];if(t.isInteger())atomicState.program=t as Integer}catch(e){logWarn"installed(): ${e.message}"};initialize()}
 def updated(){logInfo"Updated: ${driverInfoString()}";initialize()}
-def initialize(){emitEvent("driverInfo",driverInfoString());unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)
-	try{def p=(device.deviceNetworkId.tokenize('_')[-1])as Integer
-		atomicState.program=p;logDebug"initialize(): Program ${p} bound to ${device.deviceNetworkId}"
-	}catch(e){logWarn"initialize(): ${e.message}"}}
+def initialize(){emitEvent("driverInfo",driverInfoString());emitEvent("driverVersion",DRIVER_VERSION);unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)}
 
 /* ============================= Core Commands ============================= */
 def open(){
-    def p=atomicState.program?:0
-    parent?.runProgram([program:p,manual:true])
-    emitChangedEvent("valve","open","Program ${p} active")
-    emitChangedEvent("switch","on","Program ${p} active")
+	def p=atomicState.program?:0;boolean ok=false
+	try{ok=parent?.runProgram([program:p,echo:true])==true}
+	catch(e){logWarn"open(): ${e.message}"}
+	if(ok){
+		emitChangedEvent("valve","open","Program ${p} active")
+		emitChangedEvent("switch","on","Program ${p} active")
+	}else{
+		logWarn"Program ${p} start requested but failed — see WET-IT app logs for details"
+	}
 }
 
 def close(){
-    def p=atomicState.program?:0
-    parent?.stopActiveProgram()
-    emitChangedEvent("valve","closed","Program ${p} stopped")
-    emitChangedEvent("switch","off","Program ${p} stopped")
+	def p=atomicState.program?:0;boolean ok=false
+	try{ok=parent?.stopActiveProgram([echo:true])==true}
+	catch(e){logWarn"close(): ${e.message}"}
+	if(ok){
+		emitChangedEvent("valve","closed","Program ${p} stopped")
+		emitChangedEvent("switch","off","Program ${p} stopped")
+	}else{
+		logWarn"Active program stop requested but failed — see WET-IT app logs for details"
+	}
 }
 
 def on(){logDebug"On called"; open()}
