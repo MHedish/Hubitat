@@ -48,10 +48,9 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 - Open-Meteo weather source
 - Soak & Cycle
 - Saturation Skip
-- Automatic soil type 
-- Program intervals can be set to daily, every other day, or up to once every 7 days.
-- Wind/Rain/Freeze alerts will automatically skip irrigation based on user preferences.
-- User-selectable water sensors will automatically skip irrigation if wet.
+- Automatic soil type determination (US Only)
+- ISO 3166-2 location awareness
+- Improved weather provider backup logic with
 - Wind/Rain/Freeze events are reported in the app, and sensors are checked immediately before a scheduled irrigation event.
 - For Tempest PWS users, the haptic rain sensor is also available as a live rain sensor.
 ---
@@ -325,7 +324,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTM2MDY4OTU0MCw2ODQ3ODg0OTIsMTQ5Nz
+eyJoaXN0b3J5IjpbMTQxNjIzMzgzOSw2ODQ3ODg0OTIsMTQ5Nz
 Q5ODIwOSwtMTcwNjQwNjMwNCw3MDYzNjc4NTAsLTIwNDUwODMx
 NDMsMjExNDYwNzM2MiwxNjQyNTIzMTA0LC0xMjM1MDc3NDE4LC
 0xODcwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2
