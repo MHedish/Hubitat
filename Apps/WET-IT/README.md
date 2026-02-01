@@ -56,10 +56,11 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 
 ### 🌦️ New Weather Provider — Tempest PWS Integration
 
-v1.0.4.0 introduces **Tempest Personal Weather Station (PWS)** support, adding **hyper-local forecasting** and **real-time environmental data** to the ET model.
+v1.1.0.0 introduces **Open-Meteo** support, adding API Key-free globa
 
 | Provider | API Key Required | Local or Cloud | Distinct Advantages |
 |:--|:--:|:--:|:--|
+| **OpenWeather 3.0** | ❌ | Cloud | Global hourly forecasts |
 | **NOAA NWS** | ❌ | Local / Regional | Reliable baseline with no API key required |
 | **OpenWeather 3.0** | ✅ | Cloud | Global hourly forecasts |
 | **Tomorrow .io** | ✅ | Cloud | High-resolution, next-hour prediction |
@@ -322,9 +323,9 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE3MDg2MTgwOTcsNjg0Nzg4NDkyLDE0OT
-c0OTgyMDksLTE3MDY0MDYzMDQsNzA2MzY3ODUwLC0yMDQ1MDgz
-MTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMTIzNTA3NzQxOC
-wtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIy
-NjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
+eyJoaXN0b3J5IjpbOTUwNTM2MzU3LDY4NDc4ODQ5MiwxNDk3ND
+k4MjA5LC0xNzA2NDA2MzA0LDcwNjM2Nzg1MCwtMjA0NTA4MzE0
+MywyMTE0NjA3MzYyLDE2NDI1MjMxMDQsLTEyMzUwNzc0MTgsLT
+E4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4MzA5LDEyMjYy
+NjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ==
 -->
