@@ -45,8 +45,10 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 ### 🆕 v1.1.0.0 Updates🆕
 
 ### 🚀 What’s New in v1.1.0.0*
-- Added a *comprehensive scheduler* supporting up to 48 zones and 16 programs.
-- Each program can be set for a specific **time-of-day** *or* to **begin by** or **end by** sunrise, accounting for variations in runtime due to ET or seasonal adjustments.
+- Open-Meteo weather source
+- Soak & Cycle
+- Saturation Skip
+- Automatic soil type 
 - Program intervals can be set to daily, every other day, or up to once every 7 days.
 - Wind/Rain/Freeze alerts will automatically skip irrigation based on user preferences.
 - User-selectable water sensors will automatically skip irrigation if wet.
@@ -323,9 +325,9 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIwNzI4MTUwMjIsNjg0Nzg4NDkyLDE0OT
-c0OTgyMDksLTE3MDY0MDYzMDQsNzA2MzY3ODUwLC0yMDQ1MDgz
-MTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMTIzNTA3NzQxOC
-wtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIy
-NjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
+eyJoaXN0b3J5IjpbMTM2MDY4OTU0MCw2ODQ3ODg0OTIsMTQ5Nz
+Q5ODIwOSwtMTcwNjQwNjMwNCw3MDYzNjc4NTAsLTIwNDUwODMx
+NDMsMjExNDYwNzM2MiwxNjQyNTIzMTA0LC0xMjM1MDc3NDE4LC
+0xODcwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2
+MjYxNzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
 -->
