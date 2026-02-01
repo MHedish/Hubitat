@@ -38,7 +38,7 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 		- The device appears in the Amazon Alexa app as a controllable on/off device
 		- Turning the device **ON** starts the associated program
 		- Turning the device **OFF** stops the active program
-		- No additional AWS app or awk
+		- No additional Alexa skill or awkward, "Alexa, ask Rain Bird to turn on Pr
 3. Soak & Cycle
 	- Optionally, alows irrigation to be applied in multiple shorter cycles instead of a single continuous run, improving absorption and reducing runoff.
 	- When enabled:
@@ -338,10 +338,10 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNTk2MzQxODMsOTU2NTM5MDM5LDY4NDc4OD
-Q5MiwxNDk3NDk4MjA5LC0xNzA2NDA2MzA0LDcwNjM2Nzg1MCwt
-MjA0NTA4MzE0MywyMTE0NjA3MzYyLDE2NDI1MjMxMDQsLTEyMz
-UwNzc0MTgsLTE4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4
-MzA5LDEyMjYyNjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ
-==
+eyJoaXN0b3J5IjpbLTE5MTExODUxMDEsOTU2NTM5MDM5LDY4ND
+c4ODQ5MiwxNDk3NDk4MjA5LC0xNzA2NDA2MzA0LDcwNjM2Nzg1
+MCwtMjA0NTA4MzE0MywyMTE0NjA3MzYyLDE2NDI1MjMxMDQsLT
+EyMzUwNzc0MTgsLTE4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYy
+NTU4MzA5LDEyMjYyNjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMj
+NdfQ==
 -->
