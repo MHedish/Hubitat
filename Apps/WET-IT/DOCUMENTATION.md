@@ -1137,7 +1137,6 @@ Zone parameters determine how evapotranspiration (ET), soil depletion, and runti
 | **Area Type (Plant Type)** | Determines the default crop coefficient (Kc) used for ET adjustments (e.g., Turf, Shrubs, Trees). |
 | **Soil Type** | Used to determine water-holding capacity and infiltration rate. Affects MAD (Management Allowed Depletion). |
 | **Sun Exposure** | Impacts the daily ET scaling factor; “Full Sun” zones lose water faster than “Partial Shade.” |
-| **Slope or Grade** | Optional factor used for per-zone soak cycles or erosion protection logic. |
 | **Soil Memory Enabled** | Allows the zone to participate in daily soil depletion tracking and ET-based watering decisions. |
 
 ---
@@ -1856,11 +1855,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE1NzE0Njg5MjAsLTI5NzY1OTY3MSwxOT
-c4MDk4NTU3LDE1MDczODU1OTksMjkxOTkxMjE3LC0xMDI1NjY0
-NjE1LC0yMTA1MTA3OTksLTE5MzE1NjU4MjUsLTEzNDk3MzUzOT
-gsMjA3NjUxMzUwOSwtMTg2MjQyNDk5NywtNjc2NDY4NDU3LC0x
-NjgxNzk3NjAxLC02Mjc5NDEzNDMsLTE2Mzg5NDAzOTQsLTIwNj
-M4OTEwNTQsLTIzNTAyMjIzNywxOTA3ODcyNjMxLDU2MTc3OTAw
-LDEzMDg2NzY1MTNdfQ==
+eyJoaXN0b3J5IjpbMTQ3MTkyMjc5NiwtMTU3MTQ2ODkyMCwtMj
+k3NjU5NjcxLDE5NzgwOTg1NTcsMTUwNzM4NTU5OSwyOTE5OTEy
+MTcsLTEwMjU2NjQ2MTUsLTIxMDUxMDc5OSwtMTkzMTU2NTgyNS
+wtMTM0OTczNTM5OCwyMDc2NTEzNTA5LC0xODYyNDI0OTk3LC02
+NzY0Njg0NTcsLTE2ODE3OTc2MDEsLTYyNzk0MTM0MywtMTYzOD
+k0MDM5NCwtMjA2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MDc4NzI2
+MzEsNTYxNzc5MDBdfQ==
 -->
