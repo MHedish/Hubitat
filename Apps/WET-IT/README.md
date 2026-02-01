@@ -32,14 +32,13 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 	- Global, API Key-free, research-grade weather. 
 2. Voice Control
 	- WET-IT supports voice control through Hubitat's built-in **Amazon Echo Skill** by exposing a virtual Echo child device for each irrigation program.
-
-Alexa, Turn on the sprin
-
-	When enabled for a program:
+> "Alexa, Turn on the sprinkler."
+- When enabled for a program:
 		- A dedicated **WET-IT Echo** child device is created 
 		- The device appears in the Amazon Alexa app as a controllable on/off device
 		- Turning the device **ON** starts the associated program
 		- Turning the device **OFF** stops the active program
+		- No additional AWS app or awk
 3. Soak & Cycle
 	- Optionally, alows irrigation to be applied in multiple shorter cycles instead of a single continuous run, improving absorption and reducing runoff.
 	- When enabled:
@@ -339,10 +338,10 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTQ2NDQ1NzQ0Myw5NTY1MzkwMzksNjg0Nz
-g4NDkyLDE0OTc0OTgyMDksLTE3MDY0MDYzMDQsNzA2MzY3ODUw
-LC0yMDQ1MDgzMTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMT
-IzNTA3NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1
-NTgzMDksMTIyNjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM1
-19
+eyJoaXN0b3J5IjpbNTk2MzQxODMsOTU2NTM5MDM5LDY4NDc4OD
+Q5MiwxNDk3NDk4MjA5LC0xNzA2NDA2MzA0LDcwNjM2Nzg1MCwt
+MjA0NTA4MzE0MywyMTE0NjA3MzYyLDE2NDI1MjMxMDQsLTEyMz
+UwNzc0MTgsLTE4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4
+MzA5LDEyMjYyNjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ
+==
 -->
