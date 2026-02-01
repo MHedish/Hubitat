@@ -588,6 +588,7 @@ Each source offers unique benefits depending on your climate, hardware, and accu
 | Provider | API Key | Source Type | Notes |
 |:--|:--:|:--:|:--|
 | **NOAA / NWS** | ❌ | Regional (U.S.) | Baseline forecast and observed data. Reliable, free, and always available. |
+
 | **OpenWeather 3.0** | ✅ | Cloud | Global coverage with hourly forecast and precipitation models. Fast and consistent. |
 | **Tomorrow. io** | ✅ | Cloud | High-resolution global weather engine with hyperlocal forecast capability. Provides ET₀ and wind metrics natively. |
 | **Tempest PWS** | ✅ | Local Hardware | Hyper-local live data from your personal Tempest station. Feeds live rain, temperature, wind, UV, and pressure directly from your yard. |
@@ -601,12 +602,11 @@ When multiple providers are configured, WET-IT dynamically merges data to create
 1. **Tempest PWS (Primary):**
    Always prioritized for live rain, wind, temperature, and UV.
    Data is considered *authoritative* for local microclimate readings.
-2. **Tomorrow.io / OpenWeather (Forecast Layer):**
+2. **Tomorrow.io / Open-Meteo, OpenWeather (Forecast Layer):**
    Supplies short-term (1–48 hr) forecast data and predictive rain/wind alerts.
    WET-IT uses this layer for *skip-ahead* logic (rain prediction).
 3. **NOAA NWS (Fallback & Validation):**
    Provides regional consistency and baseline validation for forecast data.
-   Used as a safety fallback if APIs fail or data is incomplete.
 
 If a data source becomes unavailable, WET-IT automatically reverts to the next available provider without interrupting scheduled operations.
 
@@ -682,7 +682,7 @@ This is to ensure ET and irrigation decisions remain scientifically consistent a
 
 ### Weather & ET Dependency
 
-All weather forecasts used by WET-IT (NOAA, OpenWeather, Tomorrow.io, Tempest) are **location-specific** and directly influence
+All weather forecasts used by WET-IT (NOAA, Open-Meteo, OpenWeather, Tomorrow.io, Tempest) are **location-specific** and directly influence
 - Rain, freeze, and wind alerts
 - ET₀ calculations
 - Seasonal and hybrid irrigation budgets
@@ -693,7 +693,6 @@ Accurate location data is therefore foundational to correct system behavior.
 ### 🗺️ Location Data Attribution
 
 WET-IT may perform one-time reverse geocoding to determine regional data availability and jurisdictional context.  Reverse geocoding is provided by Geoapify. Map data © OpenStreetMap contributors.
-
 
 ---
 
@@ -1749,11 +1748,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMzU1NTIwNzgsMTk3ODA5ODU1NywxNTA3Mz
-g1NTk5LDI5MTk5MTIxNywtMTAyNTY2NDYxNSwtMjEwNTEwNzk5
-LC0xOTMxNTY1ODI1LC0xMzQ5NzM1Mzk4LDIwNzY1MTM1MDksLT
-E4NjI0MjQ5OTcsLTY3NjQ2ODQ1NywtMTY4MTc5NzYwMSwtNjI3
-OTQxMzQzLC0xNjM4OTQwMzk0LC0yMDYzODkxMDU0LC0yMzUwMj
-IyMzcsMTkwNzg3MjYzMSw1NjE3NzkwMCwxMzA4Njc2NTEzLDIw
-ODY4NzkyMDFdfQ==
+eyJoaXN0b3J5IjpbLTE4NjI0ODgzMDUsMTk3ODA5ODU1NywxNT
+A3Mzg1NTk5LDI5MTk5MTIxNywtMTAyNTY2NDYxNSwtMjEwNTEw
+Nzk5LC0xOTMxNTY1ODI1LC0xMzQ5NzM1Mzk4LDIwNzY1MTM1MD
+ksLTE4NjI0MjQ5OTcsLTY3NjQ2ODQ1NywtMTY4MTc5NzYwMSwt
+NjI3OTQxMzQzLC0xNjM4OTQwMzk0LC0yMDYzODkxMDU0LC0yMz
+UwMjIyMzcsMTkwNzg3MjYzMSw1NjE3NzkwMCwxMzA4Njc2NTEz
+LDIwODY4NzkyMDFdfQ==
 -->
