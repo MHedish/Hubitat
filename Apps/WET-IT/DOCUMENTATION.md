@@ -710,7 +710,7 @@ When multiple providers are configured, WET-IT dynamically merges data to create
 1. **Tempest PWS (Primary):**
    Always prioritized for live rain, wind, temperature, and UV.
    Data is considered *authoritative* for local microclimate readings.
-2. **Tomorrow.io / Open-Meteo, OpenWeather (Forecast Layer):**
+2. **Tomorrow. io / Open-Meteo, OpenWeather (Forecast Layer):**
    Supplies short-term (1–48 hr) forecast data and predictive rain/wind alerts.
    WET-IT uses this layer for *skip-ahead* logic (rain prediction).
 3. **NOAA NWS (Fallback & Validation):**
@@ -1856,11 +1856,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTI1NjI4MzA1NCwtMjk3NjU5NjcxLDE5Nz
-gwOTg1NTcsMTUwNzM4NTU5OSwyOTE5OTEyMTcsLTEwMjU2NjQ2
-MTUsLTIxMDUxMDc5OSwtMTkzMTU2NTgyNSwtMTM0OTczNTM5OC
-wyMDc2NTEzNTA5LC0xODYyNDI0OTk3LC02NzY0Njg0NTcsLTE2
-ODE3OTc2MDEsLTYyNzk0MTM0MywtMTYzODk0MDM5NCwtMjA2Mz
-g5MTA1NCwtMjM1MDIyMjM3LDE5MDc4NzI2MzEsNTYxNzc5MDAs
-MTMwODY3NjUxM119
+eyJoaXN0b3J5IjpbLTE1NzE0Njg5MjAsLTI5NzY1OTY3MSwxOT
+c4MDk4NTU3LDE1MDczODU1OTksMjkxOTkxMjE3LC0xMDI1NjY0
+NjE1LC0yMTA1MTA3OTksLTE5MzE1NjU4MjUsLTEzNDk3MzUzOT
+gsMjA3NjUxMzUwOSwtMTg2MjQyNDk5NywtNjc2NDY4NDU3LC0x
+NjgxNzk3NjAxLC02Mjc5NDEzNDMsLTE2Mzg5NDAzOTQsLTIwNj
+M4OTEwNTQsLTIzNTAyMjIzNywxOTA3ODcyNjMxLDU2MTc3OTAw
+LDEzMDg2NzY1MTNdfQ==
 -->
