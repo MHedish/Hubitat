@@ -28,7 +28,7 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 
 ### 🆕 What’s New in v1.1.0.0* 🆕
 
-- Open-Meteo weather source
+1. Open-Meteo weather source
 	- Global, API Key-free, research-grade weather. 
 - Soak & Cycle
 	- Optionally, llows irrigation to be applied in multiple shorter cycles instead of a single continuous run, improving absorption and reducing runoff.
@@ -39,13 +39,13 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 		- Reduces runoff on slopes or compacted soil
 		- Improves water penetration into the root zone
 		- Increases overall irrigation efficiency
-- Saturation Skip
-- Automatic soil type determination (US Only)
+2. Saturation Skip
+3. Automatic soil type determination (US Only)
 WET-IT can automatically determine soil type for zones in the United States using the USDA Soil Survey.
 	- WET-IT uses hub's latitude/longitude
 	- Queries USDA Soil Data Access (SDA) API
 	- Returns soil texture and hydrologic group
-- Location Awareness & Geospatial Intelligence
+4. Location Awareness & Geospatial Intelligence
 	- More than just lat/lon location detection, ISO 3166-2 allows WET-IT to know specifically which cloud services are available for *your* location.
 	- Reverse geocoding and regional probes are **cached** and not repeated unnecessarily.
 	- Relocation Detection
@@ -53,7 +53,7 @@ WET-IT can automatically determine soil type for zones in the United States usin
 		- WET-IT logs the previous and current coordinates
 		- Regional data (weather source eligibility, ISO subdivision, etc.) is refreshed
 		- If soil memory is enabled, WET-IT will warn that existing soil depletion data may no longer be valid and recommend a manual reset.
-- Improved weather provider backup logic with alerting.
+5. Improved weather provider backup logic with alerting.
 	- All weather providers can use Open-Meteo as a backup for alerts and observations.  Open-Meteo users, within the US and its territories, can use NOAA as a backup to Open-Meteo.
 	- If your primary weather provider is unavailable long enough to affect ET calculations, WET-IT will notify you and *optionally* stop all program scheduling until you choose a different provider and reset the ET Soil Memory.
 
@@ -328,7 +328,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTQ4NjE4ODQzMiw5NTY1MzkwMzksNjg0Nz
+eyJoaXN0b3J5IjpbLTI3MDg3Mzg1OCw5NTY1MzkwMzksNjg0Nz
 g4NDkyLDE0OTc0OTgyMDksLTE3MDY0MDYzMDQsNzA2MzY3ODUw
 LC0yMDQ1MDgzMTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMT
 IzNTA3NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1
