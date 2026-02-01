@@ -50,9 +50,10 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 - Saturation Skip
 - Automatic soil type determination (US Only)
 - ISO 3166-2 location awareness
-- Improved weather provider backup logic with
-- Wind/Rain/Freeze events are reported in the app, and sensors are checked immediately before a scheduled irrigation event.
+	- More than just lat/lon location detechiom, ISO 3166-2 allows WET-IT to know specifically which cloud services are available.
+- Improved weather provider backup logic with alerting
 - For Tempest PWS users, the haptic rain sensor is also available as a live rain sensor.
+
 ---
 
 ### 🌦️ New Weather Provider — Tempest PWS Integration
@@ -324,9 +325,9 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTQxNjIzMzgzOSw2ODQ3ODg0OTIsMTQ5Nz
-Q5ODIwOSwtMTcwNjQwNjMwNCw3MDYzNjc4NTAsLTIwNDUwODMx
-NDMsMjExNDYwNzM2MiwxNjQyNTIzMTA0LC0xMjM1MDc3NDE4LC
-0xODcwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2
-MjYxNzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
+eyJoaXN0b3J5IjpbLTQxMzU1MTcwLDY4NDc4ODQ5MiwxNDk3ND
+k4MjA5LC0xNzA2NDA2MzA0LDcwNjM2Nzg1MCwtMjA0NTA4MzE0
+MywyMTE0NjA3MzYyLDE2NDI1MjMxMDQsLTEyMzUwNzc0MTgsLT
+E4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4MzA5LDEyMjYy
+NjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ==
 -->
