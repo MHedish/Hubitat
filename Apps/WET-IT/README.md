@@ -33,7 +33,7 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 - Ensured atomicState persistence for alert data after hub reboots
 - Completed consistency audit and schema validation for production release
 - Hybrid **ET + Seasonal** model with fractional daily scaling
-- Multi-provider weather support: **OpenWeather 3.0**, **Tomorrow.io**, **Tempest Personal Weather Station**,**NOAA NWS**
+- Multi-provider weather support: **Open-Meteo**, OpenWeather 3.0**, **Tomorrow.io**, **Tempest Personal Weather Station**,**NOAA NWS**
 - Per-zone soil, plant, and nozzle modeling with adjustable coefficients
 - Optional **Soil Memory** persistence (Rachio / Orbit style)
 - Freeze/frost warnings and automatic thresholds
@@ -42,9 +42,9 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 
 ---
 
-### 🆕 v1.0.4.0 Updates🆕
+### 🆕 v1.1.0.0 Updates🆕
 
-### 🚀 What’s New in v1.0.4.0 — *Scheduler Edition*
+### 🚀 What’s New in v1.1.0.0*
 - Added a *comprehensive scheduler* supporting up to 48 zones and 16 programs.
 - Each program can be set for a specific **time-of-day** *or* to **begin by** or **end by** sunrise, accounting for variations in runtime due to ET or seasonal adjustments.
 - Program intervals can be set to daily, every other day, or up to once every 7 days.
@@ -56,7 +56,7 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 
 ### 🌦️ New Weather Provider — Tempest PWS Integration
 
-v1.1.0.0 introduces **Open-Meteo** support, adding API Key-free globa
+v1.1.0.0 introduces **Open-Meteo** support, adding API Key-free global forecasting.
 
 | Provider | API Key Required | Local or Cloud | Distinct Advantages |
 |:--|:--:|:--:|:--|
@@ -323,9 +323,9 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbOTUwNTM2MzU3LDY4NDc4ODQ5MiwxNDk3ND
-k4MjA5LC0xNzA2NDA2MzA0LDcwNjM2Nzg1MCwtMjA0NTA4MzE0
-MywyMTE0NjA3MzYyLDE2NDI1MjMxMDQsLTEyMzUwNzc0MTgsLT
-E4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4MzA5LDEyMjYy
-NjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ==
+eyJoaXN0b3J5IjpbLTIwNzI4MTUwMjIsNjg0Nzg4NDkyLDE0OT
+c0OTgyMDksLTE3MDY0MDYzMDQsNzA2MzY3ODUwLC0yMDQ1MDgz
+MTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMTIzNTA3NzQxOC
+wtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIy
+NjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
 -->
