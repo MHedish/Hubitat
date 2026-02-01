@@ -588,7 +588,7 @@ Each source offers unique benefits depending on your climate, hardware, and accu
 | Provider | API Key | Source Type | Notes |
 |:--|:--:|:--:|:--|
 | **NOAA / NWS** | ❌ | Regional (U.S.) | Baseline forecast and observed data. Reliable, free, and always available. |
-| **Open-Meteo** | ✅ | Cloud | Global coverage with hourly forecast and precipitation models. Deterministic Respon |
+| **Open-Meteo** | ❌ | Cloud | Reliable, free, global coverage with hourly forecast and precipitation models. Deterministic Responses. |
 | **OpenWeather 3.0** | ✅ | Cloud | Global coverage with hourly forecast and precipitation models. Fast and consistent. |
 | **Tomorrow. io** | ✅ | Cloud | High-resolution global weather engine with hyperlocal forecast capability. Provides ET₀ and wind metrics natively. |
 | **Tempest PWS** | ✅ | Local Hardware | Hyper-local live data from your personal Tempest station. Feeds live rain, temperature, wind, UV, and pressure directly from your yard. |
@@ -1748,7 +1748,7 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTU3NjE2NzAxOCwxOTc4MDk4NTU3LDE1MD
+eyJoaXN0b3J5IjpbLTIxMzg2ODI2OCwxOTc4MDk4NTU3LDE1MD
 czODU1OTksMjkxOTkxMjE3LC0xMDI1NjY0NjE1LC0yMTA1MTA3
 OTksLTE5MzE1NjU4MjUsLTEzNDk3MzUzOTgsMjA3NjUxMzUwOS
 wtMTg2MjQyNDk5NywtNjc2NDY4NDU3LC0xNjgxNzk3NjAxLC02
