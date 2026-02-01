@@ -1677,11 +1677,6 @@ To verify operation:
 
 ---
 
-
-
-
-
-
 ## 💨 Wind Protection Logic
 
 WET-IT monitors forecast wind values.  
@@ -1754,11 +1749,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTk3ODA5ODU1NywxNTA3Mzg1NTk5LDI5MT
-k5MTIxNywtMTAyNTY2NDYxNSwtMjEwNTEwNzk5LC0xOTMxNTY1
-ODI1LC0xMzQ5NzM1Mzk4LDIwNzY1MTM1MDksLTE4NjI0MjQ5OT
-csLTY3NjQ2ODQ1NywtMTY4MTc5NzYwMSwtNjI3OTQxMzQzLC0x
-NjM4OTQwMzk0LC0yMDYzODkxMDU0LC0yMzUwMjIyMzcsMTkwNz
-g3MjYzMSw1NjE3NzkwMCwxMzA4Njc2NTEzLDIwODY4NzkyMDEs
-MTc5MTYwODk1XX0=
+eyJoaXN0b3J5IjpbMTk2NzgzNjYzMSwxOTc4MDk4NTU3LDE1MD
+czODU1OTksMjkxOTkxMjE3LC0xMDI1NjY0NjE1LC0yMTA1MTA3
+OTksLTE5MzE1NjU4MjUsLTEzNDk3MzUzOTgsMjA3NjUxMzUwOS
+wtMTg2MjQyNDk5NywtNjc2NDY4NDU3LC0xNjgxNzk3NjAxLC02
+Mjc5NDEzNDMsLTE2Mzg5NDAzOTQsLTIwNjM4OTEwNTQsLTIzNT
+AyMjIzNywxOTA3ODcyNjMxLDU2MTc3OTAwLDEzMDg2NzY1MTMs
+MjA4Njg3OTIwMV19
 -->
