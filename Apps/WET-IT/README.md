@@ -26,25 +26,9 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 
 ### 💡 Highlights
 
-###  v1.0.0.0 Updates
-- Added **Active Weather Alerts** panel (Freeze, Rain, Wind) in app UI
-- Rounded rain and wind data for cleaner display precision
-- Improved accessibility and color contrast in weather alert section
-- Ensured atomicState persistence for alert data after hub reboots
-- Completed consistency audit and schema validation for production release
-- Hybrid **ET + Seasonal** model with fractional daily scaling
-- Multi-provider weather support: **Open-Meteo**, OpenWeather 3.0**, **Tomorrow.io**, **Tempest Personal Weather Station**,**NOAA NWS**
-- Per-zone soil, plant, and nozzle modeling with adjustable coefficients
-- Optional **Soil Memory** persistence (Rachio / Orbit style)
-- Freeze/frost warnings and automatic thresholds
-- Hub location diagnostics and elapsed-time tracking
-- Lightweight and efficient — entirely local on Hubitat
-
----
-
 ### 🆕 v1.1.0.0 Updates🆕
 
-### 🚀 What’s New in v1.1.0.0*
+### 🚀 What’s New in v1.1.0.0* 🆕
 
 - Open-Meteo weather source
 	- Global, API Key-free, research-grade weather. 
@@ -329,9 +313,10 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbOTU2NTM5MDM5LDY4NDc4ODQ5MiwxNDk3ND
-k4MjA5LC0xNzA2NDA2MzA0LDcwNjM2Nzg1MCwtMjA0NTA4MzE0
-MywyMTE0NjA3MzYyLDE2NDI1MjMxMDQsLTEyMzUwNzc0MTgsLT
-E4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4MzA5LDEyMjYy
-NjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ==
+eyJoaXN0b3J5IjpbMTM5MzQ4ODM5OSw5NTY1MzkwMzksNjg0Nz
+g4NDkyLDE0OTc0OTgyMDksLTE3MDY0MDYzMDQsNzA2MzY3ODUw
+LC0yMDQ1MDgzMTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMT
+IzNTA3NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1
+NTgzMDksMTIyNjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM1
+19
 -->
