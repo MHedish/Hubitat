@@ -1381,11 +1381,12 @@ WET-IT can automatically determine soil type for zones in the United States usin
 
 **Configuration:**
 - Navigate to Zone Setup → Advanced
-- Click "Detect Soil Type from USDA"
+- Click “Detect Soil Type from USDA”
 - Review detected soil type 
 - Optionally override if local conditions differ
 
 **Availability:** US locations only. International users must select soil type manually.
+ [SoilGrids](https://isric.org/explore/soilgrids) is on the implementation roadmap for international users. Unfortunately, that plat
 
 ---
 
@@ -1753,11 +1754,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE2OTIzMzY4MTMsMTUwNzM4NTU5OSwyOT
-E5OTEyMTcsLTEwMjU2NjQ2MTUsLTIxMDUxMDc5OSwtMTkzMTU2
-NTgyNSwtMTM0OTczNTM5OCwyMDc2NTEzNTA5LC0xODYyNDI0OT
-k3LC02NzY0Njg0NTcsLTE2ODE3OTc2MDEsLTYyNzk0MTM0Mywt
-MTYzODk0MDM5NCwtMjA2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MD
-c4NzI2MzEsNTYxNzc5MDAsMTMwODY3NjUxMywyMDg2ODc5MjAx
-LDE3OTE2MDg5NV19
+eyJoaXN0b3J5IjpbLTUzNTA3NDc2LDE1MDczODU1OTksMjkxOT
+kxMjE3LC0xMDI1NjY0NjE1LC0yMTA1MTA3OTksLTE5MzE1NjU4
+MjUsLTEzNDk3MzUzOTgsMjA3NjUxMzUwOSwtMTg2MjQyNDk5Ny
+wtNjc2NDY4NDU3LC0xNjgxNzk3NjAxLC02Mjc5NDEzNDMsLTE2
+Mzg5NDAzOTQsLTIwNjM4OTEwNTQsLTIzNTAyMjIzNywxOTA3OD
+cyNjMxLDU2MTc3OTAwLDEzMDg2NzY1MTMsMjA4Njg3OTIwMSwx
+NzkxNjA4OTVdfQ==
 -->
