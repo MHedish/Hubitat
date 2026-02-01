@@ -1446,7 +1446,7 @@ Next: [🌦 Weather & Alert Settings →](#-weather-alert-settings)
 ## 🌦 Weather & Alert Settings<a id="-weather-alert-settings"></a>
 
 WET-IT’s weather and alert system enables dynamic watering decisions based on **forecast**, **live data**, and **safety conditions** such as freezing or wind.  
-These settings govern how environmental data from NOAA, OpenWeather, Tomorrow.io, or Tempest are interpreted to trigger skips, shorten runtimes, or adjust ET.
+These settings govern how environmental data from NOAA, Open-Meteo, OpenWeather, Tomorrow.io, or Tempest are interpreted to trigger skips, shorten runtimes, or adjust ET.
 
 ---
 
@@ -1749,11 +1749,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTk2NzgzNjYzMSwxOTc4MDk4NTU3LDE1MD
-czODU1OTksMjkxOTkxMjE3LC0xMDI1NjY0NjE1LC0yMTA1MTA3
-OTksLTE5MzE1NjU4MjUsLTEzNDk3MzUzOTgsMjA3NjUxMzUwOS
-wtMTg2MjQyNDk5NywtNjc2NDY4NDU3LC0xNjgxNzk3NjAxLC02
-Mjc5NDEzNDMsLTE2Mzg5NDAzOTQsLTIwNjM4OTEwNTQsLTIzNT
-AyMjIzNywxOTA3ODcyNjMxLDU2MTc3OTAwLDEzMDg2NzY1MTMs
-MjA4Njg3OTIwMV19
+eyJoaXN0b3J5IjpbMzU1NTIwNzgsMTk3ODA5ODU1NywxNTA3Mz
+g1NTk5LDI5MTk5MTIxNywtMTAyNTY2NDYxNSwtMjEwNTEwNzk5
+LC0xOTMxNTY1ODI1LC0xMzQ5NzM1Mzk4LDIwNzY1MTM1MDksLT
+E4NjI0MjQ5OTcsLTY3NjQ2ODQ1NywtMTY4MTc5NzYwMSwtNjI3
+OTQxMzQzLC0xNjM4OTQwMzk0LC0yMDYzODkxMDU0LC0yMzUwMj
+IyMzcsMTkwNzg3MjYzMSw1NjE3NzkwMCwxMzA4Njc2NTEzLDIw
+ODY4NzkyMDFdfQ==
 -->
