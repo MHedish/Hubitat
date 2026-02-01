@@ -41,8 +41,22 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 		- Increases overall irrigation efficiency
 - Saturation Skip
 - Automatic soil type determination (US Only)
+WET-IT can automatically determine soil type for zones in the United States using the USDA Soil Survey.
+
+**How it works:**
+1. App uses hub's latitude/longitude
+2. Queries USDA Soil Data Access (SDA) API
+3. Returns soil texture and hydrologic group
+4. Maps USDA texture to WET-IT soil types
+
 - Location Awareness & Geospatial Intelligence
 	- More than just lat/lon location detection, ISO 3166-2 allows WET-IT to know specifically which cloud services are available for *your* location.
+	- Reverse geocoding and regional probes are **cached** and not repeated unnecessarily.
+	- Relocation Detection
+		If a change in hub location is detected:
+		- WET-IT logs the previous and current coordinates
+		- Regional data (weather source eligibility, ISO subdivision, etc.) is refreshed
+		- If soil memory is enabled, WET-IT will warn that existing soil depletion data may no longer be valid and recommend a manual reset.
 - Improved weather provider backup logic with alerting.
 	- All weather providers can use Open-Meteo as a backup for alerts and observations.  Open-Meteo users, within the US and its territories, can use NOAA as a backup to Open-Meteo.
 	- If your primary weather provider is unavailable long enough to affect ET calculations, WET-IT will notify you and *optionally* stop all program scheduling until you choose a different provider and reset the ET Soil Memory.
@@ -318,10 +332,10 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE5ODc2MTMzNDcsOTU2NTM5MDM5LDY4ND
-c4ODQ5MiwxNDk3NDk4MjA5LC0xNzA2NDA2MzA0LDcwNjM2Nzg1
-MCwtMjA0NTA4MzE0MywyMTE0NjA3MzYyLDE2NDI1MjMxMDQsLT
-EyMzUwNzc0MTgsLTE4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYy
-NTU4MzA5LDEyMjYyNjE3NzIsMTM3NTU5NzEyLDIxMTk4NTgyMj
-NdfQ==
+eyJoaXN0b3J5IjpbMTY2NzE0Njc0Myw5NTY1MzkwMzksNjg0Nz
+g4NDkyLDE0OTc0OTgyMDksLTE3MDY0MDYzMDQsNzA2MzY3ODUw
+LC0yMDQ1MDgzMTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMT
+IzNTA3NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1
+NTgzMDksMTIyNjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM1
+19
 -->
