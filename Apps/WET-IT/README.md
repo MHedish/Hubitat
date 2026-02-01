@@ -26,14 +26,20 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 
 ### 💡 Highlights
 
-### 🆕 v1.1.0.0 Updates🆕
-
-### 🚀 What’s New in v1.1.0.0* 🆕
+### 🆕 What’s New in v1.1.0.0* 🆕
 
 - Open-Meteo weather source
 	- Global, API Key-free, research-grade weather. 
 - Soak & Cycle
-	- Optionally, allows 
+	- Optionally, llows irrigation to be applied in multiple shorter cycles instead of a single continuous run, improving absorption and reducing runoff.
+	- When enabled:
+		- Each zone’s runtime is divided into multiple watering cycles
+		- A configurable soak period is inserted between cycles
+		- Total watering duration remains unchanged
+	- Reduces runoff on slopes or compacted soil
+- Improves water penetration into the root zone
+- Increases overall irrigation efficiency
+	- 
 - Saturation Skip
 - Automatic soil type determination (US Only)
 - ISO 3166-2 location awareness
@@ -313,10 +319,10 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTM5MzQ4ODM5OSw5NTY1MzkwMzksNjg0Nz
-g4NDkyLDE0OTc0OTgyMDksLTE3MDY0MDYzMDQsNzA2MzY3ODUw
-LC0yMDQ1MDgzMTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMT
-IzNTA3NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1
-NTgzMDksMTIyNjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM1
-19
+eyJoaXN0b3J5IjpbNzAwNzM3MjE4LDk1NjUzOTAzOSw2ODQ3OD
+g0OTIsMTQ5NzQ5ODIwOSwtMTcwNjQwNjMwNCw3MDYzNjc4NTAs
+LTIwNDUwODMxNDMsMjExNDYwNzM2MiwxNjQyNTIzMTA0LC0xMj
+M1MDc3NDE4LC0xODcwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1
+ODMwOSwxMjI2MjYxNzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX
+0=
 -->
