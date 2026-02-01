@@ -147,6 +147,7 @@ After installation (HPM or manual):
 
 | Source | Key | Notes |
 |:--|:--:|:--|
+| **[Open-Meteo](https://open-meteo.com/)** | ❌ | Global, Research-Grade, Hourly an |
 | **[OpenWeather 3.0](https://openweathermap.org/api/one-call-3)** | ✅ | Hourly and forecast-based ET₀ |
 | **[Tomorrow.io](https://docs.tomorrow.io/reference/welcome)** | ✅ | High-resolution meteorological model |
 | **[Tempest](https://tempest.earth/)** | ✅ | Hyper-local weather observation and forecasting |
@@ -321,9 +322,9 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjkwOTYwNjksNjg0Nzg4NDkyLDE0OTc0OT
-gyMDksLTE3MDY0MDYzMDQsNzA2MzY3ODUwLC0yMDQ1MDgzMTQz
-LDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMTIzNTA3NzQxOCwtMT
-g3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2
-MTc3MiwxMzc1NTk3MTIsMjExOTg1ODIyM119
+eyJoaXN0b3J5IjpbMjExODA1NTIzOSw2ODQ3ODg0OTIsMTQ5Nz
+Q5ODIwOSwtMTcwNjQwNjMwNCw3MDYzNjc4NTAsLTIwNDUwODMx
+NDMsMjExNDYwNzM2MiwxNjQyNTIzMTA0LC0xMjM1MDc3NDE4LC
+0xODcwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2
+MjYxNzcyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
 -->
