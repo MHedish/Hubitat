@@ -594,6 +594,114 @@ Each source offers unique benefits depending on your climate, hardware, and accu
 | **Tempest PWS** | ✅ | Local Hardware | Hyper-local live data from your personal Tempest station. Feeds live rain, temperature, wind, UV, and pressure directly from your yard. |
 
 ---
+## Why WET-IT does **not** cascade across multiple weather providers
+
+**Short version:**
+
+> **Resolution errors are acceptable. Precision drift is not.**
+
+### The core principle: single source of truth per cycle
+
+WET-IT intentionally avoids cascading through multiple weather providers within a single update cycle. Once a provider is selected for a given forecast window, it remains authoritative for that window.
+
+Why?
+
+Because **changing providers mid-stream introduces silent precision errors that are worse than skipping one refresh**.
+
+---
+## Resolution vs precision (the key distinction)
+
+### Resolution loss (acceptable)
+
+-   Missing a single 2-hour forecast refresh
+-   Using the previous forecast for one more cycle
+-   Delaying ET recalculation briefly
+
+**Impact:**
+-   Small
+-   Predictable
+-   Self-correcting on the next successful fetch
+
+This is equivalent to:
+> “No new information yet — hold steady.”
+
+---
+
+### Precision drift (not acceptable)
+-   Switching providers mid-cycle
+-   Mixing forecast models, accumulation methods, and rounding rules
+-   Resetting rain totals, ET inputs, or soil memory assumptions
+    
+**Impact:**
+-   Silent
+-   Non-obvious
+-   Can permanently skew ET and soil memory
+-   Breaks the user’s mental model of “what data am I using?”
+
+This is equivalent to:
+> “New information, but from a _different ruler_.”
+
+That’s how you lose trust — and correctness.
+
+----------
+
+## Practical examples (why cascading is dangerous)
+
+If WET-IT were to cascade freely:
+
+-   OpenWeather → Open-Meteo → NOAA
+-   Each provider:
+    -   Uses different model blends
+    -   Accumulates precipitation differently
+    -   Rounds at different stages
+    -   Anchors timestamps differently
+
+Result:
+-   Rain totals jump or reset
+-   ET deltas change unexpectedly
+-   Soil saturation logic becomes inconsistent
+-   Users see unexplained behavior with no UI indication
+    
+
+All without a single “error.”
+
+---
+
+## Design choice in WET-IT
+
+Therefore, WET-IT follows these rules:
+
+1.  **One provider per update cycle**
+2.  **At most one fallback**
+3.  **No multi-hop cascading**
+4.  **Fallback is explicit, logged, and visible**
+5.  **Skipping a cycle is preferable to switching sources**
+
+This preserves:
+-   ET stability
+-   Soil memory integrity
+-   Auditability
+-   User trust
+
+---
+
+## How this fits the fallback model
+
+This is why the fallback table is intentionally shallow:
+
+|Primary    |Fallback      |
+|-----------|--------------|
+|Open-Meteo |NOAA (US only)|
+|NOAA       |Open-Meteo    |
+|OpenWeather|Open-Meteo    |
+|Tomorrow. io|Open-Meteo    |
+|Tempest    |Open-Meteo    |
+
+And *not* something like:
+
+> “Try everything until something responds.”
+
+---
 
 ### 🌀 Hybrid Weather Logic
 
@@ -1748,11 +1856,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTI5NzY1OTY3MSwxOTc4MDk4NTU3LDE1MD
-czODU1OTksMjkxOTkxMjE3LC0xMDI1NjY0NjE1LC0yMTA1MTA3
-OTksLTE5MzE1NjU4MjUsLTEzNDk3MzUzOTgsMjA3NjUxMzUwOS
-wtMTg2MjQyNDk5NywtNjc2NDY4NDU3LC0xNjgxNzk3NjAxLC02
-Mjc5NDEzNDMsLTE2Mzg5NDAzOTQsLTIwNjM4OTEwNTQsLTIzNT
-AyMjIzNywxOTA3ODcyNjMxLDU2MTc3OTAwLDEzMDg2NzY1MTMs
-MjA4Njg3OTIwMV19
+eyJoaXN0b3J5IjpbMTI1NjI4MzA1NCwtMjk3NjU5NjcxLDE5Nz
+gwOTg1NTcsMTUwNzM4NTU5OSwyOTE5OTEyMTcsLTEwMjU2NjQ2
+MTUsLTIxMDUxMDc5OSwtMTkzMTU2NTgyNSwtMTM0OTczNTM5OC
+wyMDc2NTEzNTA5LC0xODYyNDI0OTk3LC02NzY0Njg0NTcsLTE2
+ODE3OTc2MDEsLTYyNzk0MTM0MywtMTYzODk0MDM5NCwtMjA2Mz
+g5MTA1NCwtMjM1MDIyMjM3LDE5MDc4NzI2MzEsNTYxNzc5MDAs
+MTMwODY3NjUxM119
 -->
