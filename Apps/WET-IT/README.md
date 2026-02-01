@@ -47,8 +47,9 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 ### 🚀 What’s New in v1.1.0.0*
 
 - Open-Meteo weather source
-	- Global 
+	- Global, API Key-free, research-grade weather. 
 - Soak & Cycle
+	- Optionally, allows 
 - Saturation Skip
 - Automatic soil type determination (US Only)
 - ISO 3166-2 location awareness
@@ -328,7 +329,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbOTM0NTU1ODQ4LDY4NDc4ODQ5MiwxNDk3ND
+eyJoaXN0b3J5IjpbOTU2NTM5MDM5LDY4NDc4ODQ5MiwxNDk3ND
 k4MjA5LC0xNzA2NDA2MzA0LDcwNjM2Nzg1MCwtMjA0NTA4MzE0
 MywyMTE0NjA3MzYyLDE2NDI1MjMxMDQsLTEyMzUwNzc0MTgsLT
 E4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4MzA5LDEyMjYy
