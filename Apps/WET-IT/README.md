@@ -42,13 +42,9 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 - Saturation Skip
 - Automatic soil type determination (US Only)
 WET-IT can automatically determine soil type for zones in the United States using the USDA Soil Survey.
-
-**How it works:**
-1. App uses hub's latitude/longitude
-2. Queries USDA Soil Data Access (SDA) API
-3. Returns soil texture and hydrologic group
-4. Maps USDA texture to WET-IT soil types
-
+	- WET-IT uses hub's latitude/longitude
+	- Queries USDA Soil Data Access (SDA) API
+	- Returns soil texture and hydrologic group
 - Location Awareness & Geospatial Intelligence
 	- More than just lat/lon location detection, ISO 3166-2 allows WET-IT to know specifically which cloud services are available for *your* location.
 	- Reverse geocoding and regional probes are **cached** and not repeated unnecessarily.
@@ -332,7 +328,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTY2NzE0Njc0Myw5NTY1MzkwMzksNjg0Nz
+eyJoaXN0b3J5IjpbLTQ4NjE4ODQzMiw5NTY1MzkwMzksNjg0Nz
 g4NDkyLDE0OTc0OTgyMDksLTE3MDY0MDYzMDQsNzA2MzY3ODUw
 LC0yMDQ1MDgzMTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMT
 IzNTA3NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1
