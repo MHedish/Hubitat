@@ -1369,6 +1369,8 @@ Advantages:
 
 ---
 
+
+
 ### 🌦️ Weather-Based Skip Controls
 
 | Condition | Parameter | Description |
@@ -1733,11 +1735,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTUwNzM4NTU5OSwyOTE5OTEyMTcsLTEwMj
-U2NjQ2MTUsLTIxMDUxMDc5OSwtMTkzMTU2NTgyNSwtMTM0OTcz
-NTM5OCwyMDc2NTEzNTA5LC0xODYyNDI0OTk3LC02NzY0Njg0NT
-csLTE2ODE3OTc2MDEsLTYyNzk0MTM0MywtMTYzODk0MDM5NCwt
-MjA2Mzg5MTA1NCwtMjM1MDIyMjM3LDE5MDc4NzI2MzEsNTYxNz
-c5MDAsMTMwODY3NjUxMywyMDg2ODc5MjAxLDE3OTE2MDg5NSwx
-MTQ1ODA2NDI1XX0=
+eyJoaXN0b3J5IjpbMTUwMTk5MDM2MywxNTA3Mzg1NTk5LDI5MT
+k5MTIxNywtMTAyNTY2NDYxNSwtMjEwNTEwNzk5LC0xOTMxNTY1
+ODI1LC0xMzQ5NzM1Mzk4LDIwNzY1MTM1MDksLTE4NjI0MjQ5OT
+csLTY3NjQ2ODQ1NywtMTY4MTc5NzYwMSwtNjI3OTQxMzQzLC0x
+NjM4OTQwMzk0LC0yMDYzODkxMDU0LC0yMzUwMjIyMzcsMTkwNz
+g3MjYzMSw1NjE3NzkwMCwxMzA4Njc2NTEzLDIwODY4NzkyMDEs
+MTc5MTYwODk1XX0=
 -->
