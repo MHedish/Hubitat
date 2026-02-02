@@ -328,9 +328,9 @@ Every WET-IT installation supports up to **16 independent programs**, each with:
 | **Runtime Method** | Base Only, Seasonal %, or ET-Based |
 | **Program Days Mode** | Interval (Every N Days) or Weekly (M/W/F etc.) |
 | **Zones** | Select one or more irrigation zones |
-| **Weather Skip Controls ** | Freeze ❄, Rain ☔, Wind 💨 avoidance logic |
+| **Weather Skip Controls** | Freeze ❄, Rain ☔, Wind 💨 avoidance logic |
 | **Minimum Runtime Threshold** | Prevents ultra-short runs that could cycle valves unnecessarily. |
-| **Buffer Between Programs ** | Minimum time between consecutive programs (minutes) |
+| **Buffer Between Programs** | Minimum time between consecutive programs (minutes) |
 
 Programs run zones sequentially for proper pressure balance and reliability.
 
