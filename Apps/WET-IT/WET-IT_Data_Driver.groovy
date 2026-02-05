@@ -25,13 +25,15 @@
 *  1.0.5.7  –– Fixed program/zone ending
 *  1.0.6.0  –– Implemented parent/child success/failure for program and zones.
 *  1.1.0.0  –– Version bump for public release.
+*  1.1.1.0  –– Added astronomical data attributes.
+*  1.2.0.0  –– Version bump for public release.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "1.1.0.0"
-@Field static final String DRIVER_MODIFIED = "2026-02-01"
+@Field static final String DRIVER_VERSION  = "1.2.0.0"
+@Field static final String DRIVER_MODIFIED = "2026-02-05"
 @Field static final int MAX_ZONES = 48
 
 metadata {
@@ -46,26 +48,37 @@ metadata {
         capability "Sensor"
         capability "Refresh"
 
-        attribute "activeZone","number"
-        attribute "activeZoneName","string"
+        attribute "activeAlerts","string"
         attribute "activeProgram","number"
         attribute "activeProgramName","string"
-        attribute "activeAlerts","string"
+        attribute "activeZone","number"
+        attribute "activeZoneName","string"
         attribute "datasetJson","string"
+		attribute "dawn","string"
+		attribute "dayLength","string"
         attribute "driverInfo","string"
 		attribute "driverVersion","string"
+		attribute "dusk","string"
 		attribute "freezeAlert","bool"
 		attribute "freezeAlertText","string"
 		attribute "freezeLowTemp","number"
-		attribute "rainAlert","bool"
+        attribute "nightBegin","string"
+		attribute "nightEnd","string"
 		attribute "programElapsed","number"
 		attribute "programElapsedText","string"
 		attribute "programRemaining","number"
 		attribute "programRemainingText","string"
+		attribute "rainAlert","bool"
 		attribute "rainAlertText","string"
 		attribute "rainForecast","number"
+		attribute "solarDate","string"
+		attribute "solarNoon","string"
         attribute "summaryText","string"
         attribute "summaryTimestamp","string"
+		attribute "sunrise","string"
+		attribute "sunset","string"
+		attribute "twilightBegin","string"
+		attribute "twilightEnd","string"
 		attribute "windAlert","bool"
 		attribute "windAlertText","string"
 		attribute "windSpeed","number"
