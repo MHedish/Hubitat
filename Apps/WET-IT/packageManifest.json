@@ -1,10 +1,10 @@
 {
   "packageName": "WET-IT",
   "author": "Marc Hedish",
-  "version": "1.1.0.0",
+  "version": "1.2.0.0",
   "minimumHEVersion": "2.3.8",
-  "dateReleased": "2026-02-01",
-  "releaseNotes": "v1.1.0.0 — Added Open-Meteo weather provider; hardened forecast handling with user-controlled fallback, forecast failure detection; Soak & Cycle; Echo Support; Saturation Skip; Soil Detection; ISO 3166-2 Geo-awareness; End-by scheduling.",
+  "dateReleased": "2026-02-05",
+  "releaseNotes": "v1.2.0.0 — Added astronomical data attributes, solar based (dawn/sunrise/sunset/dusk) scheduling; enhanced program scheduling confict detection and reporting. fixed edge-case preveting manual zone stop; fixed Tempest rain event detection when Tempest is no longer the weather provider.",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md",
   "description": "Local-first evapotranspiration (ET) and soil-moisture modeling app for Hubitat. Provides professional-grade irrigation intelligence similar to Rachio, Orbit, and Hydrawise, running entirely on-hub.",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/CHANGELOG.md",
@@ -17,7 +17,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/WET-IT.groovy",
       "required": true,
-      "version": "1.1.0.0",
+      "version": "1.2.0.0",
       "oauth": false,
       "primary": true
     }
@@ -29,7 +29,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/WET-IT_Data_Driver.groovy",
       "required": true,
-      "version": "1.1.0.0"
+      "version": "1.2.0.0"
     },
     {
       "id": "wetit_echo",
