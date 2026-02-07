@@ -19,17 +19,24 @@
 *  1.0.2.1   -- Corrected variable in checkUPSClock()
 *  1.0.2.2   -- Changed state.deferredCommand to atomicState.deferredCommand
 *  1.0.2.3   -- Added transient currentCommand
-*  1.0.2.4   -- Reverted.
+*  1.0.2.4   -- Reverted
 *  1.0.2.5   -- Moved to atomicState variables
 *  1.0.2.6   -- Changed mutex for sendUPSCommand()
+*  1.0.2.7   -- Added summary text attribute and logging
+*  1.0.2.8   -- Reverted
+*  1.0.2.9   -- Fixed infinite deferral loop after hub reboot; Improved transient-based deferral counter
+*  1.0.2.10  -- Introduced scheduled watchdog and notification; sets connectStatus to 'watchdog' when triggered
+*  1.0.2.11  -- Corrected refresh CRON cadence switching when UPS enters/leaves battery mode
+*  1.0.2.12  -- Corrected safeTelnetConnect runIn() map; updated scheduleCheck() to guard against watchdog unscheduling
+*  1.0.3.0   –– Version bump for public release
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.2.6"
-@Field static final String DRIVER_MODIFIED = "2026.01.25"
+@Field static final String DRIVER_VERSION  = "1.0.3.0"
+@Field static final String DRIVER_MODIFIED = "2026.02.07"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
 /* ===============================
@@ -54,7 +61,6 @@ metadata {
         attribute "alarmCountWarn","number"
         attribute "battery","number"
         attribute "batteryVoltage","number"
-        attribute "checkInterval","number"
         attribute "connectStatus", "string"
         attribute "deviceName","string"
         attribute "driverInfo","string"
@@ -100,6 +106,7 @@ metadata {
         attribute "runTimeHours","number"
         attribute "runTimeMinutes","number"
         attribute "serialNumber","string"
+		attribute "summaryText","string"
         attribute "temperatureC","number"
         attribute "temperatureF","number"
         attribute "upsContact","string"
@@ -272,21 +279,37 @@ def initialize(){
         updateUPSControlState(state.upsControlEnabled)
         if(state.upsControlEnabled){unschedule(autoDisableUPSControl);runIn(1800,autoDisableUPSControl)}
         scheduleCheck(runTime as Integer,runOffset as Integer)
+        clearTransient()
+        atomicState.remove("deferredCommand")
         resetTransientState("initialize");updateConnectState("Disconnected");closeConnection();runInMillis(500,"refresh")
     }else logWarn"Cannot initialize. Preferences must be set."
 }
 
 private scheduleCheck(Integer interval,Integer offset){
-    def currentInt=device.currentValue("checkInterval") as Integer
-    def currentOff=device.currentValue("checkOffset") as Integer
-    if(currentInt!=interval||currentOff!=offset){
-        def nowMin=new Date().minutes;if(offset-nowMin>interval*2){
-            def adjOff=(nowMin-(nowMin%interval));logInfo"scheduleCheck(): offset ${offset} too far ahead (${nowMin}m now); adjusting to ${adjOff} for current hour";offset=adjOff
-        }
-        unschedule(refresh);def cron7="0 ${offset}/${interval} * ? * * *";def cron6="0 ${offset}/${interval} * * * ?";def usedCron=null
-        try{schedule(cron7,refresh);usedCron=cron7}catch(ex){try{schedule(cron6,refresh);usedCron=cron6}catch(e2){logError"scheduleCheck(): failed to schedule (${e2.message})"}}
-        if(usedCron)logInfo"Monitoring scheduled every ${interval} minutes at ${offset} past the hour."
+	def currentInt=atomicState.schedInterval as Integer;def currentOff=atomicState.schedOffset as Integer
+	if(currentInt!=interval||currentOff!=offset){
+        def nowMin=new Date().minutes;if(offset-nowMin>interval*2){def adjOff=(nowMin-(nowMin%interval));logInfo"scheduleCheck(): offset ${offset} too far ahead (${nowMin}m now); adjusting to ${adjOff} for current hour";offset=adjOff}
+        def wdOffset=offset+1;if(wdOffset>59)wdOffset=0
+        def cron7="0 ${offset}/${interval} * ? * * *";def cron6="0 ${offset}/${interval} * * * ?";def usedCron=null
+        try{schedule(cron7,refresh);usedCron=cron7}catch(ex){try{schedule(cron6,refresh);usedCron=cron6}catch(e2){logError"scheduleCheck(): failed to schedule refresh (${e2.message})"}}
+        if(usedCron)logInfo"Monitoring scheduled every ${interval} minutes at ${offset} past the hour.";atomicState.schedInterval=interval;atomicState.schedOffset=offset
+        usedCron=null;def wdCron7="0 ${wdOffset}/${interval} * ? * * *";def wdCron6="0 ${wdOffset}/${interval} * * * ?"
+        try{schedule(wdCron7,"watchdog");usedCron=wdCron7}catch(ex){try{schedule(wdCron6,"watchdog");usedCron=wdCron6}catch(e2){logError"scheduleCheck(): failed to schedule watchdog (${e2.message})"}}
+        if(usedCron)logInfo"Watchdog scheduled every ${interval} minutes at ${wdOffset} past the hour."
     }else logDebug"scheduleCheck(): no change to interval/offset (still ${interval}/${offset})"
+}
+
+private void watchdog(){
+    def lastStr=device.currentValue("lastUpdate");if(!lastStr)return
+    def last
+    try{last=Date.parse("MM/dd/yyyy h:mm:ss a",lastStr).time}
+    catch(e){logDebug"watchdog(): unable to parse lastUpdate='${lastStr}'";return}
+    def interval=runTime as Integer;def delta=now()-last
+    logDebug"watchdog(): interval=${interval}  delta=${(delta/1000).toInteger()}  lastUpdate='${lastStr}'"
+    if(delta<(interval*2*60000))return
+    logDebug"No UPS update for ${(delta/60000).toInteger()} minutes"
+    emitEvent("connectStatus","Watchdog","No UPS update for ${(delta/60000).toInteger()} minutes",null,true)
+    return
 }
 
 /* ===============================
@@ -308,17 +331,17 @@ private void sendUPSCommand(String cmdName, List cmds){
     def cs=device.currentValue("connectStatus");def sessionOwner=getTransient("sessionStart")
     if(sessionOwner&&cs!="Disconnected"){
         logInfo"${cmdName} deferred 10s (Telnet busy with ${atomicState.lastCommand})"
-        if(atomicState.deferredCommand==cmdName){
-            logWarn"sendUPSCommand(): repeated deferral detected for ${cmdName}; forcing full session reset"
-            resetTransientState("sendUPSCommand");updateConnectState("Disconnected");closeConnection();runIn(2,"refresh");return
+        def deferralKey="deferralCount_${cmdName}";def deferralCount=(getTransient(deferralKey)?:0)+1
+        setTransient(deferralKey,deferralCount)
+        if(deferralCount>=3){
+            logWarn"sendUPSCommand(): ${cmdName} deferred ${deferralCount} times; forcing initialization"
+            clearTransient(deferralKey);initialize();return
         }
         atomicState.deferredCommand=cmdName;setTransient("currentCommand",cmdName)
         def retryTarget=(cmdName=="Reconnoiter")?"refresh":cmdName
-        logDebug"sendUPSCommand(): scheduling deferred ${retryTarget} retry in 10s";runIn(10,retryTarget);return
+        logDebug"sendUPSCommand(): scheduling deferred ${retryTarget} retry in 10s (attempt ${deferralCount})";runIn(10,retryTarget);return
     }
-    if(atomicState.deferredCommand){
-        logWarn"sendUPSCommand(): clearing deferredCommand (was=${atomicState.deferredCommand})"
-    }
+    if(atomicState.deferredCommand){logWarn"sendUPSCommand(): clearing deferredCommand (was=${atomicState.deferredCommand})"}
     atomicState.remove("deferredCommand");updateCommandState(cmdName);updateConnectState("Initializing")
     emitChangedEvent("lastCommandResult","Pending","${cmdName} queued for execution");logInfo"Executing UPS command: ${cmdName}"
     try{
@@ -327,7 +350,7 @@ private void sendUPSCommand(String cmdName, List cmds){
         telnetClose();updateConnectState("Connecting");initTelnetBuffer()
         state.pendingCmds=["$Username","$Password"]+cmds+["whoami"]
         logDebug"sendUPSCommand(): Opening transient Telnet connection to ${upsIP}:${upsPort}"
-        safeTelnetConnect(upsIP,upsPort.toInteger())
+        safeTelnetConnect([ip:upsIP,port:upsPort.toInteger()])
         runIn(10,"checkSessionTimeout",[data:[cmd:cmdName]])
         logDebug"sendUPSCommand(): queued ${state.pendingCmds.size()} Telnet lines for delayed send"
         runInMillis(500,"delayedTelnetSend")
@@ -345,16 +368,17 @@ private delayedTelnetSend(){
     }
 }
 
-private void safeTelnetConnect(String ip,int port,int retries=3,int delayMs=10000){
-    int attempt=(state.safeTelnetRetryCount?:1)
-    if(device.currentValue("connectStatus")in["Connecting","Connected","UPSCommand"]){if(attempt<=retries){logInfo "safeTelnetConnect(): Session active, retrying in ${delayMs/1000}s (attempt ${attempt}/${retries})";state.safeTelnetRetryCount=attempt+1;runInMillis(delayMs,"safeTelnetConnect",[data:[ip:ip,port:port,retries:retries,delayMs:delayMs]])}else{logError "safeTelnetConnect(): Aborted after ${retries} attempts ? session still busy";state.remove("safeTelnetRetryCount")};return}
-    try{
-        logDebug "safeTelnetConnect(): attempt ${attempt}/${retries} connecting to ${ip}:${port}"
-        telnetClose();telnetConnect(ip,port,null,null);state.remove("safeTelnetRetryCount");logDebug "safeTelnetConnect(): connection established"
-    }catch(Exception e){
-        def msg=e.message;def retryAllowed=(attempt<retries)
-        logWarn"safeTelnetConnect(): ${msg?:'connection error'} ${retryAllowed?'? retrying in '+(delayMs/1000)+'s (attempt '+attempt+'/'+retries+')':'? max retries reached'}"
-        if(retryAllowed){state.safeTelnetRetryCount=attempt+1;runInMillis(delayMs,"safeTelnetConnect",[data:[ip:ip,port:port,retries:retries,delayMs:delayMs]])}else{logError "safeTelnetConnect(): All ${retries} attempts failed (${msg})";state.remove("safeTelnetRetryCount")}
+private safeTelnetConnect(Map m){
+    def ip=m.ip,port=m.port as int,retries=(m.retries?:3)as int,delayMs=(m.delayMs?:10000)as int;def attempt=(state.safeTelnetRetryCount?:1)
+    if(device.currentValue("connectStatus")in["Connecting","Connected","UPSCommand"]){
+        if(attempt<=retries){
+            logInfo"safeTelnetConnect(): Session active, retrying in ${delayMs/1000}s (attempt ${attempt}/${retries})";state.safeTelnetRetryCount=attempt+1;runInMillis(delayMs,"safeTelnetConnect",[data:m])}
+        else{logError"safeTelnetConnect(): Aborted after ${retries} attempts ? session still busy";state.remove("safeTelnetRetryCount")};return}
+    try{logDebug"safeTelnetConnect(): attempt ${attempt}/${retries} connecting to ${ip}:${port}";telnetClose();telnetConnect(ip,port,null,null);state.remove("safeTelnetRetryCount");logDebug"safeTelnetConnect(): connection established"}
+    catch(e){
+        def msg=e.message;def retryAllowed=(attempt<retries);logWarn"safeTelnetConnect(): ${msg?:'connection error'} ${retryAllowed?'? retrying in '+(delayMs/1000)+'s (attempt '+attempt+'/'+retries+')':'? max retries reached'}"
+        if(retryAllowed){state.safeTelnetRetryCount=attempt+1;runInMillis(delayMs,"safeTelnetConnect",[data:m])}
+        else{;logError"safeTelnetConnect(): All ${retries} attempts failed (${msg})";state.remove("safeTelnetRetryCount")}
     }
 }
 
@@ -391,15 +415,14 @@ def setOutletGroup(p0,p1,p2){
 
 def refresh() {
     checkExternalUPSControlChange()
-    if(connectStatus in ["Connected", "Trying"]){
-        logInfo "refresh(): Telnet session already active, skipping this refresh request"
-        return
-    }
+    if(connectStatus in ["Connected", "Trying"]){logInfo "refresh(): Telnet session already active, skipping this refresh request";return}
     logInfo "${driverInfoString()} refreshing..."
     state.remove("authStarted");logDebug "Building Reconnoiter command list"
     def reconCmds=["ups ?","upsabout","about","alarmcount -p critical","alarmcount -p warning","alarmcount -p informational","detstatus -all"]
     logDebug "Initiating Reconnoiter via sendUPSCommand()"
     sendUPSCommand("Reconnoiter", reconCmds)
+	def rt=String.format("%02d:%02d",device.currentValue('runTimeHours')as Integer,device.currentValue('runTimeMinutes')as Integer);def summaryText="${device.currentValue('upsStatus')} | ${rt} | ${device.currentValue('outputWattsPercent')}% | ${device.currentValue('temperature')}°"
+	emitEvent("summaryText",summaryText);if(!logEvent)log.info"[${DRIVER_NAME} ${summaryText}"
 }
 
 /* ===============================
@@ -436,11 +459,8 @@ private handleUPSStatus(def pair){
     else if(status=~/(?i)\boff\s*no\b/)status="Off"
     emitChangedEvent("upsStatus",status,"UPS Status = ${status}")
     emitChangedEvent("wiringFault",wiringFault,"UPS Site Wiring Fault ${wiringFault?'detected':'cleared'}")
-    def rT=runTime.toInteger(),rTB=runTimeOnBattery.toInteger(),rO=runOffset.toInteger()
-    switch(status){
-        case"OnBattery":if(rT!=rTB&&device.currentValue("checkInterval")!=rTB)scheduleCheck(rTB,rO);break
-        case"Online":if(rT!=rTB&&device.currentValue("checkInterval")!=rT)scheduleCheck(rT,rO);break
-    }
+	def rT=runTime.toInteger(),rTB=runTimeOnBattery.toInteger(),rO=runOffset.toInteger()
+	if(status=="OnBattery"){logWarn"UPS now on battery power.  Monitoring cadence updated to ${rTB} minutes.";scheduleCheck(rTB,rO)}else scheduleCheck(rT,rO)
 }
 
 private handleLastTransfer(def pair){
@@ -552,9 +572,7 @@ private void handleBannerData(String l){
         emitChangedEvent("deviceName",nameVal)
     }
     def mUp=(l =~ /Up\s*Time\s*:\s*(.+?)\s+Stat/)
-    if(mUp.find()){
-        def v=mUp.group(1).trim();emitChangedEvent("upsUptime", v, "UPS Uptime = ${v}")
-    }
+    if(mUp.find()){def v=mUp.group(1).trim();emitChangedEvent("upsUptime", v, "UPS Uptime = ${v}")}
     def mDate=(l =~ /Date\s*:\s*(\d{2}\/\d{2}\/\d{4})/);if(mDate.find())setTransient("upsBannerDate",mDate.group(1).trim())
     def mTime=(l =~ /Time\s*:\s*(\d{2}:\d{2}:\d{2})/)
     if(mTime.find()&&getTransient("upsBannerDate")){
@@ -670,7 +688,7 @@ private void processUPSCommand(){
 
 private void sendHubShutdown(){
     try{
-        def postParams=[uri:"http://127.0.0.1:8080",path:"/hub/shutdown"];logWarn"Sending hub shutdown command..."
+        def postParams=[uri:"http://127.0.0.1:8080",path:"/hub/shutdown"]
         httpPost(postParams){r->if(r?.status==200)logWarn"Hub shutdown acknowledged by Hubitat."else logWarn"Hub shutdown returned status ${r?.status?:'unknown'}."}
     }catch(e){logError "sendHubShutdown(): ${e.message}"}
 }
