@@ -71,7 +71,7 @@ Average reconnoiter runtime: **<5 seconds**, with deterministic session closure 
 - 🧰 **Self-test control and alarm query support**  
 - 🚨 **Error handling and recovery** without blocking or stale sessions  
 - 🧩 **Minimal persistent state**, maximizing driver stability and speed (sub-5-second reconnoiters)
-
+- 🐕‍🦺 **Built-in watchdog**, automatic attribute udpdate when internal watchdog recognizes an infitinte loop or communication drops
 ---
 
 ## 🧱 Architecture
@@ -139,9 +139,9 @@ Each setting plays a specific role in how the driver connects to and interprets 
 
 ---
 
-### 🤖 Automation Integration (Rule Machine, WebCoRE, and Others)
+### 🤖 Automation Integration (Rule Machine, webCoRE, and Others)
 
-All commands and attributes in this driver are fully exposed to Hubitat’s automation engines, including **Rule Machine (RM)**, **WebCoRE**, **Node-RED**, and other compatible integrations.
+All commands and attributes in this driver are fully exposed to Hubitat’s automation engines, including **Rule Machine (RM)**, **webCoRE**, **Node-RED**, and other compatible integrations.
 
 The control enablement model was intentionally designed for automation safety:
 
@@ -225,7 +225,7 @@ These values can be used in **dashboards**, **Rule Machine triggers**, **notific
 | **alarmCountCrit**, **alarmCountInfo**, **alarmCountWarn** | — | Current count of UPS alarms. |
 | **battery** | % | Battery charge level. |
 | **batteryVoltage** | VDC | Current battery voltage. |
-| **connectStatus** | — | Driver’s current Telnet connection state (Initializing, Connecting, Connected, Disconnecting, Disconnected). |
+| **connectStatus** | — | Driver’s current Telnet connection state (Initializing, Connecting, Connected, Disconnecting, Disconnected, Watchdog). |
 | **deviceName** | — | Current UPS device name. |
 | **driverInfo** | — | Installed driver name, version, and build date. |
 | **inputVoltage** | VAC | Line input voltage from utility. |
