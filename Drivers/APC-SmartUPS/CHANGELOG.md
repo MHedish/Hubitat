@@ -49,7 +49,7 @@
 - Resolved `checkUPSClock()` exception caused by invalid reference object type.  
 - Enhanced `resetTransientState()` to ensure full session teardown before recovery.
 
-**1.0.2.2 — Stable Core Release**  
+**1.0.2.2 — Core Release**  
 - Hybrid `state` / `atomicState` lifecycle separation for precise session control.  
 - Eliminated watchdog recursion and `deferredCommand` residue.  
 - Deterministic Telnet recovery, consistent finalization.
@@ -61,3 +61,8 @@
 **1.0.2.6 — Stable Core Release**  
 - Resolved watchdog lock state
 - Changed mutex for sendUPSCommand()
+
+**1.0.2.7 — 1.0.2.10 — Internal**
+- Added summary text attribute and logging
+- Fixed infinite deferral loop after hub reboot; Improved transient-based deferral counter
+- Introduced scheduled watchdog and notification; sets connectStatus to 'watchdog' when triggered
