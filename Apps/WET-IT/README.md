@@ -3,12 +3,13 @@
 *A Hubitat App for Weather-Based Smart Irrigation Using Real Evapotranspiration (ET) Modeling & Scheduling*
 
 ![Platform](https://img.shields.io/badge/Platform-Hubitat-blue) 
-![Version](https://img.shields.io/badge/Version-1.0.4.0-green?t=20260116)
+![Version](https://img.shields.io/badge/Version-1.2.0.0-green?t=20260205)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
-**App Version:** 1.0.4.0
-**Driver Version:** 1.0.4.0
-**Release Date:** 2026-01-18
+**App Version:** 1.2.0.0
+**Driver Version:** 1.2.0.0
+**Echo Version:** 1.1.0.0
+**Release Date:** 2026-02-05
 
 ---
 
