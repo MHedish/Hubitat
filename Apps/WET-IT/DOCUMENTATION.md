@@ -2,10 +2,10 @@
 # 🌿 Weather-Enhanced Time-based Irrigation Tuning (WET-IT)
 
 ## Full Documentation
-*Comprehensive Technical & Integration Reference (App v1.0.4.0 / Driver v1.0.4.0)*
+*Comprehensive Technical & Integration Reference (App v1.2.0.0 / Data Driver v1.2.0.0 / Echo Driver v1.1.0.0)*
 
 ![Platform](https://img.shields.io/badge/Platform-Hubitat-blue)
-![Version](https://img.shields.io/badge/Version-1.0.4.0-green?t=20251229)
+![Version](https://img.shields.io/badge/Version-1.2.0.0-green?t=20260205)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
 WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.
