@@ -66,3 +66,8 @@
 - Added summary text attribute and logging
 - Fixed infinite deferral loop after hub reboot; Improved transient-based deferral counter
 - Introduced scheduled watchdog and notification; sets connectStatus to 'watchdog' when triggered
+
+**1.0.3.0 — Stable Core Release**
+- Fixed infinite deferral loop after hub reboot (FINALLY!); Improved transient-based deferral counter
+- Corrected refresh CRON cadence switching when UPS enters/leaves battery mode.
+- Corrected safeTelnetConnect runIn() map; updated scheduleCheck() to guard against watchdog unscheduling.- 
