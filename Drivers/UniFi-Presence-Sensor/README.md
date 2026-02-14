@@ -48,7 +48,8 @@ Supports wireless clients and hotspot guest monitoring with automatic child devi
   - **Departed**  
 - Tracks:  
   - `accessPoint`, `accessPointName`  
-  - `ssid`  
+  - `ssid`
+  - `ipAddress`
   - `presenceChanged` (last change timestamp)  
   - `hotspotGuests`, `totalHotspotClients`  
   - `hotspotGuestList`, `hotspotGuestListRaw`  
