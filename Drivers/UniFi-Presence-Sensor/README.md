@@ -37,7 +37,10 @@ Supports wireless clients and hotspot guest monitoring with automatic child devi
   - **Refresh All Children**  
   - **Reconnect All Children**  
 - Exposes UniFi sysinfo:  
-  - `deviceType`, `hostName`, `UniFiOS`, `Network`  
+  - `deviceType`, `hostName`, `UniFiOS`, `Network`
+- Tracks:
+  - `hotspotGuests`, `totalHotspotClients`  
+  - `hotspotGuestList`, `hotspotGuestListRaw`  
 - Resilient design: cookie refresh, event filtering (wireless only), disconnect recovery.  
 - Logging options (debug & raw events, auto-disable after 30 minutes).  
 
@@ -51,8 +54,6 @@ Supports wireless clients and hotspot guest monitoring with automatic child devi
   - `ssid`
   - `ipAddress`
   - `presenceChanged` (last change timestamp)  
-  - `hotspotGuests`, `totalHotspotClients`  
-  - `hotspotGuestList`, `hotspotGuestListRaw`  
 - Syncs name/label with parent device automatically.  
 - Normalizes MAC formatting (dashes → colons, lowercase).  
 
