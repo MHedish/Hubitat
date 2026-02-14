@@ -95,6 +95,7 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 - **Auto Create Clients** – Button to scan UniFi and add wireless clients (default: 1 day).  
 - **Hotspot Monitoring** – Creates special child device for guest tracking.  
 - **Logging** – Enable debug or raw event logging (auto-disables after 30 minutes).  
+- **Ignore unmanaged Wi-Fi devices** - Does not report unmanaged device events from network controller.
 
 ---
 
@@ -105,7 +106,7 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 - **Commands (buttons):** Create Client Device, Auto Create Clients, Refresh All Children, Reconnect All Children.  
 
 ### Child Driver
-- **Attributes:** `presence`, `presenceChanged`, `accessPoint`, `accessPointName`, `ssid`, hotspot guest fields.  
+- **Attributes:** `presence`, `presenceChanged`, `accessPoint`, `accessPointName`, `ipAddress`, `ssid`, hotspot guest fields.  
 - **Commands (buttons):** Arrived, Departed.  
 
 ---
