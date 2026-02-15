@@ -33,48 +33,16 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 
 ## v1.8.0.x Series (Refactor & Hardening Phase)
 
-### v1.8.0.0
-- Major refactor using modern library foundation.
 
-### v1.8.0.1
-- Reverted (stability correction).
+### v1.8.0.14
+- Added descriptive text when guest or child total counts change.
 
-### v1.8.0.2
-- Cleaned provisioning logic.
-- Hardened disconnect debounce.
-- Fixed ordering issues.
-- Rationalized lifecycle methods.
+### v1.8.0.13
+- Added preference to filter non-managed device events.
+- Improved duplicate child creation telemetry.
 
-### v1.8.0.3
-- Added child driver minimum version gating.
-- Added `device.id` namespacing to child DNI.
-- Reduced `atomicState` to essentials.
-
-### v1.8.0.4
-- Moved auto-create constants to configurable magic variables.
-
-### v1.8.0.5
-- Removed duplicate `refreshChildren()` vs `refreshAllChildren()`.
-- Collapsed `reconnectAllChildren()`.
-- Code consolidation and cleanup.
-
-### v1.8.0.6
-- Removed `customPortNum` boolean.
-- Gated port handling properly.
-- Reduced excess logging during bulk refresh.
-
-### v1.8.0.7
-- Hotspot deletion updated to attribute-based (no longer DNI-based).
-
-### v1.8.0.8
-- Fixed recursive child/guest summary emission.
-
-### v1.8.0.9
-- Added REST lookup in `parse()` to hydrate child `ipAddress`.
-
-### v1.8.0.10
-- Introduced `roamingEvents`.
-- Corrected event emission logic to prevent roaming from triggering presence changes.
+### v1.8.0.12
+- Final fix ensuring roaming does not emit presence changes.
 
 ### v1.8.0.11
 - Refined event telemetry.
@@ -82,15 +50,48 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Cleared child `ipAddress` on disconnect.
 - Added `ipAddress` to `child.refreshFromParent()` map.
 
-### v1.8.0.12
-- Final fix ensuring roaming does not emit presence changes.
+### v1.8.0.10
+- Introduced `roamingEvents`.
+- Corrected event emission logic to prevent roaming from triggering presence changes.
 
-### v1.8.0.13
-- Added preference to filter non-managed device events.
-- Improved duplicate child creation telemetry.
+### v1.8.0.9
+- Added REST lookup in `parse()` to hydrate child `ipAddress`.
 
-### v1.8.0.14
-- Added descriptive text when guest or child total counts change.
+### v1.8.0.8
+- Fixed recursive child/guest summary emission.
+
+### v1.8.0.7
+- Hotspot deletion updated to attribute-based (no longer DNI-based).
+
+### v1.8.0.6
+- Removed `customPortNum` boolean.
+- Gated port handling properly.
+- Reduced excess logging during bulk refresh.
+
+### v1.8.0.5
+- Removed duplicate `refreshChildren()` vs `refreshAllChildren()`.
+- Collapsed `reconnectAllChildren()`.
+- Code consolidation and cleanup.
+
+### v1.8.0.4
+- Moved auto-create constants to configurable magic variables
+
+### v1.8.0.3
+- Added child driver minimum version gating.
+- Added `device.id` namespacing to child DNI.
+- Reduced `atomicState` to essentials.
+
+### v1.8.0.2
+- Cleaned provisioning logic.
+- Hardened disconnect debounce.
+- Fixed ordering issues.
+- Rationalized lifecycle methods.
+
+### v1.8.0.1
+- Reverted (stability correction).
+
+### v1.8.0.0
+- Major refactor using modern library foundation.
 
 ---
 
@@ -431,5 +432,5 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTkyMzM3ODE2OF19
+eyJoaXN0b3J5IjpbLTE0OTQ5NzQwMjgsLTkyMzM3ODE2OF19
 -->
