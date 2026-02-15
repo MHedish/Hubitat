@@ -51,7 +51,7 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Reduced `atomicState` to essentials.
 
 ### v1.8.0.4
-- Moved auto-create constants to configurable “magic variables”.
+- Moved auto-create constants to configurable magic variables.
 
 ### v1.8.0.5
 - Removed duplicate `refreshChildren()` vs `refreshAllChildren()`.
@@ -431,5 +431,5 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTM3MzE4NDU4NV19
+eyJoaXN0b3J5IjpbLTkyMzM3ODE2OF19
 -->
