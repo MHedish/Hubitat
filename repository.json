@@ -24,7 +24,7 @@
       "category": "Utility",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/packageManifest.json",
       "description": "Hubitat driver pair for UniFi presence detection with client and hotspot monitoring.",
-      "tags": ["Presence & Location", "Network", "UniFi"]
+      "tags": ["LAN", "Monitoring", "Presence & Location", "Tools & Utilities"]
     },
     {
       "id": "4e5c389d-a3d5-4214-b24f-971b975cf7ae",
@@ -52,3 +52,4 @@
     }
   ]
 }
+
