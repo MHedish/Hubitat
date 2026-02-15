@@ -1,65 +1,30 @@
 /*
 *  UniFi Presence Device
 *
-*  Copyright 2025 MHedish
+*  Copyright 2025, 2026 MHedish
 *  Licensed under the Apache License, Version 2.0
 *  https://www.apache.org/licenses/LICENSE-2.0
 *
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  20250813 -- Initial version (based on tomw)
-*  20250814 -- Added manual Arrived/Departed buttons; Added AP Display Name
-*  20250816 -- Optimized code (cleanup, helpers, reduced redundancy)
-*  20250816 -- Added auto-disable logging after 30 minutes
-*  20250816 -- Added Version Info tile (driverInfo attribute)
-*  20250816 -- Ensure driverInfo appears immediately (on install/update/configure)
-*  20250827 -- v1.3.3: Added hotspot guest support attributes
-*  20250828 -- v1.3.5: Unified setPresence for refreshFromParent + commands
-*  20250829 -- v1.3.9: Preferences hide clientMAC for hotspot child; refresh() checks hotspot flag
-*  20250829 -- v1.3.9: Updated logging utilities
-*  20250831 -- v1.4.7: Normalize clientMAC (dashes -> colons), aligned logging
-*  20250901 -- v1.4.8: Synced with parent driver (2025.09.01 release)
-*  20250902 -- v1.4.8.1: Cleaned preferences (removed invalid section blocks)
-*  20250902 -- v1.4.9: Rollback anchor release. Includes cleaned preferences.
-*  20250902 -- v1.4.9.1: Added presenceTimestamp attribute (updated from parent presence changes)
-*  20250903 -- v1.5.0: Added hotspotGuestList attribute (list of connected guest MACs for hotspot child)
-*  20250904 -- v1.5.3: Added hotspotGuestListRaw attribute (raw MAC addresses for hotspot child)
-*  20250904 -- v1.5.4: Synced with parent versioning
-*  20250904 -- v1.5.6: Placeholder sync with parent (no functional child changes in this release)
-*  20250905 -- v1.5.7: Version info now auto-refreshes on refresh()
-*  20250905 -- v1.5.8: Logging overlap fix; presenceTimestamp renamed to presenceChanged
-*  20250905 -- v1.5.9: Normalized version handling (removed redundant state, aligned with parent)
-*  20250907 -- v1.5.10: Applied configurable httpTimeout to all HTTP calls
-*  20250908 -- v1.5.10.1: Testing build - aligned with parent (no functional changes)
-*  20250908 -- v1.5.10.2: Synced with parent driver (restored event declarations in parent)
-*  20250908 -- v1.6.0: Version bump for new development cycle
-*  20250908 -- v1.6.0.1: Switch handling fix - child now queries parent after block/unblock to stay in sync
-*  20250908 -- v1.6.1: Consolidated fixes through v1.6.0.1 into stable release
-*  20250908 -- v1.6.4.0: Applied fixes to presenceChanged timestamp handling and switch sync improvements
-*  20250908 -- v1.6.4.1: Improved switch handling - relies on parent’s immediate refresh for accurate state
-*  20250908 -- v1.7.0.0: Removed Switch capability and on/off commands
-*  20250908 -- v1.7.1.0: Added sync of device name/label to data values in refreshed()
-*  20250910 -- v1.7.4.0: Stable release - aligned with parent, ASCII-safe cleanup, logging fixes (dashes/colons, arrows)
-*  20250917 -- v1.7.5.0: Version bump for alignment with parent (no functional changes)
+*  1.7.0.0  -- Removed Switch capability and on/off commands
+*  1.7.1.0  -- Added sync of device name/label to data values in refreshed()
+*  1.7.4.0  -- Stable release - aligned with parent, ASCII-safe cleanup, logging fixes (dashes/colons, arrows)
+*  1.7.5.0  -- Version bump for alignment with parent (no functional changes)
+*  1.8.0.0  -- Refactored with modern library
+*  1.8.1.0  -- Added child IP Address attribute
+*  1.8.2.0  -- Added driverVersion attribute
+*  1.8.3.0  -- Restored def setVersion()
+*  1.8.4.0  -- Updated refreshFromParent() to use emitChangedEvent() to reduce excessive events
+*  1.8.5.0  -- Stable release
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.7.5.0"
-@Field static final String DRIVER_MODIFIED = "2025.09.17"
-
-/* ===============================
-   Version Info
-   =============================== */
-def driverInfoString() {
-    "${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"
-}
-
-def setVersion() {
-    emitEvent("driverInfo", driverInfoString())
-}
+@Field static final String DRIVER_VERSION  = "1.8.5.0"
+@Field static final String DRIVER_MODIFIED = "2026.02.15"
 
 metadata {
     definition(
@@ -67,23 +32,25 @@ metadata {
         namespace: "MHedish",
         author: "Marc Hedish",
         importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy"
-    ) {
+    ){
         capability "PresenceSensor"
         capability "Refresh"
+
+        attribute "accessPoint","string"
+        attribute "accessPointName", "string"
+        attribute "driverInfo","string"
+        attribute "driverVersion","string"
+        attribute "ssid","string"
+        attribute "ipAddress","string"
+        attribute "hotspotGuests","number"
+        attribute "totalHotspotClients","number"
+        attribute "presenceChanged","string"
+        attribute "hotspotGuestList","string"     // Friendly names or placeholder
+        attribute "hotspotGuestListRaw","string"  // Raw MAC addresses
 
         command "arrived"
         command "departed"
         command "disableDebugLoggingNow"
-
-        attribute "accessPoint", "string"
-        attribute "accessPointName", "string"
-        attribute "driverInfo", "string"
-        attribute "ssid", "string"
-        attribute "hotspotGuests", "number"
-        attribute "totalHotspotClients", "number"
-        attribute "presenceChanged", "string"
-        attribute "hotspotGuestList", "string"     // Friendly names or placeholder
-        attribute "hotspotGuestListRaw", "string"  // Raw MAC addresses
     }
 }
 
@@ -91,182 +58,101 @@ metadata {
    Preferences
    =============================== */
 preferences {
-    // Client MAC (not shown for hotspot child)
-    if (getDataValue("hotspot") != "true") {
-        input "clientMAC", "text", title: "Device MAC", required: true
-    }
-
-    // Debug Logging
-    input "logEnable", "bool", title: "Enable Debug Logging", defaultValue: false
+    if(getDataValue("hotspot") != "true"){input "clientMAC","text", title:"Device MAC",required:true}
+    input"logEnable","bool",title:"Enable Debug Logging",defaultValue:false
 }
 
 /* ===============================
-   Logging Utilities
+   Utilities
    =============================== */
-private logDebug(msg) {
-    if (logEnable) log.debug "[${DRIVER_NAME}] $msg"
-}
-
-private logInfo(msg)  {
-    log.info  "[${DRIVER_NAME}] $msg"
-}
-
-private logWarn(msg)  {
-    log.warn  "[${DRIVER_NAME}] $msg"
-}
-
-private logError(msg) {
-    log.error "[${DRIVER_NAME}] $msg"
-}
-
-private emitEvent(String name, def value, String descriptionText = null) {
-    sendEvent(name: name, value: value, descriptionText: descriptionText)
-}
+private String driverInfoString(){return "${DRIVER_NAME} v${DRIVER_VERSION} (${DRIVER_MODIFIED})"}
+private logDebug(msg){if(logEnable) log.debug"[${DRIVER_NAME}] $msg"}
+private logInfo(msg) {if(logEvents) log.info "[${DRIVER_NAME}] $msg"}
+private logWarn(msg) {log.warn "[${DRIVER_NAME}] $msg"}
+private logError(msg){log.error"[${DRIVER_NAME}] $msg"}
+private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
+private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
+def autoDisableDebugLogging(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "Debug logging disabled (auto)"}catch(e){logDebug "autoDisableDebugLogging(): ${e.message}"}}
+def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "Debug logging disabled (manual)"}catch(e){logDebug "disableDebugLoggingNow(): ${e.message}"}}
+def setVersion(){emitEvent("driverVersion",DRIVER_VERSION);emitEvent("driverInfo",driverInfoString())}
 
 /* ===============================
    Lifecycle
    =============================== */
-def installed() {
-    logInfo "Installed"
-    logInfo "Driver v${DRIVER_VERSION} (${DRIVER_MODIFIED}) loaded successfully"
-    setVersion()
+def installed(){logInfo"Installed";initialize()}
+def updated(){logInfo"Preferences updated";initialize()
+    if(settings.clientMAC){
+        def normalized=settings.clientMAC.replaceAll("-",":").toLowerCase()
+        if(normalized!=settings.clientMAC){device.updateSetting("clientMAC",[value: normalized,type:"text"]);logInfo "Normalized clientMAC to ${normalized}"}
+    }
+    if(getDataValue("hotspot")!="true"&&clientMAC){device.setDeviceNetworkId(parent?.childDni(clientMAC));logInfo "Configured as Normal client child"}
+    else{logInfo"Configured as Hotspot client child"}
+    initialize()
 }
 
-def updated() {
-    logDebug "Preferences"
-
-    // Normalize MAC formatting silently (replace '-' with ':', lowercase)
-    if (settings.clientMAC) {
-        def normalized = settings.clientMAC.replaceAll("-", ":").toLowerCase()
-        if (normalized != settings.clientMAC) {
-            device.updateSetting("clientMAC", [value: normalized, type: "text"])
-            logInfo "Normalized clientMAC to ${normalized}"
-        }
-    }
-
-    if (getDataValue("hotspot") != "true" && clientMAC) {
-        device.setDeviceNetworkId(parent?.childDni(clientMAC))
-        logInfo "Configured as Normal client child"
-    } else {
-        logInfo "Configured as Hotspot client child"
-    }
-
-    configure()
-
-    if (logEnable) {
-        logInfo "${DRIVER_NAME}: Debug logging enabled for 30 minutes"
-        unschedule(logsOff)
-        runIn(1800, logsOff)   // auto-disable after 30 minutes
-    }
-    setVersion()
-}
-
-def configure() {
-    state.clear()
+def initialize(){
+	logInfo"${driverInfoString()} initializing..."
+	emitEvent("driverInfo",driverInfoString())
+    unschedule(autoDisableDebugLogging)
+    if(logEnable)runIn(1800,autoDisableDebugLogging)
     refresh()
-    setVersion()
-}
-
-def logsOff() {
-    device.updateSetting("logEnable", [value: "false", type: "bool"])
-    logInfo "${DRIVER_NAME}: Debug logging disabled (auto)"
-}
-
-def disableDebugLoggingNow() {
-    unschedule(logsOff)
-    device.updateSetting("logEnable", [value: "false", type: "bool"])
-    logInfo "${DRIVER_NAME}: Debug logging disabled (manual command)"
 }
 
 /* ===============================
    Refresh
    =============================== */
-def refresh() {
-    // Always sync metadata first, log only if changed
-    if (device.getName()) {
-        def oldName = getDataValue("name")
-        def newName = device.getName()
-        if (oldName != newName) {
-            device.updateDataValue("name", newName)
-            logInfo "Device name updated in data values: '${oldName}' -> '${newName}'"
-        }
+def refresh(){
+    if(device.getName()){
+        def oldName=getDataValue("name");def newName=device.getName()
+        if(oldName!=newName){device.updateDataValue("name",newName);logInfo"Device name updated in data values: '${oldName}' -> '${newName}'"}
     }
-    if (device.getLabel()) {
-        def oldLabel = getDataValue("label")
-        def newLabel = device.getLabel()
-        if (oldLabel != newLabel) {
-            device.updateDataValue("label", newLabel)
-            logInfo "Device label updated in data values: '${oldLabel}' -> '${newLabel}'"
-        }
+    if(device.getLabel()){
+        def oldLabel=getDataValue("label");def newLabel=device.getLabel()
+        if(oldLabel!=newLabel){device.updateDataValue("label",newLabel);logInfo"Device label updated in data values: '${oldLabel}' -> '${newLabel}'"}
     }
-
-    if (getDataValue("hotspot") == "true") {
-        parent?.refreshHotspotChild()
-    } else if (settings.clientMAC) {
-        parent?.refreshFromChild(settings.clientMAC)
-    } else {
-        logWarn "${DRIVER_NAME}: refresh() called but no clientMAC or hotspot flag set"
-    }
+    if(getDataValue("hotspot")=="true"){parent?.refreshHotspotChild()}
+    else if(settings.clientMAC){parent?.refreshFromChild(settings.clientMAC)}
 }
 
 /* ===============================
    Parent Callbacks
    =============================== */
-def setupFromParent(clientDetails) {
-    if (!clientDetails) return
-    if (getDataValue("hotspot") == "true") return  // skip for hotspot children
-
-    // Normalize MAC formatting from parent
-    def normalized = clientDetails.mac?.replaceAll("-", ":")?.toLowerCase()
-    if (normalized) {
-        device.setDeviceNetworkId(parent?.childDni(normalized))
-        device.updateSetting("clientMAC", [value: normalized, type: "text"])
-        logInfo "setupFromParent(): Configured clientMAC = ${normalized}"
+def setupFromParent(clientDetails){
+    if(!clientDetails)return
+    if(getDataValue("hotspot")=="true")return  // skip for hotspot children
+    def normalized=clientDetails.mac?.replaceAll("-",":")?.toLowerCase()
+    if(normalized){
+        device.setDeviceNetworkId(parent?.childDni(normalized));device.updateSetting("clientMAC",[value: normalized,type:"text"])
+        logInfo"setupFromParent(): Configured clientMAC = ${normalized}"
     }
-
     refresh()
 }
 
-def refreshFromParent(clientDetails) {
-    logDebug "refreshFromParent(${clientDetails})"
-    if (!clientDetails) return
-
-    // Use setPresence for consistency (handles arrived/departed events)
-    if (clientDetails.presence != null) {
-        setPresence(clientDetails.presence == "present")
-    }
-
-    if (clientDetails.accessPoint) emitEvent("accessPoint", clientDetails.accessPoint)
-    if (clientDetails.accessPointName) emitEvent("accessPointName", clientDetails.accessPointName)
-    if (clientDetails.ssid != null) emitEvent("ssid", clientDetails.ssid)
-
-    if (clientDetails.hotspotGuests != null) emitEvent("hotspotGuests", clientDetails.hotspotGuests)
-    if (clientDetails.totalHotspotClients != null) emitEvent("totalHotspotClients", clientDetails.totalHotspotClients)
-    if (clientDetails.presenceChanged) emitEvent("presenceChanged", clientDetails.presenceChanged)
-
-    // Hotspot lists
-    if (clientDetails.hotspotGuestList != null) {
-        emitEvent("hotspotGuestList", clientDetails.hotspotGuestList)
-    }
-    if (clientDetails.hotspotGuestListRaw != null) {
-        emitEvent("hotspotGuestListRaw", clientDetails.hotspotGuestListRaw)
-    }
+def refreshFromParent(clientDetails){
+    logDebug"refreshFromParent(${clientDetails})"
+    if(!clientDetails)return
+    if(clientDetails.presence!=null){setPresence(clientDetails.presence=="present")}
+    if(clientDetails.accessPoint)emitChangedEvent("accessPoint",clientDetails.accessPoint)
+    if(clientDetails.accessPointName)emitChangedEvent("accessPointName",clientDetails.accessPointName)
+    if(clientDetails.ssid!=null)emitChangedEvent("ssid",clientDetails.ssid)
+    if(clientDetails.ipAddress!=null)emitChangedEvent("ipAddress",clientDetails.ipAddress)
+    if(clientDetails.hotspotGuests!=null)emitChangedEvent("hotspotGuests",clientDetails.hotspotGuests)
+    if(clientDetails.totalHotspotClients!=null)emitChangedEvent("totalHotspotClients",clientDetails.totalHotspotClients)
+    if(clientDetails.presenceChanged)emitEvent("presenceChanged",clientDetails.presenceChanged)
+    if(clientDetails.hotspotGuestList!=null)emitChangedEvent("hotspotGuestList",clientDetails.hotspotGuestList)
+    if(clientDetails.hotspotGuestListRaw!=null)emitChangedEvent("hotspotGuestListRaw",clientDetails.hotspotGuestListRaw)
 }
 
 /* ===============================
    Presence Handling
    =============================== */
-def arrived()  { setPresence(true) }
-def departed() { setPresence(false) }
+def arrived(){setPresence(true)}
+def departed(){setPresence(false)}
 
-private setPresence(boolean status) {
-    def oldStatus = device.currentValue("presence")
-    def currentStatus = status ? "present" : "not present"
-    def event = status ? "arrived" : "departed"
-
-    if (oldStatus != currentStatus) {
-        emitEvent("presence", currentStatus, "${device.displayName} has $event")
-        // Always set presenceChanged timestamp on manual or parent-triggered changes
-        emitEvent("presenceChanged", new Date().format("yyyy-MM-dd HH:mm:ss", location.timeZone))
+private void setPresence(boolean status){
+    def oldStatus=device.currentValue("presence");def currentStatus=status?"present":"not present"
+    if(oldStatus!=currentStatus){
+        emitEvent("presence",currentStatus,"${status?'🛬':'🛫'} ${device.displayName} has ${status?'arrived':'departed'}",null,true)
+        emitEvent("presenceChanged",new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone),null,null,true)
     }
 }
