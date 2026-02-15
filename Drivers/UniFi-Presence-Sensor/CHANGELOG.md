@@ -28,8 +28,6 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Disconnect now clears SSID, AP, and IP attributes.
 - Stable alignment with parent v1.8.5.0.
 
----
-
 ## v1.8.0.x Series (Refactor & Hardening Phase)
 
 
@@ -111,8 +109,6 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 **Child Driver**
 - Version bump for alignment with parent (no functional changes).
 
----
-
 ## v1.7.4.0 (2025-09-10)
 **Parent Driver**
 - Stable release – consolidated SSID sanitization, wireless-only event filtering (EVT_W), and child/guest summaries.
@@ -129,13 +125,9 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
   - Normalizes MAC formatting automatically (dashes → colons, lowercase).
   - Keeps Device Network ID and metadata synced with parent.
 
----
-
 ## v1.7.3.1 (2025-09-10)
 **Parent Driver**
 - Optimized event parsing – early filter tightened to EVT_W (wireless only), eliminating LAN event JSON parsing.
-
----
 
 ## v1.7.3.0 (2025-09-09)
 **Parent Driver**
@@ -346,26 +338,20 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Hotspot monitoring tweaks.
 - Child DNI improvements.
 
----
-
 ## v1.2.0 (2025-08-19)
 **Parent Driver**
 - Optimized drivers with unified queries.
 - Improved debounce handling and logging.
-
----
 
 ## v1.1.0 (2025-08-18)
 **Parent Driver**
 - Added driver info tile.
 - Basic enhancements to logging and metadata.
 
----
-
 ## v1.0.0 (2025-08-13)
 **Parent Driver**
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTc0MTgzMTc3NSwtOTIzMzc4MTY4XX0=
+eyJoaXN0b3J5IjpbNDU3MzE4NTAwLC05MjMzNzgxNjhdfQ==
 -->
