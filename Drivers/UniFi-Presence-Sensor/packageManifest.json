@@ -1,9 +1,9 @@
 {
   "packageName": "UniFi Presence Drivers",
   "author": "Marc Hedish",
-  "version": "1.7.5.1",
+  "version": "1.8.5.0",
   "minimumHEVersion": "2.3.0",
-  "dateReleased": "2025-09-17",
+  "dateReleased": "2026-02-15",
   "drivers": [
     {
       "id": "unifi-presence-controller",
@@ -11,7 +11,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy",
       "required": true,
-      "version": "1.7.5.1"
+      "version": "1.8.5.0"
     },
     {
       "id": "unifi-presence-device",
@@ -19,9 +19,9 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy",
       "required": true,
-      "version": "1.7.5.0"
+      "version": "1.8.5.0"
     }
   ],
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/readme.md",
-  "releaseNotes": "v1.7.5.1 (2025-09-17): Added webSocketStatus() and webSocketMessage() handlers to fix missing method errors and ensure UniFi events are routed to parse()."
+  "releaseNotes": "v1.8.5.0 (2026-02-15): Stable release: roaming no longer triggers false presence changes, added IP address attribute for child devices, refined event telemetry, eliminated recursive summaries, and completed structural cleanup and performance tightening."
 }
