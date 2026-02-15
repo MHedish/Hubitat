@@ -2,8 +2,13 @@
   "packageName": "UniFi Presence Drivers",
   "author": "Marc Hedish",
   "version": "1.8.5.0",
-  "minimumHEVersion": "2.3.0",
+  "minimumHEVersion": "2.3.6",
   "dateReleased": "2026-02-15",
+  "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/README.md",
+  "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/CHANGELOG.md",
+  "category": "Utility",
+  "tags": ["LAN", "Monitoring", "Presence & Location", "Tools & Utilities"],  
+  "releaseNotes": "v1.8.5.0 (2026-02-15): Stable release: roaming no longer triggers false presence changes, added IP address attribute for child devices, refined event telemetry, eliminated recursive summaries, and completed structural cleanup and performance tightening.",
   "drivers": [
     {
       "id": "unifi-presence-controller",
@@ -21,7 +26,5 @@
       "required": true,
       "version": "1.8.5.0"
     }
-  ],
-  "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/readme.md",
-  "releaseNotes": "v1.8.5.0 (2026-02-15): Stable release: roaming no longer triggers false presence changes, added IP address attribute for child devices, refined event telemetry, eliminated recursive summaries, and completed structural cleanup and performance tightening."
+  ]
 }
