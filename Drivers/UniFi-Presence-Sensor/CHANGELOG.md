@@ -2,7 +2,6 @@
 All notable changes to the UniFi Presence Drivers will be documented in this file.
 
 ---
----
 
 ## v1.8.5.0 (2026-02-15) – Stable Release
 
@@ -142,14 +141,10 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 **Parent Driver**
 - Added `cleanSSID()` helper; SSID sanitized in parse() and refreshFromChild() (removes quotes and channel info).
 
----
-
 ## v1.7.2.0 (2025-09-09)
 **Parent Driver**
 - Added `childDevices` and `guestDevices` attributes.
 - Updated on refresh(), refreshAllChildren(), reconnectAllChildren(), updated(), parse(), markNotPresent(), refreshHotspotChild(), refreshFromChild().
-
----
 
 ## v1.7.1.1 (2025-09-09)
 **Parent Driver**
@@ -432,5 +427,5 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE0OTQ5NzQwMjgsLTkyMzM3ODE2OF19
+eyJoaXN0b3J5IjpbMjcxMDUyNzE3LC05MjMzNzgxNjhdfQ==
 -->
