@@ -156,3 +156,6 @@ Latest release: **v1.7.4.0 (2025-09-10)** – stable release.
 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)  
 
 © 2025 Marc Hedish
+<!--stackedit_data:
+eyJoaXN0b3J5IjpbMTc5OTYzNTcxN119
+-->
