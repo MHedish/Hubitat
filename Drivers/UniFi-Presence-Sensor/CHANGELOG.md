@@ -18,6 +18,8 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 ### Child Driver
 - Updated description text for manual presence change
 
+---
+
 ### v1.8.5.0
 - Finalized roaming event handling — roaming no longer emits false presence changes.
 - REST-backed IP reconciliation:
@@ -363,6 +365,6 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTM3MDU4OTE2Nyw0NTczMTg1MDAsLTkyMz
+eyJoaXN0b3J5IjpbMTY1NTU0MzQ0MCw0NTczMTg1MDAsLTkyMz
 M3ODE2OF19
 -->
