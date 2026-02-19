@@ -1,14 +1,14 @@
 {
   "packageName": "UniFi Presence Drivers",
   "author": "Marc Hedish",
-  "version": "1.8.5.0",
-  "minimumHEVersion": "2.3.6",
-  "dateReleased": "2026-02-15",
+  "version": "1.8.6.0",
+  "minimumHEVersion": "2.3.8",
+  "dateReleased": "2026-02-19",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/README.md",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/CHANGELOG.md",
   "category": "Utility",
   "tags": ["LAN", "Monitoring", "Presence & Location", "Tools & Utilities"],  
-  "releaseNotes": "v1.8.5.0 (2026-02-15): Stable release: roaming no longer triggers false presence changes, added IP address attribute for child devices, refined event telemetry, eliminated recursive summaries, and completed structural cleanup and performance tightening.",
+  "releaseNotes": "v1.8.6.0 (2026-02-19): Stability and authentication hardening release: corrected commStatus state handling during auth failures and rate limits, eliminated recursive reinitialize/login storms, implemented proper 429 backoff behavior, fixed WebSocket initialization sequencing and header handling, resolved Hubitat GString/connect signature issues, improved greenfield initialization behavior, refined logging controls and auto-disable routines, and completed additional structural cleanup for reliability.",
   "drivers": [
     {
       "id": "unifi-presence-controller",
@@ -16,7 +16,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy",
       "required": true,
-      "version": "1.8.5.0"
+      "version": "1.8.6.0"
     },
     {
       "id": "unifi-presence-device",
@@ -24,7 +24,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy",
       "required": true,
-      "version": "1.8.5.0"
+      "version": "1.8.6.0"
     }
   ]
 }
