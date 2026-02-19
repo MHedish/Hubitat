@@ -1,7 +1,7 @@
 /*
 *  UniFi Presence Device
 *
-*  Copyright 2025, 2026 MHedish
+*  Copyright 2025 MHedish
 *  Licensed under the Apache License, Version 2.0
 *  https://www.apache.org/licenses/LICENSE-2.0
 *
@@ -18,13 +18,15 @@
 *  1.8.3.0  -- Restored def setVersion()
 *  1.8.4.0  -- Updated refreshFromParent() to use emitChangedEvent() to reduce excessive events
 *  1.8.5.0  -- Stable release
+*  1.8.5.1  -- Updated description text for manual presence change
+*  1.8.6.0  -- Version bump for alignment with parent (no functional changes)
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.8.5.0"
-@Field static final String DRIVER_MODIFIED = "2026.02.15"
+@Field static final String DRIVER_VERSION  = "1.8.6.0"
+@Field static final String DRIVER_MODIFIED = "2026.02.19"
 
 metadata {
     definition(
@@ -58,7 +60,7 @@ metadata {
    Preferences
    =============================== */
 preferences {
-    if(getDataValue("hotspot") != "true"){input "clientMAC","text", title:"Device MAC",required:true}
+    if(getDataValue("hotspot")!="true"){input "clientMAC","text", title:"Device MAC",required:true}
     input"logEnable","bool",title:"Enable Debug Logging",defaultValue:false
 }
 
@@ -72,8 +74,8 @@ private logWarn(msg) {log.warn "[${DRIVER_NAME}] $msg"}
 private logError(msg){log.error"[${DRIVER_NAME}] $msg"}
 private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
 private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
-def autoDisableDebugLogging(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "Debug logging disabled (auto)"}catch(e){logDebug "autoDisableDebugLogging(): ${e.message}"}}
-def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "Debug logging disabled (manual)"}catch(e){logDebug "disableDebugLoggingNow(): ${e.message}"}}
+private void autoDisableDebugLogging(){try{unschedule("autoDisableDebugLogging");device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "Debug logging disabled (auto)"}catch(e){logDebug"autoDisableDebugLogging(): ${e.message}"}}
+def disableDebugLoggingNow(){try{unschedule("autoDisableDebugLogging");device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "Debug logging disabled (manual)"}catch(e){logDebug"disableDebugLoggingNow(): ${e.message}"}}
 def setVersion(){emitEvent("driverVersion",DRIVER_VERSION);emitEvent("driverInfo",driverInfoString())}
 
 /* ===============================
@@ -91,10 +93,8 @@ def updated(){logInfo"Preferences updated";initialize()
 }
 
 def initialize(){
-	logInfo"${driverInfoString()} initializing..."
-	emitEvent("driverInfo",driverInfoString())
-    unschedule(autoDisableDebugLogging)
-    if(logEnable)runIn(1800,autoDisableDebugLogging)
+	emitEvent("driverInfo",driverInfoString(),"✅ Initializing",null,true);unschedule("autoDisableDebugLogging")
+    if(logEnable)runIn(1800,"autoDisableDebugLogging")
     refresh()
 }
 
@@ -152,7 +152,7 @@ def departed(){setPresence(false)}
 private void setPresence(boolean status){
     def oldStatus=device.currentValue("presence");def currentStatus=status?"present":"not present"
     if(oldStatus!=currentStatus){
-        emitEvent("presence",currentStatus,"${status?'🛬':'🛫'} ${device.displayName} has ${status?'arrived':'departed'}",null,true)
+        emitEvent("presence",currentStatus,"${status?'🛬':'🛫'} ${device.displayName} manually set ${currentStatus}",null,true)
         emitEvent("presenceChanged",new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone),null,null,true)
     }
 }
