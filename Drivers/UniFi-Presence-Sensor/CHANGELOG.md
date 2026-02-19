@@ -2,14 +2,14 @@
 All notable changes to the UniFi Presence Drivers will be documented in this file.
 
 ---
-## v1.8.6.0 (2026-02-19) – Stable Release
+## v1.8.6.0 (2026-02-19) – Stability and authentication hardening release
 
 ### Parent Driver
-
+- Stability and authentication hardening release: corrected commStatus state handling during auth failures and rate limits, eliminated recursive reinitialize/login storms, implemented proper 429 backoff behavior, fixed WebSocket initialization sequencing and header handling, resolved Hubitat GString/connect signature issues, improved greenfield initialization behavior, refined logging controls and auto-disable routines, and completed additional structural cleanup for reliability.",
 ### Child Driver
+- Updated description text for manual presence change
 
-#$# v1.8.5.0 (2026-02-15)
-
+### v1.8.5.0
 - Finalized roaming event handling — roaming no longer emits false presence changes.
 - REST-backed IP reconciliation:
   - Added `ipAddress` attribute to child devices.
@@ -31,7 +31,6 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Stable alignment with parent v1.8.5.0.
 
 ## v1.8.0.x Series (Refactor & Hardening Phase)
-
 
 ### v1.8.0.14
 - Added descriptive text when guest or child total counts change.
@@ -355,6 +354,6 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIxMjMyODQ3MTYsNDU3MzE4NTAwLC05Mj
-MzNzgxNjhdfQ==
+eyJoaXN0b3J5IjpbMTA2NTY0ODg0LDQ1NzMxODUwMCwtOTIzMz
+c4MTY4XX0=
 -->
