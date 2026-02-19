@@ -2,10 +2,14 @@
 All notable changes to the UniFi Presence Drivers will be documented in this file.
 
 ---
-
-## v1.8.5.0 (2026-02-15) – Stable Release
+## v1.8.6.0 (2026-02-19) – Stable Release
 
 ### Parent Driver
+
+### Child Driver
+
+#$# v1.8.5.0 (2026-02-15)
+
 - Finalized roaming event handling — roaming no longer emits false presence changes.
 - REST-backed IP reconciliation:
   - Added `ipAddress` attribute to child devices.
@@ -20,8 +24,6 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Removed recursive summary updates; stabilized summary emission logic.
 - Performance tightening and dead-code sweep completed.
 - Structural cleanup prior to stable tagging.
-
-### Child Driver
 - Added `ipAddress` attribute.
 - Restored `setVersion()` method.
 - Improved telemetry and lifecycle cleanup.
@@ -353,5 +355,6 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNDU3MzE4NTAwLC05MjMzNzgxNjhdfQ==
+eyJoaXN0b3J5IjpbLTIxMjMyODQ3MTYsNDU3MzE4NTAwLC05Mj
+MzNzgxNjhdfQ==
 -->
