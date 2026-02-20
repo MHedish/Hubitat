@@ -6,6 +6,7 @@
   "dateReleased": "2026-02-05",
   "releaseNotes": "v1.2.0.0 — Added astronomical data attributes, solar based (dawn/sunrise/sunset/dusk) scheduling; enhanced program scheduling confict detection and reporting. fixed edge-case preveting manual zone stop; fixed Tempest rain event detection when Tempest is no longer the weather provider.",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md",
+  "communityLink": "https://community.hubitat.com/t/wet-it-weather-enhanced-time-based-irrigation-tuning-for-hubitat/160224",
   "description": "Local-first evapotranspiration (ET) and soil-moisture modeling app for Hubitat. Provides professional-grade irrigation intelligence similar to Rachio, Orbit, and Hydrawise, running entirely on-hub.",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/CHANGELOG.md",
   "category": ["Utility","Control","Convenience"],
