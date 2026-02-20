@@ -1,6 +1,7 @@
 {
   "author": "Marc Hedish",
   "gitHubUrl": "https://github.com/MHedish/Hubitat",
+  "payPalUrl": "https://paypal.me/MHedish",
   "packages": [
     {
       "id": "6e5251ae-6faf-42f6-94a5-341806660b76",
@@ -52,4 +53,5 @@
     }
   ]
 }
+
 
