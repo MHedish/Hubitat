@@ -6,6 +6,7 @@
   "dateReleased": "2026-02-07",
   "releaseNotes": "Stable release — v1.0.3.0 — Added summary text attribute; Fixed infinite deferral loop after hub reboot; Introduced scheduled watchdog — sets connectStatus to 'watchdog' when triggered; Improved transient-based deferral counter; corrected cron reschedule when UPS enters/leaves battery mode.",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/README.md",
+  "communityLink": "https://community.hubitat.com/t/release-apc-smartups-status-driver/158899",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/CHANGELOG.md",
   "tags": ["UPS","APC","Smart-UPS","Integrations","Monitoring","Hubitat","Tools & Utilities"],
   "drivers": [
