@@ -1,15 +1,15 @@
 {
   "packageName": "UniFi Presence Drivers",
   "author": "Marc Hedish",
-  "version": "1.8.6.0",
+  "version": "1.8.6.2",
   "minimumHEVersion": "2.3.8",
-  "dateReleased": "2026-02-19",
+  "dateReleased": "2026-02-20",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/README.md",
   "communityLink": "https://community.hubitat.com/t/release-unifi-presence-drivers-for-hubitat/156847",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/CHANGELOG.md",
   "category": "Utility",
   "tags": ["LAN", "Monitoring", "Presence & Location", "Tools & Utilities"],  
-  "releaseNotes": "v1.8.6.0 (2026-02-19): Stability and authentication hardening release: corrected commStatus state handling during auth failures and rate limits, eliminated recursive reinitialize/login storms, implemented proper 429 backoff behavior, fixed WebSocket initialization sequencing and header handling, resolved Hubitat GString/connect signature issues, improved greenfield initialization behavior, refined logging controls and auto-disable routines, and completed additional structural cleanup for reliability.",
+  "releaseNotes": "v1.8.6.0 (2026-02-19): Stability and authentication hardening release: corrected commStatus state handling during auth failures and rate limits, eliminated recursive reinitialize/login storms, implemented proper 429 backoff behavior, fixed WebSocket initialization sequencing and header handling, resolved Hubitat GString/connect signature issues, improved greenfield initialization behavior, refined logging controls and auto-disable routines, and completed additional structural cleanup for reliability.\nv1.8.6.2 (2026-02-20):  Updated genParamsAuth() to acommodate older UniFiOS 4.x; Added Ignore SSL Certificate Issues preference; enhanced commStatus messages",
   "drivers": [
     {
       "id": "unifi-presence-controller",
@@ -17,7 +17,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy",
       "required": true,
-      "version": "1.8.6.0"
+      "version": "1.8.6.2"
     },
     {
       "id": "unifi-presence-device",
