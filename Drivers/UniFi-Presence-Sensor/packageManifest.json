@@ -5,6 +5,7 @@
   "minimumHEVersion": "2.3.8",
   "dateReleased": "2026-02-19",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/README.md",
+  "communityLink": "https://community.hubitat.com/t/release-unifi-presence-drivers-for-hubitat/156847",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/CHANGELOG.md",
   "category": "Utility",
   "tags": ["LAN", "Monitoring", "Presence & Location", "Tools & Utilities"],  
