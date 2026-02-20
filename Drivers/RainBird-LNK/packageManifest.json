@@ -6,6 +6,7 @@
   "dateReleased": "2025-12-17",
   "minimumHEVersion": "2.3.6",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md",
+  "communityLink": "https://community.hubitat.com/t/release-rain-bird-lnk-lnk2-wifi-module-controller/159062",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/CHANGELOG.md",
   "category": "Utility",
   "tags": ["Irrigation", "Valves", "Timers", "Monitoring", "Water"],
