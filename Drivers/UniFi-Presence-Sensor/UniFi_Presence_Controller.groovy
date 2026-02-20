@@ -8,15 +8,6 @@
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  1.7.0.0  -- Removed block/unblock (Switch) support; driver now focused solely on presence detection
-*  1.7.1.0  -- Improved SSID handling in parse() and refreshFromChild() (handles spaces, quotes, special chars; empty SSID ? null)
-*  1.7.1.1  -- Unified Raw Event Logging disable with Debug Logging (auto-disable 30m, safe unschedule handling)
-*  1.7.2.0  -- Added childDevices and guestDevices attributes; updated on refresh(), refreshAllChildren(), reconnectAllChildren(), updated(), parse(), markNotPresent(), refreshHotspotChild(), refreshFromChild()
-*  1.7.3.0  -- Added cleanSSID() helper; SSID sanitized in parse() and refreshFromChild() (removes quotes and channel info)
-*  1.7.3.1  -- Optimized event parsing - early filter tightened to EVT_W (wireless only), eliminating LAN event JSON parsing
-*  1.7.4.0  -- Stable release - feature complete and hardened
-*  1.7.5.0  -- Added encodeSiteName() helper - site names with spaces/special chars are now URL-encoded for safe API calls
-*  1.7.5.1  -- Added webSocketStatus() and webSocketMessage() handlers - fixes missing method errors, routes UniFi events to parse()
 *  1.8.0.0  -- Refactored with modern library
 *  1.8.0.1  -- Reverted
 *  1.8.0.2  -- Cleaned provisioning; hardened debounce; fixed ordering issues; rationalized lifecycle methods
@@ -40,6 +31,8 @@
 *  1.8.5.5  -- Updated lifecycle, WSS, logging improvements
 *  1.8.5.6  -- Updated presence event description
 *  1.8.6.0  -- Stable Release - Reversioned for release
+*  1.8.6.1  -- Updated genParansAuth() to acommodate older UniFiOS 4.x
+*  1.8.6.2  -- Added param to ignore SSL errors
 */
 
 import groovy.transform.Field
@@ -47,9 +40,9 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 import java.net.URLEncoder
 
-@Field static final String DRIVER_NAME="UniFi Presence Controller"
-@Field static final String DRIVER_VERSION="1.8.6.0"
-@Field static final String DRIVER_MODIFIED="2026.02.19"
+@Field static final String DRIVER_NAME="UniFi Presence Controller (Test Track)"
+@Field static final String DRIVER_VERSION="1.8.6.2"
+@Field static final String DRIVER_MODIFIED="2026.02.20"
 @Field static final Integer AUTO_CREATE_DAYS=1
 @Field static final Integer AUTO_CREATE_MAX=50
 @Field static final Map CHILD_DRIVER=[name:"UniFi Presence Device",minVer:"1.8.6.0",required:true]
@@ -101,7 +94,8 @@ preferences {
     input"disconnectDebounce","number",title:"Disconnect Debounce (seconds, default=20)",defaultValue:20
     input"httpTimeout","number",title:"HTTP Timeout (seconds, default=15)",defaultValue:15
     input"monitorHotspot","bool",title:"Monitor Hotspot Clients",defaultValue:true
-	input"ignoreUnmanagedDevices","bool",title:"Ignore unmanaged Wi-Fi devices",defaultValue:true
+    input"ignoreUnmanagedDevices","bool",title:"Ignore unmanaged Wi-Fi devices",defaultValue:true
+    input"ignoreSSLIssues","bool",title:"Ignore SSL Certificate Issues",defaultValue:true
     input"logRawEvents","bool",title:"Enable raw UniFi event debug logging",defaultValue:false
     input"logEvents","bool",title:"Log all events",defaultValue:false
     input"logEnable","bool",title:"Enable Debug Logging",defaultValue:false
@@ -133,7 +127,7 @@ def installed(){logInfo"Installed";initialize()}
 def updated(){logInfo"Preferences updated";if(monitorHotspot){createHotspotChild()}else{deleteHotspotChild()}
 	logDebug"⚙️ Preferences – Site: ${siteName} | Refresh: ${refreshInterval} | Debounce: ${disconnectDebounce} | HTTP Timeout: ${httpTimeout} | Ignore Unmanaged: ${ignoreUnmanagedDevices}";initialize()}
 def initialize(){
-    emitEvent("driverInfo",driverInfoString(),"✅ Initializing...",null,true);emitEvent("commStatus","unknown","☑️ Initializing")
+    emitEvent("driverInfo",driverInfoString(),"☑️ Initializing",null,true);emitEvent("commStatus","unknown","☑️ Initializing",null,true)
     recoverDisconnectTimers()
     if(controllerIP&&username&&password){
         if(logEnable){logInfo"🪲 Debug logging enabled for 30 minutes";unschedule("autoDisableDebugLogging");runIn(1800,"autoDisableDebugLogging")}
@@ -143,7 +137,7 @@ def initialize(){
             if(os==null)throw new Exception("⚠️ Check IP, port, or controller connection")
             atomicState.UniFiOS=os;refreshCookie()
             if(atomicState.cookie&&atomicState.csrf){
-                atomicState.remove("reconnectDelay");emitEvent("commStatus","good","✅ Connection established",null,true)
+                atomicState.remove("reconnectDelay");emitEvent("commStatus","good","✅ REST connection established",null,true)
                 runIn(2,"refresh");runIn(4,"checkChildDriver");runIn(6,"openEventSocket");querySysInfo();updateChildAndGuestSummaries()
             }else{emitEvent("commStatus","error","❌ Not authenticated")}
         }catch(e){logError"initialize() failed: ${e.message}";emitEvent("commStatus","error","⚠️ initialize_exception");reinitialize()}
@@ -188,13 +182,13 @@ private void createHotspotChild(){
     try{
         if(getChildDevices()?.find{it.getDataValue("hotspot")=="true"}) return
         def dni="UniFi-${device.id}-hotspot";def newChild=addChildDevice("UniFi Presence Device",dni,[label:"Guest",name:"UniFi Hotspot",isComponent:false])
-        newChild.updateDataValue("hotspot","true");logInfo"Created Hotspot child device"
+        newChild.updateDataValue("hotspot","true");logInfo"🛜 Hotspot child device created"
     }catch(e){logError"createHotspotChild() failed: ${e.message}"}
 }
 
 private void deleteHotspotChild(){
     def child=getChildDevices()?.find{it.getDataValue("hotspot")=="true"}
-    if(child){logInfo"Deleting Hotspot child device";deleteChildDevice(child.deviceNetworkId)};emitEvent("guestDevices","disabled","Monitor Hotspot Clients set to disabled in Preferences",null,true)
+    if(child){logInfo"🛜 Deleting Hotspot child device";deleteChildDevice(child.deviceNetworkId)};emitEvent("guestDevices","disabled","Monitor Hotspot Clients set to disabled in Preferences",null,true)
 }
 
 private Map checkChildDriver(){
@@ -373,7 +367,7 @@ private formatTimestamp(rawTime){
    WebSocket Handling
    =============================== */
 def webSocketStatus(String status){
-	if(status.startsWith("status: open")){emitEvent("commStatus","good","⛓️ WebSocket connection established",null,true);atomicState.reconnectDelay=1}
+	if(status.startsWith("status: open")){emitEvent("commStatus","good","🔗️ WebSocket connection established",null,true);emitEvent("driverInfo",driverInfoString(),"✅ Initialization complete",null,true);atomicState.reconnectDelay=1}
 	else if(status.startsWith("status: closing")){emitEvent("commStatus","closing","⛓️‍💥️ WebSocket disconnecting",null,true)}
 	else if(status.startsWith("status: closed")){
 		logWarn"⚠️ WebSocket closed"
@@ -447,7 +441,7 @@ private void openEventSocket(){
         if(!port){logWarn"❌ WebSocket not opened: port unresolved";return}
         def uri="wss://${controllerIP}:${port}/proxy/network/wss/s/${encodeSiteName(siteName)}/events".toString()
         logDebug"Connecting websocket -> ${uri}"
-        interfaces.webSocket.connect(uri,headers:["Cookie":atomicState.cookie,"X-CSRF-Token":atomicState.csrf],ignoreSSLIssues:true)
+        interfaces.webSocket.connect(uri,headers:["Cookie":atomicState.cookie,"X-CSRF-Token":atomicState.csrf],ignoreSSLIssues:(settings?.ignoreSSLIssues?:false))
     }catch(e){logError"❌ openEventSocket() failed: ${sanitizePayload(e.message)}"}
 }
 
@@ -527,21 +521,24 @@ private String cleanSSID(val){
    HTTP / WebSocket Helpers
    =============================== */
 private genParamsAuth(op){
-	[uri:getBaseURI()+(op=="login"?getLoginSuffix():getLogoutSuffix()),headers:['Content-Type':"application/json"],body:JsonOutput.toJson([username:username,password:password,strict:true]),ignoreSSLIssues:true,timeout:(httpTimeout?:15)]}
-	def genHeadersWss(){[Cookie:atomicState.cookie,'User-Agent':"UniFi Events"]
+    def uri=getBaseURI()+(op=="login"?getLoginSuffix():getLogoutSuffix())
+    def bodyMap=[username:username,password:password]
+    if(atomicState.UniFiOS)bodyMap.strict=true
+    [uri:uri,headers:['Content-Type':"application/json"],body:JsonOutput.toJson(bodyMap),timeout:(httpTimeout?:15)]
 }
 
 private def genParamsMain(suffix, body=null){
 	def params=[uri:getBaseURI()+getKnownClientsSuffix()+suffix,headers:[Cookie:atomicState.cookie,'X-CSRF-Token':atomicState.csrf],ignoreSSLIssues:true,timeout:(httpTimeout?:15)]
-    if(body) params.body=body
+    if(body)params.body=body
     return params
 }
 
 private httpExec(op,params){
-    def result;if(!params.timeout){params.timeout=(httpTimeout?:15)}     // Ensure timeout is always applied
-    logDebug"httpExec(${op}, ${sanitizePayload(params?.toString())})";def cb={resp->result=resp}
-    if(op=="POST"){httpPost(params, cb)}
-    else if(op=="GET"){httpGet(params,cb)}
+    def result;if(!params.timeout)params.timeout=(httpTimeout?:15)
+    params.ignoreSSLIssues=settings?.ignoreSSLIssues?:true;logDebug"httpExec(${op}, ${sanitizePayload(params?.toString())})"
+    def cb={resp->result=resp}
+    if(op=="POST")httpPost(params,cb)
+    else if(op=="GET")httpGet(params,cb)
     result
 }
 
