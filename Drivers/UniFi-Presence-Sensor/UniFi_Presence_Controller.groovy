@@ -31,8 +31,8 @@
 *  1.8.5.5  -- Updated lifecycle, WSS, logging improvements
 *  1.8.5.6  -- Updated presence event description
 *  1.8.6.0  -- Stable Release - Reversioned for release
-*  1.8.6.1  -- Updated genParansAuth() to acommodate older UniFiOS 4.x
-*  1.8.6.2  -- Added param to ignore SSL errors
+*  1.8.6.1  -- Updated genParamsAuth() to acommodate older UniFiOS 4.x
+*  1.8.6.2  -- Added param to ignore SSL errors; enhanced commStatus messages
 */
 
 import groovy.transform.Field
@@ -40,7 +40,7 @@ import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
 import java.net.URLEncoder
 
-@Field static final String DRIVER_NAME="UniFi Presence Controller (Test Track)"
+@Field static final String DRIVER_NAME="UniFi Presence Controller"
 @Field static final String DRIVER_VERSION="1.8.6.2"
 @Field static final String DRIVER_MODIFIED="2026.02.20"
 @Field static final Integer AUTO_CREATE_DAYS=1
