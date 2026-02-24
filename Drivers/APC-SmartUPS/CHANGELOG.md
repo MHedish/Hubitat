@@ -71,3 +71,6 @@
 - Fixed infinite deferral loop after hub reboot (FINALLY!); Improved transient-based deferral counter
 - Corrected refresh CRON cadence switching when UPS enters/leaves battery mode.
 - Corrected safeTelnetConnect runIn() map; updated scheduleCheck() to guard against watchdog unscheduling.- 
+
+**1.0.4.0 — Updated for AP9641**
+- Added NUL (0x00) stripping in parse() to ensure compatibility with AP9641 (NMC3) Telnet CR/NULL/LF line framing.
