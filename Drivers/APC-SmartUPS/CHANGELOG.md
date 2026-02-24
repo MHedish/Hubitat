@@ -74,3 +74,8 @@
 
 **1.0.4.0 — Updated for AP9641**
 - Added NUL (0x00) stripping in parse() to ensure compatibility with AP9641 (NMC3) Telnet CR/NULL/LF line framing.
+
+**1.0.4.1 — AP9641 Parse Callback Reliability**
+- Added `telnetConnect` options with `termChars:[13]` to ensure inbound APC Telnet responses trigger `parse()` reliably on AP9641/NMC3 framing.
+- Retained backward-compatible fallback to legacy `telnetConnect(ip,port,user,pass)` signature when options signature is unavailable.
+- Validated end-to-end reconnoiter parsing and attribute/event updates under live AP9641 test sessions.

@@ -1,10 +1,10 @@
 {
   "packageName": "APC SmartUPS Status",
   "author": "Marc Hedish",
-  "version": "1.0.4.0",
+  "version": "1.0.4.1",
   "minimumHEVersion": "2.3.0",
   "dateReleased": "2026-02-24",
-  "releaseNotes": "Stable release — v1.0.3.0 — Added summary text attribute; Fixed infinite deferral loop after hub reboot; Introduced scheduled watchdog — sets connectStatus to 'watchdog' when triggered; Improved transient-based deferral counter; corrected cron reschedule when UPS enters/leaves battery mode.\n\nv1.0.4.0 — Added NUL (0x00) stripping to ensure compatibility with AP9641 (NMC3) Telnet framing.",
+  "releaseNotes": "v1.0.4.1 — Fixes AP9641/NMC3 Telnet receive parsing by enabling CR termChars in telnetConnect options, with fallback to legacy telnetConnect signature for compatibility. Retains NUL (0x00) stripping for CR/NUL/LF framing and validates full reconnoiter parsing, command results, and attribute/event updates in live testing.\n\nv1.0.4.0 — Added NUL (0x00) stripping to ensure compatibility with AP9641 (NMC3) Telnet framing.",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/README.md",
   "communityLink": "https://community.hubitat.com/t/release-apc-smartups-status-driver/158899",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/APC-SmartUPS/CHANGELOG.md",
@@ -16,7 +16,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/APC-SmartUPS/APC-SmartUPS-Status.groovy",
       "required": true,
-      "version": "1.0.4.0"
+      "version": "1.0.4.1"
     }
   ]
 }
