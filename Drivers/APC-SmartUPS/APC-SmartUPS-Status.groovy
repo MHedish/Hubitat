@@ -29,14 +29,15 @@
 *  1.0.2.11  -- Corrected refresh CRON cadence switching when UPS enters/leaves battery mode
 *  1.0.2.12  -- Corrected safeTelnetConnect runIn() map; updated scheduleCheck() to guard against watchdog unscheduling
 *  1.0.3.0   –– Version bump for public release
+*  1.0.4.0   -- Added NUL (0x00) stripping in parse() to ensure compatibility with AP9641 (NMC3) Telnet CR/NULL/LF line framing.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.3.0"
-@Field static final String DRIVER_MODIFIED = "2026.02.07"
+@Field static final String DRIVER_VERSION  = "1.0.4.0"
+@Field static final String DRIVER_MODIFIED = "2026.02.24"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
 /* ===============================
@@ -139,7 +140,7 @@ metadata {
    Preferences
    =============================== */
 preferences {
-    input("docBlock", "hidden", title: driverDocBlock())
+    input("docBlock","hidden",title:driverDocBlock())
     input("upsIP","text",title:"Smart UPS (APC only) IP Address",required:true)
     input("upsPort","integer",title:"Telnet Port",description:"Default 23",defaultValue:23,required:true)
     input("Username","text",title:"Username for Login",required:true,defaultValue:"")
@@ -704,7 +705,7 @@ private void clearTransient(String key=null){if(key){transientContext.remove("${
    Parse
    =============================== */
 private parse(String msg){
-    msg=msg.replaceAll('\r\n','\n').replaceAll('\r','\n');def lines=msg.split('\n').findAll {it.trim()}
+    msg=msg.replaceAll('\u0000','');msg=msg.replaceAll('\r\n','\n').replaceAll('\r','\n');def lines=msg.split('\n').findAll{it.trim()}
     lines.each {line ->
         logDebug "Buffering line: ${line}"
         if(!state.authStarted) initTelnetBuffer()
