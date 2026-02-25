@@ -31,13 +31,14 @@
 *  1.0.3.0   –– Version bump for public release
 *  1.0.4.0   -- Added NUL (0x00) stripping in parse() to ensure compatibility with AP9641 (NMC3) Telnet CR/NULL/LF line framing.
 *  1.0.4.1   -- Added telnetConnect options with CR termChars for reliable parse() callbacks on AP9641/NMC3 framing; fallback to legacy signature retained.
+*  1.0.4.2   -- Guard parse() against late/stale Telnet callbacks so connectStatus cannot flip back to Connected after cleanup.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.4.1"
+@Field static final String DRIVER_VERSION  = "1.0.4.2"
 @Field static final String DRIVER_MODIFIED = "2026.02.24"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -718,6 +719,12 @@ private void clearTransient(String key=null){if(key){transientContext.remove("${
    Parse
    =============================== */
 def parse(String msg){
+    def cs=device.currentValue("connectStatus")
+    def hasActiveSession=(getTransient("sessionStart")!=null)||(state.pendingCmds!=null)
+    if(cs=="Disconnected"&&!hasActiveSession){
+        logDebug "parse(): ignoring stale Telnet callback while disconnected"
+        return
+    }
     msg=msg.replaceAll('\u0000','');msg=msg.replaceAll('\r\n','\n').replaceAll('\r','\n');def lines=msg.split('\n').findAll{it.trim()}
     lines.each {line ->
         logDebug "Buffering line: ${line}"
