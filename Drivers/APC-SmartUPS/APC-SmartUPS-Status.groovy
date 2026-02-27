@@ -39,13 +39,14 @@
 *  1.0.5.7   -- Preserved full session transcript during RX drain and improved whoami marker detection for callback-framed payloads.
 *  1.0.5.8   -- Prevented premature session timeout during active RX callbacks; improved stream-close command context fallback.
 *  1.0.5.9   -- Fixed timeout/finalize race using session timeout token, buffered-data-aware timeout extension, and stale-timeout cancellation.
+*  1.0.5.10  -- Refined timeout handling for stale buffered sessions; gracefully closes/flushes Reconnoiter on idle instead of endless extension.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.5.9"
+@Field static final String DRIVER_VERSION  = "1.0.5.10"
 @Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -384,10 +385,15 @@ private checkSessionTimeout(Map data){
         long rxIdle=lastRx>0?(now()-lastRx):Long.MAX_VALUE
         int bufferSize=((getTransient("sessionBuffer")?:[]) as List).size()
         int ext=((getTransient("timeoutExtendCount")?:0) as int)
-        if((rxIdle<3500||bufferSize>0)&&ext<6){
+        if(rxIdle<3500&&ext<6){
             setTransient("timeoutExtendCount",ext+1)
             logInfo"checkSessionTimeout(): ${cmd} still active (rxIdle=${rxIdle}ms, buffer=${bufferSize}), extending timeout window (${ext+1}/6)"
             runIn(3,"checkSessionTimeout",[data:data])
+            return
+        }
+        if(cmd=="Reconnoiter"&&bufferSize>0&&rxIdle>=3500){
+            logWarn"checkSessionTimeout(): ${cmd} appears idle with buffered data (rxIdle=${rxIdle}ms, buffer=${bufferSize}); forcing graceful close/flush"
+            closeConnection()
             return
         }
         logTrace("timeout: cmd=${cmd} status=${s} elapsedMs=${elapsed} cbSeq=${getTransient('cbSeq')?:0} statusSeq=${getTransient('statusSeq')?:0} pendingCmds=${(state.pendingCmds instanceof List)?state.pendingCmds.size():0} rxLineCount=${getTransient('rxLineCount')?:0} partialLen=${(getTransient('rxPartial')?:'').toString().length()}")
