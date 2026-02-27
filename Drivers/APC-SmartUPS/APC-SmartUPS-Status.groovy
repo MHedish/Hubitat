@@ -30,13 +30,14 @@
 *  1.0.2.12  -- Corrected safeTelnetConnect runIn() map; updated scheduleCheck() to guard against watchdog unscheduling
 *  1.0.3.0   –– Version bump for public release
 *  1.0.5.0   -- Reworked parse() to use LF-delimited RX queue/drain processing; removed CR/LF/NUL normalization and termChars-specific transport tuning.
+*  1.0.5.1   -- Fixed watchdog recovery cleanup to clear transient session keys; adjusted parse() late-callback guard to allow in-flight session callbacks.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.5.0"
+@Field static final String DRIVER_VERSION  = "1.0.5.1"
 @Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -407,11 +408,20 @@ private safeTelnetConnect(Map m){
 }
 
 private void resetTransientState(String origin, Boolean suppressWarn=false){
-    def keys=["pendingCmds","deferredCommand","telnetBuffer","sessionStart","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen","rxPartial","rxLineCount","rxDrainActive"]
-    def residuals=keys.findAll{state[it]}
-    if(residuals&&!suppressWarn)logWarn"resetTransientState(): residuals (${residuals.join(', ')}) during ${origin}"
+    def stateKeys=["pendingCmds","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen"]
+    def transientKeys=["telnetBuffer","sessionStart","rxPartial","rxLineCount","rxDrainActive","currentCommand","upsBannerRefTime","lastConnectState"]
+    def residualState=stateKeys.findAll{state[it]!=null}
+    def residualTransient=transientKeys.findAll{getTransient(it)!=null}
+    if(!suppressWarn&&(residualState||residualTransient)){
+        def msg=[]
+        if(residualState)msg<<"state=${residualState.join(', ')}"
+        if(residualTransient)msg<<"transient=${residualTransient.join(', ')}"
+        logWarn"resetTransientState(): residuals (${msg.join(' | ')}) during ${origin}"
+    }
     if(atomicState.deferredCommand)logWarn"resetTransientState(): atomicState had deferredCommand='${atomicState.deferredCommand}' during ${origin}"
-    keys.each{state.remove(it)}
+    stateKeys.each{state.remove(it)}
+    transientKeys.each{clearTransient(it)}
+    atomicState.remove("deferredCommand")
 }
 
 /* ===============================
@@ -730,7 +740,11 @@ private void clearTransient(String key=null){if(key){transientContext.remove("${
 def parse(String msg){
     if(msg==null||msg.length()==0)return
     def cs=(device.currentValue("connectStatus")?:"")
-    if(cs in ["Disconnected","Disconnecting"]){
+    def inFlight=((getTransient("sessionStart")!=null)
+        ||((state.pendingCmds instanceof List)&&!state.pendingCmds.isEmpty())
+        ||(state.authStarted==true)
+        ||((getTransient("rxLineCount")?:0) as int)>0)
+    if((cs in ["Disconnected","Disconnecting"])&&!inFlight){
         logDebug "parse(): ignored late callback while ${cs}"
         return
     }
