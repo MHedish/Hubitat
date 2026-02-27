@@ -38,13 +38,14 @@
 *  1.0.5.6   -- Fixed RX lifecycle: avoid per-callback buffer reset and support callback-framed payloads without embedded LF.
 *  1.0.5.7   -- Preserved full session transcript during RX drain and improved whoami marker detection for callback-framed payloads.
 *  1.0.5.8   -- Prevented premature session timeout during active RX callbacks; improved stream-close command context fallback.
+*  1.0.5.9   -- Fixed timeout/finalize race using session timeout token, buffered-data-aware timeout extension, and stale-timeout cancellation.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.5.8"
+@Field static final String DRIVER_VERSION  = "1.0.5.9"
 @Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -219,6 +220,7 @@ private void initTelnetBuffer(){
     setTransient("sessionBuffer",[])
     setTransient("lastRxAt",0L)
     setTransient("timeoutExtendCount",0)
+    setTransient("timeoutSessionId",null)
     setTransient("cbSeq",0)
     setTransient("statusSeq",0)
     setTransient("sessionStart",now())
@@ -370,15 +372,22 @@ private void watchdog(){
    Command Helpers
    =============================== */
 private checkSessionTimeout(Map data){
+    def sid=(data?.sessionId?:"").toString()
+    def activeSid=(getTransient("timeoutSessionId")?:"").toString()
+    if(sid&&activeSid&&sid!=activeSid){
+        logDebug"checkSessionTimeout(): stale timeout ignored for session ${sid} (active=${activeSid})"
+        return
+    }
     def cmd=data?.cmd?:'Unknown';def start=getTransient("sessionStart")?:0L;def elapsed=now()-start;def s=device.currentValue("connectStatus")
     if(s!="Disconnected"&&elapsed>10000){
         long lastRx=(getTransient("lastRxAt")?:0L) as long
         long rxIdle=lastRx>0?(now()-lastRx):Long.MAX_VALUE
+        int bufferSize=((getTransient("sessionBuffer")?:[]) as List).size()
         int ext=((getTransient("timeoutExtendCount")?:0) as int)
-        if(rxIdle<3500&&ext<4){
+        if((rxIdle<3500||bufferSize>0)&&ext<6){
             setTransient("timeoutExtendCount",ext+1)
-            logInfo"checkSessionTimeout(): ${cmd} still active (rxIdle=${rxIdle}ms), extending timeout window (${ext+1}/4)"
-            runIn(5,"checkSessionTimeout",[data:data])
+            logInfo"checkSessionTimeout(): ${cmd} still active (rxIdle=${rxIdle}ms, buffer=${bufferSize}), extending timeout window (${ext+1}/6)"
+            runIn(3,"checkSessionTimeout",[data:data])
             return
         }
         logTrace("timeout: cmd=${cmd} status=${s} elapsedMs=${elapsed} cbSeq=${getTransient('cbSeq')?:0} statusSeq=${getTransient('statusSeq')?:0} pendingCmds=${(state.pendingCmds instanceof List)?state.pendingCmds.size():0} rxLineCount=${getTransient('rxLineCount')?:0} partialLen=${(getTransient('rxPartial')?:'').toString().length()}")
@@ -411,12 +420,15 @@ private void sendUPSCommand(String cmdName, List cmds){
     try{
         setTransient("currentCommand",cmdName)
         setTransient("sessionStart",now())
+        def timeoutSid="${now()}-${Math.abs((cmdName?:'cmd').hashCode())}"
+        setTransient("timeoutSessionId",timeoutSid)
+        setTransient("timeoutExtendCount",0)
         logDebug"sendUPSCommand(): session start timestamp = ${getTransient('sessionStart')}"
         telnetClose();updateConnectState("Connecting");initTelnetBuffer()
         state.pendingCmds=["$Username","$Password"]+cmds+["whoami"]
         logDebug"sendUPSCommand(): Opening transient Telnet connection to ${upsIP}:${upsPort}"
         safeTelnetConnect([ip:upsIP,port:upsPort.toInteger()])
-        runIn(10,"checkSessionTimeout",[data:[cmd:cmdName]])
+        runIn(12,"checkSessionTimeout",[data:[cmd:cmdName,sessionId:timeoutSid]])
         logDebug"sendUPSCommand(): queued ${state.pendingCmds.size()} Telnet lines for delayed send"
         runInMillis(500,"delayedTelnetSend")
     }catch(e){
@@ -465,7 +477,7 @@ private safeTelnetConnect(Map m){
 
 private void resetTransientState(String origin, Boolean suppressWarn=false){
     def stateKeys=["pendingCmds","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen"]
-    def transientKeys=["telnetBuffer","sessionStart","rxPartial","rxLineCount","rxDrainActive","sessionBuffer","currentCommand","upsBannerRefTime","lastConnectState","lastRxAt","timeoutExtendCount","cbSeq","statusSeq"]
+    def transientKeys=["telnetBuffer","sessionStart","rxPartial","rxLineCount","rxDrainActive","sessionBuffer","currentCommand","upsBannerRefTime","lastConnectState","lastRxAt","timeoutExtendCount","timeoutSessionId","cbSeq","statusSeq"]
     def residualState=stateKeys.findAll{state[it]!=null}
     def residualTransient=transientKeys.findAll{getTransient(it)!=null}
     if(!suppressWarn&&(residualState||residualTransient)){
@@ -523,6 +535,8 @@ private finalizeSession(String origin){
     def f=getTransient("finalizing");if(f&&f!=origin){logDebug"finalizeSession(): already running from ${f}, skipping duplicate (${origin})";return}
     setTransient("finalizing",origin)
     try{
+        unschedule("checkSessionTimeout")
+        clearTransient("timeoutSessionId")
         if(getTransient("sessionStart"))emitLastUpdate()
         def cmd=(getTransient("currentCommand")?:atomicState.lastCommand?:"Session")
         emitChangedEvent("lastCommandResult","Complete","${cmd} completed normally")
@@ -926,6 +940,8 @@ private telnetStatus(String s){def l=s?.toLowerCase()?:"";setTransient("lastRxAt
 private boolean telnetSend(List m,Integer ms){logDebug "telnetSend(): sending ${m.size()} messages with ${ms} ms delay";m.each{sendData("$it",ms)};true}
 private void closeConnection(){
     try{
+        unschedule("checkSessionTimeout")
+        clearTransient("timeoutSessionId")
         telnetClose();logDebug"Telnet connection closed"
         def b=getTransient("sessionBuffer")?:[]
         def currentCmd=(getTransient("currentCommand")?:atomicState.lastCommand?:device.currentValue("lastCommand")?:"")
