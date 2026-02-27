@@ -33,13 +33,14 @@
 *  1.0.5.1   -- Fixed watchdog recovery cleanup to clear transient session keys; adjusted parse() late-callback guard to allow in-flight session callbacks.
 *  1.0.5.2   -- Restored callback triggering with LF termChars while retaining RX line-buffer parse model; addresses no-callback session timeouts.
 *  1.0.5.3   -- Added optional callback instrumentation traces for transport-level troubleshooting (no parser behavior change).
+*  1.0.5.4   -- Updated callback instrumentation to log at info level when enabled, independent of debug toggle.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.5.3"
+@Field static final String DRIVER_VERSION  = "1.0.5.4"
 @Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -169,6 +170,7 @@ private logDebug(msg){if(logEnable) log.debug "[${DRIVER_NAME}] $msg"}
 private logInfo(msg) {if(logEvents) log.info  "[${DRIVER_NAME}] $msg"}
 private logWarn(msg) {log.warn "[${DRIVER_NAME}] $msg"}
 private logError(msg){log.error"[${DRIVER_NAME}] $msg"}
+private logTrace(msg){if(logCallbackTrace) log.info "[${DRIVER_NAME}] trace ${msg}"}
 private String traceSnippet(String s,Integer maxChars=120){
     if(s==null)return""
     Integer lim=Math.min(s.length(),maxChars)
@@ -359,9 +361,7 @@ private void watchdog(){
 private checkSessionTimeout(Map data){
     def cmd=data?.cmd?:'Unknown';def start=getTransient("sessionStart")?:0L;def elapsed=now()-start;def s=device.currentValue("connectStatus")
     if(s!="Disconnected"&&elapsed>10000){
-        if(logEnable&&logCallbackTrace){
-            log.debug "[${DRIVER_NAME}] trace timeout: cmd=${cmd} status=${s} elapsedMs=${elapsed} cbSeq=${getTransient('cbSeq')?:0} statusSeq=${getTransient('statusSeq')?:0} pendingCmds=${(state.pendingCmds instanceof List)?state.pendingCmds.size():0} rxLineCount=${getTransient('rxLineCount')?:0} partialLen=${(getTransient('rxPartial')?:'').toString().length()}"
-        }
+        logTrace("timeout: cmd=${cmd} status=${s} elapsedMs=${elapsed} cbSeq=${getTransient('cbSeq')?:0} statusSeq=${getTransient('statusSeq')?:0} pendingCmds=${(state.pendingCmds instanceof List)?state.pendingCmds.size():0} rxLineCount=${getTransient('rxLineCount')?:0} partialLen=${(getTransient('rxPartial')?:'').toString().length()}")
         logWarn"checkSessionTimeout(): ${cmd} still ${s} after ${elapsed}ms — forcing cleanup"
         emitChangedEvent("lastCommandResult","Failed","${cmd} watchdog-triggered recovery")
         resetTransientState("checkSessionTimeout");updateConnectState("Disconnected");closeConnection()
@@ -407,10 +407,8 @@ private void sendUPSCommand(String cmdName, List cmds){
 
 private delayedTelnetSend(){
     if(state.pendingCmds){
-        if(logEnable&&logCallbackTrace){
-            def preview=(state.pendingCmds.take(3)?:[]).join(" | ")
-            log.debug "[${DRIVER_NAME}] trace send: queued=${state.pendingCmds.size()} preview='${traceSnippet(preview,160)}'"
-        }
+        def preview=(state.pendingCmds.take(3)?:[]).join(" | ")
+        logTrace("send: queued=${state.pendingCmds.size()} preview='${traceSnippet(preview,160)}'")
         logDebug "delayedTelnetSend(): sending ${state.pendingCmds.size()} queued commands"
         telnetSend(state.pendingCmds, 500);state.remove("pendingCmds")
     }
@@ -429,11 +427,11 @@ private safeTelnetConnect(Map m){
         try{
             telnetConnect(opts,ip,port,null,null)
             logDebug"safeTelnetConnect(): connected with options ${opts}"
-            if(logEnable&&logCallbackTrace)log.debug "[${DRIVER_NAME}] trace connect: opts=${opts}"
+            logTrace("connect: opts=${opts}")
         }catch(MissingMethodException mme){
             logDebug"safeTelnetConnect(): options signature unavailable; falling back to legacy telnetConnect()"
             telnetConnect(ip,port,null,null)
-            if(logEnable&&logCallbackTrace)log.debug "[${DRIVER_NAME}] trace connect: legacy signature fallback"
+            logTrace("connect: legacy signature fallback")
         }
         state.remove("safeTelnetRetryCount");logDebug"safeTelnetConnect(): connection established"
     }
@@ -785,11 +783,9 @@ def parse(String msg){
         logDebug "parse(): ignored late callback while ${cs}"
         return
     }
-    if(logEnable&&logCallbackTrace){
-        Integer seq=((getTransient("cbSeq")?:0) as int)+1
-        setTransient("cbSeq",seq)
-        log.debug "[${DRIVER_NAME}] trace parse#${seq}: len=${msg.length()} status=${cs?:'n/a'} inFlight=${inFlight} head='${traceSnippet(msg,120)}'"
-    }
+    Integer seq=((getTransient("cbSeq")?:0) as int)+1
+    setTransient("cbSeq",seq)
+    logTrace("parse#${seq}: len=${msg.length()} status=${cs?:'n/a'} inFlight=${inFlight} head='${traceSnippet(msg,120)}'")
     if(!state.authStarted) initTelnetBuffer()
     def currentCmd=(atomicState.lastCommand?:device.currentValue("lastCommand")?:"unknown")
     enqueueRxChunk(msg,currentCmd)
@@ -820,18 +816,14 @@ private void enqueueRxChunk(String chunk,String currentCmd){
     setTransient("telnetBuffer",buf)
     setTransient("rxPartial",partial)
     setTransient("rxLineCount",lineCount)
-    if(logEnable&&logCallbackTrace){
-        log.debug "[${DRIVER_NAME}] trace enqueue: cmd=${currentCmd} linesAdded=${lineCount-before} lineCount=${lineCount} partialLen=${partial.length()}"
-    }
+    logTrace("enqueue: cmd=${currentCmd} linesAdded=${lineCount-before} lineCount=${lineCount} partialLen=${partial.length()}")
 }
 
 private void drainRxLines(){
     if(getTransient("rxDrainActive"))return
     int lineCount=(getTransient("rxLineCount")?:0) as int
     if(lineCount<=0)return
-    if(logEnable&&logCallbackTrace){
-        log.debug "[${DRIVER_NAME}] trace drain: start lineCount=${lineCount}"
-    }
+    logTrace("drain: start lineCount=${lineCount}")
     setTransient("rxDrainActive",true)
     try{
         while(((getTransient("rxLineCount")?:0) as int)>0){
@@ -848,9 +840,7 @@ private void drainRxLines(){
         }
     }finally{
         setTransient("rxDrainActive",false)
-        if(logEnable&&logCallbackTrace){
-            log.debug "[${DRIVER_NAME}] trace drain: end lineCount=${getTransient('rxLineCount')?:0}"
-        }
+        logTrace("drain: end lineCount=${getTransient('rxLineCount')?:0}")
     }
 }
 
@@ -890,7 +880,7 @@ private void handleInboundLine(String line){
    Telnet Data, Status & Close
    =============================== */
 private sendData(String m,Integer ms){logDebug "$m";def h=sendHubCommand(new hubitat.device.HubAction("$m",hubitat.device.Protocol.TELNET));pauseExecution(ms);return h}
-private telnetStatus(String s){def l=s?.toLowerCase()?:"";if(logEnable&&logCallbackTrace){Integer seq=((getTransient("statusSeq")?:0) as int)+1;setTransient("statusSeq",seq);log.debug"[${DRIVER_NAME}] trace status#${seq}: ${traceSnippet(s?:'',180)}"};if(l.contains("receive error: stream is closed")){def b=getTransient("telnetBuffer")?:[];def currentCmd=(atomicState.lastCommand?:device.currentValue("lastCommand")?:"");logDebug"telnetStatus(): Stream closed, buffer has ${b.size()} lines";if(b&&b.size()>0&&currentCmd=="Reconnoiter"){def t=(b[-1]?.line?.toString()?:"");def tail=t.size()>100?t[-100..-1]:t;logDebug"telnetStatus(): Last buffer tail (up to 100 chars): ${tail}";logDebug"telnetStatus(): Stream closed with unprocessed buffer, forcing parse";processBufferedSession()};logDebug"telnetStatus(): connection reset after stream close"}else if(l.contains("send error")){logWarn"telnetStatus(): Telnet send error: ${s}"}else if(l.contains("closed")||l.contains("error")){logDebug"telnetStatus(): ${s}"}else logDebug"telnetStatus(): ${s}";closeConnection()}
+private telnetStatus(String s){def l=s?.toLowerCase()?:"";Integer seq=((getTransient("statusSeq")?:0) as int)+1;setTransient("statusSeq",seq);logTrace("status#${seq}: ${traceSnippet(s?:'',180)}");if(l.contains("receive error: stream is closed")){def b=getTransient("telnetBuffer")?:[];def currentCmd=(atomicState.lastCommand?:device.currentValue("lastCommand")?:"");logDebug"telnetStatus(): Stream closed, buffer has ${b.size()} lines";if(b&&b.size()>0&&currentCmd=="Reconnoiter"){def t=(b[-1]?.line?.toString()?:"");def tail=t.size()>100?t[-100..-1]:t;logDebug"telnetStatus(): Last buffer tail (up to 100 chars): ${tail}";logDebug"telnetStatus(): Stream closed with unprocessed buffer, forcing parse";processBufferedSession()};logDebug"telnetStatus(): connection reset after stream close"}else if(l.contains("send error")){logWarn"telnetStatus(): Telnet send error: ${s}"}else if(l.contains("closed")||l.contains("error")){logDebug"telnetStatus(): ${s}"}else logDebug"telnetStatus(): ${s}";closeConnection()}
 private boolean telnetSend(List m,Integer ms){logDebug "telnetSend(): sending ${m.size()} messages with ${ms} ms delay";m.each{sendData("$it",ms)};true}
 private void closeConnection(){
     try{
