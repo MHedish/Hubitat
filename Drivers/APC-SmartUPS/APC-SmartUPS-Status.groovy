@@ -35,13 +35,14 @@
 *  1.0.5.3   -- Added optional callback instrumentation traces for transport-level troubleshooting (no parser behavior change).
 *  1.0.5.4   -- Updated callback instrumentation to log at info level when enabled, independent of debug toggle.
 *  1.0.5.5   -- Added runtime diagnostics line to log effective trace/debug/event flags at initialize and refresh.
+*  1.0.5.6   -- Fixed RX lifecycle: avoid per-callback buffer reset and support callback-framed payloads without embedded LF.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.5.5"
+@Field static final String DRIVER_VERSION  = "1.0.5.6"
 @Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -792,7 +793,10 @@ def parse(String msg){
     Integer seq=((getTransient("cbSeq")?:0) as int)+1
     setTransient("cbSeq",seq)
     logTrace("parse#${seq}: len=${msg.length()} status=${cs?:'n/a'} inFlight=${inFlight} head='${traceSnippet(msg,120)}'")
-    if(!state.authStarted) initTelnetBuffer()
+    if(getTransient("sessionStart")==null){
+        logTrace("parse#${seq}: opening ad-hoc RX session")
+        initTelnetBuffer()
+    }
     def currentCmd=(atomicState.lastCommand?:device.currentValue("lastCommand")?:"unknown")
     enqueueRxChunk(msg,currentCmd)
     drainRxLines()
@@ -803,6 +807,7 @@ private void enqueueRxChunk(String chunk,String currentCmd){
     int lineCount=(getTransient("rxLineCount")?:0) as int
     int before=lineCount
     def buf=(getTransient("telnetBuffer")?:[]) as List
+    boolean sawLf=chunk?.contains('\n')
     for(int i=0;i<chunk.length();i++){
         char ch=chunk.charAt(i)
         partial=partial+ch
@@ -813,6 +818,14 @@ private void enqueueRxChunk(String chunk,String currentCmd){
                 buf << [cmd: currentCmd,line: line]
                 lineCount++
             }
+        }
+    }
+    if(!sawLf&&lineCount==before){
+        String framed=partial.replaceAll('[\\r\\u0000]+$','')
+        if(framed?.trim()){
+            buf << [cmd: currentCmd,line: framed]
+            lineCount++
+            partial=""
         }
     }
     if(partial.length()>4096){
