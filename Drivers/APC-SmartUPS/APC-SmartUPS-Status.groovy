@@ -29,15 +29,15 @@
 *  1.0.2.11  -- Corrected refresh CRON cadence switching when UPS enters/leaves battery mode
 *  1.0.2.12  -- Corrected safeTelnetConnect runIn() map; updated scheduleCheck() to guard against watchdog unscheduling
 *  1.0.3.0   –– Version bump for public release
-*  1.0.4.0   -- Added NUL (0x00) stripping in parse() to ensure compatibility with AP9641 (NMC3) Telnet CR/NULL/LF line framing.
+*  1.0.5.0   -- Reworked parse() to use LF-delimited RX queue/drain processing; removed CR/LF/NUL normalization and termChars-specific transport tuning.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.4.0"
-@Field static final String DRIVER_MODIFIED = "2026.02.24"
+@Field static final String DRIVER_VERSION  = "1.0.5.0"
+@Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
 /* ===============================
@@ -171,7 +171,25 @@ private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=fa
 private updateConnectState(String newState){def old=device.currentValue("connectStatus");def last=getTransient("lastConnectState");if(old!=newState&&last!=newState){setTransient("lastConnectState",newState);emitChangedEvent("connectStatus",newState)}else{logDebug"updateConnectState(): no change (${old} → ${newState})"}}
 private updateCommandState(String newCmd){def old=atomicState.lastCommand;atomicState.lastCommand=newCmd;if(old!=newCmd)logDebug"lastCommand = ${newCmd}"}
 private def normalizeDateTime(String r){if(!r||r.trim()=="")return r;try{def m=r=~/^(\d{2})\/(\d{2})\/(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/;if(m.matches()){def(mm,dd,yy,hh,mi,ss)=m[0][1..6];def y=(yy as int)<80?2000+(yy as int):1900+(yy as int);def f="${mm}/${dd}/${y}"+(hh?" ${hh}:${mi}:${ss?:'00'}":"");def d=Date.parse(hh?"MM/dd/yyyy HH:mm:ss":"MM/dd/yyyy",f);return hh?d.format("MM/dd/yyyy h:mm:ss a",location.timeZone):d.format("MM/dd/yyyy",location.timeZone)};for(fmt in["MM/dd/yyyy HH:mm:ss","MM/dd/yyyy h:mm:ss a","MM/dd/yyyy","yyyy-MM-dd","MMM dd yyyy HH:mm:ss"])try{def d=Date.parse(fmt,r);return(fmt.contains("HH")||fmt.contains("h:mm:ss"))?d.format("MM/dd/yyyy h:mm:ss a",location.timeZone):d.format("MM/dd/yyyy",location.timeZone)}catch(e){} }catch(e){};return r}
-private void initTelnetBuffer(){def b=getTransient("telnetBuffer");if(b instanceof List&&b.size()){def t;try{def p=b[-(Math.min(3,b.size()))..-1]*.line.findAll{it}.join(" | ");t=p[-(Math.min(80,p.size()))..-1]}catch(e){t="unavailable (${e.message})"};logDebug"initTelnetBuffer(): clearing leftover buffer (${b.size()} lines, preview='${t}')"};setTransient("telnetBuffer",[]);setTransient("sessionStart",now());logDebug"initTelnetBuffer(): Session start at ${new Date(getTransient('sessionStart'))}"}
+private void initTelnetBuffer(){
+    def b=getTransient("telnetBuffer")
+    if(b instanceof List&&b.size()){
+        def t
+        try{
+            def p=b[-(Math.min(3,b.size()))..-1]*.line.findAll{it}.join(" | ")
+            t=p[-(Math.min(80,p.size()))..-1]
+        }catch(e){
+            t="unavailable (${e.message})"
+        }
+        logDebug"initTelnetBuffer(): clearing leftover buffer (${b.size()} lines, preview='${t}')"
+    }
+    setTransient("telnetBuffer",[])
+    setTransient("rxPartial","")
+    setTransient("rxLineCount",0)
+    setTransient("rxDrainActive",false)
+    setTransient("sessionStart",now())
+    logDebug"initTelnetBuffer(): Session start at ${new Date(getTransient('sessionStart'))}"
+}
 private checkExternalUPSControlChange(){def c=device.currentValue("upsControlEnabled")as Boolean;def p=state.lastUpsControlEnabled as Boolean;if(p==null){state.lastUpsControlEnabled=c;return};if(c!=p){logInfo "UPS Control state changed externally (${p} → ${c})";state.lastUpsControlEnabled=c;updateUPSControlState(c);unschedule(autoDisableUPSControl);if(c)runIn(1800,"autoDisableUPSControl")else state.remove("controlDeviceName")}}
 
 /* ==================================
@@ -375,7 +393,12 @@ private safeTelnetConnect(Map m){
         if(attempt<=retries){
             logInfo"safeTelnetConnect(): Session active, retrying in ${delayMs/1000}s (attempt ${attempt}/${retries})";state.safeTelnetRetryCount=attempt+1;runInMillis(delayMs,"safeTelnetConnect",[data:m])}
         else{logError"safeTelnetConnect(): Aborted after ${retries} attempts ? session still busy";state.remove("safeTelnetRetryCount")};return}
-    try{logDebug"safeTelnetConnect(): attempt ${attempt}/${retries} connecting to ${ip}:${port}";telnetClose();telnetConnect(ip,port,null,null);state.remove("safeTelnetRetryCount");logDebug"safeTelnetConnect(): connection established"}
+    try{
+        logDebug"safeTelnetConnect(): attempt ${attempt}/${retries} connecting to ${ip}:${port}"
+        telnetClose()
+        telnetConnect(ip,port,null,null)
+        state.remove("safeTelnetRetryCount");logDebug"safeTelnetConnect(): connection established"
+    }
     catch(e){
         def msg=e.message;def retryAllowed=(attempt<retries);logWarn"safeTelnetConnect(): ${msg?:'connection error'} ${retryAllowed?'? retrying in '+(delayMs/1000)+'s (attempt '+attempt+'/'+retries+')':'? max retries reached'}"
         if(retryAllowed){state.safeTelnetRetryCount=attempt+1;runInMillis(delayMs,"safeTelnetConnect",[data:m])}
@@ -384,7 +407,7 @@ private safeTelnetConnect(Map m){
 }
 
 private void resetTransientState(String origin, Boolean suppressWarn=false){
-    def keys=["pendingCmds","deferredCommand","telnetBuffer","sessionStart","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen"]
+    def keys=["pendingCmds","deferredCommand","telnetBuffer","sessionStart","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen","rxPartial","rxLineCount","rxDrainActive"]
     def residuals=keys.findAll{state[it]}
     if(residuals&&!suppressWarn)logWarn"resetTransientState(): residuals (${residuals.join(', ')}) during ${origin}"
     if(atomicState.deferredCommand)logWarn"resetTransientState(): atomicState had deferredCommand='${atomicState.deferredCommand}' during ${origin}"
@@ -704,38 +727,95 @@ private void clearTransient(String key=null){if(key){transientContext.remove("${
 /* ===============================
    Parse
    =============================== */
-private parse(String msg){
-    msg=msg.replaceAll('\u0000','');msg=msg.replaceAll('\r\n','\n').replaceAll('\r','\n');def lines=msg.split('\n').findAll{it.trim()}
-    lines.each {line ->
-        logDebug "Buffering line: ${line}"
-        if(!state.authStarted) initTelnetBuffer()
-        def buf=getTransient("telnetBuffer")?:[]
-        buf << [cmd: device.currentValue("lastCommand")?:"unknown",line: line]
-        setTransient("telnetBuffer",buf)
-        if(!state.authStarted){
-            updateConnectState("Connected");logDebug "First Telnet data seen; session flagged as Connected"
-            def cmd=device.currentValue("lastCommand")
-            if(cmd){
-                updateCommandState(cmd)
-            }else{
-                logDebug "parse(): Skipping updateCommandState – no current command yet (auth handshake)"
+def parse(String msg){
+    if(msg==null||msg.length()==0)return
+    def cs=(device.currentValue("connectStatus")?:"")
+    if(cs in ["Disconnected","Disconnecting"]){
+        logDebug "parse(): ignored late callback while ${cs}"
+        return
+    }
+    if(!state.authStarted) initTelnetBuffer()
+    def currentCmd=(atomicState.lastCommand?:device.currentValue("lastCommand")?:"unknown")
+    enqueueRxChunk(msg,currentCmd)
+    drainRxLines()
+}
+
+private void enqueueRxChunk(String chunk,String currentCmd){
+    def partial=(getTransient("rxPartial")?:"") as String
+    int lineCount=(getTransient("rxLineCount")?:0) as int
+    def buf=(getTransient("telnetBuffer")?:[]) as List
+    for(int i=0;i<chunk.length();i++){
+        char ch=chunk.charAt(i)
+        partial=partial+ch
+        if(ch=='\n'){
+            String line=partial.substring(0,partial.length()-1)
+            partial=""
+            if(line?.trim()){
+                buf << [cmd: currentCmd,line: line]
+                lineCount++
             }
-            setTransient("upsBannerRefTime",now());state.authStarted=true
+        }
+    }
+    if(partial.length()>4096){
+        logWarn "enqueueRxChunk(): trimming oversized partial RX buffer (${partial.length()} chars)"
+        partial=partial[-1024..-1]
+    }
+    setTransient("telnetBuffer",buf)
+    setTransient("rxPartial",partial)
+    setTransient("rxLineCount",lineCount)
+}
+
+private void drainRxLines(){
+    if(getTransient("rxDrainActive"))return
+    int lineCount=(getTransient("rxLineCount")?:0) as int
+    if(lineCount<=0)return
+    setTransient("rxDrainActive",true)
+    try{
+        while(((getTransient("rxLineCount")?:0) as int)>0){
+            def buf=(getTransient("telnetBuffer")?:[]) as List
+            if(!buf||buf.isEmpty()){
+                setTransient("rxLineCount",0)
+                break
+            }
+            def entry=buf.remove(0)
+            setTransient("telnetBuffer",buf)
+            int remaining=((getTransient("rxLineCount")?:0) as int)-1
+            setTransient("rxLineCount",Math.max(remaining,0))
+            handleInboundLine((entry?.line?:"") as String)
+        }
+    }finally{
+        setTransient("rxDrainActive",false)
+    }
+}
+
+private void handleInboundLine(String line){
+    if(!line?.trim())return
+    line=line.trim()
+    logDebug "Buffering line: ${line}"
+    if(!state.authStarted){
+        updateConnectState("Connected");logDebug "First Telnet data seen; session flagged as Connected"
+        def cmd=(atomicState.lastCommand?:device.currentValue("lastCommand"))
+        if(cmd){
+            updateCommandState(cmd)
         }else{
-            if(line.startsWith("apc>whoami"))state.whoamiEchoSeen=true
-            if(line.startsWith("E000: Success"))state.whoamiAckSeen=true
-            if(line.trim().equalsIgnoreCase(Username.trim()))state.whoamiUserSeen=true
-            if((state.whoamiEchoSeen&&state.whoamiAckSeen&&state.whoamiUserSeen)
-                ||(connectStatus=="UPSCommand"&&state.whoamiEchoSeen)){
-                logDebug "whoami sequence complete, processing buffer..."
-                ["whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen","authStarted"].each {state.remove(it)}
-                if(connectStatus=="UPSCommand"){
-                    handleUPSCommands()
-                }else{
-                    processBufferedSession()
-                }
-                closeConnection()
+            logDebug "parse(): Skipping updateCommandState – no current command yet (auth handshake)"
+        }
+        setTransient("upsBannerRefTime",now());state.authStarted=true
+    }else{
+        if(line.startsWith("apc>whoami"))state.whoamiEchoSeen=true
+        if(line.startsWith("E000: Success"))state.whoamiAckSeen=true
+        def user=(Username?:"").trim()
+        if(user && line?.toLowerCase()?.contains(user.toLowerCase()))state.whoamiUserSeen=true
+        if((state.whoamiEchoSeen&&state.whoamiAckSeen&&state.whoamiUserSeen)
+            ||(connectStatus=="UPSCommand"&&state.whoamiEchoSeen)){
+            logDebug "whoami sequence complete, processing buffer..."
+            ["whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen","authStarted"].each {state.remove(it)}
+            if(connectStatus=="UPSCommand"){
+                handleUPSCommands()
+            }else{
+                processBufferedSession()
             }
+            closeConnection()
         }
     }
 }
@@ -744,14 +824,15 @@ private parse(String msg){
    Telnet Data, Status & Close
    =============================== */
 private sendData(String m,Integer ms){logDebug "$m";def h=sendHubCommand(new hubitat.device.HubAction("$m",hubitat.device.Protocol.TELNET));pauseExecution(ms);return h}
-private telnetStatus(String s){def l=s?.toLowerCase()?:"";if(l.contains("receive error: stream is closed")){def b=getTransient("telnetBuffer")?:[];logDebug"telnetStatus(): Stream closed, buffer has ${b.size()} lines";if(b&&b.size()>0&&device.currentValue("lastCommand")=="Reconnoiter"){def t=(b[-1]?.line?.toString()?:"");def tail=t.size()>100?t[-100..-1]:t;logDebug"telnetStatus(): Last buffer tail (up to 100 chars): ${tail}";logDebug"telnetStatus(): Stream closed with unprocessed buffer, forcing parse";processBufferedSession()};logDebug"telnetStatus(): connection reset after stream close"}else if(l.contains("send error")){logWarn"telnetStatus(): Telnet send error: ${s}"}else if(l.contains("closed")||l.contains("error")){logDebug"telnetStatus(): ${s}"}else logDebug"telnetStatus(): ${s}";closeConnection()}
+private telnetStatus(String s){def l=s?.toLowerCase()?:"";if(l.contains("receive error: stream is closed")){def b=getTransient("telnetBuffer")?:[];def currentCmd=(atomicState.lastCommand?:device.currentValue("lastCommand")?:"");logDebug"telnetStatus(): Stream closed, buffer has ${b.size()} lines";if(b&&b.size()>0&&currentCmd=="Reconnoiter"){def t=(b[-1]?.line?.toString()?:"");def tail=t.size()>100?t[-100..-1]:t;logDebug"telnetStatus(): Last buffer tail (up to 100 chars): ${tail}";logDebug"telnetStatus(): Stream closed with unprocessed buffer, forcing parse";processBufferedSession()};logDebug"telnetStatus(): connection reset after stream close"}else if(l.contains("send error")){logWarn"telnetStatus(): Telnet send error: ${s}"}else if(l.contains("closed")||l.contains("error")){logDebug"telnetStatus(): ${s}"}else logDebug"telnetStatus(): ${s}";closeConnection()}
 private boolean telnetSend(List m,Integer ms){logDebug "telnetSend(): sending ${m.size()} messages with ${ms} ms delay";m.each{sendData("$it",ms)};true}
 private void closeConnection(){
     try{
         telnetClose();logDebug"Telnet connection closed"
         def b=getTransient("telnetBuffer")?:[]
-        if(b&&b.size()>0&&(device.currentValue("lastCommand")in["Reconnoiter","UPSCommand"])){
-            if(device.currentValue("lastCommand")=="Reconnoiter")processBufferedSession()else processUPSCommand()
+        def currentCmd=(atomicState.lastCommand?:device.currentValue("lastCommand")?:"")
+        if(b&&b.size()>0&&currentCmd){
+            if(currentCmd=="Reconnoiter")processBufferedSession()else processUPSCommand()
         }else logDebug"closeConnection(): no buffered data"
     }catch(e){logDebug"closeConnection(): ${e.message}"}finally{
         def cs=device.currentValue("connectStatus")
@@ -759,6 +840,7 @@ private void closeConnection(){
             updateConnectState("Disconnected")
         }else logDebug"closeConnection(): connectStatus already ${cs}"
         clearTransient("telnetBuffer");clearTransient("finalizing")
+        clearTransient("rxPartial");clearTransient("rxLineCount");clearTransient("rxDrainActive")
         logDebug"closeConnection(): cleanup complete"
     }
 }
