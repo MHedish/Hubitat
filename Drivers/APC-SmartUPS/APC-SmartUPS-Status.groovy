@@ -31,13 +31,14 @@
 *  1.0.3.0   –– Version bump for public release
 *  1.0.5.0   -- Reworked parse() to use LF-delimited RX queue/drain processing; removed CR/LF/NUL normalization and termChars-specific transport tuning.
 *  1.0.5.1   -- Fixed watchdog recovery cleanup to clear transient session keys; adjusted parse() late-callback guard to allow in-flight session callbacks.
+*  1.0.5.2   -- Restored callback triggering with LF termChars while retaining RX line-buffer parse model; addresses no-callback session timeouts.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.5.1"
+@Field static final String DRIVER_VERSION  = "1.0.5.2"
 @Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -397,7 +398,14 @@ private safeTelnetConnect(Map m){
     try{
         logDebug"safeTelnetConnect(): attempt ${attempt}/${retries} connecting to ${ip}:${port}"
         telnetClose()
-        telnetConnect(ip,port,null,null)
+        def opts=[termChars:[10]]
+        try{
+            telnetConnect(opts,ip,port,null,null)
+            logDebug"safeTelnetConnect(): connected with options ${opts}"
+        }catch(MissingMethodException mme){
+            logDebug"safeTelnetConnect(): options signature unavailable; falling back to legacy telnetConnect()"
+            telnetConnect(ip,port,null,null)
+        }
         state.remove("safeTelnetRetryCount");logDebug"safeTelnetConnect(): connection established"
     }
     catch(e){
