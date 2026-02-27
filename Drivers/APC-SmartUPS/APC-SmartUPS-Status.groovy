@@ -34,13 +34,14 @@
 *  1.0.5.2   -- Restored callback triggering with LF termChars while retaining RX line-buffer parse model; addresses no-callback session timeouts.
 *  1.0.5.3   -- Added optional callback instrumentation traces for transport-level troubleshooting (no parser behavior change).
 *  1.0.5.4   -- Updated callback instrumentation to log at info level when enabled, independent of debug toggle.
+*  1.0.5.5   -- Added runtime diagnostics line to log effective trace/debug/event flags at initialize and refresh.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.5.4"
+@Field static final String DRIVER_VERSION  = "1.0.5.5"
 @Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -171,6 +172,9 @@ private logInfo(msg) {if(logEvents) log.info  "[${DRIVER_NAME}] $msg"}
 private logWarn(msg) {log.warn "[${DRIVER_NAME}] $msg"}
 private logError(msg){log.error"[${DRIVER_NAME}] $msg"}
 private logTrace(msg){if(logCallbackTrace) log.info "[${DRIVER_NAME}] trace ${msg}"}
+private void logRuntimeFlags(String origin){
+    log.warn "[${DRIVER_NAME}] runtime(${origin}): logCallbackTrace=${settings?.logCallbackTrace} logEnable=${settings?.logEnable} logEvents=${settings?.logEvents} connectStatus=${device.currentValue('connectStatus')}"
+}
 private String traceSnippet(String s,Integer maxChars=120){
     if(s==null)return""
     Integer lim=Math.min(s.length(),maxChars)
@@ -307,6 +311,7 @@ def installed(){logInfo "Installed";initialize()}
 def updated(){logInfo "Preferences updated";initialize()}
 def initialize(){
     logInfo "${driverInfoString()} initializing..."
+    logRuntimeFlags("initialize")
     emitEvent("driverInfo", driverInfoString())
     state.upsControlEnabled=state.upsControlEnabled?:false
     def threshold=settings.runTimeOnBattery*2
@@ -484,6 +489,7 @@ def setOutletGroup(p0,p1,p2){
 
 def refresh() {
     checkExternalUPSControlChange()
+    logRuntimeFlags("refresh")
     if(connectStatus in ["Connected", "Trying"]){logInfo "refresh(): Telnet session already active, skipping this refresh request";return}
     logInfo "${driverInfoString()} refreshing..."
     state.remove("authStarted");logDebug "Building Reconnoiter command list"
