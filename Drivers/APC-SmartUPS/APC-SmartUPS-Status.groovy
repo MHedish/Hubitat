@@ -73,7 +73,6 @@ metadata {
         capability "Temperature Measurement"
 
         attribute "alarmCountCrit","number"
-        setTransient("sessionMode",cmdName=="Reconnoiter"?"recon":"command")
         attribute "alarmCountInfo","number"
         attribute "alarmCountWarn","number"
         attribute "battery","number"
@@ -646,7 +645,6 @@ private handleElectricalMetrics(def pair){
                 case"VA":if(p2=="Percent:")emitChangedEvent("outputVAPercent",p3,"Output VA = ${p3} ${p4}","%");break
             };break
         case"Input":
-                setTransient("sessionMode",cmdName=="Reconnoiter"?"recon":"command")
             switch(p1){
                 case"Voltage:":emitChangedEvent("inputVoltage",p2,"Input Voltage = ${p2} ${p3}",p3);break
                 case"Frequency:":emitChangedEvent("inputFrequency",p2,"Input Frequency = ${p2} ${p3}","Hz");break
@@ -659,7 +657,6 @@ private handleIdentificationAndSelfTest(def pair){
     switch(p0){
         case"Serial":if(p1=="Number:"){logDebug "UPS Serial Number parsed: ${p2}";emitEvent("serialNumber",p2,"UPS Serial Number = $p2")};break
         case"Manufacture":if(p1=="Date:"){def dt=normalizeDateTime(p2);logDebug "UPS Manufacture Date parsed: ${dt}";emitEvent("manufactureDate",dt,"UPS Manufacture Date = $dt")};break
-                    setTransient("postAuthCmds",cmds+["whoami"])
         case"Firmware":if(p1=="Revision:"){def fw=[p2,p3,p4].findAll{it}.join(" ");emitEvent("firmwareVersion",fw,"Firmware Version = $fw")};break
         case"Self-Test":if(p1=="Date:"){def dt=normalizeDateTime(p2);emitEvent("lastSelfTestDate",dt,"UPS Last Self-Test Date = $dt")};if(p1=="Result:"){def r=[p2,p3,p4,p5].findAll{it}.join(" ");emitEvent("lastSelfTestResult",r,"UPS Last Self Test Result = $r")};break
     }
