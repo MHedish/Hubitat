@@ -285,6 +285,7 @@ def initialize(){
         scheduleCheck(runTime as Integer,runOffset as Integer)
         clearTransient()
         atomicState.remove("deferredCommand")
+        atomicState.remove("deferredCmds")
         resetTransientState("initialize");updateConnectState("Disconnected");closeConnection();runInMillis(500,"refresh")
     }else logWarn"Cannot initialize. Preferences must be set."
 }
@@ -341,12 +342,17 @@ private void sendUPSCommand(String cmdName, List cmds){
             logWarn"sendUPSCommand(): ${cmdName} deferred ${deferralCount} times; forcing initialization"
             clearTransient(deferralKey);initialize();return
         }
-        atomicState.deferredCommand=cmdName;setTransient("currentCommand",cmdName)
-        def retryTarget=(cmdName=="Reconnoiter")?"refresh":cmdName
-        logDebug"sendUPSCommand(): scheduling deferred ${retryTarget} retry in 10s (attempt ${deferralCount})";runIn(10,retryTarget);return
+        atomicState.deferredCommand=cmdName
+        atomicState.deferredCmds=cmds
+        setTransient("currentCommand",cmdName)
+        logDebug"sendUPSCommand(): scheduling deferred command-dispatch retry in 10s (attempt ${deferralCount})"
+        runIn(10,"runDeferredCommand")
+        return
     }
     if(atomicState.deferredCommand){logWarn"sendUPSCommand(): clearing deferredCommand (was=${atomicState.deferredCommand})"}
-    atomicState.remove("deferredCommand");updateCommandState(cmdName);updateConnectState("Initializing")
+    atomicState.remove("deferredCommand")
+    atomicState.remove("deferredCmds")
+    updateCommandState(cmdName);updateConnectState("Initializing")
     emitChangedEvent("lastCommandResult","Pending","${cmdName} queued for execution");logInfo"Executing UPS command: ${cmdName}"
     try{
         setTransient("sessionStart",now())
@@ -370,6 +376,17 @@ private delayedTelnetSend(){
         logDebug "delayedTelnetSend(): sending ${state.pendingCmds.size()} queued commands"
         telnetSend(state.pendingCmds, 500);state.remove("pendingCmds")
     }
+}
+
+private void runDeferredCommand(){
+    def cmd=(atomicState.deferredCommand?:"") as String
+    def cmds=(atomicState.deferredCmds instanceof List)?(atomicState.deferredCmds as List):null
+    if(!cmd||!cmds||cmds.isEmpty()){
+        logWarn"runDeferredCommand(): no deferred command payload available; skipping"
+        return
+    }
+    logInfo"runDeferredCommand(): retrying deferred command '${cmd}'"
+    sendUPSCommand(cmd,cmds)
 }
 
 private safeTelnetConnect(Map m){
