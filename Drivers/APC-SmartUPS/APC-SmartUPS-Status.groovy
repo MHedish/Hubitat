@@ -43,13 +43,14 @@
 *  1.0.5.11  -- Restored UPS command timeout behavior: flush buffered output before failure, preserve command context, and avoid overwriting explicit command results.
 *  1.0.5.12  -- Improved UPS command E-code detection when prompt-prefixed and added per-session command-processing guard.
 *  1.0.5.13  -- Split command-session behavior: Reconnoiter keeps whoami sentinel/idle flush; non-Recon commands use longer timeout and no early idle close.
+*  1.0.5.15  -- Added command-mode timing chain: explicit session mode, gated post-auth dispatch, and command completion trigger on E-code receipt.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.5.14"
+@Field static final String DRIVER_VERSION  = "1.0.5.15"
 @Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -228,6 +229,7 @@ private void initTelnetBuffer(){
     setTransient("commandProcessed",false)
     setTransient("postAuthCmds",null)
     setTransient("postAuthSent",false)
+    setTransient("sessionMode",null)
     setTransient("cbSeq",0)
     setTransient("statusSeq",0)
     setTransient("sessionStart",now())
@@ -386,6 +388,15 @@ private checkSessionTimeout(Map data){
         return
     }
     def cmd=data?.cmd?:'Unknown';def start=getTransient("sessionStart")?:0L;def elapsed=now()-start;def s=device.currentValue("connectStatus")
+    def mode=(getTransient("sessionMode")?:"") as String
+    boolean postAuthSent=(getTransient("postAuthSent")?:false) as boolean
+    def queued=(getTransient("postAuthCmds")?:[]) as List
+    if(mode=="command"&&!postAuthSent&&queued&&!queued.isEmpty()&&elapsed>5000){
+        logWarn"checkSessionTimeout(): ${cmd} post-auth dispatch fallback after ${elapsed}ms; sending ${queued.size()} queued command(s)"
+        telnetSend(queued,500)
+        setTransient("postAuthSent",true)
+        clearTransient("postAuthCmds")
+    }
     long timeoutMs=(cmd=="Reconnoiter")?10000L:22000L
     if(s!="Disconnected"&&elapsed>timeoutMs){
         long lastRx=(getTransient("lastRxAt")?:0L) as long
@@ -500,7 +511,7 @@ private safeTelnetConnect(Map m){
 
 private void resetTransientState(String origin, Boolean suppressWarn=false){
     def stateKeys=["pendingCmds","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen"]
-    def transientKeys=["telnetBuffer","sessionStart","rxPartial","rxLineCount","rxDrainActive","sessionBuffer","currentCommand","upsBannerRefTime","lastConnectState","lastRxAt","timeoutExtendCount","timeoutSessionId","commandProcessed","postAuthCmds","postAuthSent","cbSeq","statusSeq"]
+    def transientKeys=["telnetBuffer","sessionStart","rxPartial","rxLineCount","rxDrainActive","sessionBuffer","currentCommand","upsBannerRefTime","lastConnectState","lastRxAt","timeoutExtendCount","timeoutSessionId","commandProcessed","postAuthCmds","postAuthSent","sessionMode","cbSeq","statusSeq"]
     def residualState=stateKeys.findAll{state[it]!=null}
     def residualTransient=transientKeys.findAll{getTransient(it)!=null}
     if(!suppressWarn&&(residualState||residualTransient)){
@@ -641,6 +652,7 @@ private handleElectricalMetrics(def pair){
                 case"VA":if(p2=="Percent:")emitChangedEvent("outputVAPercent",p3,"Output VA = ${p3} ${p4}","%");break
             };break
         case"Input":
+                setTransient("sessionMode",cmdName=="Reconnoiter"?"recon":"command")
             switch(p1){
                 case"Voltage:":emitChangedEvent("inputVoltage",p2,"Input Voltage = ${p2} ${p3}",p3);break
                 case"Frequency:":emitChangedEvent("inputFrequency",p2,"Input Frequency = ${p2} ${p3}","Hz");break
@@ -653,7 +665,7 @@ private handleIdentificationAndSelfTest(def pair){
     switch(p0){
         case"Serial":if(p1=="Number:"){logDebug "UPS Serial Number parsed: ${p2}";emitEvent("serialNumber",p2,"UPS Serial Number = $p2")};break
         case"Manufacture":if(p1=="Date:"){def dt=normalizeDateTime(p2);logDebug "UPS Manufacture Date parsed: ${dt}";emitEvent("manufactureDate",dt,"UPS Manufacture Date = $dt")};break
-        case"Model:":def model=[p1,p2,p3,p4,p5].findAll{it}.join(" ").trim().replaceAll(/\s+/," ");emitEvent("model",model,"UPS Model = $model");break
+                    setTransient("postAuthCmds",cmds+["whoami"])
         case"Firmware":if(p1=="Revision:"){def fw=[p2,p3,p4].findAll{it}.join(" ");emitEvent("firmwareVersion",fw,"Firmware Version = $fw")};break
         case"Self-Test":if(p1=="Date:"){def dt=normalizeDateTime(p2);emitEvent("lastSelfTestDate",dt,"UPS Last Self-Test Date = $dt")};if(p1=="Result:"){def r=[p2,p3,p4,p5].findAll{it}.join(" ");emitEvent("lastSelfTestResult",r,"UPS Last Self Test Result = $r")};break
     }
@@ -945,16 +957,22 @@ private void handleInboundLine(String line){
         }
         setTransient("upsBannerRefTime",now());state.authStarted=true
     }else{
+        def mode=(getTransient("sessionMode")?:"") as String
         def queued=(getTransient("postAuthCmds")?:[]) as List
         boolean sent=(getTransient("postAuthSent")?:false) as boolean
-        if(!sent&&queued&&!queued.isEmpty()){
-            boolean authActivity=(lowered.contains("user name")||lowered.contains("password")||lowered.contains("apc>")||line.startsWith("E000:"))
+        if(mode=="command"&&!sent&&queued&&!queued.isEmpty()){
+            int seq=(getTransient("cbSeq")?:0) as int
+            boolean authActivity=(lowered.contains("apc>")||line.startsWith("E000:")||(user&&lowered.contains(user.toLowerCase())&&seq>=3))
             if(authActivity){
                 logInfo"post-auth dispatch: sending ${queued.size()} queued command(s) for ${(getTransient('currentCommand')?:'session')}"
                 telnetSend(queued,500)
                 setTransient("postAuthSent",true)
                 clearTransient("postAuthCmds")
             }
+        }
+        if(mode=="command"&&(line =~ /E\d{3}:/)){
+            logDebug "command-mode completion marker seen: ${line}"
+            processUPSCommand();closeConnection();return
         }
         if((state.whoamiAckSeen&&state.whoamiUserSeen)
             ||(connectStatus=="UPSCommand"&&state.whoamiEchoSeen)){
