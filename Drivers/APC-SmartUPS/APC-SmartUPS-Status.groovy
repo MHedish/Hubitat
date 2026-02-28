@@ -336,7 +336,7 @@ private checkSessionTimeout(Map data){
 
 private void sendUPSCommand(String cmdName, List cmds){
     if(!state.upsControlEnabled&&cmdName!="Reconnoiter"){
-        logWarn"${cmdName} called but UPS control is disabled";atomicState.remove("pendingDeferredCmd");return
+        logWarn"${cmdName} called but UPS control is disabled";return
     }
     def cs=device.currentValue("connectStatus");def sessionOwner=getTransient("sessionStart")
     if(sessionOwner&&cs!="Disconnected"){
@@ -469,7 +469,7 @@ def refresh() {
     logDebug "Initiating Reconnoiter via sendUPSCommand()"
     sendUPSCommand("Reconnoiter", reconCmds)
 	def rt=String.format("%02d:%02d",device.currentValue('runTimeHours')as Integer,device.currentValue('runTimeMinutes')as Integer);def summaryText="${device.currentValue('upsStatus')} | ${rt} | ${device.currentValue('outputWattsPercent')}% | ${device.currentValue('temperature')}°"
-	emitEvent("summaryText",summaryText);if(!logEvent)log.info"[${DRIVER_NAME} ${summaryText}"
+    emitEvent("summaryText",summaryText);if(!logEvents)log.info"[${DRIVER_NAME} ${summaryText}"
 }
 
 /* ===============================
@@ -797,15 +797,10 @@ def parse(String msg){
             if(line.startsWith("apc>whoami"))state.whoamiEchoSeen=true
             if(line.startsWith("E000: Success"))state.whoamiAckSeen=true
             if(line.trim().equalsIgnoreCase(Username.trim()))state.whoamiUserSeen=true
-            if((state.whoamiEchoSeen&&state.whoamiAckSeen&&state.whoamiUserSeen)
-                ||(connectStatus=="UPSCommand"&&state.whoamiEchoSeen)){
+            if(state.whoamiEchoSeen&&state.whoamiAckSeen&&state.whoamiUserSeen){
                 logDebug "whoami sequence complete, processing buffer..."
                 ["whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen","authStarted"].each {state.remove(it)}
-                if(connectStatus=="UPSCommand"){
-                    handleUPSCommands()
-                }else{
-                    processBufferedSession()
-                }
+                processBufferedSession()
                 closeConnection()
             }
         }
@@ -839,7 +834,7 @@ private void closeConnection(){
     try{
         telnetClose();logDebug"Telnet connection closed"
         def b=getTransient("telnetBuffer")?:[]
-        if(b&&b.size()>0&&(device.currentValue("lastCommand")in["Reconnoiter","UPSCommand"])){
+        if(b&&b.size()>0){
             if(device.currentValue("lastCommand")=="Reconnoiter")processBufferedSession()else processUPSCommand()
         }else logDebug"closeConnection(): no buffered data"
     }catch(e){logDebug"closeConnection(): ${e.message}"}finally{
