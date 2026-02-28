@@ -44,13 +44,14 @@
 *  1.0.5.12  -- Improved UPS command E-code detection when prompt-prefixed and added per-session command-processing guard.
 *  1.0.5.13  -- Split command-session behavior: Reconnoiter keeps whoami sentinel/idle flush; non-Recon commands use longer timeout and no early idle close.
 *  1.0.5.15  -- Added command-mode timing chain: explicit session mode, gated post-auth dispatch, and command completion trigger on E-code receipt.
+*  1.0.5.16  -- Fixed command-mode staging activation by setting sessionMode after buffer initialization.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.5.15"
+@Field static final String DRIVER_VERSION  = "1.0.5.16"
 @Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -65,13 +66,13 @@ metadata {
         importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/APC-SmartUPS/APC-SmartUPS-Status.groovy"
     ){
         capability "Actuator"
-        capability "Battery"
         capability "Initialize"
         capability "PowerSource"
         capability "Refresh"
         capability "Temperature Measurement"
 
         attribute "alarmCountCrit","number"
+        setTransient("sessionMode",cmdName=="Reconnoiter"?"recon":"command")
         attribute "alarmCountInfo","number"
         attribute "alarmCountWarn","number"
         attribute "battery","number"
