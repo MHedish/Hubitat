@@ -806,7 +806,7 @@ private boolean telnetSend(List m,Integer ms){
     logDebug "telnetSend(): sending ${m.size()} messages with ${ms} ms delay"
     m.each{item->
         int postDelay=ms
-        String payload="$item"
+        String payload="${item?:''}\r\n"
         if(throttleRemaining>0&&throttleMs>0){
             int preDelay=Math.max(ms,throttleMs)
             throttleRemaining--
