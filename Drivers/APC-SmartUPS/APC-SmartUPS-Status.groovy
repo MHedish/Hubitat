@@ -285,16 +285,16 @@ private void clearCommandQueue(){
 }
 
 private Map getInFlightCommand(){
-    def c=state.commandInFlight
+    def c=atomicState.commandInFlight
     return (c instanceof Map)?(c as Map):null
 }
 
 private void setInFlightCommand(String cmdName){
-    state.commandInFlight=[cmd:cmdName,startedAt:now()]
+    atomicState.commandInFlight=[cmd:cmdName,startedAt:now()]
 }
 
 private void clearInFlightCommand(){
-    state.remove("commandInFlight")
+    atomicState.remove("commandInFlight")
 }
 
 private void enqueueCommand(String cmdName,List cmds,String source="unknown"){
@@ -315,7 +315,18 @@ private Map dequeueCommand(){
 
 def processCommandQueue(){
     def cs=device.currentValue("connectStatus")
-    if(getInFlightCommand())return
+    Map inFlight=getInFlightCommand()
+    if(inFlight){
+        if(cs in ["Initializing","Connecting","Connected"]){
+            unschedule("processCommandQueue")
+            runIn(1,"processCommandQueue")
+            return
+        }
+        long started=((inFlight.startedAt?:0L) as Long)
+        long ageMs=started>0?(now()-started):-1L
+        logWarn"processCommandQueue(): clearing stale in-flight '${inFlight.cmd?:'Unknown'}' while ${cs?:'n/a'} (age=${ageMs}ms)"
+        clearInFlightCommand()
+    }
     if(cs in ["Initializing","Connecting","Connected"]){
         unschedule("processCommandQueue")
         runIn(1,"processCommandQueue")
