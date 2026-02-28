@@ -154,6 +154,7 @@ preferences {
     input("autoShutdownHub","bool",title:"Shutdown Hubitat when UPS battery is low",description:"",defaultValue:true)
     input("upsTZOffset","number",title:"UPS Time Zone Offset (minutes)",description:"Offset UPS-reported time from hub (-720 to +840). Default=0 for same TZ",defaultValue:0,range:"-720..840")
     input("logEnable","bool",title:"Enable Debug Logging",description:"Auto-off after 30 minutes.",defaultValue:false)
+    input("logCallbackTrace","bool",title:"[Diagnostic] Log callback transport trace",description:"Temporary callback-level diagnostics for telnet transport behavior.",defaultValue:false)
     input("logEvents","bool",title:"Log All Events",description:"",defaultValue:false)
 }
 
@@ -166,6 +167,7 @@ private logDebug(msg){if(logEnable) log.debug "[${DRIVER_NAME}] $msg"}
 private logInfo(msg) {if(logEvents) log.info  "[${DRIVER_NAME}] $msg"}
 private logWarn(msg) {log.warn "[${DRIVER_NAME}] $msg"}
 private logError(msg){log.error"[${DRIVER_NAME}] $msg"}
+private logTrace(msg){if(logCallbackTrace) log.info "[${DRIVER_NAME}] trace ${msg}"}
 private void emitLastUpdate(){def s=getTransient("sessionStart");def ms=s?(now()-s):0;def sec=(ms/1000).toDouble().round(3);emitChangedEvent("lastUpdate",new Date().format("MM/dd/yyyy h:mm:ss a"),"Data Capture Run Time = ${sec}s");clearTransient("sessionStart")}
 private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
 private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
@@ -729,10 +731,12 @@ private List<String> normalizeInboundLines(String msg){
         partial=partial[-1024..-1]
     }
     setTransient("rxCarry",partial)
+    logTrace("normalize: inLen=${msg?.length()?:0} outLines=${lines.size()} carryLen=${partial.length()}")
     return lines
 }
 
 private parse(String msg){
+    logTrace("parse: len=${msg?.length()?:0} status=${device.currentValue('connectStatus')?:'n/a'}")
     def lines=normalizeInboundLines(msg)
     if(!lines)return
     lines.each {line ->
@@ -773,7 +777,7 @@ private parse(String msg){
    Telnet Data, Status & Close
    =============================== */
 private sendData(String m,Integer ms){logDebug "$m";def h=sendHubCommand(new hubitat.device.HubAction("$m",hubitat.device.Protocol.TELNET));pauseExecution(ms);return h}
-private telnetStatus(String s){def l=s?.toLowerCase()?:"";if(l.contains("receive error: stream is closed")){def b=getTransient("telnetBuffer")?:[];logDebug"telnetStatus(): Stream closed, buffer has ${b.size()} lines";if(b&&b.size()>0&&device.currentValue("lastCommand")=="Reconnoiter"){def t=(b[-1]?.line?.toString()?:"");def tail=t.size()>100?t[-100..-1]:t;logDebug"telnetStatus(): Last buffer tail (up to 100 chars): ${tail}";logDebug"telnetStatus(): Stream closed with unprocessed buffer, forcing parse";processBufferedSession()};logDebug"telnetStatus(): connection reset after stream close"}else if(l.contains("send error")){logWarn"telnetStatus(): Telnet send error: ${s}"}else if(l.contains("closed")||l.contains("error")){logDebug"telnetStatus(): ${s}"}else logDebug"telnetStatus(): ${s}";closeConnection()}
+private telnetStatus(String s){def l=s?.toLowerCase()?:"";logTrace("status: ${s?:''}");if(l.contains("receive error: stream is closed")){def b=getTransient("telnetBuffer")?:[];logDebug"telnetStatus(): Stream closed, buffer has ${b.size()} lines";if(b&&b.size()>0&&device.currentValue("lastCommand")=="Reconnoiter"){def t=(b[-1]?.line?.toString()?:"");def tail=t.size()>100?t[-100..-1]:t;logDebug"telnetStatus(): Last buffer tail (up to 100 chars): ${tail}";logDebug"telnetStatus(): Stream closed with unprocessed buffer, forcing parse";processBufferedSession()};logDebug"telnetStatus(): connection reset after stream close"}else if(l.contains("send error")){logWarn"telnetStatus(): Telnet send error: ${s}"}else if(l.contains("closed")||l.contains("error")){logDebug"telnetStatus(): ${s}"}else logDebug"telnetStatus(): ${s}";closeConnection()}
 private boolean telnetSend(List m,Integer ms){logDebug "telnetSend(): sending ${m.size()} messages with ${ms} ms delay";m.each{sendData("$it",ms)};true}
 private void closeConnection(){
     try{
