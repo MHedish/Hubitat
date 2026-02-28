@@ -299,8 +299,20 @@ private void clearInFlightCommand(){
 
 private void enqueueCommand(String cmdName,List cmds,String source="unknown"){
     List<Map> q=getCommandQueue()
-    if(cmdName=="Reconnoiter"&&q.any{((it?.cmd?:"") as String)=="Reconnoiter"})return
-    q << [cmd:cmdName,cmds:cmds,source:source,enqueuedAt:now()]
+    Map inFlight=getInFlightCommand()
+    if(cmdName=="Reconnoiter"){
+        boolean reconInFlight=((inFlight?.cmd?:"") as String)=="Reconnoiter"
+        boolean reconQueued=q.any{((it?.cmd?:"") as String)=="Reconnoiter"}
+        if(reconInFlight||reconQueued)return
+    }
+    Map item=[cmd:cmdName,cmds:cmds,source:source,enqueuedAt:now()]
+    if(cmdName!="Reconnoiter"){
+        int firstRecon=q.findIndexOf{((it?.cmd?:"") as String)=="Reconnoiter"}
+        if(firstRecon>=0)q.add(firstRecon,item)
+        else q << item
+    }else{
+        q << item
+    }
     saveCommandQueue(q)
     if(cmdName!="Reconnoiter")logInfo"${cmdName} queued (${source}; depth=${q.size()})"
 }
@@ -309,6 +321,14 @@ private Map dequeueCommand(){
     List<Map> q=getCommandQueue()
     if(!q||q.isEmpty())return null
     Map item=q.remove(0) as Map
+    if((((item?.cmd?:"") as String)=="Reconnoiter")&&q&&!q.isEmpty()){
+        int removed=0
+        while(q&&q.size()>0&&(((q[0]?.cmd?:"") as String)=="Reconnoiter")){
+            q.remove(0)
+            removed++
+        }
+        if(removed>0)logInfo"dequeueCommand(): coalesced ${removed} extra Reconnoiter request(s)"
+    }
     if(q.isEmpty())clearCommandQueue() else saveCommandQueue(q)
     return item
 }
@@ -340,6 +360,7 @@ def processCommandQueue(){
         runIn(1,"processCommandQueue")
         return
     }
+    logInfo"processCommandQueue(): dequeued '${cmdName}'"
     startCommandSession(cmdName,cmds)
 }
 
