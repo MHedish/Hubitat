@@ -270,6 +270,92 @@ private updateUPSControlState(Boolean enable){
    =============================== */
 def installed(){logInfo "Installed";initialize()}
 def updated(){logInfo "Preferences updated";initialize()}
+
+private List<Map> getCommandQueue(){
+    def q=state.commandQueue
+    return (q instanceof List)?(q as List<Map>):[]
+}
+
+private void saveCommandQueue(List<Map> q){
+    state.commandQueue=q
+}
+
+private void clearCommandQueue(){
+    state.remove("commandQueue")
+}
+
+private Map getInFlightCommand(){
+    def c=state.commandInFlight
+    return (c instanceof Map)?(c as Map):null
+}
+
+private void setInFlightCommand(String cmdName){
+    state.commandInFlight=[cmd:cmdName,startedAt:now()]
+}
+
+private void clearInFlightCommand(){
+    state.remove("commandInFlight")
+}
+
+private void enqueueCommand(String cmdName,List cmds,String source="unknown"){
+    List<Map> q=getCommandQueue()
+    if(cmdName=="Reconnoiter"&&q.any{((it?.cmd?:"") as String)=="Reconnoiter"})return
+    q << [cmd:cmdName,cmds:cmds,source:source,enqueuedAt:now()]
+    saveCommandQueue(q)
+    if(cmdName!="Reconnoiter")logInfo"${cmdName} queued (${source}; depth=${q.size()})"
+}
+
+private Map dequeueCommand(){
+    List<Map> q=getCommandQueue()
+    if(!q||q.isEmpty())return null
+    Map item=q.remove(0) as Map
+    if(q.isEmpty())clearCommandQueue() else saveCommandQueue(q)
+    return item
+}
+
+def processCommandQueue(){
+    def cs=device.currentValue("connectStatus")
+    if(getInFlightCommand())return
+    if(cs in ["Initializing","Connecting","Connected"]){
+        unschedule("processCommandQueue")
+        runIn(1,"processCommandQueue")
+        return
+    }
+    Map next=dequeueCommand()
+    if(!next)return
+    String cmdName=(next.cmd?:"") as String
+    List cmds=(next.cmds instanceof List)?(next.cmds as List):[]
+    if(!cmdName||cmds.isEmpty()){
+        runIn(1,"processCommandQueue")
+        return
+    }
+    startCommandSession(cmdName,cmds)
+}
+
+private void startCommandSession(String cmdName,List cmds){
+    setInFlightCommand(cmdName)
+    updateCommandState(cmdName);updateConnectState("Initializing")
+    emitChangedEvent("lastCommandResult","Pending","${cmdName} queued for execution");logInfo"Executing UPS command: ${cmdName}"
+    try{
+        setTransient("currentCommand",cmdName)
+        setTransient("sessionStart",now())
+        logDebug"sendUPSCommand(): session start timestamp = ${getTransient('sessionStart')}"
+        telnetClose();updateConnectState("Connecting");initTelnetBuffer()
+        state.pendingCmds=["$Username","$Password"]+cmds+["whoami"]
+        logDebug"sendUPSCommand(): Opening transient Telnet connection to ${upsIP}:${upsPort}"
+        safeTelnetConnect([ip:upsIP,port:upsPort.toInteger()])
+        Integer timeoutSec=(cmdName=="Reconnoiter")?15:10
+        runIn(timeoutSec,"checkSessionTimeout",[data:[cmd:cmdName,timeoutMs:(timeoutSec*1000)]])
+        logDebug"sendUPSCommand(): queued ${state.pendingCmds.size()} Telnet lines for delayed send"
+        runInMillis(500,"delayedTelnetSend")
+    }catch(e){
+        logError"sendUPSCommand(${cmdName}): ${e.message}"
+        emitChangedEvent("lastCommandResult","Failure")
+        clearInFlightCommand()
+        updateConnectState("Disconnected");closeConnection();runIn(1,"processCommandQueue")
+    }
+}
+
 def initialize(){
     logInfo "${driverInfoString()} initializing..."
     emitEvent("driverInfo", driverInfoString())
@@ -284,11 +370,13 @@ def initialize(){
     if(upsIP&&upsPort&&Username&&Password){
         unschedule(autoDisableDebugLogging)
         unschedule("runDeferredCommand")
+        unschedule("processCommandQueue")
         if(logEnable)runIn(1800,autoDisableDebugLogging)
         updateUPSControlState(state.upsControlEnabled)
         if(state.upsControlEnabled){unschedule(autoDisableUPSControl);runIn(1800,autoDisableUPSControl)}
         scheduleCheck(runTime as Integer,runOffset as Integer)
         clearTransient()
+        clearCommandQueue();clearInFlightCommand()
         atomicState.remove("deferredCommand")
         atomicState.remove("deferredCmds")
         resetTransientState("initialize");updateConnectState("Disconnected");closeConnection();runInMillis(500,"refresh")
@@ -330,6 +418,7 @@ private checkSessionTimeout(Map data){
     if(s!="Disconnected"&&elapsed>timeoutMs){
         logWarn"checkSessionTimeout(): ${cmd} still ${s} after ${elapsed}ms — forcing cleanup"
         emitChangedEvent("lastCommandResult","Failed","${cmd} watchdog-triggered recovery")
+        clearInFlightCommand()
         resetTransientState("checkSessionTimeout");updateConnectState("Disconnected");closeConnection()
     }else logDebug"checkSessionTimeout(): ${cmd} completed or cleaned normally after ${elapsed}ms"
 }
@@ -338,45 +427,8 @@ private void sendUPSCommand(String cmdName, List cmds){
     if(!state.upsControlEnabled&&cmdName!="Reconnoiter"){
         logWarn"${cmdName} called but UPS control is disabled";return
     }
-    def cs=device.currentValue("connectStatus");def sessionOwner=getTransient("sessionStart")
-    if(sessionOwner&&cs!="Disconnected"){
-        logInfo"${cmdName} deferred 10s (Telnet busy with ${atomicState.lastCommand})"
-        def deferralKey="deferralCount_${cmdName}";def deferralCount=(getTransient(deferralKey)?:0)+1
-        setTransient(deferralKey,deferralCount)
-        if(deferralCount>=3){
-            logWarn"sendUPSCommand(): ${cmdName} deferred ${deferralCount} times; forcing initialization"
-            clearTransient(deferralKey);initialize();return
-        }
-        atomicState.deferredCommand=cmdName
-        atomicState.deferredCmds=cmds
-        logDebug"sendUPSCommand(): scheduling deferred command-dispatch retry in 10s (attempt ${deferralCount})"
-        unschedule("runDeferredCommand")
-        runIn(10,"runDeferredCommand")
-        return
-    }
-    unschedule("runDeferredCommand")
-    if(atomicState.deferredCommand){logWarn"sendUPSCommand(): clearing deferredCommand (was=${atomicState.deferredCommand})"}
-    atomicState.remove("deferredCommand")
-    atomicState.remove("deferredCmds")
-    updateCommandState(cmdName);updateConnectState("Initializing")
-    emitChangedEvent("lastCommandResult","Pending","${cmdName} queued for execution");logInfo"Executing UPS command: ${cmdName}"
-    try{
-        setTransient("currentCommand",cmdName)
-        setTransient("sessionStart",now())
-        logDebug"sendUPSCommand(): session start timestamp = ${getTransient('sessionStart')}"
-        telnetClose();updateConnectState("Connecting");initTelnetBuffer()
-        state.pendingCmds=["$Username","$Password"]+cmds+["whoami"]
-        logDebug"sendUPSCommand(): Opening transient Telnet connection to ${upsIP}:${upsPort}"
-        safeTelnetConnect([ip:upsIP,port:upsPort.toInteger()])
-        Integer timeoutSec=(cmdName=="Reconnoiter")?15:10
-        runIn(timeoutSec,"checkSessionTimeout",[data:[cmd:cmdName,timeoutMs:(timeoutSec*1000)]])
-        logDebug"sendUPSCommand(): queued ${state.pendingCmds.size()} Telnet lines for delayed send"
-        runInMillis(500,"delayedTelnetSend")
-    }catch(e){
-        logError"sendUPSCommand(${cmdName}): ${e.message}"
-        emitChangedEvent("lastCommandResult","Failure")
-        updateConnectState("Disconnected");closeConnection()
-    }
+    enqueueCommand(cmdName,cmds,"api")
+    processCommandQueue()
 }
 
 private delayedTelnetSend(){
@@ -387,14 +439,7 @@ private delayedTelnetSend(){
 }
 
 private void runDeferredCommand(){
-    def cmd=(atomicState.deferredCommand?:"") as String
-    def cmds=(atomicState.deferredCmds instanceof List)?(atomicState.deferredCmds as List):null
-    if(!cmd||!cmds||cmds.isEmpty()){
-        logDebug"runDeferredCommand(): no deferred command payload available; skipping"
-        return
-    }
-    logInfo"runDeferredCommand(): retrying deferred command '${cmd}'"
-    sendUPSCommand(cmd,cmds)
+    processCommandQueue()
 }
 
 private safeTelnetConnect(Map m){
@@ -427,10 +472,9 @@ private safeTelnetConnect(Map m){
 }
 
 private void resetTransientState(String origin, Boolean suppressWarn=false){
-    def keys=["pendingCmds","deferredCommand","telnetBuffer","sessionStart","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen"]
+    def keys=["pendingCmds","telnetBuffer","sessionStart","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen"]
     def residuals=keys.findAll{state[it]}
     if(residuals&&!suppressWarn)logWarn"resetTransientState(): residuals (${residuals.join(', ')}) during ${origin}"
-    if(atomicState.deferredCommand)logWarn"resetTransientState(): atomicState had deferredCommand='${atomicState.deferredCommand}' during ${origin}"
     keys.each{state.remove(it)}
     clearTransient("rxCarry")
     clearTransient("sendThrottleRemaining")
@@ -489,7 +533,9 @@ private finalizeSession(String origin){
             case"ups off":case"ups on":try{runIn(30,"refresh")}catch(e){};break
         }
     }catch(e){logWarn"finalizeSession(): ${e.message}"}finally{
+        clearInFlightCommand()
         resetTransientState("finalizeSession",true);clearTransient("finalizing")
+        runInMillis(100,"processCommandQueue")
     }
 }
 
@@ -846,6 +892,9 @@ private void closeConnection(){
             updateConnectState("Disconnected")
         }else logDebug"closeConnection(): connectStatus already ${cs}"
         clearTransient("telnetBuffer");clearTransient("rxCarry");clearTransient("sendThrottleRemaining");clearTransient("sendThrottleMs");clearTransient("finalizing")
+        clearTransient("sessionStart");clearTransient("currentCommand")
+        clearInFlightCommand()
+        runInMillis(100,"processCommandQueue")
         logDebug"closeConnection(): cleanup complete"
     }
 }
