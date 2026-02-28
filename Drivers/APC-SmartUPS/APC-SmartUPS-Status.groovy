@@ -378,7 +378,22 @@ private safeTelnetConnect(Map m){
         if(attempt<=retries){
             logInfo"safeTelnetConnect(): Session active, retrying in ${delayMs/1000}s (attempt ${attempt}/${retries})";state.safeTelnetRetryCount=attempt+1;runInMillis(delayMs,"safeTelnetConnect",[data:m])}
         else{logError"safeTelnetConnect(): Aborted after ${retries} attempts ? session still busy";state.remove("safeTelnetRetryCount")};return}
-    try{logDebug"safeTelnetConnect(): attempt ${attempt}/${retries} connecting to ${ip}:${port}";telnetClose();telnetConnect(ip,port,null,null);state.remove("safeTelnetRetryCount");logDebug"safeTelnetConnect(): connection established"}
+    try{
+        logDebug"safeTelnetConnect(): attempt ${attempt}/${retries} connecting to ${ip}:${port}"
+        telnetClose()
+        def opts=[termChars:[10]]
+        try{
+            telnetConnect(opts,ip,port,null,null)
+            logDebug"safeTelnetConnect(): connected with options ${opts}"
+            logTrace("connect: opts=${opts}")
+        }catch(MissingMethodException mme){
+            logDebug"safeTelnetConnect(): options signature unavailable; falling back to legacy telnetConnect()"
+            telnetConnect(ip,port,null,null)
+            logTrace("connect: legacy signature fallback")
+        }
+        state.remove("safeTelnetRetryCount")
+        logDebug"safeTelnetConnect(): connection established"
+    }
     catch(e){
         def msg=e.message;def retryAllowed=(attempt<retries);logWarn"safeTelnetConnect(): ${msg?:'connection error'} ${retryAllowed?'? retrying in '+(delayMs/1000)+'s (attempt '+attempt+'/'+retries+')':'? max retries reached'}"
         if(retryAllowed){state.safeTelnetRetryCount=attempt+1;runInMillis(delayMs,"safeTelnetConnect",[data:m])}
