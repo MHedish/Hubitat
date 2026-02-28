@@ -41,13 +41,14 @@
 *  1.0.5.9   -- Fixed timeout/finalize race using session timeout token, buffered-data-aware timeout extension, and stale-timeout cancellation.
 *  1.0.5.10  -- Refined timeout handling for stale buffered sessions; gracefully closes/flushes Reconnoiter on idle instead of endless extension.
 *  1.0.5.11  -- Restored UPS command timeout behavior: flush buffered output before failure, preserve command context, and avoid overwriting explicit command results.
+*  1.0.5.12  -- Improved UPS command E-code detection when prompt-prefixed and added per-session command-processing guard.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.5.11"
+@Field static final String DRIVER_VERSION  = "1.0.5.12"
 @Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -223,6 +224,7 @@ private void initTelnetBuffer(){
     setTransient("lastRxAt",0L)
     setTransient("timeoutExtendCount",0)
     setTransient("timeoutSessionId",null)
+    setTransient("commandProcessed",false)
     setTransient("cbSeq",0)
     setTransient("statusSeq",0)
     setTransient("sessionStart",now())
@@ -489,7 +491,7 @@ private safeTelnetConnect(Map m){
 
 private void resetTransientState(String origin, Boolean suppressWarn=false){
     def stateKeys=["pendingCmds","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen"]
-    def transientKeys=["telnetBuffer","sessionStart","rxPartial","rxLineCount","rxDrainActive","sessionBuffer","currentCommand","upsBannerRefTime","lastConnectState","lastRxAt","timeoutExtendCount","timeoutSessionId","cbSeq","statusSeq"]
+    def transientKeys=["telnetBuffer","sessionStart","rxPartial","rxLineCount","rxDrainActive","sessionBuffer","currentCommand","upsBannerRefTime","lastConnectState","lastRxAt","timeoutExtendCount","timeoutSessionId","commandProcessed","cbSeq","statusSeq"]
     def residualState=stateKeys.findAll{state[it]!=null}
     def residualTransient=transientKeys.findAll{getTransient(it)!=null}
     if(!suppressWarn&&(residualState||residualTransient)){
@@ -786,6 +788,8 @@ private void processBufferedSession(){
 }
 
 private void processUPSCommand(){
+    if(getTransient("commandProcessed")){logDebug "processUPSCommand(): command already processed for this session";return}
+    setTransient("commandProcessed",true)
     def buf=getTransient("sessionBuffer")?:[]
     if(!buf||buf.isEmpty()){
         logDebug "processUPSCommand(): No buffered data to process";return
@@ -793,10 +797,11 @@ private void processUPSCommand(){
     def lines=buf.findAll {it.line}.collect {it.line.trim()}
     clearTransient("sessionBuffer");def cmd=(getTransient("currentCommand")?:atomicState.lastCommand?:device.currentValue("lastCommand")?:"Unknown")
     logDebug "processUPSCommand(): processing ${lines.size()} lines for UPS command '${cmd}'"
-    def errLine=lines.find { it ==~ /^E\\d{3}:.*/ }
+    def errLine=lines.find { it =~ /E\d{3}:/ }
     if(errLine){
-        logInfo "processUPSCommand(): UPS command '${cmd}' returned '${errLine}'"
-        handleUPSCommands(errLine.split(/\s+/))
+        def norm=(errLine.replaceFirst(/^.*?(E\d{3}:)/,'$1')).trim()
+        logInfo "processUPSCommand(): UPS command '${cmd}' returned '${norm}'"
+        handleUPSCommands(norm.split(/\s+/))
     }else{
         logWarn"processUPSCommand(): UPS command '${cmd}' completed with no E-code response"
         emitChangedEvent("lastCommandResult","No Response","Command '${cmd}' completed without explicit result")
