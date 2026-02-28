@@ -49,7 +49,7 @@ import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.5.13"
+@Field static final String DRIVER_VERSION  = "1.0.5.14"
 @Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -226,6 +226,8 @@ private void initTelnetBuffer(){
     setTransient("timeoutExtendCount",0)
     setTransient("timeoutSessionId",null)
     setTransient("commandProcessed",false)
+    setTransient("postAuthCmds",null)
+    setTransient("postAuthSent",false)
     setTransient("cbSeq",0)
     setTransient("statusSeq",0)
     setTransient("sessionStart",now())
@@ -436,8 +438,15 @@ private void sendUPSCommand(String cmdName, List cmds){
         setTransient("timeoutExtendCount",0)
         logDebug"sendUPSCommand(): session start timestamp = ${getTransient('sessionStart')}"
         telnetClose();updateConnectState("Connecting");initTelnetBuffer()
-        def sessionCmds=["$Username","$Password"]+cmds
-        if(cmdName=="Reconnoiter")sessionCmds+=["whoami"]
+        def sessionCmds=["$Username","$Password"]
+        if(cmdName=="Reconnoiter"){
+            sessionCmds+=cmds+["whoami"]
+            setTransient("postAuthCmds",null)
+            setTransient("postAuthSent",true)
+        }else{
+            setTransient("postAuthCmds",cmds)
+            setTransient("postAuthSent",false)
+        }
         state.pendingCmds=sessionCmds
         logDebug"sendUPSCommand(): Opening transient Telnet connection to ${upsIP}:${upsPort}"
         safeTelnetConnect([ip:upsIP,port:upsPort.toInteger()])
@@ -491,7 +500,7 @@ private safeTelnetConnect(Map m){
 
 private void resetTransientState(String origin, Boolean suppressWarn=false){
     def stateKeys=["pendingCmds","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen"]
-    def transientKeys=["telnetBuffer","sessionStart","rxPartial","rxLineCount","rxDrainActive","sessionBuffer","currentCommand","upsBannerRefTime","lastConnectState","lastRxAt","timeoutExtendCount","timeoutSessionId","commandProcessed","cbSeq","statusSeq"]
+    def transientKeys=["telnetBuffer","sessionStart","rxPartial","rxLineCount","rxDrainActive","sessionBuffer","currentCommand","upsBannerRefTime","lastConnectState","lastRxAt","timeoutExtendCount","timeoutSessionId","commandProcessed","postAuthCmds","postAuthSent","cbSeq","statusSeq"]
     def residualState=stateKeys.findAll{state[it]!=null}
     def residualTransient=transientKeys.findAll{getTransient(it)!=null}
     if(!suppressWarn&&(residualState||residualTransient)){
@@ -936,6 +945,17 @@ private void handleInboundLine(String line){
         }
         setTransient("upsBannerRefTime",now());state.authStarted=true
     }else{
+        def queued=(getTransient("postAuthCmds")?:[]) as List
+        boolean sent=(getTransient("postAuthSent")?:false) as boolean
+        if(!sent&&queued&&!queued.isEmpty()){
+            boolean authActivity=(lowered.contains("user name")||lowered.contains("password")||lowered.contains("apc>")||line.startsWith("E000:"))
+            if(authActivity){
+                logInfo"post-auth dispatch: sending ${queued.size()} queued command(s) for ${(getTransient('currentCommand')?:'session')}"
+                telnetSend(queued,500)
+                setTransient("postAuthSent",true)
+                clearTransient("postAuthCmds")
+            }
+        }
         if((state.whoamiAckSeen&&state.whoamiUserSeen)
             ||(connectStatus=="UPSCommand"&&state.whoamiEchoSeen)){
             logDebug "whoami sequence complete, processing buffer..."
