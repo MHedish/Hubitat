@@ -174,7 +174,7 @@ private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=fa
 private updateConnectState(String newState){def old=device.currentValue("connectStatus");def last=getTransient("lastConnectState");if(old!=newState&&last!=newState){setTransient("lastConnectState",newState);emitChangedEvent("connectStatus",newState)}else{logDebug"updateConnectState(): no change (${old} → ${newState})"}}
 private updateCommandState(String newCmd){def old=atomicState.lastCommand;atomicState.lastCommand=newCmd;if(old!=newCmd)logDebug"lastCommand = ${newCmd}"}
 private def normalizeDateTime(String r){if(!r||r.trim()=="")return r;try{def m=r=~/^(\d{2})\/(\d{2})\/(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/;if(m.matches()){def(mm,dd,yy,hh,mi,ss)=m[0][1..6];def y=(yy as int)<80?2000+(yy as int):1900+(yy as int);def f="${mm}/${dd}/${y}"+(hh?" ${hh}:${mi}:${ss?:'00'}":"");def d=Date.parse(hh?"MM/dd/yyyy HH:mm:ss":"MM/dd/yyyy",f);return hh?d.format("MM/dd/yyyy h:mm:ss a",location.timeZone):d.format("MM/dd/yyyy",location.timeZone)};for(fmt in["MM/dd/yyyy HH:mm:ss","MM/dd/yyyy h:mm:ss a","MM/dd/yyyy","yyyy-MM-dd","MMM dd yyyy HH:mm:ss"])try{def d=Date.parse(fmt,r);return(fmt.contains("HH")||fmt.contains("h:mm:ss"))?d.format("MM/dd/yyyy h:mm:ss a",location.timeZone):d.format("MM/dd/yyyy",location.timeZone)}catch(e){} }catch(e){};return r}
-private void initTelnetBuffer(){def b=getTransient("telnetBuffer");if(b instanceof List&&b.size()){def t;try{def p=b[-(Math.min(3,b.size()))..-1]*.line.findAll{it}.join(" | ");t=p[-(Math.min(80,p.size()))..-1]}catch(e){t="unavailable (${e.message})"};logDebug"initTelnetBuffer(): clearing leftover buffer (${b.size()} lines, preview='${t}')"};setTransient("telnetBuffer",[]);setTransient("rxCarry","");setTransient("sendThrottleRemaining",3);setTransient("sendThrottleMs",2000);setTransient("authStage",null);setTransient("postAuthCmds",null);setTransient("postAuthSent",false);setTransient("sessionStart",now());logDebug"initTelnetBuffer(): Session start at ${new Date(getTransient('sessionStart'))}"}
+private void initTelnetBuffer(){def b=getTransient("telnetBuffer");if(b instanceof List&&b.size()){def t;try{def p=b[-(Math.min(3,b.size()))..-1]*.line.findAll{it}.join(" | ");t=p[-(Math.min(80,p.size()))..-1]}catch(e){t="unavailable (${e.message})"};logDebug"initTelnetBuffer(): clearing leftover buffer (${b.size()} lines, preview='${t}')"};setTransient("telnetBuffer",[]);setTransient("rxCarry","");setTransient("sendThrottleRemaining",3);setTransient("sendThrottleMs",2000);setTransient("sessionStart",now());logDebug"initTelnetBuffer(): Session start at ${new Date(getTransient('sessionStart'))}"}
 private checkExternalUPSControlChange(){def c=device.currentValue("upsControlEnabled")as Boolean;def p=state.lastUpsControlEnabled as Boolean;if(p==null){state.lastUpsControlEnabled=c;return};if(c!=p){logInfo "UPS Control state changed externally (${p} → ${c})";state.lastUpsControlEnabled=c;updateUPSControlState(c);unschedule(autoDisableUPSControl);if(c)runIn(1800,"autoDisableUPSControl")else state.remove("controlDeviceName")}}
 
 /* ==================================
@@ -352,14 +352,12 @@ private void sendUPSCommand(String cmdName, List cmds){
         setTransient("sessionStart",now())
         logDebug"sendUPSCommand(): session start timestamp = ${getTransient('sessionStart')}"
         telnetClose();updateConnectState("Connecting");initTelnetBuffer()
-        setTransient("authStage","await_user_prompt")
-        setTransient("postAuthCmds",cmds+["whoami"])
-        setTransient("postAuthSent",false)
-        state.remove("pendingCmds")
+        state.pendingCmds=["$Username","$Password"]+cmds+["whoami"]
         logDebug"sendUPSCommand(): Opening transient Telnet connection to ${upsIP}:${upsPort}"
         safeTelnetConnect([ip:upsIP,port:upsPort.toInteger()])
         runIn(10,"checkSessionTimeout",[data:[cmd:cmdName]])
-        logDebug"sendUPSCommand(): auth-gated dispatch armed (${((getTransient('postAuthCmds')?:[]) as List).size()} post-auth commands queued)"
+        logDebug"sendUPSCommand(): queued ${state.pendingCmds.size()} Telnet lines for delayed send"
+        runInMillis(500,"delayedTelnetSend")
     }catch(e){
         logError"sendUPSCommand(${cmdName}): ${e.message}"
         emitChangedEvent("lastCommandResult","Failure")
@@ -412,9 +410,6 @@ private void resetTransientState(String origin, Boolean suppressWarn=false){
     clearTransient("rxCarry")
     clearTransient("sendThrottleRemaining")
     clearTransient("sendThrottleMs")
-    clearTransient("authStage")
-    clearTransient("postAuthCmds")
-    clearTransient("postAuthSent")
 }
 
 /* ===============================
@@ -764,25 +759,6 @@ def parse(String msg){
         def buf=getTransient("telnetBuffer")?:[]
         buf << [cmd: device.currentValue("lastCommand")?:"unknown",line: line]
         setTransient("telnetBuffer",buf)
-        def stage=(getTransient("authStage")?:"") as String
-        boolean postAuthSent=(getTransient("postAuthSent")?:false) as boolean
-        def queued=(getTransient("postAuthCmds")?:[]) as List
-        String lower=(line?:"").toLowerCase()
-        if(stage=="await_user_prompt"&&(lower.contains("user name")||lower.contains("user id")||lower.contains("userid")||lower.contains("username")||lower.contains("login"))){
-            logInfo"auth-chain: username prompt detected; sending username"
-            telnetSend(["$Username"],500)
-            setTransient("authStage","await_password_prompt")
-        }else if(stage=="await_password_prompt"&&lower.contains("password")){
-            logInfo"auth-chain: password prompt detected; sending password"
-            telnetSend(["$Password"],500)
-            setTransient("authStage","await_shell_prompt")
-        }else if(stage=="await_shell_prompt"&&!postAuthSent&&queued&&!queued.isEmpty()&&(lower.contains("apc>")||line.startsWith("E000:"))){
-            logInfo"auth-chain: shell prompt detected; sending ${queued.size()} queued command(s)"
-            telnetSend(queued,500)
-            setTransient("postAuthSent",true)
-            clearTransient("postAuthCmds")
-            setTransient("authStage","await_result")
-        }
         if(!state.authStarted){
             updateConnectState("Connected");logDebug "First Telnet data seen; session flagged as Connected"
             def cmd=device.currentValue("lastCommand")
@@ -846,7 +822,7 @@ private void closeConnection(){
         if(cs!="Disconnected"&&cs!="Disconnecting"){
             updateConnectState("Disconnected")
         }else logDebug"closeConnection(): connectStatus already ${cs}"
-        clearTransient("telnetBuffer");clearTransient("rxCarry");clearTransient("sendThrottleRemaining");clearTransient("sendThrottleMs");clearTransient("authStage");clearTransient("postAuthCmds");clearTransient("postAuthSent");clearTransient("finalizing")
+        clearTransient("telnetBuffer");clearTransient("rxCarry");clearTransient("sendThrottleRemaining");clearTransient("sendThrottleMs");clearTransient("finalizing")
         logDebug"closeConnection(): cleanup complete"
     }
 }
