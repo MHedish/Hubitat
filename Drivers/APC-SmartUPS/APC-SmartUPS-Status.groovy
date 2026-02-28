@@ -727,6 +727,7 @@ private List<String> normalizeInboundLines(String msg){
     String partial=((getTransient("rxCarry")?:"") as String)+(msg?:"")
     partial=partial.replace('\u0000','')
     List<String> lines=[]
+    String tokenRegex='(?i)(user\\s*name\\s*:\\s*|user\\s*id\\s*:\\s*|userid\\s*:\\s*|username\\s*:\\s*|login\\s*:\\s*|password\\s*:\\s*|apc>|E\\d{3}:)'
     while(partial.length()>0){
         int lfIdx=partial.indexOf('\n')
         int tokenEnd=-1
@@ -741,12 +742,25 @@ private List<String> normalizeInboundLines(String msg){
         String normalized=segment.replace('\r','').replace('\n','').trim()
         if(normalized)lines<<normalized
     }
+    if(lines.isEmpty()&&partial){
+        String scan=partial.replaceAll('[\\r\\u0000]+','').replaceAll('[^\\x20-\\x7E]+','')
+        def scanMatcher=(scan =~ tokenRegex)
+        if(scanMatcher.find()){
+            String token=scanMatcher.group(1)?.trim()
+            if(token){
+                lines<<token
+                partial=""
+                logTrace("normalize: token fallback='${token}'")
+            }
+        }
+    }
     if(partial.length()>4096){
         logWarn"normalizeInboundLines(): trimming oversized RX carry (${partial.length()} chars)"
         partial=partial[-1024..-1]
     }
     setTransient("rxCarry",partial)
-    logTrace("normalize: inLen=${msg?.length()?:0} outLines=${lines.size()} carryLen=${partial.length()}")
+    String carryHead=partial?partial.replaceAll('[\\r\\u0000]+','').replaceAll('[^\\x20-\\x7E]+','').take(60):""
+    logTrace("normalize: inLen=${msg?.length()?:0} outLines=${lines.size()} carryLen=${partial.length()} carryHead='${carryHead}'")
     return lines
 }
 
