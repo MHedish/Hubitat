@@ -797,14 +797,16 @@ private boolean telnetSend(List m,Integer ms){
     int throttleMs=(getTransient("sendThrottleMs")?:0) as int
     logDebug "telnetSend(): sending ${m.size()} messages with ${ms} ms delay"
     m.each{item->
-        int useDelay=ms
+        int postDelay=ms
         if(throttleRemaining>0&&throttleMs>0){
-            useDelay=Math.max(ms,throttleMs)
+            int preDelay=Math.max(ms,throttleMs)
             throttleRemaining--
             setTransient("sendThrottleRemaining",throttleRemaining)
-            logInfo "send throttle: applying ${useDelay}ms delay (${throttleRemaining} primed sends remaining)"
+            logInfo "send throttle: applying ${preDelay}ms pre-send delay (${throttleRemaining} primed sends remaining)"
+            pauseExecution(preDelay)
+            postDelay=0
         }
-        sendData("$item",useDelay)
+        sendData("$item",postDelay)
     }
     true
 }
