@@ -369,7 +369,6 @@ def initialize(){
     if(logEnable)logDebug("IP=$upsIP, Port=$upsPort, Username=$Username, Password=${Password?.replaceAll(/./, '*')}")else logInfo "IP=$upsIP, Port=$upsPort"
     if(upsIP&&upsPort&&Username&&Password){
         unschedule(autoDisableDebugLogging)
-        unschedule("runDeferredCommand")
         unschedule("processCommandQueue")
         if(logEnable)runIn(1800,autoDisableDebugLogging)
         updateUPSControlState(state.upsControlEnabled)
@@ -377,8 +376,6 @@ def initialize(){
         scheduleCheck(runTime as Integer,runOffset as Integer)
         clearTransient()
         clearCommandQueue();clearInFlightCommand()
-        atomicState.remove("deferredCommand")
-        atomicState.remove("deferredCmds")
         resetTransientState("initialize");updateConnectState("Disconnected");closeConnection();runInMillis(500,"refresh")
     }else logWarn"Cannot initialize. Preferences must be set."
 }
