@@ -735,7 +735,7 @@ private List<String> normalizeInboundLines(String msg){
     return lines
 }
 
-private parse(String msg){
+def parse(String msg){
     logTrace("parse: len=${msg?.length()?:0} status=${device.currentValue('connectStatus')?:'n/a'}")
     def lines=normalizeInboundLines(msg)
     if(!lines)return
