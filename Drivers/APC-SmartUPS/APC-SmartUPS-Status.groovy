@@ -483,7 +483,7 @@ private safeTelnetConnect(Map m){
     try{
         logDebug"safeTelnetConnect(): attempt ${attempt}/${retries} connecting to ${ip}:${port}"
         telnetClose()
-        def opts=[termChars:[10]]
+        def opts=[termChars:[10,13,58,62]]
         try{
             telnetConnect(opts,ip,port,null,null)
             logDebug"safeTelnetConnect(): connected with options ${opts}"
@@ -868,29 +868,24 @@ private void enqueueRxChunk(String chunk,String currentCmd){
     int before=lineCount
     def buf=(getTransient("telnetBuffer")?:[]) as List
     def sess=(getTransient("sessionBuffer")?:[]) as List
-    boolean sawLf=chunk?.contains('\n')
-    for(int i=0;i<chunk.length();i++){
-        char ch=chunk.charAt(i)
-        partial=partial+ch
-        if(ch=='\n'){
-            String line=partial.substring(0,partial.length()-1)
-            partial=""
-            if(line?.trim()){
-                def entry=[cmd: currentCmd,line: line]
-                buf << entry
-                sess << entry
-                lineCount++
-            }
-        }
-    }
-    if(!sawLf&&lineCount==before){
-        String framed=partial.replaceAll('[\\r\\u0000]+$','')
-        if(framed?.trim()){
-            def entry=[cmd: currentCmd,line: framed]
+    partial = partial + (chunk?:"")
+    while(partial!=null&&partial.length()>0){
+        int lfIdx=partial.indexOf('\n')
+        int tokenEnd=-1
+        def tokenMatcher=(partial =~ /(?i)(user\s*name\s*:\s*|user\s*id\s*:\s*|userid\s*:\s*|username\s*:\s*|login\s*:\s*|password\s*:\s*|apc>|E\d{3}:)/)
+        if(tokenMatcher.find())tokenEnd=tokenMatcher.end()
+        int cut=-1
+        if(lfIdx>=0&&(tokenEnd<0||(lfIdx+1)<=tokenEnd))cut=lfIdx+1
+        else if(tokenEnd>0)cut=tokenEnd
+        if(cut<0)break
+        String line=partial.substring(0,cut)
+        partial=partial.substring(cut)
+        String normalized=line?.replaceAll('[\r\u0000\n]+','')?.trim()
+        if(normalized){
+            def entry=[cmd: currentCmd,line: normalized]
             buf << entry
             sess << entry
             lineCount++
-            partial=""
         }
     }
     if(partial.length()>4096){
@@ -947,41 +942,45 @@ private void handleInboundLine(String line){
             logDebug "parse(): Skipping updateCommandState – no current command yet (auth handshake)"
         }
         setTransient("upsBannerRefTime",now());state.authStarted=true
-    }else{
-        def mode=(getTransient("sessionMode")?:"") as String
-        def stage=(getTransient("authStage")?:"await_user_prompt") as String
-        def queued=(getTransient("postAuthCmds")?:[]) as List
-        boolean sent=(getTransient("postAuthSent")?:false) as boolean
-        if(stage=="await_user_prompt"&&lowered.contains("user name")){
-            telnetSend(["$Username"],500)
-            setTransient("authStage","await_password_prompt")
-            logInfo "auth-chain: username sent"
-        }else if(stage=="await_password_prompt"&&lowered.contains("password")){
-            telnetSend(["$Password"],500)
-            setTransient("authStage","await_shell_prompt")
-            logInfo "auth-chain: password sent"
-        }else if(stage=="await_shell_prompt"&&!sent&&queued&&!queued.isEmpty()&&(lowered.contains("apc>")||line.startsWith("E000:"))){
-            logInfo"post-auth dispatch: sending ${queued.size()} queued command(s) for ${(getTransient('currentCommand')?:'session')}"
-            telnetSend(queued,500)
-            setTransient("postAuthSent",true)
-            clearTransient("postAuthCmds")
-            setTransient("authStage","await_command_result")
+    }
+    def mode=(getTransient("sessionMode")?:"") as String
+    def stage=(getTransient("authStage")?:"await_user_prompt") as String
+    def queued=(getTransient("postAuthCmds")?:[]) as List
+    boolean sent=(getTransient("postAuthSent")?:false) as boolean
+    boolean userPrompt=((line =~ /(?i)\buser\s*name\s*:\s*/).find()
+        ||(line =~ /(?i)\buser\s*id\s*:\s*/).find()
+        ||(line =~ /(?i)\buserid\s*:\s*/).find()
+        ||(line =~ /(?i)\busername\s*:\s*/).find()
+        ||(line =~ /(?i)\blogin\s*:\s*/).find())
+    if(stage=="await_user_prompt"&&userPrompt){
+        telnetSend(["$Username"],500)
+        setTransient("authStage","await_password_prompt")
+        logInfo "auth-chain: username sent"
+    }else if(stage=="await_password_prompt"&&(line =~ /(?i)\bpassword\s*:\s*/).find()){
+        telnetSend(["$Password"],500)
+        setTransient("authStage","await_shell_prompt")
+        logInfo "auth-chain: password sent"
+    }else if(stage=="await_shell_prompt"&&!sent&&queued&&!queued.isEmpty()&&(lowered.contains("apc>")||line.startsWith("E000:"))){
+        logInfo"post-auth dispatch: sending ${queued.size()} queued command(s) for ${(getTransient('currentCommand')?:'session')}"
+        telnetSend(queued,500)
+        setTransient("postAuthSent",true)
+        clearTransient("postAuthCmds")
+        setTransient("authStage","await_command_result")
+    }
+    if(mode=="command"&&(line =~ /E\d{3}:/)){
+        logDebug "command-mode completion marker seen: ${line}"
+        processUPSCommand();closeConnection();return
+    }
+    if((state.whoamiAckSeen&&state.whoamiUserSeen)
+        ||(connectStatus=="UPSCommand"&&state.whoamiEchoSeen)){
+        logDebug "whoami sequence complete, processing buffer..."
+        ["whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen","authStarted"].each {state.remove(it)}
+        if(connectStatus=="UPSCommand"){
+            handleUPSCommands()
+        }else{
+            processBufferedSession()
         }
-        if(mode=="command"&&(line =~ /E\d{3}:/)){
-            logDebug "command-mode completion marker seen: ${line}"
-            processUPSCommand();closeConnection();return
-        }
-        if((state.whoamiAckSeen&&state.whoamiUserSeen)
-            ||(connectStatus=="UPSCommand"&&state.whoamiEchoSeen)){
-            logDebug "whoami sequence complete, processing buffer..."
-            ["whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen","authStarted"].each {state.remove(it)}
-            if(connectStatus=="UPSCommand"){
-                handleUPSCommands()
-            }else{
-                processBufferedSession()
-            }
-            closeConnection()
-        }
+        closeConnection()
     }
 }
 
