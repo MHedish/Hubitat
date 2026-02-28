@@ -42,13 +42,14 @@
 *  1.0.5.10  -- Refined timeout handling for stale buffered sessions; gracefully closes/flushes Reconnoiter on idle instead of endless extension.
 *  1.0.5.11  -- Restored UPS command timeout behavior: flush buffered output before failure, preserve command context, and avoid overwriting explicit command results.
 *  1.0.5.12  -- Improved UPS command E-code detection when prompt-prefixed and added per-session command-processing guard.
+*  1.0.5.13  -- Split command-session behavior: Reconnoiter keeps whoami sentinel/idle flush; non-Recon commands use longer timeout and no early idle close.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.5.12"
+@Field static final String DRIVER_VERSION  = "1.0.5.13"
 @Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -383,7 +384,8 @@ private checkSessionTimeout(Map data){
         return
     }
     def cmd=data?.cmd?:'Unknown';def start=getTransient("sessionStart")?:0L;def elapsed=now()-start;def s=device.currentValue("connectStatus")
-    if(s!="Disconnected"&&elapsed>10000){
+    long timeoutMs=(cmd=="Reconnoiter")?10000L:22000L
+    if(s!="Disconnected"&&elapsed>timeoutMs){
         long lastRx=(getTransient("lastRxAt")?:0L) as long
         long rxIdle=lastRx>0?(now()-lastRx):Long.MAX_VALUE
         int bufferSize=((getTransient("sessionBuffer")?:[]) as List).size()
@@ -396,11 +398,6 @@ private checkSessionTimeout(Map data){
         }
         if(cmd=="Reconnoiter"&&bufferSize>0&&rxIdle>=3500){
             logWarn"checkSessionTimeout(): ${cmd} appears idle with buffered data (rxIdle=${rxIdle}ms, buffer=${bufferSize}); forcing graceful close/flush"
-            closeConnection()
-            return
-        }
-        if(bufferSize>0&&rxIdle>=3500){
-            logWarn"checkSessionTimeout(): ${cmd} idle with buffered data (rxIdle=${rxIdle}ms, buffer=${bufferSize}); forcing graceful close/flush"
             closeConnection()
             return
         }
@@ -439,10 +436,13 @@ private void sendUPSCommand(String cmdName, List cmds){
         setTransient("timeoutExtendCount",0)
         logDebug"sendUPSCommand(): session start timestamp = ${getTransient('sessionStart')}"
         telnetClose();updateConnectState("Connecting");initTelnetBuffer()
-        state.pendingCmds=["$Username","$Password"]+cmds+["whoami"]
+        def sessionCmds=["$Username","$Password"]+cmds
+        if(cmdName=="Reconnoiter")sessionCmds+=["whoami"]
+        state.pendingCmds=sessionCmds
         logDebug"sendUPSCommand(): Opening transient Telnet connection to ${upsIP}:${upsPort}"
         safeTelnetConnect([ip:upsIP,port:upsPort.toInteger()])
-        runIn(12,"checkSessionTimeout",[data:[cmd:cmdName,sessionId:timeoutSid]])
+        Integer timeoutSec=(cmdName=="Reconnoiter")?12:24
+        runIn(timeoutSec,"checkSessionTimeout",[data:[cmd:cmdName,sessionId:timeoutSid]])
         logDebug"sendUPSCommand(): queued ${state.pendingCmds.size()} Telnet lines for delayed send"
         runInMillis(500,"delayedTelnetSend")
     }catch(e){
