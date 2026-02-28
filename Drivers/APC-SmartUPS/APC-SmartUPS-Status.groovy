@@ -815,33 +815,22 @@ def parse(String msg){
    Telnet Data, Status & Close
    =============================== */
 private sendData(String m,Integer ms){logDebug "$m";def h=sendHubCommand(new hubitat.device.HubAction("$m",hubitat.device.Protocol.TELNET));pauseExecution(ms);return h}
-private void sendDataPaced(String payload,Integer charDelayMs){
-    if(payload==null)return
-    for(int i=0;i<payload.length();i++){
-        String ch=payload.substring(i,i+1)
-        sendData(ch,charDelayMs)
-    }
-}
 private telnetStatus(String s){def l=s?.toLowerCase()?:"";logTrace("status: ${s?:''}");if(l.contains("receive error: stream is closed")){def b=getTransient("telnetBuffer")?:[];logDebug"telnetStatus(): Stream closed, buffer has ${b.size()} lines";if(b&&b.size()>0&&device.currentValue("lastCommand")=="Reconnoiter"){def t=(b[-1]?.line?.toString()?:"");def tail=t.size()>100?t[-100..-1]:t;logDebug"telnetStatus(): Last buffer tail (up to 100 chars): ${tail}";logDebug"telnetStatus(): Stream closed with unprocessed buffer, forcing parse";processBufferedSession()};logDebug"telnetStatus(): connection reset after stream close"}else if(l.contains("send error")){logWarn"telnetStatus(): Telnet send error: ${s}"}else if(l.contains("closed")||l.contains("error")){logDebug"telnetStatus(): ${s}"}else logDebug"telnetStatus(): ${s}";closeConnection()}
 private boolean telnetSend(List m,Integer ms){
     int throttleRemaining=(getTransient("sendThrottleRemaining")?:0) as int
     int throttleMs=(getTransient("sendThrottleMs")?:0) as int
-    int charDelayMs=100
     logDebug "telnetSend(): sending ${m.size()} messages with ${ms} ms delay"
     m.each{item->
         int postDelay=ms
-        String payload="${item?:''}\r\n"
+        String payload="${item?:''}\r"
         if(throttleRemaining>0&&throttleMs>0){
             int preDelay=Math.max(ms,throttleMs)
             throttleRemaining--
             setTransient("sendThrottleRemaining",throttleRemaining)
-            logInfo "send throttle: applying ${preDelay}ms pre-send delay + ${charDelayMs}ms char pacing (${throttleRemaining} primed sends remaining)"
+            logInfo "send throttle: applying ${preDelay}ms pre-send delay (${throttleRemaining} primed sends remaining)"
             pauseExecution(preDelay)
-            sendDataPaced(payload,charDelayMs)
-            postDelay=0
-        }else{
-            sendData(payload,postDelay)
         }
+        sendData(payload,postDelay)
     }
     true
 }
