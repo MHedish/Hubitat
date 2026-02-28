@@ -30,15 +30,18 @@
 *  1.0.2.12  -- Corrected safeTelnetConnect runIn() map; updated scheduleCheck() to guard against watchdog unscheduling
 *  1.0.3.0   –– Version bump for public release
 *  1.0.4.0   -- Added NUL (0x00) stripping in parse() to ensure compatibility with AP9641 (NMC3) Telnet CR/NULL/LF line framing.
-*  1.0.4.1   -- Added stream normalizer with semantic prompt boundaries for no-newline prompt framing.
+*  1.0.4.1   -- NMC3 transport stabilization pass: added callback transport tracing, restored parse callback dispatch, introduced LF termChars connect with legacy fallback,
+*               refined stream normalizer/carry handling for CR/LF/NUL framing, and retained blind-send auth/command flow after prompt-gated experiment rollback.
+*  1.0.4.2   -- Deferred retry hardening/noise cleanup: dispatch deferred retries through runDeferredCommand payload replay, unschedule stale deferred timers before
+*               requeue/execute, and treat empty deferred payload callback as debug no-op.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.4.1"
-@Field static final String DRIVER_MODIFIED = "2026.02.27"
+@Field static final String DRIVER_VERSION  = "1.0.4.2"
+@Field static final String DRIVER_MODIFIED = "2026.02.28"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
 /* ===============================
@@ -279,6 +282,7 @@ def initialize(){
     if(logEnable)logDebug("IP=$upsIP, Port=$upsPort, Username=$Username, Password=${Password?.replaceAll(/./, '*')}")else logInfo "IP=$upsIP, Port=$upsPort"
     if(upsIP&&upsPort&&Username&&Password){
         unschedule(autoDisableDebugLogging)
+        unschedule("runDeferredCommand")
         if(logEnable)runIn(1800,autoDisableDebugLogging)
         updateUPSControlState(state.upsControlEnabled)
         if(state.upsControlEnabled){unschedule(autoDisableUPSControl);runIn(1800,autoDisableUPSControl)}
@@ -346,9 +350,11 @@ private void sendUPSCommand(String cmdName, List cmds){
         atomicState.deferredCmds=cmds
         setTransient("currentCommand",cmdName)
         logDebug"sendUPSCommand(): scheduling deferred command-dispatch retry in 10s (attempt ${deferralCount})"
+        unschedule("runDeferredCommand")
         runIn(10,"runDeferredCommand")
         return
     }
+    unschedule("runDeferredCommand")
     if(atomicState.deferredCommand){logWarn"sendUPSCommand(): clearing deferredCommand (was=${atomicState.deferredCommand})"}
     atomicState.remove("deferredCommand")
     atomicState.remove("deferredCmds")
@@ -382,7 +388,7 @@ private void runDeferredCommand(){
     def cmd=(atomicState.deferredCommand?:"") as String
     def cmds=(atomicState.deferredCmds instanceof List)?(atomicState.deferredCmds as List):null
     if(!cmd||!cmds||cmds.isEmpty()){
-        logWarn"runDeferredCommand(): no deferred command payload available; skipping"
+        logDebug"runDeferredCommand(): no deferred command payload available; skipping"
         return
     }
     logInfo"runDeferredCommand(): retrying deferred command '${cmd}'"
