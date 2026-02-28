@@ -30,14 +30,15 @@
 *  1.0.2.12  -- Corrected safeTelnetConnect runIn() map; updated scheduleCheck() to guard against watchdog unscheduling
 *  1.0.3.0   –– Version bump for public release
 *  1.0.4.0   -- Added NUL (0x00) stripping in parse() to ensure compatibility with AP9641 (NMC3) Telnet CR/NULL/LF line framing.
+*  1.0.4.1   -- Added stream normalizer with semantic prompt boundaries for no-newline prompt framing.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.4.0"
-@Field static final String DRIVER_MODIFIED = "2026.02.24"
+@Field static final String DRIVER_VERSION  = "1.0.4.1"
+@Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
 /* ===============================
@@ -171,7 +172,7 @@ private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=fa
 private updateConnectState(String newState){def old=device.currentValue("connectStatus");def last=getTransient("lastConnectState");if(old!=newState&&last!=newState){setTransient("lastConnectState",newState);emitChangedEvent("connectStatus",newState)}else{logDebug"updateConnectState(): no change (${old} → ${newState})"}}
 private updateCommandState(String newCmd){def old=atomicState.lastCommand;atomicState.lastCommand=newCmd;if(old!=newCmd)logDebug"lastCommand = ${newCmd}"}
 private def normalizeDateTime(String r){if(!r||r.trim()=="")return r;try{def m=r=~/^(\d{2})\/(\d{2})\/(\d{2})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/;if(m.matches()){def(mm,dd,yy,hh,mi,ss)=m[0][1..6];def y=(yy as int)<80?2000+(yy as int):1900+(yy as int);def f="${mm}/${dd}/${y}"+(hh?" ${hh}:${mi}:${ss?:'00'}":"");def d=Date.parse(hh?"MM/dd/yyyy HH:mm:ss":"MM/dd/yyyy",f);return hh?d.format("MM/dd/yyyy h:mm:ss a",location.timeZone):d.format("MM/dd/yyyy",location.timeZone)};for(fmt in["MM/dd/yyyy HH:mm:ss","MM/dd/yyyy h:mm:ss a","MM/dd/yyyy","yyyy-MM-dd","MMM dd yyyy HH:mm:ss"])try{def d=Date.parse(fmt,r);return(fmt.contains("HH")||fmt.contains("h:mm:ss"))?d.format("MM/dd/yyyy h:mm:ss a",location.timeZone):d.format("MM/dd/yyyy",location.timeZone)}catch(e){} }catch(e){};return r}
-private void initTelnetBuffer(){def b=getTransient("telnetBuffer");if(b instanceof List&&b.size()){def t;try{def p=b[-(Math.min(3,b.size()))..-1]*.line.findAll{it}.join(" | ");t=p[-(Math.min(80,p.size()))..-1]}catch(e){t="unavailable (${e.message})"};logDebug"initTelnetBuffer(): clearing leftover buffer (${b.size()} lines, preview='${t}')"};setTransient("telnetBuffer",[]);setTransient("sessionStart",now());logDebug"initTelnetBuffer(): Session start at ${new Date(getTransient('sessionStart'))}"}
+private void initTelnetBuffer(){def b=getTransient("telnetBuffer");if(b instanceof List&&b.size()){def t;try{def p=b[-(Math.min(3,b.size()))..-1]*.line.findAll{it}.join(" | ");t=p[-(Math.min(80,p.size()))..-1]}catch(e){t="unavailable (${e.message})"};logDebug"initTelnetBuffer(): clearing leftover buffer (${b.size()} lines, preview='${t}')"};setTransient("telnetBuffer",[]);setTransient("rxCarry","");setTransient("sessionStart",now());logDebug"initTelnetBuffer(): Session start at ${new Date(getTransient('sessionStart'))}"}
 private checkExternalUPSControlChange(){def c=device.currentValue("upsControlEnabled")as Boolean;def p=state.lastUpsControlEnabled as Boolean;if(p==null){state.lastUpsControlEnabled=c;return};if(c!=p){logInfo "UPS Control state changed externally (${p} → ${c})";state.lastUpsControlEnabled=c;updateUPSControlState(c);unschedule(autoDisableUPSControl);if(c)runIn(1800,"autoDisableUPSControl")else state.remove("controlDeviceName")}}
 
 /* ==================================
@@ -389,6 +390,7 @@ private void resetTransientState(String origin, Boolean suppressWarn=false){
     if(residuals&&!suppressWarn)logWarn"resetTransientState(): residuals (${residuals.join(', ')}) during ${origin}"
     if(atomicState.deferredCommand)logWarn"resetTransientState(): atomicState had deferredCommand='${atomicState.deferredCommand}' during ${origin}"
     keys.each{state.remove(it)}
+    clearTransient("rxCarry")
 }
 
 /* ===============================
@@ -704,8 +706,35 @@ private void clearTransient(String key=null){if(key){transientContext.remove("${
 /* ===============================
    Parse
    =============================== */
+private List<String> normalizeInboundLines(String msg){
+    String partial=((getTransient("rxCarry")?:"") as String)+(msg?:"")
+    partial=partial.replace('\u0000','')
+    List<String> lines=[]
+    while(partial.length()>0){
+        int lfIdx=partial.indexOf('\n')
+        int tokenEnd=-1
+        def tokenMatcher=(partial =~ /(?i)(user\s*name\s*:\s*|user\s*id\s*:\s*|userid\s*:\s*|username\s*:\s*|login\s*:\s*|password\s*:\s*|apc>|E\d{3}:)/)
+        if(tokenMatcher.find())tokenEnd=tokenMatcher.end()
+        int cut=-1
+        if(lfIdx>=0&&(tokenEnd<0||(lfIdx+1)<=tokenEnd))cut=lfIdx+1
+        else if(tokenEnd>0)cut=tokenEnd
+        if(cut<0)break
+        String segment=partial.substring(0,cut)
+        partial=partial.substring(cut)
+        String normalized=segment.replace('\r','').replace('\n','').trim()
+        if(normalized)lines<<normalized
+    }
+    if(partial.length()>4096){
+        logWarn"normalizeInboundLines(): trimming oversized RX carry (${partial.length()} chars)"
+        partial=partial[-1024..-1]
+    }
+    setTransient("rxCarry",partial)
+    return lines
+}
+
 private parse(String msg){
-    msg=msg.replaceAll('\u0000','');msg=msg.replaceAll('\r\n','\n').replaceAll('\r','\n');def lines=msg.split('\n').findAll{it.trim()}
+    def lines=normalizeInboundLines(msg)
+    if(!lines)return
     lines.each {line ->
         logDebug "Buffering line: ${line}"
         if(!state.authStarted) initTelnetBuffer()
@@ -758,7 +787,7 @@ private void closeConnection(){
         if(cs!="Disconnected"&&cs!="Disconnecting"){
             updateConnectState("Disconnected")
         }else logDebug"closeConnection(): connectStatus already ${cs}"
-        clearTransient("telnetBuffer");clearTransient("finalizing")
+        clearTransient("telnetBuffer");clearTransient("rxCarry");clearTransient("finalizing")
         logDebug"closeConnection(): cleanup complete"
     }
 }
