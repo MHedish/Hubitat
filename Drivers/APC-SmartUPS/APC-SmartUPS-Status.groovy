@@ -34,13 +34,14 @@
 *               refined stream normalizer/carry handling for CR/LF/NUL framing, and retained blind-send auth/command flow after prompt-gated experiment rollback.
 *  1.0.4.2   -- Deferred retry hardening/noise cleanup: dispatch deferred retries through runDeferredCommand payload replay, unschedule stale deferred timers before
 *               requeue/execute, and treat empty deferred payload callback as debug no-op.
+*  1.0.4.3   -- Increased Reconnoiter session watchdog window to 15s (commands remain 10s) to account for startup pacing under slower APC/NMC response conditions.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.4.2"
+@Field static final String DRIVER_VERSION  = "1.0.4.3"
 @Field static final String DRIVER_MODIFIED = "2026.02.28"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -325,8 +326,8 @@ private void watchdog(){
    Command Helpers
    =============================== */
 private checkSessionTimeout(Map data){
-    def cmd=data?.cmd?:'Unknown';def start=getTransient("sessionStart")?:0L;def elapsed=now()-start;def s=device.currentValue("connectStatus")
-    if(s!="Disconnected"&&elapsed>10000){
+    def cmd=data?.cmd?:'Unknown';def timeoutMs=(data?.timeoutMs?:10000) as Long;def start=getTransient("sessionStart")?:0L;def elapsed=now()-start;def s=device.currentValue("connectStatus")
+    if(s!="Disconnected"&&elapsed>timeoutMs){
         logWarn"checkSessionTimeout(): ${cmd} still ${s} after ${elapsed}ms — forcing cleanup"
         emitChangedEvent("lastCommandResult","Failed","${cmd} watchdog-triggered recovery")
         resetTransientState("checkSessionTimeout");updateConnectState("Disconnected");closeConnection()
@@ -367,7 +368,8 @@ private void sendUPSCommand(String cmdName, List cmds){
         state.pendingCmds=["$Username","$Password"]+cmds+["whoami"]
         logDebug"sendUPSCommand(): Opening transient Telnet connection to ${upsIP}:${upsPort}"
         safeTelnetConnect([ip:upsIP,port:upsPort.toInteger()])
-        runIn(10,"checkSessionTimeout",[data:[cmd:cmdName]])
+        Integer timeoutSec=(cmdName=="Reconnoiter")?15:10
+        runIn(timeoutSec,"checkSessionTimeout",[data:[cmd:cmdName,timeoutMs:(timeoutSec*1000)]])
         logDebug"sendUPSCommand(): queued ${state.pendingCmds.size()} Telnet lines for delayed send"
         runInMillis(500,"delayedTelnetSend")
     }catch(e){
