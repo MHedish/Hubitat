@@ -232,6 +232,7 @@ private void initTelnetBuffer(){
     setTransient("postAuthSent",false)
     setTransient("sessionMode",null)
     setTransient("authStage",null)
+    setTransient("authNudgeSent",false)
     setTransient("cbSeq",0)
     setTransient("statusSeq",0)
     setTransient("sessionStart",now())
@@ -393,6 +394,16 @@ private checkSessionTimeout(Map data){
     def mode=(getTransient("sessionMode")?:"") as String
     boolean postAuthSent=(getTransient("postAuthSent")?:false) as boolean
     def queued=(getTransient("postAuthCmds")?:[]) as List
+    def stage=(getTransient("authStage")?:"") as String
+    int cbSeq=(getTransient("cbSeq")?:0) as int
+    boolean nudgeSent=(getTransient("authNudgeSent")?:false) as boolean
+    if(stage=="await_user_prompt"&&cbSeq==0&&elapsed>1500&&!nudgeSent){
+        logInfo"checkSessionTimeout(): no inbound auth prompt yet; sending CR nudge"
+        sendData("\r",100)
+        setTransient("authNudgeSent",true)
+        runIn(2,"checkSessionTimeout",[data:data])
+        return
+    }
     if(!postAuthSent&&queued&&!queued.isEmpty()&&elapsed>9000){
         logWarn"checkSessionTimeout(): ${cmd} auth chain appears stalled at '${getTransient('authStage')?:'unknown'}' after ${elapsed}ms"
     }
@@ -483,7 +494,7 @@ private safeTelnetConnect(Map m){
     try{
         logDebug"safeTelnetConnect(): attempt ${attempt}/${retries} connecting to ${ip}:${port}"
         telnetClose()
-        def opts=[termChars:[10,13,58,62]]
+        def opts=[termChars:[10]]
         try{
             telnetConnect(opts,ip,port,null,null)
             logDebug"safeTelnetConnect(): connected with options ${opts}"
@@ -504,7 +515,7 @@ private safeTelnetConnect(Map m){
 
 private void resetTransientState(String origin, Boolean suppressWarn=false){
     def stateKeys=["pendingCmds","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen"]
-    def transientKeys=["telnetBuffer","sessionStart","rxPartial","rxLineCount","rxDrainActive","sessionBuffer","currentCommand","upsBannerRefTime","lastConnectState","lastRxAt","timeoutExtendCount","timeoutSessionId","commandProcessed","postAuthCmds","postAuthSent","sessionMode","authStage","cbSeq","statusSeq"]
+    def transientKeys=["telnetBuffer","sessionStart","rxPartial","rxLineCount","rxDrainActive","sessionBuffer","currentCommand","upsBannerRefTime","lastConnectState","lastRxAt","timeoutExtendCount","timeoutSessionId","commandProcessed","postAuthCmds","postAuthSent","sessionMode","authStage","authNudgeSent","cbSeq","statusSeq"]
     def residualState=stateKeys.findAll{state[it]!=null}
     def residualTransient=transientKeys.findAll{getTransient(it)!=null}
     if(!suppressWarn&&(residualState||residualTransient)){
