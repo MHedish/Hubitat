@@ -158,7 +158,7 @@ preferences {
     input("autoShutdownHub","bool",title:"Shutdown Hubitat when UPS battery is low",description:"",defaultValue:true)
     input("upsTZOffset","number",title:"UPS Time Zone Offset (minutes)",description:"Offset UPS-reported time from hub (-720 to +840). Default=0 for same TZ",defaultValue:0,range:"-720..840")
     input("logEnable","bool",title:"Enable Debug Logging",description:"Auto-off after 30 minutes.",defaultValue:false)
-    input("logCallbackTrace","bool",title:"[Diagnostic] Log callback transport trace",description:"Temporary callback-level diagnostics for telnet transport behavior.",defaultValue:false)
+    input("logCallbackTrace","bool",title:"[Diagnostic] Log callback transport trace",description:"Advanced callback-level diagnostics for telnet transport behavior.",defaultValue:false)
     input("logEvents","bool",title:"Log All Events",description:"",defaultValue:false)
 }
 
