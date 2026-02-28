@@ -40,13 +40,14 @@
 *  1.0.5.8   -- Prevented premature session timeout during active RX callbacks; improved stream-close command context fallback.
 *  1.0.5.9   -- Fixed timeout/finalize race using session timeout token, buffered-data-aware timeout extension, and stale-timeout cancellation.
 *  1.0.5.10  -- Refined timeout handling for stale buffered sessions; gracefully closes/flushes Reconnoiter on idle instead of endless extension.
+*  1.0.5.11  -- Restored UPS command timeout behavior: flush buffered output before failure, preserve command context, and avoid overwriting explicit command results.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.5.10"
+@Field static final String DRIVER_VERSION  = "1.0.5.11"
 @Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -396,6 +397,11 @@ private checkSessionTimeout(Map data){
             closeConnection()
             return
         }
+        if(bufferSize>0&&rxIdle>=3500){
+            logWarn"checkSessionTimeout(): ${cmd} idle with buffered data (rxIdle=${rxIdle}ms, buffer=${bufferSize}); forcing graceful close/flush"
+            closeConnection()
+            return
+        }
         logTrace("timeout: cmd=${cmd} status=${s} elapsedMs=${elapsed} cbSeq=${getTransient('cbSeq')?:0} statusSeq=${getTransient('statusSeq')?:0} pendingCmds=${(state.pendingCmds instanceof List)?state.pendingCmds.size():0} rxLineCount=${getTransient('rxLineCount')?:0} partialLen=${(getTransient('rxPartial')?:'').toString().length()}")
         logWarn"checkSessionTimeout(): ${cmd} still ${s} after ${elapsed}ms — forcing cleanup"
         emitChangedEvent("lastCommandResult","Failed","${cmd} watchdog-triggered recovery")
@@ -545,7 +551,8 @@ private finalizeSession(String origin){
         clearTransient("timeoutSessionId")
         if(getTransient("sessionStart"))emitLastUpdate()
         def cmd=(getTransient("currentCommand")?:atomicState.lastCommand?:"Session")
-        emitChangedEvent("lastCommandResult","Complete","${cmd} completed normally")
+        def prior=(device.currentValue("lastCommandResult")?:"").toString()
+        if(!(prior in ["Success","Failure","No Response"]))emitChangedEvent("lastCommandResult","Complete","${cmd} completed normally")
         logDebug"finalizeSession(): cleanup from ${origin}"
         switch(cmd.toLowerCase()){
             case"self test":try{runIn(45,"refresh")}catch(e){};break
@@ -784,9 +791,9 @@ private void processUPSCommand(){
         logDebug "processUPSCommand(): No buffered data to process";return
     }
     def lines=buf.findAll {it.line}.collect {it.line.trim()}
-    clearTransient("sessionBuffer");def cmd=atomicState.lastCommand?:"Unknown"
+    clearTransient("sessionBuffer");def cmd=(getTransient("currentCommand")?:atomicState.lastCommand?:device.currentValue("lastCommand")?:"Unknown")
     logDebug "processUPSCommand(): processing ${lines.size()} lines for UPS command '${cmd}'"
-    def errLine=lines.find { it ==~ /^E\\d{3}:/ }
+    def errLine=lines.find { it ==~ /^E\\d{3}:.*/ }
     if(errLine){
         logInfo "processUPSCommand(): UPS command '${cmd}' returned '${errLine}'"
         handleUPSCommands(errLine.split(/\s+/))
