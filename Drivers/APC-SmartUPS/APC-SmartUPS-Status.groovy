@@ -963,12 +963,12 @@ private void handleInboundLine(String line){
         ||(line =~ /(?i)\buserid\s*:\s*/).find()
         ||(line =~ /(?i)\busername\s*:\s*/).find()
         ||(line =~ /(?i)\blogin\s*:\s*/).find())
-    if(stage=="await_user_prompt"&&userPrompt){
-        telnetSend(["$Username"],500)
+    if(stage=="await_user_prompt" && userPrompt){
+        sendAuthCredential("$Username","username")
         setTransient("authStage","await_password_prompt")
         logInfo "auth-chain: username sent"
     }else if(stage=="await_password_prompt"&&(line =~ /(?i)\bpassword\s*:\s*/).find()){
-        telnetSend(["$Password"],500)
+        sendAuthCredential("$Password","password")
         setTransient("authStage","await_shell_prompt")
         logInfo "auth-chain: password sent"
     }else if(stage=="await_shell_prompt"&&!sent&&queued&&!queued.isEmpty()&&(lowered.contains("apc>")||line.startsWith("E000:"))){
@@ -999,6 +999,16 @@ private void handleInboundLine(String line){
    Telnet Data, Status & Close
    =============================== */
 private sendData(String m,Integer ms){logDebug "$m";def h=sendHubCommand(new hubitat.device.HubAction("$m",hubitat.device.Protocol.TELNET));pauseExecution(ms);return h}
+private void sendAuthCredential(String value,String label){
+    def cs=(device.currentValue("connectStatus")?:"") as String
+    if(cs in ["Disconnected","Disconnecting"]){
+        logWarn "auth-chain: skipped ${label} send while ${cs}"
+        return
+    }
+    String payload="${value?:''}\r"
+    logTrace("send-auth: ${label} len=${(value?:'').toString().length()}")
+    sendData(payload,500)
+}
 private telnetStatus(String s){def l=s?.toLowerCase()?:"";setTransient("lastRxAt",now());Integer seq=((getTransient("statusSeq")?:0) as int)+1;setTransient("statusSeq",seq);logTrace("status#${seq}: ${traceSnippet(s?:'',180)}");if(l.contains("receive error: stream is closed")){def b=getTransient("sessionBuffer")?:[];def currentCmd=(getTransient("currentCommand")?:atomicState.lastCommand?:device.currentValue("lastCommand")?:"");logDebug"telnetStatus(): Stream closed, buffer has ${b.size()} lines";if(b&&b.size()>0){def t=(b[-1]?.line?.toString()?:"");def tail=t.size()>100?t[-100..-1]:t;logDebug"telnetStatus(): Last buffer tail (up to 100 chars): ${tail}";logDebug"telnetStatus(): Stream closed with unprocessed buffer, forcing parse";if(currentCmd=="Reconnoiter")processBufferedSession()else processUPSCommand()};logDebug"telnetStatus(): connection reset after stream close"}else if(l.contains("send error")){logWarn"telnetStatus(): Telnet send error: ${s}"}else if(l.contains("closed")||l.contains("error")){logDebug"telnetStatus(): ${s}"}else logDebug"telnetStatus(): ${s}";closeConnection()}
 private boolean telnetSend(List m,Integer ms){logDebug "telnetSend(): sending ${m.size()} messages with ${ms} ms delay";m.each{sendData("$it",ms)};true}
 private void closeConnection(){
