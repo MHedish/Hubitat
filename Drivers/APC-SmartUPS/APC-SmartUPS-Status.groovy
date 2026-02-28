@@ -45,13 +45,14 @@
 *  1.0.5.13  -- Split command-session behavior: Reconnoiter keeps whoami sentinel/idle flush; non-Recon commands use longer timeout and no early idle close.
 *  1.0.5.15  -- Added command-mode timing chain: explicit session mode, gated post-auth dispatch, and command completion trigger on E-code receipt.
 *  1.0.5.16  -- Fixed command-mode staging activation by setting sessionMode after buffer initialization.
+*  1.0.5.17  -- Unified pre-command connect/auth chain across all sessions with shared prompt-gated state progression.
 */
 
 import groovy.transform.Field
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.5.16"
+@Field static final String DRIVER_VERSION  = "1.0.5.17"
 @Field static final String DRIVER_MODIFIED = "2026.02.27"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -231,6 +232,7 @@ private void initTelnetBuffer(){
     setTransient("postAuthCmds",null)
     setTransient("postAuthSent",false)
     setTransient("sessionMode",null)
+    setTransient("authStage",null)
     setTransient("cbSeq",0)
     setTransient("statusSeq",0)
     setTransient("sessionStart",now())
@@ -392,11 +394,8 @@ private checkSessionTimeout(Map data){
     def mode=(getTransient("sessionMode")?:"") as String
     boolean postAuthSent=(getTransient("postAuthSent")?:false) as boolean
     def queued=(getTransient("postAuthCmds")?:[]) as List
-    if(mode=="command"&&!postAuthSent&&queued&&!queued.isEmpty()&&elapsed>5000){
-        logWarn"checkSessionTimeout(): ${cmd} post-auth dispatch fallback after ${elapsed}ms; sending ${queued.size()} queued command(s)"
-        telnetSend(queued,500)
-        setTransient("postAuthSent",true)
-        clearTransient("postAuthCmds")
+    if(!postAuthSent&&queued&&!queued.isEmpty()&&elapsed>9000){
+        logWarn"checkSessionTimeout(): ${cmd} auth chain appears stalled at '${getTransient('authStage')?:'unknown'}' after ${elapsed}ms"
     }
     long timeoutMs=(cmd=="Reconnoiter")?10000L:22000L
     if(s!="Disconnected"&&elapsed>timeoutMs){
@@ -450,22 +449,16 @@ private void sendUPSCommand(String cmdName, List cmds){
         setTransient("timeoutExtendCount",0)
         logDebug"sendUPSCommand(): session start timestamp = ${getTransient('sessionStart')}"
         telnetClose();updateConnectState("Connecting");initTelnetBuffer()
-        def sessionCmds=["$Username","$Password"]
-        if(cmdName=="Reconnoiter"){
-            sessionCmds+=cmds+["whoami"]
-            setTransient("postAuthCmds",null)
-            setTransient("postAuthSent",true)
-        }else{
-            setTransient("postAuthCmds",cmds)
-            setTransient("postAuthSent",false)
-        }
-        state.pendingCmds=sessionCmds
+        setTransient("sessionMode",cmdName=="Reconnoiter"?"recon":"command")
+        setTransient("authStage","await_user_prompt")
+        setTransient("postAuthCmds",cmdName=="Reconnoiter"?(cmds+["whoami"]):cmds)
+        setTransient("postAuthSent",false)
+        state.pendingCmds=[]
         logDebug"sendUPSCommand(): Opening transient Telnet connection to ${upsIP}:${upsPort}"
         safeTelnetConnect([ip:upsIP,port:upsPort.toInteger()])
         Integer timeoutSec=(cmdName=="Reconnoiter")?12:24
         runIn(timeoutSec,"checkSessionTimeout",[data:[cmd:cmdName,sessionId:timeoutSid]])
-        logDebug"sendUPSCommand(): queued ${state.pendingCmds.size()} Telnet lines for delayed send"
-        runInMillis(500,"delayedTelnetSend")
+        logDebug"sendUPSCommand(): auth-gated dispatch armed (${(getTransient('postAuthCmds')?:[]).size()} post-auth commands queued)"
     }catch(e){
         logError"sendUPSCommand(${cmdName}): ${e.message}"
         emitChangedEvent("lastCommandResult","Failure")
@@ -512,7 +505,7 @@ private safeTelnetConnect(Map m){
 
 private void resetTransientState(String origin, Boolean suppressWarn=false){
     def stateKeys=["pendingCmds","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen"]
-    def transientKeys=["telnetBuffer","sessionStart","rxPartial","rxLineCount","rxDrainActive","sessionBuffer","currentCommand","upsBannerRefTime","lastConnectState","lastRxAt","timeoutExtendCount","timeoutSessionId","commandProcessed","postAuthCmds","postAuthSent","sessionMode","cbSeq","statusSeq"]
+    def transientKeys=["telnetBuffer","sessionStart","rxPartial","rxLineCount","rxDrainActive","sessionBuffer","currentCommand","upsBannerRefTime","lastConnectState","lastRxAt","timeoutExtendCount","timeoutSessionId","commandProcessed","postAuthCmds","postAuthSent","sessionMode","authStage","cbSeq","statusSeq"]
     def residualState=stateKeys.findAll{state[it]!=null}
     def residualTransient=transientKeys.findAll{getTransient(it)!=null}
     if(!suppressWarn&&(residualState||residualTransient)){
@@ -959,17 +952,23 @@ private void handleInboundLine(String line){
         setTransient("upsBannerRefTime",now());state.authStarted=true
     }else{
         def mode=(getTransient("sessionMode")?:"") as String
+        def stage=(getTransient("authStage")?:"await_user_prompt") as String
         def queued=(getTransient("postAuthCmds")?:[]) as List
         boolean sent=(getTransient("postAuthSent")?:false) as boolean
-        if(mode=="command"&&!sent&&queued&&!queued.isEmpty()){
-            int seq=(getTransient("cbSeq")?:0) as int
-            boolean authActivity=(lowered.contains("apc>")||line.startsWith("E000:")||(user&&lowered.contains(user.toLowerCase())&&seq>=3))
-            if(authActivity){
-                logInfo"post-auth dispatch: sending ${queued.size()} queued command(s) for ${(getTransient('currentCommand')?:'session')}"
-                telnetSend(queued,500)
-                setTransient("postAuthSent",true)
-                clearTransient("postAuthCmds")
-            }
+        if(stage=="await_user_prompt"&&lowered.contains("user name")){
+            telnetSend(["$Username"],500)
+            setTransient("authStage","await_password_prompt")
+            logInfo "auth-chain: username sent"
+        }else if(stage=="await_password_prompt"&&lowered.contains("password")){
+            telnetSend(["$Password"],500)
+            setTransient("authStage","await_shell_prompt")
+            logInfo "auth-chain: password sent"
+        }else if(stage=="await_shell_prompt"&&!sent&&queued&&!queued.isEmpty()&&(lowered.contains("apc>")||line.startsWith("E000:"))){
+            logInfo"post-auth dispatch: sending ${queued.size()} queued command(s) for ${(getTransient('currentCommand')?:'session')}"
+            telnetSend(queued,500)
+            setTransient("postAuthSent",true)
+            clearTransient("postAuthCmds")
+            setTransient("authStage","await_command_result")
         }
         if(mode=="command"&&(line =~ /E\d{3}:/)){
             logDebug "command-mode completion marker seen: ${line}"
