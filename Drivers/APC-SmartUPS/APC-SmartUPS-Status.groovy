@@ -232,7 +232,6 @@ private void initTelnetBuffer(){
     setTransient("postAuthSent",false)
     setTransient("sessionMode",null)
     setTransient("authStage",null)
-    setTransient("authNudgeSent",false)
     setTransient("cbSeq",0)
     setTransient("statusSeq",0)
     setTransient("sessionStart",now())
@@ -394,16 +393,6 @@ private checkSessionTimeout(Map data){
     def mode=(getTransient("sessionMode")?:"") as String
     boolean postAuthSent=(getTransient("postAuthSent")?:false) as boolean
     def queued=(getTransient("postAuthCmds")?:[]) as List
-    def stage=(getTransient("authStage")?:"") as String
-    int cbSeq=(getTransient("cbSeq")?:0) as int
-    boolean nudgeSent=(getTransient("authNudgeSent")?:false) as boolean
-    if(stage=="await_user_prompt"&&cbSeq==0&&elapsed>1500&&!nudgeSent){
-        logInfo"checkSessionTimeout(): no inbound auth prompt yet; sending CR nudge"
-        sendData("\r",100)
-        setTransient("authNudgeSent",true)
-        runIn(2,"checkSessionTimeout",[data:data])
-        return
-    }
     if(!postAuthSent&&queued&&!queued.isEmpty()&&elapsed>9000){
         logWarn"checkSessionTimeout(): ${cmd} auth chain appears stalled at '${getTransient('authStage')?:'unknown'}' after ${elapsed}ms"
     }
@@ -515,7 +504,7 @@ private safeTelnetConnect(Map m){
 
 private void resetTransientState(String origin, Boolean suppressWarn=false){
     def stateKeys=["pendingCmds","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen"]
-    def transientKeys=["telnetBuffer","sessionStart","rxPartial","rxLineCount","rxDrainActive","sessionBuffer","currentCommand","upsBannerRefTime","lastConnectState","lastRxAt","timeoutExtendCount","timeoutSessionId","commandProcessed","postAuthCmds","postAuthSent","sessionMode","authStage","authNudgeSent","cbSeq","statusSeq"]
+    def transientKeys=["telnetBuffer","sessionStart","rxPartial","rxLineCount","rxDrainActive","sessionBuffer","currentCommand","upsBannerRefTime","lastConnectState","lastRxAt","timeoutExtendCount","timeoutSessionId","commandProcessed","postAuthCmds","postAuthSent","sessionMode","authStage","cbSeq","statusSeq"]
     def residualState=stateKeys.findAll{state[it]!=null}
     def residualTransient=transientKeys.findAll{getTransient(it)!=null}
     if(!suppressWarn&&(residualState||residualTransient)){
@@ -897,6 +886,20 @@ private void enqueueRxChunk(String chunk,String currentCmd){
             buf << entry
             sess << entry
             lineCount++
+        }
+    }
+    if(lineCount==before&&partial){
+        String scan=partial.replaceAll('[^\\x20-\\x7E\\n]+','')
+        def scanMatcher=(scan =~ /(?i)(user\s*name\s*:\s*|user\s*id\s*:\s*|userid\s*:\s*|username\s*:\s*|login\s*:\s*|password\s*:\s*|apc>|E\d{3}:)/)
+        if(scanMatcher.find()){
+            String normalized=scan.substring(0,scanMatcher.end())?.trim()
+            if(normalized){
+                def entry=[cmd: currentCmd,line: normalized]
+                buf << entry
+                sess << entry
+                lineCount++
+                partial=""
+            }
         }
     }
     if(partial.length()>4096){
