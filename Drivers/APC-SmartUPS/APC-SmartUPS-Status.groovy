@@ -272,29 +272,29 @@ def installed(){logInfo "Installed";initialize()}
 def updated(){logInfo "Preferences updated";initialize()}
 
 private List<Map> getCommandQueue(){
-    def q=state.commandQueue
+    def q=getTransient("commandQueue")
     return (q instanceof List)?(q as List<Map>):[]
 }
 
 private void saveCommandQueue(List<Map> q){
-    state.commandQueue=q
+    setTransient("commandQueue",q)
 }
 
 private void clearCommandQueue(){
-    state.remove("commandQueue")
+    clearTransient("commandQueue")
 }
 
 private Map getInFlightCommand(){
-    def c=atomicState.commandInFlight
+    def c=getTransient("commandInFlight")
     return (c instanceof Map)?(c as Map):null
 }
 
 private void setInFlightCommand(String cmdName){
-    atomicState.commandInFlight=[cmd:cmdName,startedAt:now()]
+    setTransient("commandInFlight",[cmd:cmdName,startedAt:now()])
 }
 
 private void clearInFlightCommand(){
-    atomicState.remove("commandInFlight")
+    clearTransient("commandInFlight")
 }
 
 private void enqueueCommand(String cmdName,List cmds,String source="unknown"){
