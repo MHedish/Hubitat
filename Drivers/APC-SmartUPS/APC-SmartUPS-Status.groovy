@@ -349,7 +349,6 @@ private void sendUPSCommand(String cmdName, List cmds){
         }
         atomicState.deferredCommand=cmdName
         atomicState.deferredCmds=cmds
-        setTransient("currentCommand",cmdName)
         logDebug"sendUPSCommand(): scheduling deferred command-dispatch retry in 10s (attempt ${deferralCount})"
         unschedule("runDeferredCommand")
         runIn(10,"runDeferredCommand")
@@ -362,6 +361,7 @@ private void sendUPSCommand(String cmdName, List cmds){
     updateCommandState(cmdName);updateConnectState("Initializing")
     emitChangedEvent("lastCommandResult","Pending","${cmdName} queued for execution");logInfo"Executing UPS command: ${cmdName}"
     try{
+        setTransient("currentCommand",cmdName)
         setTransient("sessionStart",now())
         logDebug"sendUPSCommand(): session start timestamp = ${getTransient('sessionStart')}"
         telnetClose();updateConnectState("Connecting");initTelnetBuffer()
@@ -834,8 +834,11 @@ private void closeConnection(){
     try{
         telnetClose();logDebug"Telnet connection closed"
         def b=getTransient("telnetBuffer")?:[]
-        if(b&&b.size()>0){
-            if(device.currentValue("lastCommand")=="Reconnoiter")processBufferedSession()else processUPSCommand()
+        def activeCmd=(atomicState.lastCommand?:"") as String
+        if(b&&b.size()>0&&activeCmd){
+            if(activeCmd=="Reconnoiter")processBufferedSession()else processUPSCommand()
+        }else if(b&&b.size()>0&&!activeCmd){
+            logDebug"closeConnection(): dropping buffered data with no active command context"
         }else logDebug"closeConnection(): no buffered data"
     }catch(e){logDebug"closeConnection(): ${e.message}"}finally{
         def cs=device.currentValue("connectStatus")
