@@ -37,6 +37,7 @@
 *  1.0.4.3   -- Increased Reconnoiter session watchdog window to 15s (commands remain 10s) to account for startup pacing under slower APC/NMC response conditions.
 *  1.0.4.4   -- Arbiter stability pass: restored queue/in-flight persistence to state and added session-token guards to suppress duplicate processing/finalization.
 *  1.0.4.5   -- Queue/parse race fix: age-gated in-flight stale clearing to avoid premature handoff during disconnect transitions, and E-code-only UPS command result parsing.
+*  1.0.4.6   -- Finalization reliability pass: removed fragile cross-origin finalize gate and guaranteed finalize cleanup via try/finally in both command-processing paths.
 */
 
 import groovy.transform.Field
@@ -44,7 +45,7 @@ import java.util.Collections
 import java.util.UUID
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.4.5"
+@Field static final String DRIVER_VERSION  = "1.0.4.6"
 @Field static final String DRIVER_MODIFIED = "2026.02.28"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -580,8 +581,6 @@ private finalizeSession(String origin){
         return
     }
     if(token)setTransient("sessionFinalizedToken",token)
-    def f=getTransient("finalizing");if(f&&f!=origin){logDebug"finalizeSession(): already running from ${f}, skipping duplicate (${origin})";return}
-    setTransient("finalizing",origin)
     try{
         if(getTransient("sessionStart"))emitLastUpdate()
         def cmd=(getTransient("currentCommand")?:atomicState.lastCommand?:"Session")
@@ -595,7 +594,7 @@ private finalizeSession(String origin){
         }
     }catch(e){logWarn"finalizeSession(): ${e.message}"}finally{
         clearInFlightCommand()
-        resetTransientState("finalizeSession",true);clearTransient("finalizing")
+        resetTransientState("finalizeSession",true)
         runInMillis(100,"processCommandQueue")
     }
 }
@@ -811,23 +810,26 @@ private void processBufferedSession(){
         return
     }
     if(token)setTransient("sessionProcessedToken",token)
-    def lines=buf.findAll{it.line}
-    clearTransient("telnetBuffer")
-    def secBanner=extractSection(lines,"Schneider","apc>")
-    def secUps=extractSection(lines,"apc>ups ?","apc>")
-    def secAbout=extractSection(lines,"apc>about","apc>")
-    def secUpsAbout=extractSection(lines,"apc>upsabout","apc>")
-    def secAlarmCrit=extractSection(lines,"apc>alarmcount -p critical","apc>")
-    def secAlarmWarn=extractSection(lines,"apc>alarmcount -p warning","apc>")
-    def secAlarmInfo=extractSection(lines,"apc>alarmcount -p informational","apc>")
-    def secDetStatus=extractSection(lines,"apc>detstatus -all","apc>")
-    if(secBanner)handleBannerSection(secBanner)
-    if(secUps)handleUPSSection(secUps)
-    if(secUpsAbout)handleUPSAboutSection(secUpsAbout)
-    if(secAbout)handleNMCData(secAbout)
-    if(secAlarmCrit||secAlarmWarn||secAlarmInfo)handleAlarmCount(secAlarmCrit+secAlarmWarn+secAlarmInfo)
-    if(secDetStatus)handleDetStatus(secDetStatus)
-    finalizeSession("processBufferedSession")
+    try{
+        def lines=buf.findAll{it.line}
+        clearTransient("telnetBuffer")
+        def secBanner=extractSection(lines,"Schneider","apc>")
+        def secUps=extractSection(lines,"apc>ups ?","apc>")
+        def secAbout=extractSection(lines,"apc>about","apc>")
+        def secUpsAbout=extractSection(lines,"apc>upsabout","apc>")
+        def secAlarmCrit=extractSection(lines,"apc>alarmcount -p critical","apc>")
+        def secAlarmWarn=extractSection(lines,"apc>alarmcount -p warning","apc>")
+        def secAlarmInfo=extractSection(lines,"apc>alarmcount -p informational","apc>")
+        def secDetStatus=extractSection(lines,"apc>detstatus -all","apc>")
+        if(secBanner)handleBannerSection(secBanner)
+        if(secUps)handleUPSSection(secUps)
+        if(secUpsAbout)handleUPSAboutSection(secUpsAbout)
+        if(secAbout)handleNMCData(secAbout)
+        if(secAlarmCrit||secAlarmWarn||secAlarmInfo)handleAlarmCount(secAlarmCrit+secAlarmWarn+secAlarmInfo)
+        if(secDetStatus)handleDetStatus(secDetStatus)
+    }finally{
+        finalizeSession("processBufferedSession")
+    }
 }
 
 private void processUPSCommand(){
@@ -843,18 +845,21 @@ private void processUPSCommand(){
         return
     }
     if(token)setTransient("sessionProcessedToken",token)
-    def lines=buf.findAll {it.line}.collect {it.line.trim()}
-    clearTransient("telnetBuffer");def cmd=atomicState.lastCommand?:"Unknown"
-    logDebug "processUPSCommand(): processing ${lines.size()} lines for UPS command '${cmd}'"
-    def errLine=lines.find { it ==~ /^E\\d{3}:/ }
-    if(errLine){
-        logInfo "processUPSCommand(): UPS command '${cmd}' returned '${errLine}'"
-        handleUPSCommands(errLine.split(/\s+/))
-    }else{
-        logWarn"processUPSCommand(): UPS command '${cmd}' completed with no E-code response"
-        emitChangedEvent("lastCommandResult","No Response","Command '${cmd}' completed without explicit result")
+    try{
+        def lines=buf.findAll {it.line}.collect {it.line.trim()}
+        clearTransient("telnetBuffer");def cmd=atomicState.lastCommand?:"Unknown"
+        logDebug "processUPSCommand(): processing ${lines.size()} lines for UPS command '${cmd}'"
+        def errLine=lines.find { it ==~ /^E\\d{3}:/ }
+        if(errLine){
+            logInfo "processUPSCommand(): UPS command '${cmd}' returned '${errLine}'"
+            handleUPSCommands(errLine.split(/\s+/))
+        }else{
+            logWarn"processUPSCommand(): UPS command '${cmd}' completed with no E-code response"
+            emitChangedEvent("lastCommandResult","No Response","Command '${cmd}' completed without explicit result")
+        }
+    }finally{
+        finalizeSession("processUPSCommand")
     }
-    finalizeSession("processUPSCommand")
 }
 
 private void sendHubShutdown(){
@@ -974,7 +979,7 @@ private void closeConnection(){
         if(cs!="Disconnected"&&cs!="Disconnecting"){
             updateConnectState("Disconnected")
         }else logDebug"closeConnection(): connectStatus already ${cs}"
-        clearTransient("telnetBuffer");clearTransient("rxCarry");clearTransient("sendThrottleRemaining");clearTransient("sendThrottleMs");clearTransient("finalizing")
+        clearTransient("telnetBuffer");clearTransient("rxCarry");clearTransient("sendThrottleRemaining");clearTransient("sendThrottleMs")
         clearTransient("sessionStart");clearTransient("currentCommand")
         clearInFlightCommand()
         runInMillis(100,"processCommandQueue")
