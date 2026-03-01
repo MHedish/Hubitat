@@ -35,13 +35,15 @@
 *  1.0.4.2   -- Deferred retry hardening/noise cleanup: dispatch deferred retries through runDeferredCommand payload replay, unschedule stale deferred timers before
 *               requeue/execute, and treat empty deferred payload callback as debug no-op.
 *  1.0.4.3   -- Increased Reconnoiter session watchdog window to 15s (commands remain 10s) to account for startup pacing under slower APC/NMC response conditions.
+*  1.0.4.4   -- Arbiter stability pass: restored queue/in-flight persistence to state and added session-token guards to suppress duplicate processing/finalization.
 */
 
 import groovy.transform.Field
 import java.util.Collections
+import java.util.UUID
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.4.3"
+@Field static final String DRIVER_VERSION  = "1.0.4.4"
 @Field static final String DRIVER_MODIFIED = "2026.02.28"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -272,29 +274,33 @@ def installed(){logInfo "Installed";initialize()}
 def updated(){logInfo "Preferences updated";initialize()}
 
 private List<Map> getCommandQueue(){
-    def q=getTransient("commandQueue")
+    def q=state.commandQueue
     return (q instanceof List)?(q as List<Map>):[]
 }
 
 private void saveCommandQueue(List<Map> q){
-    setTransient("commandQueue",q)
+    state.commandQueue=q
 }
 
 private void clearCommandQueue(){
-    clearTransient("commandQueue")
+    state.remove("commandQueue")
 }
 
 private Map getInFlightCommand(){
-    def c=getTransient("commandInFlight")
+    def c=state.commandInFlight
     return (c instanceof Map)?(c as Map):null
 }
 
-private void setInFlightCommand(String cmdName){
-    setTransient("commandInFlight",[cmd:cmdName,startedAt:now()])
+private String newSessionToken(){
+    return UUID.randomUUID().toString()
+}
+
+private void setInFlightCommand(String cmdName,String token){
+    state.commandInFlight=[cmd:cmdName,startedAt:now(),token:token]
 }
 
 private void clearInFlightCommand(){
-    clearTransient("commandInFlight")
+    state.remove("commandInFlight")
 }
 
 private void enqueueCommand(String cmdName,List cmds,String source="unknown"){
@@ -365,10 +371,14 @@ def processCommandQueue(){
 }
 
 private void startCommandSession(String cmdName,List cmds){
-    setInFlightCommand(cmdName)
+    String token=newSessionToken()
+    setInFlightCommand(cmdName,token)
     updateCommandState(cmdName);updateConnectState("Initializing")
     emitChangedEvent("lastCommandResult","Pending","${cmdName} queued for execution");logInfo"Executing UPS command: ${cmdName}"
     try{
+        setTransient("sessionToken",token)
+        clearTransient("sessionProcessedToken")
+        clearTransient("sessionFinalizedToken")
         setTransient("currentCommand",cmdName)
         setTransient("sessionStart",now())
         logDebug"sendUPSCommand(): session start timestamp = ${getTransient('sessionStart')}"
@@ -377,7 +387,7 @@ private void startCommandSession(String cmdName,List cmds){
         logDebug"sendUPSCommand(): Opening transient Telnet connection to ${upsIP}:${upsPort}"
         safeTelnetConnect([ip:upsIP,port:upsPort.toInteger()])
         Integer timeoutSec=(cmdName=="Reconnoiter")?15:10
-        runIn(timeoutSec,"checkSessionTimeout",[data:[cmd:cmdName,timeoutMs:(timeoutSec*1000)]])
+        runIn(timeoutSec,"checkSessionTimeout",[data:[cmd:cmdName,token:token,timeoutMs:(timeoutSec*1000)]])
         logDebug"sendUPSCommand(): queued ${state.pendingCmds.size()} Telnet lines for delayed send"
         runInMillis(500,"delayedTelnetSend")
     }catch(e){
@@ -443,7 +453,12 @@ private void watchdog(){
    Command Helpers
    =============================== */
 private checkSessionTimeout(Map data){
-    def cmd=data?.cmd?:'Unknown';def timeoutMs=(data?.timeoutMs?:10000) as Long;def start=getTransient("sessionStart")?:0L;def elapsed=now()-start;def s=device.currentValue("connectStatus")
+    def cmd=data?.cmd?:'Unknown';def token=(data?.token?:'') as String;def timeoutMs=(data?.timeoutMs?:10000) as Long;def start=getTransient("sessionStart")?:0L;def elapsed=now()-start;def s=device.currentValue("connectStatus")
+    Map inFlight=getInFlightCommand();String activeToken=((inFlight?.token?:'') as String)
+    if(token&&activeToken&&token!=activeToken){
+        logDebug"checkSessionTimeout(): stale timer ignored for ${cmd}"
+        return
+    }
     if(s!="Disconnected"&&elapsed>timeoutMs){
         logWarn"checkSessionTimeout(): ${cmd} still ${s} after ${elapsed}ms — forcing cleanup"
         emitChangedEvent("lastCommandResult","Failed","${cmd} watchdog-triggered recovery")
@@ -549,12 +564,20 @@ def refresh() {
    Session Finalization
    =============================== */
 private finalizeSession(String origin){
+    Map inFlight=getInFlightCommand()
+    String token=((getTransient("sessionToken")?:inFlight?.token?:"") as String)
+    if(token&&getTransient("sessionFinalizedToken")==token){
+        logDebug"finalizeSession(): duplicate finalize suppressed from ${origin}"
+        return
+    }
+    if(token)setTransient("sessionFinalizedToken",token)
     def f=getTransient("finalizing");if(f&&f!=origin){logDebug"finalizeSession(): already running from ${f}, skipping duplicate (${origin})";return}
     setTransient("finalizing",origin)
     try{
         if(getTransient("sessionStart"))emitLastUpdate()
         def cmd=(getTransient("currentCommand")?:atomicState.lastCommand?:"Session")
-        emitChangedEvent("lastCommandResult","Complete","${cmd} completed normally")
+        def currentResult=device.currentValue("lastCommandResult")
+        if(currentResult in [null,"","Pending"])emitChangedEvent("lastCommandResult","Complete","${cmd} completed normally")
         logDebug"finalizeSession(): cleanup from ${origin}"
         switch(cmd.toLowerCase()){
             case"self test":try{runIn(45,"refresh")}catch(e){};break
@@ -770,6 +793,14 @@ private List<String> extractSection(List<Map> lines,String start,String end){def
 private void processBufferedSession(){
     def buf=getTransient("telnetBuffer")?:[]
     if(!buf)return
+    Map inFlight=getInFlightCommand()
+    String token=((getTransient("sessionToken")?:inFlight?.token?:"") as String)
+    if(token&&getTransient("sessionProcessedToken")==token){
+        logDebug"processBufferedSession(): duplicate processing suppressed"
+        clearTransient("telnetBuffer")
+        return
+    }
+    if(token)setTransient("sessionProcessedToken",token)
     def lines=buf.findAll{it.line}
     clearTransient("telnetBuffer")
     def secBanner=extractSection(lines,"Schneider","apc>")
@@ -794,6 +825,14 @@ private void processUPSCommand(){
     if(!buf||buf.isEmpty()){
         logDebug "processUPSCommand(): No buffered data to process";return
     }
+    Map inFlight=getInFlightCommand()
+    String token=((getTransient("sessionToken")?:inFlight?.token?:"") as String)
+    if(token&&getTransient("sessionProcessedToken")==token){
+        logDebug "processUPSCommand(): duplicate processing suppressed"
+        clearTransient("telnetBuffer")
+        return
+    }
+    if(token)setTransient("sessionProcessedToken",token)
     def lines=buf.findAll {it.line}.collect {it.line.trim()}
     clearTransient("telnetBuffer");def cmd=atomicState.lastCommand?:"Unknown"
     logDebug "processUPSCommand(): processing ${lines.size()} lines for UPS command '${cmd}'"
@@ -911,7 +950,12 @@ private void closeConnection(){
         def b=getTransient("telnetBuffer")?:[]
         def activeCmd=(atomicState.lastCommand?:"") as String
         if(b&&b.size()>0&&activeCmd){
-            if(activeCmd=="Reconnoiter")processBufferedSession()else processUPSCommand()
+            Map inFlight=getInFlightCommand()
+            String token=((getTransient("sessionToken")?:inFlight?.token?:"") as String)
+            if(token&&getTransient("sessionProcessedToken")==token){
+                logDebug"closeConnection(): buffer already processed for active session"
+                clearTransient("telnetBuffer")
+            }else if(activeCmd=="Reconnoiter")processBufferedSession()else processUPSCommand()
         }else if(b&&b.size()>0&&!activeCmd){
             logDebug"closeConnection(): dropping buffered data with no active command context"
         }else logDebug"closeConnection(): no buffered data"
