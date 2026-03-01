@@ -36,6 +36,7 @@
 *               requeue/execute, and treat empty deferred payload callback as debug no-op.
 *  1.0.4.3   -- Increased Reconnoiter session watchdog window to 15s (commands remain 10s) to account for startup pacing under slower APC/NMC response conditions.
 *  1.0.4.4   -- Arbiter stability pass: restored queue/in-flight persistence to state and added session-token guards to suppress duplicate processing/finalization.
+*  1.0.4.5   -- Queue/parse race fix: age-gated in-flight stale clearing to avoid premature handoff during disconnect transitions, and E-code-only UPS command result parsing.
 */
 
 import groovy.transform.Field
@@ -43,7 +44,7 @@ import java.util.Collections
 import java.util.UUID
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.0.4.4"
+@Field static final String DRIVER_VERSION  = "1.0.4.5"
 @Field static final String DRIVER_MODIFIED = "2026.02.28"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 
@@ -350,6 +351,14 @@ def processCommandQueue(){
         }
         long started=((inFlight.startedAt?:0L) as Long)
         long ageMs=started>0?(now()-started):-1L
+        String inFlightCmd=((inFlight.cmd?:"") as String)
+        long staleThresholdMs=(inFlightCmd=="Reconnoiter")?30000L:15000L
+        if(ageMs>=0L&&ageMs<staleThresholdMs){
+            logDebug"processCommandQueue(): waiting on in-flight '${inFlightCmd?:'Unknown'}' while ${cs?:'n/a'} (age=${ageMs}ms < ${staleThresholdMs}ms)"
+            unschedule("processCommandQueue")
+            runIn(1,"processCommandQueue")
+            return
+        }
         logWarn"processCommandQueue(): clearing stale in-flight '${inFlight.cmd?:'Unknown'}' while ${cs?:'n/a'} (age=${ageMs}ms)"
         clearInFlightCommand()
     }
@@ -677,6 +686,7 @@ private handleIdentificationAndSelfTest(def pair){
 
 private handleUPSCommands(def pair){
     if(!pair) return;def code=pair[0]?.trim(),desc=translateUPSError(code),cmd=atomicState.lastCommand
+    if(!(code==~ /^E\d{3}:$/))return
     def validCmds=["Alarm Test","Self Test","UPS On","UPS Off","Reboot","Sleep","Calibrate Run Time","setOutletGroup"]
     if(!(cmd in validCmds))return
     if(code in["E000:","E001:"]){emitChangedEvent("lastCommandResult","Success","Command '${cmd}' acknowledged by UPS (${desc})");logInfo"UPS Command '${cmd}' succeeded (${desc})";return}
