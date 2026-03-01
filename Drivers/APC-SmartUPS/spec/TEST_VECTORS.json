@@ -1,0 +1,209 @@
+{
+  "version": "1.0.0",
+  "module": "APC SmartUPS Hubitat Driver",
+  "description": "Deterministic clean-room test vectors for queue/session/parser behavior. These vectors are implementation-agnostic and should be executed in a mocked Hubitat runtime harness.",
+  "assumptions": {
+    "clockUnit": "ms",
+    "controlEnabledDefault": false,
+    "staleThresholdMs": {
+      "defaultCommand": 15000,
+      "reconnoiter": 30000
+    }
+  },
+  "vectors": [
+    {
+      "id": "TV-001-control-gate",
+      "title": "Control command rejected while UPS control disabled",
+      "setup": {
+        "state": { "upsControlEnabled": false, "commandQueue": [], "commandInFlight": null },
+        "attributes": { "connectStatus": "Disconnected" }
+      },
+      "stimulus": [
+        { "t": 0, "type": "command", "name": "alarmTest" }
+      ],
+      "expect": {
+        "queueDepth": 0,
+        "inFlight": null,
+        "events": [],
+        "logsContains": ["Alarm Test called but UPS control is disabled"]
+      }
+    },
+    {
+      "id": "TV-002-basic-alarm-success",
+      "title": "Single Alarm Test success path",
+      "setup": {
+        "state": { "upsControlEnabled": true, "commandQueue": [], "commandInFlight": null },
+        "attributes": { "connectStatus": "Disconnected" }
+      },
+      "stimulus": [
+        { "t": 0, "type": "command", "name": "alarmTest" },
+        { "t": 50, "type": "parse", "chunk": "apc>whoami\n" },
+        { "t": 60, "type": "parse", "chunk": "E000: Success\n" },
+        { "t": 70, "type": "parse", "chunk": "username\n" }
+      ],
+      "expect": {
+        "eventsOrdered": [
+          "lastCommandResult=Pending",
+          "lastCommandResult=Success"
+        ],
+        "terminalResultOneOf": ["Success", "Complete"],
+        "maxTerminalResultEmits": 1,
+        "queueDepth": 0,
+        "inFlight": null
+      }
+    },
+    {
+      "id": "TV-003-no-response-fallback",
+      "title": "No E-code yields No Response",
+      "setup": {
+        "state": { "upsControlEnabled": true, "commandQueue": [], "commandInFlight": null },
+        "attributes": { "connectStatus": "Disconnected" }
+      },
+      "stimulus": [
+        { "t": 0, "type": "command", "name": "alarmTest" },
+        { "t": 50, "type": "parse", "chunk": "apc>whoami\n" },
+        { "t": 60, "type": "parse", "chunk": "some telemetry line\n" },
+        { "t": 70, "type": "parse", "chunk": "username\n" }
+      ],
+      "expect": {
+        "eventsOrdered": [
+          "lastCommandResult=Pending",
+          "lastCommandResult=No Response"
+        ],
+        "queueDepth": 0,
+        "inFlight": null
+      }
+    },
+    {
+      "id": "TV-004-ignore-non-ecode-as-command-failure",
+      "title": "Telemetry tokens do not produce command failure",
+      "setup": {
+        "state": { "upsControlEnabled": true },
+        "attributes": { "lastCommand": "Alarm Test" }
+      },
+      "stimulus": [
+        { "t": 0, "type": "direct", "fn": "handleUPSCommands", "args": [["Output", "Voltage:", "120.0"]] },
+        { "t": 1, "type": "direct", "fn": "handleUPSCommands", "args": [["Battery", "State", "Of", "Charge:", "98"]] }
+      ],
+      "expect": {
+        "events": [],
+        "logsNotContains": ["UPS Command 'Alarm Test' failed"]
+      }
+    },
+    {
+      "id": "TV-005-overlap-canonical",
+      "title": "Canonical overlap: alarm during refresh must execute",
+      "setup": {
+        "state": { "upsControlEnabled": true, "commandQueue": [], "commandInFlight": null },
+        "attributes": { "connectStatus": "Disconnected" }
+      },
+      "stimulus": [
+        { "t": 0, "type": "command", "name": "alarmTest" },
+        { "t": 2000, "type": "command", "name": "refresh" },
+        { "t": 2500, "type": "command", "name": "alarmTest" },
+        { "t": 5000, "type": "parse", "chunk": "apc>whoami\nE000: Success\nusername\n" },
+        { "t": 9000, "type": "parse", "chunk": "Schneider\napc>ups ?\n...\napc>whoami\nE000: Success\nusername\n" },
+        { "t": 13000, "type": "parse", "chunk": "apc>whoami\nE000: Success\nusername\n" }
+      ],
+      "expect": {
+        "minAlarmExecutions": 2,
+        "noLostQueuedAlarm": true,
+        "queueDepth": 0,
+        "inFlight": null,
+        "logsOrderedContains": [
+          "Alarm Test queued",
+          "processCommandQueue(): dequeued 'Alarm Test'",
+          "Executing UPS command: Alarm Test",
+          "Reconnoiter",
+          "Alarm Test queued",
+          "processCommandQueue(): dequeued 'Alarm Test'"
+        ]
+      }
+    },
+    {
+      "id": "TV-006-duplicate-close-callback",
+      "title": "Duplicate close/status callbacks do not duplicate terminal events",
+      "setup": {
+        "state": { "upsControlEnabled": true },
+        "attributes": { "connectStatus": "Connected" }
+      },
+      "stimulus": [
+        { "t": 0, "type": "command", "name": "alarmTest" },
+        { "t": 100, "type": "parse", "chunk": "apc>whoami\nE000: Success\nusername\n" },
+        { "t": 110, "type": "status", "value": "receive error: Stream is closed" },
+        { "t": 120, "type": "status", "value": "receive error: Stream is closed" }
+      ],
+      "expect": {
+        "maxTerminalResultEmits": 1,
+        "queueDepth": 0,
+        "inFlight": null
+      }
+    },
+    {
+      "id": "TV-007-stale-timer-ignored",
+      "title": "Old watchdog timer does not clear newer in-flight command",
+      "setup": {
+        "state": { "upsControlEnabled": true },
+        "attributes": { "connectStatus": "Connected" }
+      },
+      "stimulus": [
+        { "t": 0, "type": "command", "name": "alarmTest" },
+        { "t": 500, "type": "command", "name": "alarmTest" },
+        { "t": 10000, "type": "timer", "name": "checkSessionTimeout", "data": { "cmd": "Alarm Test", "token": "OLD_TOKEN", "timeoutMs": 10000 } }
+      ],
+      "expect": {
+        "logsContains": ["stale timer ignored"],
+        "doesNotClearActiveInFlightByOldToken": true
+      }
+    },
+    {
+      "id": "TV-008-stale-clear-threshold",
+      "title": "In-flight not cleared before stale threshold",
+      "setup": {
+        "state": { "upsControlEnabled": true, "commandInFlight": { "cmd": "Alarm Test", "startedAt": 0, "token": "T1" } },
+        "attributes": { "connectStatus": "Disconnected" }
+      },
+      "stimulus": [
+        { "t": 5000, "type": "invoke", "fn": "processCommandQueue" },
+        { "t": 14999, "type": "invoke", "fn": "processCommandQueue" },
+        { "t": 15001, "type": "invoke", "fn": "processCommandQueue" }
+      ],
+      "expect": {
+        "beforeThreshold": { "inFlightStillSet": true },
+        "afterThreshold": { "inFlightCleared": true }
+      }
+    },
+    {
+      "id": "TV-009-recon-dedupe",
+      "title": "Multiple refresh calls coalesce to one recon request",
+      "setup": {
+        "state": { "upsControlEnabled": true, "commandQueue": [] },
+        "attributes": { "connectStatus": "Disconnected" }
+      },
+      "stimulus": [
+        { "t": 0, "type": "command", "name": "refresh" },
+        { "t": 1, "type": "command", "name": "refresh" },
+        { "t": 2, "type": "command", "name": "refresh" }
+      ],
+      "expect": {
+        "maxQueuedRecon": 1
+      }
+    },
+    {
+      "id": "TV-010-normalizer-crlf-cr-nul",
+      "title": "Inbound normalizer handles CR/LF/NUL framing",
+      "setup": {
+        "state": {},
+        "attributes": {}
+      },
+      "stimulus": [
+        { "t": 0, "type": "parse", "chunk": "line1\r\nline2\u0000\rline3\npartial" },
+        { "t": 1, "type": "parse", "chunk": "-cont\n" }
+      ],
+      "expect": {
+        "normalizedLinesContain": ["line1", "line2", "line3", "partial-cont"],
+        "noNulInNormalizedLines": true
+      }
+    }
+  ]
+}
