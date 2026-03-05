@@ -2,10 +2,10 @@
 # 🌿 Weather-Enhanced Time-based Irrigation Tuning (WET-IT)
 
 ## Full Documentation
-*Comprehensive Technical & Integration Reference (App v1.2.0.0 / Data Driver v1.2.0.0 / Echo Driver v1.1.0.0)*
+*Comprehensive Technical & Integration Reference (App v1.2.2.0 / Data Driver v1.2.2.0 / Echo Driver v1.1.0.0)*
 
 ![Platform](https://img.shields.io/badge/Platform-Hubitat-blue)
-![Version](https://img.shields.io/badge/Version-1.2.0.0-green?t=20260205)
+![Version](https://img.shields.io/badge/Version-1.2.2.0-green?t=20260305)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
 WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.
@@ -952,7 +952,7 @@ The driver provides two key functions:
 
 ---
 
-### 🌾 Active Program & Zone States
+### 🌾 Program & Zone States
 
 | Attribute | Type | Description |
 |:--|:--|:--|
@@ -961,6 +961,9 @@ The driver provides two key functions:
 | `activeZone` | number | Zone currently watering |
 | `activeZoneName` | string | Name of the active zone |
 | `activeAlerts` | string | Combined text of all active weather alerts |
+| `nextProgramEpoch` | string | UNIX timestamp for the next scheduled program event |
+| `nextProgramName` | string | The name of the next scheduled program |
+| `nextProgramText` | string | Date/Time text of the next scheduled event |
 
 ---
 
@@ -985,7 +988,8 @@ Inactive zones are automatically cleared to keep event logs concise.
 
 ```json
 {
-  "version": "1.0.4.0",
+  "schema":"wetit.unified.v1",
+  "version":"1.2.1.16",
   "timestamp": "2026-01-16T02:00:00Z",
   "weather": {
     "source": "Tempest",
