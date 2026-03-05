@@ -1,6 +1,6 @@
 /*
 *  WET-IT Data Driver
-*  Copyright 2025 Marc Hedish
+*  Copyright 2025, 2026 Marc Hedish
 *  Licensed under the Apache License, Version 2.0
 *  https://www.apache.org/licenses/LICENSE-2.0
 *
@@ -27,13 +27,16 @@
 *  1.1.0.0  –– Version bump for public release.
 *  1.1.1.0  –– Added astronomical data attributes.
 *  1.2.0.0  –– Version bump for public release.
+*  1.2.1.0  –– Begin update to publish next program.
+*  1.2.1.1  –– Added nextProgramEpoch, nextProgramName, and nextProgramText attributes.
+*  1.2.2.0  –– Version bump for public release.
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "1.2.0.0"
-@Field static final String DRIVER_MODIFIED = "2026-02-05"
+@Field static final String DRIVER_VERSION  = "1.2.2.0"
+@Field static final String DRIVER_MODIFIED = "2026-03-05"
 @Field static final int MAX_ZONES = 48
 
 metadata {
@@ -62,6 +65,9 @@ metadata {
 		attribute "freezeAlert","bool"
 		attribute "freezeAlertText","string"
 		attribute "freezeLowTemp","number"
+		attribute "nextProgramEpoch","number"
+		attribute "nextProgramName","string"
+		attribute "nextProgramText","string"
         attribute "nightBegin","string"
 		attribute "nightEnd","string"
 		attribute "programElapsed","number"
