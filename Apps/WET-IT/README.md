@@ -3,13 +3,13 @@
 *A Hubitat App for Weather-Based Smart Irrigation Using Real Evapotranspiration (ET) Modeling & Scheduling*
 
 ![Platform](https://img.shields.io/badge/Platform-Hubitat-blue) 
-![Version](https://img.shields.io/badge/Version-1.2.0.0-green?t=20260205)
+![Version](https://img.shields.io/badge/Version-1.2.2.0-green?t=20260205)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
-**App Version:** 1.2.0.0
-**Driver Version:** 1.2.0.0
+**App Version:** 1.2.2.0
+**Driver Version:** 1.2.2.0
 **Echo Version:** 1.1.0.0
-**Release Date:** 2026-02-05
+**Release Date:** 2026-03-05
 
 ---
 
@@ -18,7 +18,7 @@
 **WET-IT** brings professional-grade **Evapotranspiration (ET)** and **Seasonal Adjustment Modeling** to the Hubitat ecosystem.  
 It models how much water each irrigation zone *should* need based on real weather data and plant/soil parameters — ~~without directly scheduling watering.~~
 
-***Now with full scheduling!***
+***With full scheduling!***
 Supports up to 48 zones and 16 schedules!
 
 ### 🧩 Core Purpose
@@ -27,7 +27,16 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 
 ### 💡 Highlights
 
-### 🆕 What’s New in v1.1.0.0* 🆕
+### 🆕 *What’s New in v1.2.2.0* 🆕
+
+Added next scheduled program attributes:
+- nextProgramEpoch
+- nextProgramName
+- nextProgramText
+
+It's also reported in the System Diagnostics section of the Main Page. 
+
+### *What Was New in v1.1.0.0*
 
 1. Open-Meteo weather source
 	- Global, API Key-free, research-grade weather. 
