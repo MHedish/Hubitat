@@ -62,26 +62,38 @@
 *  1.1.0.7   –– Really fixed the conflict messages.
 *  1.1.0.8   –– Included conflict "flag" on scheduled programs grid; fixed wxForecast events.
 *  1.2.0.0   –– Version bump for public release.
+*  1.2.1.0   –– Begin update to publish next program.
+*  1.2.1.6   –– Added nextProgramEpoch, nextProgramName, and nextProgramText
+*  1.2.1.7   –– Added Next Program to diag/dashboard area. Cleaned up some of the dash prompts.
+*  1.2.1.8   –– Implemented astronomical data forecasting for better nextProgram precision.
+*  1.2.1.15  –– Final version of getNextScheduledProgram(), best performance ~40ms.
+*  1.2.1.16  –– Updated verifySystem() to include astronomical cache validation and update to nextProgram
+*  1.2.2.0   –– Version bump for public release.
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="1.2.0.0"
-@Field static final String APP_MODIFIED="2026-02-05"
+@Field static final String APP_VERSION="1.2.2.0"
+@Field static final String APP_MODIFIED="2026-03-05"
+@Field static final String JSON_SCHEMA="wetit.unified.v1"
 @Field static final String REPO_ROOT="https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT"
 @Field static final String RAW_ROOT="https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT"
 @Field static final String LAT="N2IwYzNmYTU5OTQ1NGYwNW"
 @Field static final String LON="FjZTEyODI5ZTBlNTI0YTQ="
-@Field static final String TS_FMT="yyyy-MM-dd'T'HH:mm:ssXXX"
+@Field static final String DATE_FMT="yyyy-MM-dd"
+@Field static final String TIME_FMT="h:mm:ss a"
+@Field static final String TS_FMT_LOCAL="yyyy-MM-dd HH:mm:ss"
+@Field static final String TS_FMT_ISO="yyyy-MM-dd'T'HH:mm:ssXXX"
+@Field static final long DAY_MS=86400000L
 @Field static final WX_LABEL=[noaa:"NOAA NWS",openmeteo:"Open-Meteo",openweather:"OpenWeather 3.0",tempest:"Tempest PWS",tomorrow:"Tomorrow.io"]
 @Field static final int MAX_ZONES=48
 @Field static final int MAX_PROGRAMS=16
 @Field static def cachedChild=null
 @Field static Integer cachedZoneCount=null
 @Field static final Map CHILD_DRIVERS=[
-    data:[name:"WET-IT Data",minVer:"1.2.0.0",required:true],
+    data:[name:"WET-IT Data",minVer:"1.2.2.0",required:true],
     echo:[name:"WET-IT Echo",minVer:"1.1.0.0",required:false]
 ]
 
@@ -114,7 +126,7 @@ private logInfo(msg){if(logEvents)log.info"[${APP_NAME}] $msg"}
 private logWarn(msg){log.warn"[${APP_NAME}] $msg"}
 private logError(msg){log.error"[${APP_NAME}] $msg"}
 private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}
-private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=app.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
+private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=app.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 private childEmitEvent(dev,n,v,d=null,u=null,boolean f=false){try{dev.emitEvent(n,v,d,u,f)}catch(e){logWarn"childEmitEvent(): ${e.message}"}}
 private childEmitChangedEvent(dev,n,v,d=null,u=null,boolean f=false){try{dev.emitChangedEvent(n,v,d,u,f)}catch(e){logWarn"childEmitChangedEvent(): ${e.message}"}}
 private getDataChild(boolean fresh=false){def dni="wetit_data_${app.id}";if(fresh||!cachedChild||!getChildDevice(dni))cachedChild=ensureDataDevice();return cachedChild}
@@ -357,18 +369,19 @@ def mainPage(){
             input"btnVerifySystem","button",title: "✅ Verify System Integrity",width:4
             input"btnRunWeatherUpdate","button",title: "🔄 Run Weather/ET Updates Now",width:4
 			paragraph""
-			if(atomicState.tempDiagMsg)paragraph "<b>Last Diagnostic:</b> ${atomicState.tempDiagMsg}";atomicState.tempDiagMsg="&nbsp;"
+			if(atomicState.tempDiagMsg){paragraph "<b>Last Diagnostic:</b> ${atomicState.tempDiagMsg}";atomicState.tempDiagMsg="&nbsp;"}
 			def c=getDataChild(true);def loc=c?.currentValue('wxLocation');def wxKey=c?.currentValue('wxSource');def wx=WX_LABEL[wxKey]?:wxKey?:'n/a'
-			paragraph "🌦️ ${loc?loc+' ':''}Weather → ${wx} Forecast: ${c?.currentValue('wxTimestamp')?:'n/a'}, Checked: ${c?.currentValue('wxChecked')?:'n/a'}"
-			def sd=atomicState.solarData
+			if(settings.schedulingActive){paragraph"📅 Next Program → ${c?.currentValue('nextProgramName')?:'Unknown'} — ${c?.currentValue('nextProgramText')?:'Unknown'}"}else{paragraph"📅 Scheduling Disabled"}
+			paragraph "🌦️ Weather → ${loc?loc+'':'Unknown'} — ${wx} Forecast: ${c?.currentValue('wxTimestamp')?:'n/a'}, Checked: ${c?.currentValue('wxChecked')?:'n/a'}"
+			def sd=atomicState.solarData?.days?.get(new Date().format(DATE_FMT,location.timeZone))?:[:]
 			if(sd){
-			    def tz=location.timeZone;def fmt={k->sd[k]?Date.parse(TS_FMT,sd[k]).format("h:mm:ss a",tz):'n/a'};def dl=sd.dayLength?String.format("%d:%02d",(sd.dayLength/3600).intValue(),((sd.dayLength%3600)/60).intValue()):'n/a'
-			    paragraph"🌘 Day Length: ${dl} | Dawn: ${fmt('civilTwilightBegin')} | Sunrise: ${fmt('sunrise')} | Solar Noon: ${fmt('solarNoon')} | Sunset: ${fmt('sunset')} | Dusk: ${fmt('civilTwilightEnd')}"
+			    def tz=location.timeZone;def fmt={k->sd[k]?Date.parse(TS_FMT_ISO,sd[k]).format(TIME_FMT,tz):'n/a'};def dl=sd.dayLength?String.format("%d:%02d",(sd.dayLength/3600).intValue(),((sd.dayLength%3600)/60).intValue()):'n/a'
+			    paragraph"🌘 Astronomical Events → Day Length: ${dl} | Dawn: ${fmt('civilTwilightBegin')} | Sunrise: ${fmt('sunrise')} | Solar Noon: ${fmt('solarNoon')} | Sunset: ${fmt('sunset')} | Dusk: ${fmt('civilTwilightEnd')}"
 			}
 			def s=getCurrentSeasons(state.geo?.lat);paragraph "🍃 Current Seasons → Astronomical: <b>${s.currentSeasonA}</b>, Meteorological: <b>${s.currentSeasonM}</b>"
 			def iso=state.geo?.iso;def flag=state.geo?.flag?.url;def isoDecorated=(iso&&flag)?"${iso} <img src='${flag}'style='height:28px;vertical-align:bottom;margin-left:4px'>":(iso?:'')
-            paragraph"📍 Hub Location — ${location.name?:'Unknown'}: (${state.geo?.lat}, ${state.geo?.lon}) — ${isoDecorated}"
-			paragraph "<i>Ensure hub time zone and location are correct for accurate ET calculations.</i>"
+            paragraph"📍 Hub Location → ${location.name?:'Unknown'}: (${state.geo?.lat}, ${state.geo?.lon}) — ${isoDecorated}"
+			paragraph "<i><small>Ensure hub time zone and location are correct for accurate ET calculations.</i></small>"
 			paragraph"<p style='opacity:0.75;'><small>Astronomical data provided by <a href='https://sunrise-sunset.org/' target='_blank'>Sunrise-Sunset.org</a>."+
 				"${state.geo?.iso?' Reverse geocoding powered by <a href=\'https://www.geoapify.com/\' target=\'_blank\'>Geoapify</a>. Map data © <a href=\'https://www.openstreetmap.org/copyright\' target=\'_blank\'>OpenStreetMap contributors</a>.':''}</small></p>"
         }
@@ -567,9 +580,9 @@ def schedulePage(params){
 					}
 				}
 			}else if(sm in ["sunrise","sunset","dawn","dusk"]){
-				def labelTime="";def sd=atomicState.solarData;def glyph=[sunrise:"☀️",dawn:"🌅",sunset:"🌇",dusk:"🌃"]
+				def labelTime="";def sd=atomicState.solarData?.days?.get(new Date().format(DATE_FMT,location.timeZone))?:[:];def glyph=[sunrise:"☀️",dawn:"🌅",sunset:"🌇",dusk:"🌃"]
 				if(sd){def key=[sunrise:"sunrise",sunset:"sunset",dawn:"civilTwilightBegin",dusk:"civilTwilightEnd"][sm]
-					def raw=key?sd[key]:null;if(raw){def d=Date.parse(TS_FMT,raw);labelTime="  ${glyph[sm]} Current ${sm} is ${d.format('h:mm:ss a',location.timeZone)}"}
+					def raw=key?sd[key]:null;if(raw){def d=Date.parse(TS_FMT_ISO,raw);labelTime="  ${glyph[sm]} Current ${sm} is ${d.format(TIME_FMT,location.timeZone)}"}
 				}
 				input"programEndBy_${p}","bool",title:"End by ${sm} instead of start at ${sm}?${labelTime}",defaultValue:false,submitOnChange:true
 				if(settings["useCycleSoak_${p}"])paragraph"<b>Note</b>: With <span style='color:#008B8B'>Cycle & Soak</span> enabled, ${sm} end-times are approximate."
@@ -809,7 +822,7 @@ private void resetSoilForZone(Object... args){
         def z=(args.size()>0?args[0]:0)as Integer;def pct=(args.size()>1?args[1]:1.0)as BigDecimal
         pct=Math.min(Math.max(pct,0.0G),1.0G);def k="zoneDepletion_${z}";def tKey="zoneDepletionTs_${z}"
         def oldVal=(state[k]?:0G)as BigDecimal;def newVal=oldVal*(1.0-pct)
-        state[k]=newVal;state[tKey]=new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone)
+        state[k]=newVal;state[tKey]=new Date().format(TS_FMT_LOCAL,location.timeZone)
         updateSoilMemory()
         logInfo"resetSoilForZone(${z},${pct}): ${String.format('%.3f',oldVal)}→${String.format('%.3f',newVal)} (${(pct*100).intValue()}% refill)"
     }catch(e){logWarn"resetSoilForZone(${args}): ${e}"}
@@ -975,7 +988,7 @@ private Map getProgramWindow(Integer p){
 			if(raw){start=timeToday(raw,tz);end=new Date(start.time+(total*1000))}
 			else{start=timeToday("12:00",tz);end=new Date(start.time+(total*1000))}
 		}else{
-			def rise=atomicState.solarData?.sunrise?Date.parse(TS_FMT,atomicState.solarData.sunrise):getSunriseAndSunset().sunrise;Boolean endBy=(settings["programEndBy_${p}"]?:false)
+			def sd=atomicState.solarData?.days?.get(new Date().format(DATE_FMT,location.timeZone));def rise=sd?.sunrise?Date.parse(TS_FMT_ISO,sd.sunrise):getSunriseAndSunset().sunrise;Boolean endBy=(settings["programEndBy_${p}"]?:false)
 			if(endBy){end=rise;start=new Date(rise.time-(total*1000))}
 			else{start=rise;end=new Date(rise.time+(total*1000))}
 		}
@@ -1210,6 +1223,12 @@ private boolean verifySystem(boolean force=false){
 	if(settings.find{k,v->k.startsWith("programEchoEnabled_")&&v}){try{verifyEchoChildren();logInfo"✅ Echo child devices verified"}catch(e){logWarn"verifySystem(): Echo verify failed ${e.message}";issues<<"Echo verification failed (${e.message})"}}
 	cleanupProbeDevices()
 	if(!fetchGeo(force))issues<<"Unable to populate geolocation cache"else logInfo"✅ Geolocation cache verified."
+	def solarOk=true;def sd=atomicState.solarData;def today=new Date().format("yyyy-MM-dd",location.timeZone)
+	if(!sd){issues<<"Astronomical cache missing";solarOk=false}
+	else if(!(sd.days instanceof Map)){issues<<"Astronomical cache structure invalid";solarOk=false}
+	else if(!sd.days[today]){issues<<"Astronomical cache missing entry for ${today}";solarOk = false}
+	if(solarOk)logInfo "🌘 Astronomical cache verified."
+	def next=getNextScheduledProgram();if((!next)&&(settings.schedulingActive))issues<<"Next scheduled program not calculated."else logInfo"📅️ Next scheduled program verified."
     def wx=child.currentValue("wxSource")?:'Unknown'
     if(wx in ['Unknown','Not yet fetched',''])issues<<"invalid weather source (${wx})"
     if(issues){issues.each{logWarn"System Verification: ⚠️ ${it}"};logInfo"❌ Issues detected during system verification";return false}
@@ -1244,7 +1263,7 @@ private Map fetchWeather(boolean force=false){
             atomicState.tempDiagMsg="⚠️ Forecast data stale for multiple cycles; ET continuing on last known forecast."
     }else if(wx&&!wx.failed)atomicState.forecastMissCount=0
     if(!wx||wx.isEmpty()){logWarn"fetchWeather(): ❌ ${src.toUpperCase()} fetch failed — no data returned";return [failed:true,source:src.toUpperCase()]}
-    def nowStr=new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone);atomicState.wxChecked=nowStr
+    def nowStr=new Date().format(TS_FMT_LOCAL,location.timeZone);atomicState.wxChecked=nowStr
     if(obsOnly){
         atomicState.wxSource=wx.source;atomicState.lastWxUpdateTs=now();fetchWxLocation()
         def c=getDataChild()
@@ -1280,7 +1299,7 @@ private Map fetchWeatherOwm(boolean force=false){
             if(resp.status!=200||!resp.data){logWarn"fetchWeatherOwm(): HTTP ${resp.status}, invalid data";return}
             def d=resp.data.daily?.getAt(0);if(!d){logWarn"fetchWeatherOwm(): Missing daily[0]";return}
             def tsField=d.dt?:resp.data.current?.dt
-            def providerTs=(tsField?(new Date(tsField*1000L)).format("yyyy-MM-dd HH:mm:ss",location.timeZone):null)
+            def providerTs=(tsField?(new Date(tsField*1000L)).format(TS_FMT_LOCAL,location.timeZone):null)
             BigDecimal tMaxF=(d.temp?.max?:0)as BigDecimal,tMinF=(d.temp?.min?:tMaxF)as BigDecimal
             BigDecimal tMax=convTemp(tMaxF,'F',unit),tMin=convTemp(tMinF,'F',unit)
             BigDecimal rainMm=(d.rain?:0)as BigDecimal,rainIn=etMmToIn(rainMm)
@@ -1313,12 +1332,12 @@ private Map fetchWeatherNoaa(boolean force=false){
             else data=new groovy.json.JsonSlurper().parseText(r2?.data?.toString()?:'{}')
             def p=data?.properties;if(!p){logWarn"fetchWeatherNoaa(): Missing properties block";return}
             def gen=p.generatedAt?:p.updateTime
-            def providerTs=gen?Date.parse(TS_FMT,gen).format("yyyy-MM-dd HH:mm:ss",location.timeZone):null
+            def providerTs=gen?Date.parse(TS_FMT_ISO,gen).format(TS_FMT_LOCAL,location.timeZone):null
             BigDecimal tMaxC=(p.maxTemperature?.values?.getAt(0)?.value?:0)as BigDecimal
             BigDecimal tMinC=(p.minTemperature?.values?.getAt(0)?.value?:tMaxC)as BigDecimal
             BigDecimal tMaxF=convTemp(tMaxC,'C','F'),tMinF=convTemp(tMinC,'C','F')
             BigDecimal tMax=convTemp(tMaxC,'C',unit),tMin=convTemp(tMinC,'C',unit)
-            BigDecimal rainMm=0;if(p?.quantitativePrecipitation?.values){def vals=p.quantitativePrecipitation.values;def now=new Date();def cutoff=now+(24*60*60*1000);vals.each{v->try{def vs=Date.parse("yyyy-MM-dd'T'HH:mm:ssX",v.validTime.split('/')[0]);if(vs>=now&&vs<=cutoff&&v.value!=null)rainMm+=(v.value as BigDecimal)}catch(ignored){}}}
+            BigDecimal rainMm=0;if(p?.quantitativePrecipitation?.values){def vals=p.quantitativePrecipitation.values;def now=new Date();def cutoff=now+(24*60*60*1000);vals.each{v->try{def t=v.validTime?.split('/')?.getAt(0);def vs=t?Date.parse(TS_FMT_ISO,t):null;if(vs>=now&&vs<=cutoff&&v.value!=null)rainMm+=(v.value as BigDecimal)}catch(ignored){}}}
             BigDecimal rainIn=etMmToIn(rainMm)
             String windSpeed='';String windDir=''
             try{
@@ -1329,7 +1348,7 @@ private Map fetchWeatherNoaa(boolean force=false){
                     else f=new groovy.json.JsonSlurper().parseText(fr?.data?.toString()?:'{}')
                     def periods=f?.properties?.periods
                     if(periods&&periods.size()>0){
-                        def now=new Date();def cutoff=now+6*60*60*1000;def near=periods.find{pf->try{Date.parse(TS_FMT,pf.startTime)<=cutoff}catch(ex){false}}
+                        def now=new Date();def cutoff=now+6*60*60*1000;def near=periods.find{pf->try{Date.parse(TS_FMT_ISO,pf.startTime)<=cutoff}catch(ex){false}}
                         if(!near)near=periods[0]
                         windSpeed=(near?.windSpeed?:'');windDir=(near?.windDirection?:'')
                     }
@@ -1352,14 +1371,14 @@ private Map fetchWeatherTomorrow(boolean force=false){
             def dNode=resp.data?.timelines?.daily?.getAt(0)
             def v=dNode?.values;if(!v){logWarn"fetchWeatherTomorrow(): No daily data";return}
             def ts=dNode?.time?:resp.data?.timelines?.daily?.getAt(0)?.startTime
-            def providerTs=ts?Date.parse("yyyy-MM-dd'T'HH:mm:ssX",ts).format("yyyy-MM-dd HH:mm:ss",location.timeZone):null
+            def providerTs=ts?Date.parse(TS_FMT_ISO,ts).format(TS_FMT_LOCAL,location.timeZone):null
             def hourly=resp.data?.timelines?.hourly
             BigDecimal tMaxF=(v.temperatureMax?:0)as BigDecimal,tMinF=(v.temperatureMin?:tMaxF)as BigDecimal
             BigDecimal tMax=convTemp(tMaxF,'F',unit),tMin=convTemp(tMinF,'F',unit)
             BigDecimal rainMm=(v.precipitationSum?:0)as BigDecimal,rainIn=etMmToIn(rainMm)
             BigDecimal windSpeedF=0;String windDir=''
             if(hourly&&hourly.size()>0){
-                def now=new Date();def cutoff=now+3*60*60*1000;def near=hourly.find{h->try{Date.parse("yyyy-MM-dd'T'HH:mm:ssX",h.startTime)<=cutoff}catch(ex){false}}
+                def now=new Date();def cutoff=now+3*60*60*1000;def near=hourly.find{h->try{Date.parse(TS_FMT_ISO,h.startTime)<=cutoff}catch(ex){false}}
                 if(!near)near=hourly[0]
                 def hv=near?.values?:[:];windSpeedF=(hv.windSpeed?:hv.windSpeedAvg?:hv.windSpeedMax?:0)as BigDecimal;windDir=(hv.windDirection?:hv.windDirectionAvg?:'')?.toString()
             }else logWarn"fetchWeatherTomorrow(): Missing hourly timeline"
@@ -1394,7 +1413,7 @@ private Map fetchWeatherTempest(boolean force=false){
                 BigDecimal rainIn=etMmToIn(rainMm)
                 BigDecimal windSpeed=((o.wind_avg?:0)as BigDecimal)*2.237
 				String windDir=(o.wind_direction?:'')?.toString()
-				String ts=o.timestamp?new Date((o.timestamp as Long)*1000L).format("yyyy-MM-dd HH:mm:ss",location.timeZone):null
+				String ts=o.timestamp?new Date((o.timestamp as Long)*1000L).format(TS_FMT_LOCAL,location.timeZone):null
 				r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,windSpeed:windSpeed,windUnit:'mph',windDir:windDir,unit:unit,providerTs:ts]
                 childEmitEvent(getDataChild(),"wxForecast",WX_LABEL[atomicState.wxSource],"${WX_LABEL[atomicState.wxSource]}: t=${tF}°F, rainIn=${rainIn}, wind=${r.windSpeed.setScale(1,BigDecimal.ROUND_HALF_UP)}${unit=='C'?'kph':'mph'}")
             }
@@ -1417,7 +1436,7 @@ private Map fetchWeatherOpenMeteo(boolean force=false){
             BigDecimal wind=(d.windspeed_10m_max?.getAt(idx)?:0)as BigDecimal
             BigDecimal tMaxF=(unit=='C')?convTemp(tMax,'C','F'):tMax
             BigDecimal tMinF=(unit=='C')?convTemp(tMin,'C','F'):tMin
-            String ts=d.time?.getAt(idx)?Date.parse("yyyy-MM-dd",d.time[idx]).format("yyyy-MM-dd HH:mm:ss",location.timeZone):null
+            String ts=d.time?.getAt(idx)?Date.parse(DATE_FMT,d.time[idx]).format(TS_FMT_LOCAL,location.timeZone):null
             r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:(unit=='C'?etMmToIn(rain):rain),windSpeed:wind,windDir:"",unit:unit,providerTs:ts]
             childEmitEvent(getDataChild(),"wxForecast",WX_LABEL[atomicState.wxSource],"${WX_LABEL[atomicState.wxSource]}: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rain=${rain}${unit=='C'?'mm':'in'}, wind=${wind}${unit=='C'?'kph':'mph'}")}
         return r
@@ -1519,9 +1538,9 @@ private Map detectWindAlert(Map wx){
 
 private runWeatherUpdate(){
     def tz=location.timeZone;def utc=TimeZone.getTimeZone("UTC")
-    if(atomicState.solarData?.solarDate!=new Date().format("yyyy-MM-dd",utc)){
+    if(!(atomicState.solarData?.days instanceof Map)||atomicState.solarData?.solarDate!=new Date().format(DATE_FMT,utc)){
         if(getAstronomicalData()){
-            logInfo"🌘 Astronomical data updated. Dawn: ${Date.parse(TS_FMT,atomicState.solarData.civilTwilightBegin).format("MMM d, h:mm:ss a",tz)} Dusk: ${Date.parse(TS_FMT,atomicState.solarData.civilTwilightEnd).format("MMM d, h:mm:ss a",tz)}"
+            def today=new Date().format(DATE_FMT,location.timeZone);def t=atomicState.solarData?.days?.get(today);if(t)logInfo"🌘 Astronomical data updated. Dawn: ${Date.parse(TS_FMT_ISO,t.civilTwilightBegin).format("MMM d, h:mm:ss a",tz)} Dusk: ${Date.parse(TS_FMT_ISO,t.civilTwilightEnd).format("MMM d, h:mm:ss a",tz)}"
         }else logWarn"⚠️ Unable to retrieve astronomical data"
     }
     if(!owmApiKey&&!tioApiKey&&!tpwsApiKey&&!(weatherSource in ["noaa","openmeteo"])){logWarn"runWeatherUpdate(): No valid API key or source configured; aborting";return}
@@ -1536,13 +1555,14 @@ private runWeatherUpdate(){
     }
     cachedZoneCount=zoneCount
     Map wx=fetchWeather(false);if(!wx){logWarn"runWeatherUpdate(): No weather data";return}
-    def nowStr=new Date().format("yyyy-MM-dd HH:mm:ss",tz)
+    def nowStr=new Date().format(TS_FMT_LOCAL,tz)
     atomicState.wxChecked=nowStr
     if(wx.providerTs){atomicState.wxTimestamp=wx.providerTs}
-	def sd=atomicState.solarData;Long dayLen=sd?.dayLength?:((sr&&ss)?((ss.time-sr.time)/1000L):null)
-	Date sr=sd?.sunrise?Date.parse(TS_FMT,sd.sunrise):getSunriseAndSunset().sunrise
-	Date ss=sd?.sunset?Date.parse(TS_FMT,sd.sunset):getSunriseAndSunset().sunset
-    BigDecimal lat=state.geo?.lat;int jDay=Calendar.getInstance(location.timeZone).get(Calendar.DAY_OF_YEAR)
+	def sd=atomicState.solarData?.days?.get(new Date().format(DATE_FMT,location.timeZone))?:[:];def today=new Date().format(DATE_FMT,tz);def s=sd?.days?.get(today)
+	Date sr=s?.sunrise?Date.parse(TS_FMT_ISO,s.sunrise):getSunriseAndSunset().sunrise
+	Date ss=s?.sunset?Date.parse(TS_FMT_ISO,s.sunset):getSunriseAndSunset().sunset
+	Long dayLen=s?.dayLength?:((sr&&ss)?((ss.time-sr.time)/1000L):null)
+	BigDecimal lat=state.geo?.lat;int jDay=Calendar.getInstance(location.timeZone).get(Calendar.DAY_OF_YEAR)
     BigDecimal baseline=(settings.baselineEt0Inches?:0.18)as BigDecimal
     Map env=[tMaxF:wx.tMaxF,tMinF:wx.tMinF,rainIn:wx.rainIn,latDeg:lat,julianDay:jDay,dayLengthSec:dayLen,baselineEt0:baseline]
     logInfo"🧐 Running hybrid ET+Seasonal model for ${zoneCount} zones"
@@ -1582,20 +1602,36 @@ private Map getCurrentSeasons(BigDecimal lat){
     return[currentSeasonA:astro,currentSeasonM:meteo]
 }
 
+private Map solarForDay(Date d){def sd=atomicState.solarData?.days;if(!sd)return null;String k=d.format(DATE_FMT,location.timeZone);return sd[k]}
+
 private boolean getAstronomicalData(){
     try{
-        httpGet(uri:"https://api.sunrise-sunset.org/json?lat=${state.geo.lat}&lng=${state.geo.lon}&formatted=0"){r->
-            if(r?.status!=200||r?.data?.status!="OK")return false
-            def d=r.data.results;def sd=Date.parse(TS_FMT,d.sunrise)
-            atomicState.solarData=[
-                sunrise:d.sunrise,sunset:d.sunset,
-                civilTwilightBegin:d.civil_twilight_begin,civilTwilightEnd:d.civil_twilight_end,
-                solarNoon:d.solar_noon,dayLength:(d.day_length as Integer),
-                nauticalTwilightBegin:d.nautical_twilight_begin,nauticalTwilightEnd:d.nautical_twilight_end,
-                astronomicalTwilightBegin:d.astronomical_twilight_begin,astronomicalTwilightEnd:d.astronomical_twilight_end,
-                solarDate:sd.format("yyyy-MM-dd",location.timeZone)
-            ]
+        def lat=state.geo?.lat,lon=state.geo?.lon;if(!lat||!lon)return false
+        def tz=location.timeZone;def today=new Date().format(DATE_FMT,tz);long base=new Date().clearTime().time
+        if(atomicState.solarData?.sunrise){logInfo"🌘 Migrating legacy solar cache";atomicState.remove("solarData")}
+        if(!(atomicState.solarData?.days instanceof Map)){atomicState.solarData=[days:[:],order:[]]}
+        def sd=atomicState.solarData;sd.days=sd.days?:[:];sd.order=sd.order?:[]
+        if(sd.days.isEmpty()){
+            for(int i=0;i<7;i++){
+                def d=new Date(base+DAY_MS*i).format(DATE_FMT,tz)
+                httpGet(uri:"https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&date=${d}&formatted=0"){r->
+                    if(r?.status!=200||r?.data?.status!="OK")return
+                    def x=r.data.results
+                    sd.days[d]=[sunrise:x.sunrise,sunset:x.sunset,civilTwilightBegin:x.civil_twilight_begin,civilTwilightEnd:x.civil_twilight_end,solarNoon:x.solar_noon,dayLength:(x.day_length as Integer),nauticalTwilightBegin:x.nautical_twilight_begin,nauticalTwilightEnd:x.nautical_twilight_end,astronomicalTwilightBegin:x.astronomical_twilight_begin,astronomicalTwilightEnd:x.astronomical_twilight_end]
+                    if(!sd.order.contains(d))sd.order<<d
+                }
+            }
+        }else if(!sd.days[today]){
+            def oldest=sd.order.remove(0);sd.days.remove(oldest)
+            def d=new Date(base+DAY_MS*6).format(DATE_FMT,tz)
+            httpGet(uri:"https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&date=${d}&formatted=0"){r->
+                if(r?.status!=200||r?.data?.status!="OK")return
+                def x=r.data.results
+                sd.days[d]=[sunrise:x.sunrise,sunset:x.sunset,civilTwilightBegin:x.civil_twilight_begin,civilTwilightEnd:x.civil_twilight_end,solarNoon:x.solar_noon,dayLength:(x.day_length as Integer),nauticalTwilightBegin:x.nautical_twilight_begin,nauticalTwilightEnd:x.nautical_twilight_end,astronomicalTwilightBegin:x.astronomical_twilight_begin,astronomicalTwilightEnd:x.astronomical_twilight_end]
+                sd.order<<d
+            }
         }
+        sd.solarDate=today;atomicState.solarData=sd
         return true
     }catch(e){logWarn"getAstronomicalData():${e.message}"}
     false
@@ -1633,7 +1669,7 @@ private void fetchWxLocation(){
 /* ---------- Event Publishing ---------- */
 private publishZoneData(Map results){
 	def c=getDataChild();if(!c){logDebug"publishZoneData(): getDataChild() returned null.";return}
-	String ts=new Date().format("yyyy-MM-dd HH:mm:ss",location.timeZone)
+	String ts=new Date().format(TS_FMT_LOCAL,location.timeZone)
 	Integer zoneCount=cachedZoneCount?:results?.size()?:0
 	def freeze=detectFreezeAlert(state.lastWeather?:[:])
 	String u=state.lastWeather?.unit?:settings.tempUnits?:"F"
@@ -1656,6 +1692,8 @@ private publishZoneData(Map results){
         logDebug "publishZoneData(): atomicState weather alerts persisted"
     }catch(e){logWarn "publishZoneData(): failed to persist atomicState alerts (${e.message})"}
 	def meta=[
+		schema:JSON_SCHEMA,
+		version:APP_VERSION,
 		timestamp:ts,
 		wxChecked:atomicState.wxChecked?:"",
 		wxLocation:atomicState.wxLocation?:"",
@@ -1680,19 +1718,9 @@ private publishZoneData(Map results){
         def prior=(atomicState.zoneDataset?.find{it.id==zoneNum })?:[:]
         Integer prevET=prior.etBudgetPct?:100;Integer prevSeasonal=prior.seasonalBudgetPct?:100;Integer etBudget=(v.etBudgetPct!=null?v.etBudgetPct:prevET)as Integer
         Integer seasonalBudget=(v.seasonalBudgetPct!=null?v.seasonalBudgetPct:prevSeasonal)as Integer;Integer etAdjustedTime=Math.round(baseTime*etBudget/100)
-        zones <<[
-            id:zoneNum,
-            zone:zoneName,
-            baseTime:baseTime,
-            baseTimeUnit:baseUnit,
-            etBudgetPct:etBudget,
-            seasonalBudgetPct:seasonalBudget,
-            etAdjustedTime:etAdjustedTime,
-            depletion:soil.depletion?:0,
-            updated:soil.updated?:""
-        ]
+        zones<<[id:zoneNum,zone:zoneName,baseTime:baseTime,baseTimeUnit:baseUnit,etBudgetPct:etBudget,seasonalBudgetPct:seasonalBudget,etAdjustedTime:etAdjustedTime,depletion:soil.depletion?:0,updated:soil.updated?:""]
     }
-	def combined=[meta:meta,zones:zones,solar:atomicState.solarData];atomicState.zoneDataset=zones
+	def solarDate=ts.substring(0,10);def sd=atomicState.solarData?.days?.get(solarDate)?:[:];def combined=[meta:meta,zones:zones,solar:[solarDate:solarDate]+sd];atomicState.zoneDataset=zones
 	String json=new groovy.json.JsonOutput().toJson(combined)
 	String summaryText=zones.collect{z->"${z.zone}: ET ${z.etBudgetPct}%, Seasonal ${z.seasonalBudgetPct}%, ET Adjusted ${z.etAdjustedTime}s"}.join(" | ")
 	def alerts=[];if(freeze.freezeAlert)alerts<<"🧊️ Freeze";if(rain.rainAlert)alerts<<"☔ Rain";if(wind.windAlert)alerts<<"💨 Wind";if(alerts)summaryText+=" | Alerts: ${alerts.join(', ')}"
@@ -1714,20 +1742,19 @@ private publishZoneData(Map results){
 			childEmitChangedEvent(c,"zone${id}EtAdjustedTime",z.etAdjustedTime,"ET Adjusted time for Zone ${id}","s",false)
 		}
 		logInfo"publishZoneData(): zone attributes emitted (${zones.size()} zones)"
-		def sd=atomicState.solarData
 		if(sd){
 			def dl=(sd.dayLength as Number).longValue();def h=(dl/3600) as int;def m=((dl%3600)/60) as int;def s=(dl%60) as int
 			childEmitChangedEvent(c,"dayLength",sprintf("%02d:%02d:%02d",h,m,s))
-			childEmitChangedEvent(c,"solarDate",sd.solarDate)
-			childEmitChangedEvent(c,"sunrise",Date.parse(TS_FMT,sd.sunrise).format("h:mm:ss a",location.timeZone))
-			childEmitChangedEvent(c,"sunset",Date.parse(TS_FMT,sd.sunset).format("h:mm:ss a",location.timeZone))
-			childEmitChangedEvent(c,"solarNoon",Date.parse(TS_FMT,sd.solarNoon).format("h:mm:ss a",location.timeZone))
-			childEmitChangedEvent(c,"nightBegin",Date.parse(TS_FMT,sd.astronomicalTwilightEnd).format("h:mm:ss a",location.timeZone))
-			childEmitChangedEvent(c,"nightEnd",Date.parse(TS_FMT,sd.astronomicalTwilightBegin).format("h:mm:ss a",location.timeZone))
-			childEmitChangedEvent(c,"twilightBegin",Date.parse(TS_FMT,sd.nauticalTwilightBegin).format("h:mm:ss a",location.timeZone))
-			childEmitChangedEvent(c,"twilightEnd",Date.parse(TS_FMT,sd.nauticalTwilightEnd).format("h:mm:ss a",location.timeZone))
-			childEmitChangedEvent(c,"dawn",Date.parse(TS_FMT,sd.civilTwilightBegin).format("h:mm:ss a",location.timeZone))
-			childEmitChangedEvent(c,"dusk",Date.parse(TS_FMT,sd.civilTwilightEnd).format("h:mm:ss a",location.timeZone))
+			childEmitChangedEvent(c,"solarDate",solarDate)
+			childEmitChangedEvent(c,"sunrise",Date.parse(TS_FMT_ISO,sd.sunrise).format(TIME_FMT,location.timeZone))
+			childEmitChangedEvent(c,"sunset",Date.parse(TS_FMT_ISO,sd.sunset).format(TIME_FMT,location.timeZone))
+			childEmitChangedEvent(c,"solarNoon",Date.parse(TS_FMT_ISO,sd.solarNoon).format(TIME_FMT,location.timeZone))
+			childEmitChangedEvent(c,"nightBegin",Date.parse(TS_FMT_ISO,sd.astronomicalTwilightEnd).format(TIME_FMT,location.timeZone))
+			childEmitChangedEvent(c,"nightEnd",Date.parse(TS_FMT_ISO,sd.astronomicalTwilightBegin).format(TIME_FMT,location.timeZone))
+			childEmitChangedEvent(c,"twilightBegin",Date.parse(TS_FMT_ISO,sd.nauticalTwilightBegin).format(TIME_FMT,location.timeZone))
+			childEmitChangedEvent(c,"twilightEnd",Date.parse(TS_FMT_ISO,sd.nauticalTwilightEnd).format(TIME_FMT,location.timeZone))
+			childEmitChangedEvent(c,"dawn",Date.parse(TS_FMT_ISO,sd.civilTwilightBegin).format(TIME_FMT,location.timeZone))
+			childEmitChangedEvent(c,"dusk",Date.parse(TS_FMT_ISO,sd.civilTwilightEnd).format(TIME_FMT,location.timeZone))
 		}
 	}
 }
@@ -1742,8 +1769,8 @@ private BigDecimal getPrevDepletion(Integer z){def k="zoneDepletion_${z}";def v=
 
 private adjustSoilDepletion(){
     try{
-        def nowTs=new Date();def nowStr=nowTs.format("yyyy-MM-dd HH:mm:ss",location.timeZone)
-        def lastEtTs=atomicState.etLastCalcTs?Date.parse("yyyy-MM-dd HH:mm:ss",atomicState.etLastCalcTs):null
+        def nowTs=new Date();def nowStr=nowTs.format(TS_FMT_LOCAL,location.timeZone)
+        def lastEtTs=atomicState.etLastCalcTs?Date.parse(TS_FMT_LOCAL,atomicState.etLastCalcTs):null
         def elapsedMin=lastEtTs?((nowTs.time-lastEtTs.time)/60000.0):1440.0
         if(elapsedMin<5.0){logDebug"adjustSoilDepletion(): skipped (${String.format('%.1f',elapsedMin)}m since last update < 5 min threshold)";return}
         def etDaily=getEt0ForDay();def seasonalAdj=getSeasonalAdjustment();def etScaled=etDaily*seasonalAdj*(elapsedMin/1440.0)
@@ -1771,7 +1798,7 @@ private zoneWateredHandler(evt){
 }
 
 private Map etComputeZoneBudgets(Map env,List<Map> zones,String method){
-    def tz=location.timeZone;def nowTs=new Date();def nowStr=nowTs.format("yyyy-MM-dd HH:mm:ss",tz)
+    def tz=location.timeZone;def nowTs=new Date();def nowStr=nowTs.format(TS_FMT_LOCAL,tz)
     BigDecimal tMaxF=(env.tMaxF?:0G)as BigDecimal;BigDecimal tMinF=(env.tMinF?:tMaxF)as BigDecimal
     BigDecimal rainIn=(env.rainIn?:0G)as BigDecimal;BigDecimal latDeg=(env.latDeg?:0G)as BigDecimal
     int jDay=(env.julianDay?:1)as int;Long dayLen=env.dayLengthSec as Long
@@ -1780,7 +1807,7 @@ private Map etComputeZoneBudgets(Map env,List<Map> zones,String method){
     zones?.each{Map zCfg->
         def zId=zCfg.id;if(!zId)return
         def tsKey="zoneDepletionTs_${zId}"
-        def zRaw=atomicState[tsKey];def zLastTs=(!zRaw||zRaw=="—")?new Date().clearTime():Date.parse("yyyy-MM-dd HH:mm:ss",zRaw)
+        def zRaw=atomicState[tsKey];def zLastTs=(!zRaw||zRaw=="—")?new Date().clearTime():Date.parse(TS_FMT_LOCAL,zRaw)
         BigDecimal elapsedMin=((nowTs.time-zLastTs.time)/60000.0G)
         BigDecimal fracDay=Math.min(elapsedMin/1440.0G,1.0G)
         BigDecimal et0In=(etCalcEt0Hargreaves(tMaxF,tMinF,latDeg,jDay,dayLen)*fracDay).setScale(3,BigDecimal.ROUND_HALF_UP)
@@ -1968,11 +1995,11 @@ private void irrigationTick(){
 		if(settings.schedulingActive?.toString()!="true"){logDebug"⛔ Scheduling inactive — skipping tick";return}
 		atomicState.saturationSkipPrograms=atomicState.saturationSkipPrograms?.findAll{it<=settings.programCount}
 		def now=new Date();Integer pCount=(settings.programCount?:0)as Integer;if(pCount<1)return
-		def solar=atomicState.solarData
-		Date sunrise=solar?.sunrise?Date.parse(TS_FMT,solar.sunrise):getSunriseAndSunset().sunrise
-		Date sunset=solar?.sunset?Date.parse(TS_FMT,solar.sunset):getSunriseAndSunset().sunset
-		Date dawn=solar?.civilTwilightBegin?Date.parse(TS_FMT,solar.civilTwilightBegin):null
-		Date dusk=solar?.civilTwilightEnd?Date.parse(TS_FMT,solar.civilTwilightEnd):null
+		def solar=atomicState.solarData?.days?.get(new Date().format(DATE_FMT,location.timeZone))
+		Date sunrise=solar?.sunrise?Date.parse(TS_FMT_ISO,solar.sunrise):getSunriseAndSunset().sunrise
+		Date sunset=solar?.sunset?Date.parse(TS_FMT_ISO,solar.sunset):getSunriseAndSunset().sunset
+		Date dawn=solar?.civilTwilightBegin?Date.parse(TS_FMT_ISO,solar.civilTwilightBegin):null
+		Date dusk=solar?.civilTwilightEnd?Date.parse(TS_FMT_ISO,solar.civilTwilightEnd):null
 		def glyph=[sunrise:"☀️",dawn:"🌅",sunset:"🌇",dusk:"🌃"]
 		(1..pCount).each{Integer p->
 			def name=settings["programName_${p}"]?:"Program ${p}"
@@ -2007,6 +2034,77 @@ private void irrigationTick(){
 			runProgram([program:p,scheduled:true])
 		}
 	}catch(e){logError"irrigationTick(): ${e.message}"}
+	def ap=atomicState.activeProgram;if(ap)return
+	def c=getDataChild();if(!c)return
+	def next=getNextScheduledProgram();Long ts=next?.start?.time?:0L;logDebug"Next Scheduled Program: ${(next?.name?:'None')} | ${ts}"
+	def cs=c.currentState("nextProgramEpoch");Long cur=(cs?.value?.toString()?.isLong()?cs.value.toString().toLong():0L)
+    logDebug"cs: [${cs}] | cur: [${cur}] | ts: [${ts}]"
+	if(cur!=ts){
+	    childEmitChangedEvent(c,"nextProgramName",next?.name?:"unknown","📅 Next scheduled program name updated")
+	    childEmitChangedEvent(c,"nextProgramText",next?.start?next.start.format(TS_FMT_LOCAL,location.timeZone):"unknown","📅️ Next scheduled program time updated")
+	    childEmitChangedEvent(c,"nextProgramEpoch",ts,"⏰ Next scheduled program epoch updated")
+	}else{logDebug"No change in next scheduled program."}
+}
+
+private Map getNextScheduledProgram(){
+	if(settings.schedulingActive?.toString()!="true")return null
+	Integer pCount=(settings.programCount?:0)as Integer;if(pCount<1)return null
+	def tz=location?.timeZone?:TimeZone.getDefault();long ts=now();long today0=new Date().clearTime().time;def cal=Calendar.getInstance(tz)
+	def df=new java.text.SimpleDateFormat(DATE_FMT);df.setTimeZone(tz);def dow=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
+	String[] dayStr=new String[8];int[] dayDow=new int[8];long[] dayMs=new long[8]
+	for(int off=0;off<8;off++){
+		long ms=today0+(off*DAY_MS);dayMs[off]=ms;def d=new Date(ms);dayStr[off]=d.format(DATE_FMT,tz);cal.time=d;dayDow[off]=cal.get(Calendar.DAY_OF_WEEK)-1
+	}
+	def solarDays=atomicState.solarData?.days
+	long nextKey=Long.MAX_VALUE;Map next=null;int nextTotal=0
+	for(int p=1;p<=pCount;p++){
+		if(settings["programActive_${p}"]?.toString()!="true")continue
+		def pr=atomicState."programRuntime_${p}";Integer total=(pr instanceof Map)?(pr.total?:0):(pr instanceof Number?pr:0);if(total<=0)continue
+		def zones=settings["programZones_${p}"];if(!(zones instanceof List)||zones.isEmpty())continue
+		Integer minTime=(settings.progMinTime?:60)as Integer;if(total<minTime)continue
+		if((atomicState.saturationSkipPrograms?:[]).contains(p))continue
+		int soakAdj=0
+		if(settings["useCycleSoak_${p}"]){
+			Integer cc=(settings["cycleCount_${p}"]?:1)as Integer;Integer sp=(settings["cyclePauseMin_${p}"]?:0)as Integer
+			if(cc>1&&sp>0)soakAdj=(cc-1)*sp*60
+		}
+		String name=settings["programName_${p}"]?.trim()?:"Program ${p}";String sm=(settings["programStartMode_${p}"]?:'time').toString().toLowerCase()
+		boolean endBy=(settings["programEndBy_${p}"]?:false)?true:false;String dm=(settings["programDaysMode_${p}"]?:'weekly').toString();long anchor0=0L
+		Integer iv=(dm=="interval")?((settings["programInterval_${p}"]?:2)as Integer):0;def allowed=(dm=="weekly")?(settings["programWeekdays_${p}"]?:[]):null
+		if(dm=="interval"){
+			def lastStr=state.lastRun?.get(p)
+			if(lastStr){try{anchor0=df.parse(lastStr).clearTime().time}catch(e){}}
+		}
+		def rawTime=(sm=="time")?settings["programStartTime_${p}"]:null;long tDelta=0L
+		if(sm=="time"){
+			if(!rawTime)continue
+			Date t=timeToday(rawTime,tz);tDelta=t.time-t.clearTime().time
+		}
+		for(int off=0;off<8;off++){
+			if(dm=="weekly"){
+				if(!(allowed instanceof List)||allowed.isEmpty())break
+				if(!allowed.contains(dow[dayDow[off]]))continue
+			}else if(dm=="interval"){
+				if(iv<1)continue
+				if(anchor0){long diff=((dayMs[off]-anchor0)/DAY_MS);if(diff%iv!=0)continue}
+			}
+			long baseMs=0L;if(sm=="time"){
+				baseMs=dayMs[off]+tDelta
+			}else{
+				def s=(solarDays instanceof Map)?solarDays[dayStr[off]]:null;if(!s)continue
+				def iso=(sm=="sunrise")?s.sunrise:(sm=="sunset")?s.sunset:(sm=="dawn")?s.civilTwilightBegin:(sm=="dusk")?s.civilTwilightEnd:null
+				if(!iso)continue
+				baseMs=Date.parse(TS_FMT_ISO,iso).time
+			}
+			long targetMs=endBy?(baseMs-((total+soakAdj)*1000L)):baseMs;if(targetMs<=ts)continue
+			long key=(targetMs<<5)+p;if(key<nextKey){nextKey=key;next=[program:p,name:name,epoch:targetMs];nextTotal=total} //Adjust mask if MAX_PROGRAMS > 32
+			break
+		}
+	}
+	if(!next)return null
+	next.start=new Date(next.epoch);next.end=new Date(next.epoch+(nextTotal*1000L));done=now()
+	logDebug"getNextScheduledProgram(): Evaluated ${pCount} programs in ${(done-ts)}ms. ${next} wins."
+	return next
 }
 
 private void syncEchoChildren(){
@@ -2058,7 +2156,7 @@ def runProgram(Map data){
 	Integer p=data.program;if(p<1||p>settings.programCount){logWarn"runProgram() Invalid program number: ${p}";return false}
 	Boolean scheduled=data.scheduled==true;Boolean manual=data.manual==true;Boolean fromChild=data.child==true;Boolean fromEcho=data.echo==true
 	def mode=settings["programDaysMode_${p}"]?:'weekly';def name=settings["programName_${p}"]?:"Program ${p}"
-	def today=new Date();def df=new java.text.SimpleDateFormat("yyyy-MM-dd");def weekday=today.format("EEE")
+	def today=new Date();def df=new java.text.SimpleDateFormat(DATE_FMT);def weekday=today.format("EEE")
 	def last=state.lastRun?.get(p);def canRun=false;def src=scheduled?"[Scheduled]":manual?"[Manual]":fromEcho?"[Echo]":fromChild?"[fromChild]":"[Unknown]"
 	def ap=atomicState.activeProgram
 	if(ap){
@@ -2069,7 +2167,7 @@ def runProgram(Map data){
 	else if(mode=='interval'){
 	    Integer interval=(settings["programInterval_${p}"]?:2)as Integer
 	    if(!last)canRun=true
-	    else{Integer diff=(df.parse(today.format('yyyy-MM-dd')).time-df.parse(last).time)/(86400000L);canRun=diff>=interval}
+	    else{Integer diff=(df.parse(today.format(DATE_FMT)).time-df.parse(last).time)/(DAY_MS);canRun=diff>=interval}
 	}
 	if(!canRun&&!manual&&!fromChild&&!fromEcho){logInfo"runProgram(${p}): Skipped – not scheduled for today (${weekday})";return}
 	if(!atomicState.lastWxUpdateTs||((now()-atomicState.lastWxUpdateTs)/60000)>=5)try{runWeatherUpdate()}catch(e){logWarn "Weather refresh failed during Program ${p} (${name}) → ${e}"}
@@ -2093,7 +2191,7 @@ def runProgram(Map data){
 	def lastEnd=atomicState.lastProgramEnd?:0L
 	if(!manual&&!fromChild&&!fromEcho&&lastEnd){
 		Long elapsed=((new Date().time-lastEnd)/60000L);Integer buffer=settings.progBufferDelay
-		def lastStr=new Date(lastEnd).format("yyyy-MM-dd HH:mm:ss",location.timeZone)
+		def lastStr=new Date(lastEnd).format(TS_FMT_LOCAL,location.timeZone)
 		def lastWasManual=(atomicState.lastManualEnd&&atomicState.lastManualEnd==lastEnd)
 		logDebug"Program buffer check - progBuffer=${buffer} min | LastEnd=${lastStr} | Elapsed=${elapsed} min | lastWasManual=${lastWasManual}"
 		if(!lastWasManual&&buffer>0&&elapsed<buffer){logWarn"⏳ Program ${p} (${name}) skipped — previous scheduled run ended ${elapsed} min ago (Buffer=${buffer} min enforced)";return}
@@ -2131,7 +2229,7 @@ private void endProgram(ap){
     childEmitChangedEvent(c,"activeProgramName","idle","No active program",null,true)
     def ec=getEchoChild(p);if(ec){childEmitChangedEvent(ec,"valve","closed","Program ${p} stopped",null,true);childEmitChangedEvent(ec,"switch","off","Program ${p} stopped",null,true)}
     logInfo"Program(${p}): All active zones complete (${ap.zones.size()}/${ap.zones.size()})"
-    logDebug"Program(${p}) end recorded at ${endTs.format('yyyy-MM-dd HH:mm:ss',location.timeZone)} manual=${ap.manual}"
+    logDebug"Program(${p}) end recorded at ${endTs.format(TS_FMT_LOCAL,location.timeZone)} manual=${ap.manual}"
     if(atomicState.saturationSkipPrograms){def m=atomicState.saturationSkipPrograms;m=m?m.findAll{it!=p}:m;atomicState.saturationSkipPrograms=m}
     atomicState.remove("activeProgram")
 }
