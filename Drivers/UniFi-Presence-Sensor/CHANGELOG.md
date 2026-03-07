@@ -13,8 +13,7 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 -   `initialize()` now **clears stored authentication tokens before login**, ensuring a clean authentication cycle when the driver starts or reinitializes.
 -   `httpExec()` now **automatically retries requests once after a 401 response** by refreshing the authentication cookie and CSRF token.
 -   Improved **resilience to UniFi session invalidation**, such as when the same account logs in from another client.
--   REST authentication is now explicitly reported as  
-    **“✅ REST connection established”** during initialization to distinguish it from the WebSocket connection.
+-   REST authentication is now explicitly reported as **“✅ REST connection established”** during initialization to distinguish it from the WebSocket connection.
 
 ### Note:
 
