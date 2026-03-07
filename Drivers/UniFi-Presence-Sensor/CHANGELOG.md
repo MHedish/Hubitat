@@ -20,6 +20,8 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 
 -   These changes improve compatibility with **UniFi OS controllers and gateway-hosted Network applications** that aggressively invalidate API sessions.
 
+---
+
 ### v1.8.6.0
 - Corrected commStatus state handling during auth failures and rate limits
 - Eliminated recursive reinitialize/login storms
@@ -379,6 +381,6 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE2NzgzMDc2NjUsMTY1NTU0MzQ0MCw0NT
-czMTg1MDAsLTkyMzM3ODE2OF19
+eyJoaXN0b3J5IjpbMTQxODYzNDQwMiwxNjU1NTQzNDQwLDQ1Nz
+MxODUwMCwtOTIzMzc4MTY4XX0=
 -->
