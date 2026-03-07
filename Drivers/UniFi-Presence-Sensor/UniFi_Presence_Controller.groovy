@@ -33,6 +33,11 @@
 *  1.8.6.0  -- Stable Release - Reversioned for release
 *  1.8.6.1  -- Updated genParamsAuth() to acommodate older UniFiOS 4.x
 *  1.8.6.2  -- Added param to ignore SSL errors; enhanced commStatus messages
+*  1.8.6.3  -- Removed logDebug 'login() succeeded' message; upodated encodeSiteName() to allow for spaces between 'words' in sitename; updated isUniFiOS() to not use 302 to identify UniFIOS
+*  1.8.6.3  -- Reverted
+*  1.8.6.4  -- Updated UnFIOS type determination
+*  1.8.6.5  -- Reverted
+*  1.8.6.6  -- Reset stale cookies during initialization and add automatic 401 authentication recovery
 */
 
 import groovy.transform.Field
@@ -41,8 +46,8 @@ import groovy.json.JsonOutput
 import java.net.URLEncoder
 
 @Field static final String DRIVER_NAME="UniFi Presence Controller"
-@Field static final String DRIVER_VERSION="1.8.6.2"
-@Field static final String DRIVER_MODIFIED="2026.02.20"
+@Field static final String DRIVER_VERSION="1.8.6.6"
+@Field static final String DRIVER_MODIFIED="2026.03.07"
 @Field static final Integer AUTO_CREATE_DAYS=1
 @Field static final Integer AUTO_CREATE_MAX=50
 @Field static final Map CHILD_DRIVER=[name:"UniFi Presence Device",minVer:"1.8.6.0",required:true]
@@ -124,7 +129,7 @@ def disableRawEventLoggingNow(){try{unschedule("autoDisableRawEventLogging");dev
    Lifecycle
    =============================== */
 def installed(){logInfo"Installed";initialize()}
-def updated(){logInfo"Preferences updated";if(monitorHotspot){createHotspotChild()}else{deleteHotspotChild()}
+def updated(){logInfo"⚙ Preferences updated";if(monitorHotspot){createHotspotChild()}else{deleteHotspotChild()}
 	logDebug"⚙️ Preferences – Site: ${siteName} | Refresh: ${refreshInterval} | Debounce: ${disconnectDebounce} | HTTP Timeout: ${httpTimeout} | Ignore Unmanaged: ${ignoreUnmanagedDevices}";initialize()}
 def initialize(){
     emitEvent("driverInfo",driverInfoString(),"☑️ Initializing",null,true);emitEvent("commStatus","unknown","☑️ Initializing",null,true)
@@ -133,9 +138,8 @@ def initialize(){
         if(logEnable){logInfo"🪲 Debug logging enabled for 30 minutes";unschedule("autoDisableDebugLogging");runIn(1800,"autoDisableDebugLogging")}
         if(logRawEvents){logInfo"📊 Raw UniFi event logging enabled for 30 minutes";unschedule("autoDisableRawEventLogging");runIn(1800,"autoDisableRawEventLogging")}
         try{
-            closeEventSocket();def os=isUniFiOS()
-            if(os==null)throw new Exception("⚠️ Check IP, port, or controller connection")
-            atomicState.UniFiOS=os;refreshCookie()
+            closeEventSocket();atomicState.useProxyPrefix=detectProxyPrefix()
+            logDebug "Proxy prefix required: ${atomicState.useProxyPrefix}";atomicState.cookie=null;atomicState.csrf=null;refreshCookie()
             if(atomicState.cookie&&atomicState.csrf){
                 atomicState.remove("reconnectDelay");emitEvent("commStatus","good","✅ REST connection established",null,true)
                 runIn(2,"refresh");runIn(4,"checkChildDriver");runIn(6,"openEventSocket");querySysInfo();updateChildAndGuestSummaries()
@@ -385,9 +389,8 @@ void webSocketMessage(String message){try{parse(message)}catch(e){logError"webSo
    Networking / Query / Helpers
    =============================== */
 private encodeSiteName(name){
-    try{
-		return URLEncoder.encode(name?:"default", "UTF-8")
-    }catch(Exception e){logWarn"encodeSiteName() failed, falling back to raw siteName: ${sanitizePayload(e.message)}";return name?:"default"}
+    try{return URLEncoder.encode(name?:"default","UTF-8").replace("+","%20")}
+    catch(e){logWarn"encodeSiteName() failed: ${sanitizePayload(e.message)}";return name?:"default"}
 }
 
 private void withDisconnectTimers(Closure c){def timers=atomicState.disconnectTimers?:[:];c(timers);atomicState.disconnectTimers=timers}
@@ -427,7 +430,7 @@ private void querySysInfo(){
     try{
         def resp=runQuery("stat/sysinfo",true);def sysinfo=resp?.data?.data?.getAt(0)
         if(!sysinfo)return
-        logDebug"🛈 sysinfo.udm_version = ${sysinfo.udm_version}"
+        logDebug"ⓘ sysinfo.udm_version = ${sysinfo.udm_version}"
         emitChangedEvent("deviceType",sysinfo.ubnt_device_type);emitChangedEvent("hostName",sysinfo.hostname)
         emitChangedEvent("UniFiOS",sysinfo.console_display_version);emitChangedEvent("network",sysinfo.version)
     }catch(e){logError"querySysInfo() failed: ${sanitizePayload(e.message)}"}
@@ -451,6 +454,7 @@ private void closeEventSocket(){
 }
 
 private void refreshCookie(){
+	logDebug "refreshCookie(): cookie=${atomicState.cookie?'present':'null'}, csrf=${atomicState.csrf?'present':'null'}, refreshing=${atomicState.refreshingCookie}"
     if(atomicState.refreshingCookie)return
     atomicState.refreshingCookie=true
     try{
@@ -471,6 +475,7 @@ private void refreshCookie(){
 def invalidateCookie(){logout();emitEvent("commStatus","unknown","Logged Out",null,true)}
 
 private void login(){
+	logDebug "login(): cookie=${cookie?'received':'missing'}, csrf=${csrf?'received':'missing'}"
     try{
         def resp=httpExec("POST",genParamsAuth("login"));def cookie=null,csrf=null
         resp?.headers?.each{
@@ -481,7 +486,7 @@ private void login(){
         }
         if(cookie){
             atomicState.cookie=cookie;atomicState.csrf=csrf;unschedule("refreshCookie");runIn(6600,"refreshCookie")
-            logDebug"Scheduled cookie refresh in 6600s";querySysInfo();logDebug"login() succeeded"
+            logDebug"Scheduled cookie refresh in 6600s";querySysInfo()
         }else{
             logWarn"login() did not receive a session cookie – UniFi may require multiple login attempts"
             throw new RuntimeException("Login did not return session cookie")
@@ -527,8 +532,9 @@ private genParamsAuth(op){
     [uri:uri,headers:['Content-Type':"application/json"],body:JsonOutput.toJson(bodyMap),timeout:(httpTimeout?:15)]
 }
 
-private def genParamsMain(suffix, body=null){
-	def params=[uri:getBaseURI()+getKnownClientsSuffix()+suffix,headers:[Cookie:atomicState.cookie,'X-CSRF-Token':atomicState.csrf],ignoreSSLIssues:true,timeout:(httpTimeout?:15)]
+private def genParamsMain(suffix,body=null){
+    def base=atomicState.useProxyPrefix?"proxy/network/api/s/${encodeSiteName(siteName)}/":"api/s/${encodeSiteName(siteName)}/";logDebug "API request → ${suffix}"
+    def params=[uri:getBaseURI()+base+suffix,headers:[Cookie:atomicState.cookie,'X-CSRF-Token':atomicState.csrf],ignoreSSLIssues:(settings?.ignoreSSLIssues?:true),timeout:(httpTimeout?:15)]
     if(body)params.body=body
     return params
 }
@@ -549,14 +555,13 @@ def httpExecWithAuthCheck(op,params,throwToCaller=false){
     }
     catch(groovyx.net.http.HttpResponseException e){
         def status=e.response?.status
-        if(status==401){
-            logWarn"Auth failed (401), refreshing cookie";refreshCookie()
-            if(atomicState.cookie){
-                params.headers["Cookie"]=atomicState.cookie;params.headers["X-CSRF-Token"]=atomicState.csrf
-                return httpExec(op,params)
-            }
-            return null
-        }
+        if(status==401&&!params._retry){
+		    logWarn "Auth failed (401), refreshing cookie";atomicState.cookie=null;atomicState.csrf=null;if(!atomicState.refreshingCookie)refreshCookie()
+		    if(atomicState.cookie){
+		        params.headers["Cookie"]=atomicState.cookie;params.headers["X-CSRF-Token"]=atomicState.csrf;params._retry=true;return httpExec(op,params)
+		    }
+		    return null
+		}
         if(status==403){
             if(!atomicState.authFailedUntil||now()>atomicState.authFailedUntil){logError"🔒 Authentication rejected (403). Check credentials.";atomicState.authFailedUntil=now()+60000}
             return null
@@ -574,16 +579,22 @@ private sanitizePayload(msg){if(!msg)return msg;def s=msg instanceof String?msg:
 /* ===============================
    Base URI & Endpoint Helpers
    =============================== */
-def getBaseURI(){def port=PortNum?:(atomicState.UniFiOS?443:8443);return "https://${controllerIP}:${port}/"}
-def getLoginSuffix(){atomicState.UniFiOS?"api/auth/login":"api/login"}
-def getLogoutSuffix(){atomicState.UniFiOS?"api/auth/logout":"api/logout"}
+def getBaseURI(){def port=PortNum?:443;return "https://${controllerIP}:${port}/"}
+def getLoginSuffix(){"api/auth/login"}
+def getLogoutSuffix(){"api/auth/logout"}
 def getKnownClientsSuffix(){def safeSite=encodeSiteName(siteName);return atomicState.UniFiOS?"proxy/network/api/s/${safeSite}/":"api/s/${safeSite}/"}
 private getWssURI(site){def safeSite=encodeSiteName(site);def port=PortNum?:(atomicState.UniFiOS?443:8443);return atomicState.UniFiOS?"wss://${controllerIP}:${port}/proxy/network/wss/s/${safeSite}/events":"wss://${controllerIP}:${port}/wss/s/${safeSite}/events"}
 
 /* ===============================
    Platform Detection
    =============================== */
-private Boolean isUniFiOS(){Boolean os=null;def p8443=PortNum?:8443;def p443=PortNum?:443
-	try{httpPost([uri:"https://${controllerIP}:${p8443}",ignoreSSLIssues:true,timeout:(httpTimeout?:15)]){if(it.status==302)os=false}}catch(e){}
-	try{httpPost([uri:"https://${controllerIP}:${p443}/proxy/network/api/s/default/self",ignoreSSLIssues:true,timeout:(httpTimeout?:15)]){if(it.status==200)os=true}}catch(groovyx.net.http.HttpResponseException e){if(e.response?.status==401)os=true}
-	return os}
+private Boolean detectProxyPrefix(){
+    def port=PortNum?:443
+    try{
+        httpGet([uri:"https://${controllerIP}:${port}/proxy/network/api/self",ignoreSSLIssues:(settings?.ignoreSSLIssues?:true),timeout:(httpTimeout?:15)]){resp->}
+        return true
+    }catch(groovyx.net.http.HttpResponseException e){
+        if(e.response?.status in [200,401])return true
+    }catch(ignore){}
+    return false
+}
