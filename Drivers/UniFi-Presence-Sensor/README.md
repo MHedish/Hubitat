@@ -157,5 +157,5 @@ Latest release: **v1.8.6.6 (2026-03-07)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTUyMDEzOTU4Nl19
+eyJoaXN0b3J5IjpbMTE5ODA1MTk2M119
 -->
