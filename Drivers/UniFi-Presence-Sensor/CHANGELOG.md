@@ -2,9 +2,12 @@
 All notable changes to the UniFi Presence Drivers will be documented in this file.
 
 ---
-## v1.8.6.0 (2026-02-19) – Stability and authentication hardening release
+## v1.8.6.6 (2026-03-07) – Stability and authentication hardening release
 
-### Parent Driver
+
+
+
+### v1.8.6.0
 - Corrected commStatus state handling during auth failures and rate limits
 - Eliminated recursive reinitialize/login storms
 - Implemented proper 429 backoff behavior
@@ -14,9 +17,7 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Refined logging controls and auto-disable routines
 - Completed additional structural cleanup for reliability
 - Various cosmetic improvements to event descriptions and logs
-
-### Child Driver
-- Updated description text for manual presence change
+- Updated description text for manual presence change in child driver
 
 ---
 
@@ -365,6 +366,6 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTY1NTU0MzQ0MCw0NTczMTg1MDAsLTkyMz
-M3ODE2OF19
+eyJoaXN0b3J5IjpbLTMzMTY1NTY1NywxNjU1NTQzNDQwLDQ1Nz
+MxODUwMCwtOTIzMzc4MTY4XX0=
 -->
