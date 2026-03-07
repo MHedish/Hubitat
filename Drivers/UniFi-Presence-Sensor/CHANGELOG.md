@@ -380,6 +380,6 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTQxODYzNDQwMiwxNjU1NTQzNDQwLDQ1Nz
-MxODUwMCwtOTIzMzc4MTY4XX0=
+eyJoaXN0b3J5IjpbLTE4MTIzODg3NjQsMTQxODYzNDQwMiwxNj
+U1NTQzNDQwLDQ1NzMxODUwMCwtOTIzMzc4MTY4XX0=
 -->
