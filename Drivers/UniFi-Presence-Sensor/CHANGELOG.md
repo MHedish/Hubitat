@@ -4,7 +4,25 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 ---
 ## v1.8.6.6 (2026-03-07) – Stability and authentication hardening release
 
+### Fixed
+-   **Authentication recovery issues** that could cause repeated `401 Unauthorized` errors after a controller session expired or was invalidated.
+-   **WebSocket reconnection failures** that occurred when the driver attempted to reuse a stale authentication cookie.
+-   **Driver initialization edge case** where an expired cookie could prevent a successful REST login during startup.
 
+### Improved
+
+-   `initialize()` now **clears stored authentication tokens before login**, ensuring a clean authentication cycle when the driver starts or reinitializes.
+-   `httpExec()` now **automatically retries requests once after a 401 response** by refreshing the authentication cookie and CSRF token.
+-   Improved **resilience to UniFi session invalidation**, such as when the same account logs in from another client.
+
+### Behavior Changes
+-   REST authentication is now explicitly reported as  
+    **“✅ REST connection established”** during initialization to distinguish it from the WebSocket connection.
+    
+
+### Notes
+
+-   These changes improve compatibility with **UniFi OS controllers and gateway-hosted Network applications** that aggressively invalidate API sessions.
 
 
 ### v1.8.6.0
@@ -366,6 +384,6 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTMzMTY1NTY1NywxNjU1NTQzNDQwLDQ1Nz
+eyJoaXN0b3J5IjpbMTY5MTU3MDgzNCwxNjU1NTQzNDQwLDQ1Nz
 MxODUwMCwtOTIzMzc4MTY4XX0=
 -->
