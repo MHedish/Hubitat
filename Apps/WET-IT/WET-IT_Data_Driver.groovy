@@ -30,13 +30,15 @@
 *  1.2.1.0  –– Begin update to publish next program.
 *  1.2.1.1  –– Added nextProgramEpoch, nextProgramName, and nextProgramText attributes.
 *  1.2.2.0  –– Version bump for public release.
+*  1.2.2.1  –– Added nextProgramSchedule attribute.
+*  1.2.2.2  –– Restored appInfo attribute; added runNextProgram() and skipNextProgram()
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "1.2.2.0"
-@Field static final String DRIVER_MODIFIED = "2026-03-05"
+@Field static final String DRIVER_VERSION  = "1.2.2.2"
+@Field static final String DRIVER_MODIFIED = "2026-03-08"
 @Field static final int MAX_ZONES = 48
 
 metadata {
@@ -56,6 +58,7 @@ metadata {
         attribute "activeProgramName","string"
         attribute "activeZone","number"
         attribute "activeZoneName","string"
+        attribute "appInfo","string"
         attribute "datasetJson","string"
 		attribute "dawn","string"
 		attribute "dayLength","string"
@@ -67,6 +70,7 @@ metadata {
 		attribute "freezeLowTemp","number"
 		attribute "nextProgramEpoch","number"
 		attribute "nextProgramName","string"
+		attribute "nextProgramScheduleJson","string"
 		attribute "nextProgramText","string"
         attribute "nightBegin","string"
 		attribute "nightEnd","string"
@@ -114,6 +118,8 @@ metadata {
 		        [name:"Percentage",description:"(1-100)",type:"NUMBER",constraints:[1..100],required:false]
 				]
 
+		command "runNextProgram"
+		command "skipNextProgram"
 		command "runProgram",["NUMBER"]
 		command "stopProgram"
 		command "runZone",["NUMBER"]
@@ -148,6 +154,20 @@ def refresh(){parent.runWeatherUpdate();logInfo"Manual refresh: summary=${device
 
 /* ============================= Core Commands ============================= */
 private String formatTime(Long s){Long m=(s/60L)as Long;Long r=(s%60L)as Long;return String.format("%d:%02d",m,r)}
+
+def runNextProgram(){
+	logDebug"runNextProgram()";boolean ok=false
+	try{ok=parent.runNextProgram()==true}
+	catch(e){logWarn"runNextProgram(): ${e.message}"}
+	if(!ok)emitEvent("switch",null,"runNextProgram() failed",null,true)
+}
+
+def skipNextProgram(){
+	logDebug"skipNextProgram()";boolean ok=false
+	try{ok=parent.skipNextProgram()==true}
+	catch(e){logWarn"skipNextProgram(): ${e.message}"}
+	if(!ok)emitEvent("switch",null,"skipNextProgram() failed",null,true)
+}
 
 def runProgram(p){
 	logDebug"runProgram(${p})";boolean ok=false
