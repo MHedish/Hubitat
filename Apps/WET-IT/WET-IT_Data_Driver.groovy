@@ -32,13 +32,14 @@
 *  1.2.2.0  –– Version bump for public release.
 *  1.2.2.1  –– Added nextProgramSchedule attribute.
 *  1.2.2.2  –– Restored appInfo attribute; added runNextProgram() and skipNextProgram()
+*  1.2.3.0  –– Version bump for public release
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "1.2.2.2"
-@Field static final String DRIVER_MODIFIED = "2026-03-08"
+@Field static final String DRIVER_VERSION  = "1.2.3.0"
+@Field static final String DRIVER_MODIFIED = "2026-03-10"
 @Field static final int MAX_ZONES = 48
 
 metadata {
