@@ -193,6 +193,7 @@
 ## ☀️ 1.2.3.0 — Public Release
 
 **App v1.2.3.0 / Driver v1.2.3.0**
+- Corrected persistence bug in weather alert summary.
 -  Added nextProgramScheduleJson
 - Added child driver commands:
 	- runNextProgram()
@@ -201,8 +202,8 @@
 Added the ability to immediately run the next scheduled program or to skip over the next scheduled program(s).
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMzk3NDYxMjI3LC0xNzI1MTIxODc4LC0xOT
-I2NDUxMjMsMTIzNDYyNjgxMywxMTcyNTg3MTk5LDUyMzAyODIz
-LC0xMTc0MjMxOTE2LDEzODMzODA0NDYsMTcyNTI4NDU2OSwtMT
-AyOTk3ODQ3LC04MTIwNzIzNTgsMTg0NzAzNzgwM119
+eyJoaXN0b3J5IjpbLTkyNTk2NjM5NywtMTcyNTEyMTg3OCwtMT
+kyNjQ1MTIzLDEyMzQ2MjY4MTMsMTE3MjU4NzE5OSw1MjMwMjgy
+MywtMTE3NDIzMTkxNiwxMzgzMzgwNDQ2LDE3MjUyODQ1NjksLT
+EwMjk5Nzg0NywtODEyMDcyMzU4LDE4NDcwMzc4MDNdfQ==
 -->
