@@ -36,7 +36,9 @@ Added two new commands to the child driver:
 - runNextProgram()
 - skipNextProgram()
 
-These allow you to skip over the next scheduled 
+The runNextProgram() command will immediately run the next scheduled program rather than wait for the timed schedule.
+
+The skipThese allow you to skip over the next scheduled program (per the JSON and local attributes) without needing to disable the program. 
 
 ### 🆕 *What’s Was New in v1.2.2.0* 🆕
 
@@ -359,7 +361,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTI2NjkwOTc2NywtODUyMDc4ODgzLDE1MD
+eyJoaXN0b3J5IjpbMTk1ODAzNzgwMCwtODUyMDc4ODgzLDE1MD
 E3MzE1NTgsOTU2NTM5MDM5LDY4NDc4ODQ5MiwxNDk3NDk4MjA5
 LC0xNzA2NDA2MzA0LDcwNjM2Nzg1MCwtMjA0NTA4MzE0MywyMT
 E0NjA3MzYyLDE2NDI1MjMxMDQsLTEyMzUwNzc0MTgsLTE4NzA4
