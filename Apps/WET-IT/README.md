@@ -3,13 +3,13 @@
 *A Hubitat App for Weather-Based Smart Irrigation Using Real Evapotranspiration (ET) Modeling & Scheduling*
 
 ![Platform](https://img.shields.io/badge/Platform-Hubitat-blue) 
-![Version](https://img.shields.io/badge/Version-1.2.2.0-green?t=20260205)
+![Version](https://img.shields.io/badge/Version-1.2.3.0-green?t=20260205)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
-**App Version:** 1.2.2.0
-**Driver Version:** 1.2.2.0
+**App Version:** 1.2.3.0
+**Driver Version:** 1.2.3.0
 **Echo Version:** 1.1.0.0
-**Release Date:** 2026-03-05
+**Release Date:** 2026-03-10
 
 ---
 
@@ -26,6 +26,13 @@ Supports up to 48 zones and 16 schedules!
 WET-IT provides **per-zone correction factors** that any Hubitat automation (Rule Machine, webCoRE, Node-RED, etc.) can use to control irrigation valves, pumps, or relays.
 
 ### 💡 Highlights
+
+### 🆕 *What’s New in v1.2.3.0* 🆕
+
+Added next scheduled program attributes:
+- nextProgramScheduleJson
+- nextProgramName
+- nextProgramText
 
 ### 🆕 *What’s New in v1.2.2.0* 🆕
 
@@ -348,10 +355,10 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTg1MjA3ODg4MywxNTAxNzMxNTU4LDk1Nj
-UzOTAzOSw2ODQ3ODg0OTIsMTQ5NzQ5ODIwOSwtMTcwNjQwNjMw
-NCw3MDYzNjc4NTAsLTIwNDUwODMxNDMsMjExNDYwNzM2MiwxNj
-QyNTIzMTA0LC0xMjM1MDc3NDE4LC0xODcwODQyNzcsMTM3OTQz
-NjI1MywtMTU2MjU1ODMwOSwxMjI2MjYxNzcyLDEzNzU1OTcxMi
-wyMTE5ODU4MjIzXX0=
+eyJoaXN0b3J5IjpbLTE1MDgwMjkzOTIsLTg1MjA3ODg4MywxNT
+AxNzMxNTU4LDk1NjUzOTAzOSw2ODQ3ODg0OTIsMTQ5NzQ5ODIw
+OSwtMTcwNjQwNjMwNCw3MDYzNjc4NTAsLTIwNDUwODMxNDMsMj
+ExNDYwNzM2MiwxNjQyNTIzMTA0LC0xMjM1MDc3NDE4LC0xODcw
+ODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2MjYxNz
+cyLDEzNzU1OTcxMiwyMTE5ODU4MjIzXX0=
 -->
