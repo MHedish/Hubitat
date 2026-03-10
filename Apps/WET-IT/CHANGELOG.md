@@ -178,10 +178,15 @@
     -   Hardened, policy-driven weather handling
     -   Fully separated observation vs. ET forecast data paths
 -   Documentation and changelog updated to reflect current system behavior and design guarantees.
+- 
+## ☀️ 1.2.0.0 — Public Release
+
+**App v1.2.0.0 / Driver v1.2.0.0**
+-   Added astronomical data attributes.
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE3MjUxMjE4NzgsLTE5MjY0NTEyMywxMj
-M0NjI2ODEzLDExNzI1ODcxOTksNTIzMDI4MjMsLTExNzQyMzE5
-MTYsMTM4MzM4MDQ0NiwxNzI1Mjg0NTY5LC0xMDI5OTc4NDcsLT
-gxMjA3MjM1OCwxODQ3MDM3ODAzXX0=
+eyJoaXN0b3J5IjpbNDYzNDEyNzEsLTE3MjUxMjE4NzgsLTE5Mj
+Y0NTEyMywxMjM0NjI2ODEzLDExNzI1ODcxOTksNTIzMDI4MjMs
+LTExNzQyMzE5MTYsMTM4MzM4MDQ0NiwxNzI1Mjg0NTY5LC0xMD
+I5OTc4NDcsLTgxMjA3MjM1OCwxODQ3MDM3ODAzXX0=
 -->
