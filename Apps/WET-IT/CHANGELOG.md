@@ -184,9 +184,20 @@
 **App v1.2.0.0 / Driver v1.2.0.0**
 -   Added astronomical data attributes.
 
+## ☀️ 1.2.2.1 — Maintenance Release
+
+**App v1.2.2.1 / Driver v1.2.2.1**
+-   Added nextProgramEpoch, nextProgramName, and nextProgramText attributes.
+- Added nextProgramSchedule attribute.
+
+## ☀️ 1.2.3.0 — Public Release
+
+**App v1.2.3.0 / Driver v1.2.0.0**
+-   Added astronomical data attributes.
+
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNDYzNDEyNzEsLTE3MjUxMjE4NzgsLTE5Mj
-Y0NTEyMywxMjM0NjI2ODEzLDExNzI1ODcxOTksNTIzMDI4MjMs
-LTExNzQyMzE5MTYsMTM4MzM4MDQ0NiwxNzI1Mjg0NTY5LC0xMD
-I5OTc4NDcsLTgxMjA3MjM1OCwxODQ3MDM3ODAzXX0=
+eyJoaXN0b3J5IjpbLTE5NjAzNzgxNDgsLTE3MjUxMjE4NzgsLT
+E5MjY0NTEyMywxMjM0NjI2ODEzLDExNzI1ODcxOTksNTIzMDI4
+MjMsLTExNzQyMzE5MTYsMTM4MzM4MDQ0NiwxNzI1Mjg0NTY5LC
+0xMDI5OTc4NDcsLTgxMjA3MjM1OCwxODQ3MDM3ODAzXX0=
 -->
