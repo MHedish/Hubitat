@@ -40,7 +40,9 @@ The runNextProgram() command will immediately run the next scheduled program rat
 
 The skipNextProgram() allows you to skip over the next scheduled program (per the JSON and local attributes) without needing to disable the program.
 
-You might want to skip the next scheduled time because of a broken valve or perhaps your planning to have an event in the backyward and don't want the grass watered this one tine
+You might want to skip the next scheduled time because of a broken valve or perhaps your planning to have an event in the backyard and don't want the grass watered this one time.  The advantage here is you won't need to remember to turn the program back on.
+
+Skips can also be stacked so you can temporarily skip multiple programs in the schedule.
 
 ### 🆕 *What’s Was New in v1.2.2.0* 🆕
 
@@ -363,10 +365,10 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTc0NjQzMDY1NSwtODUyMDc4ODgzLDE1MD
-E3MzE1NTgsOTU2NTM5MDM5LDY4NDc4ODQ5MiwxNDk3NDk4MjA5
-LC0xNzA2NDA2MzA0LDcwNjM2Nzg1MCwtMjA0NTA4MzE0MywyMT
-E0NjA3MzYyLDE2NDI1MjMxMDQsLTEyMzUwNzc0MTgsLTE4NzA4
-NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4MzA5LDEyMjYyNjE3Nz
-IsMTM3NTU5NzEyLDIxMTk4NTgyMjNdfQ==
+eyJoaXN0b3J5IjpbNDYxNDUzMDk1LC04NTIwNzg4ODMsMTUwMT
+czMTU1OCw5NTY1MzkwMzksNjg0Nzg4NDkyLDE0OTc0OTgyMDks
+LTE3MDY0MDYzMDQsNzA2MzY3ODUwLC0yMDQ1MDgzMTQzLDIxMT
+Q2MDczNjIsMTY0MjUyMzEwNCwtMTIzNTA3NzQxOCwtMTg3MDg0
+Mjc3LDEzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2MTc3Mi
+wxMzc1NTk3MTIsMjExOTg1ODIyM119
 -->
