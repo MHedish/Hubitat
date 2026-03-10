@@ -2,10 +2,10 @@
 # 🌿 Weather-Enhanced Time-based Irrigation Tuning (WET-IT)
 
 ## Full Documentation
-*Comprehensive Technical & Integration Reference (App v1.2.2.0 / Data Driver v1.2.2.0 / Echo Driver v1.1.0.0)*
+*Comprehensive Technical & Integration Reference (App v1.2.3.0 / Data Driver v1.3.0.0 / Echo Driver v1.1.0.0)*
 
 ![Platform](https://img.shields.io/badge/Platform-Hubitat-blue)
-![Version](https://img.shields.io/badge/Version-1.2.2.0-green?t=20260305)
+![Version](https://img.shields.io/badge/Version-1.2.3.0-green?t=20260305)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
 WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.
@@ -1029,6 +1029,8 @@ This JSON mirrors the internal data model and can be parsed directly by Rule Mac
 | **`markZoneWatered(zone, percent)`** | *number, number (optional)* | Marks a specific zone as watered and resets its ET depletion. Optionally specify a percent (e.g., `50`) to partially refill soil memory. |
 | **`markAllZonesWatered()`** | none | Resets all zones’ ET data and soil memory, as if the entire system has been watered. |
 | **`disableDebugLoggingNow()`** | none | Turns off driver debug logging immediately. |
+| **`disableDebugLoggingNow()`** | none | Turns off driver debug logging immediately. |
+| **`disableDebugLoggingNow()`** | none | Turns off driver debug logging immediately. |
 
 ---
 
@@ -1859,11 +1861,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE3MDU2MTMzNjgsMTQ3MTkyMjc5NiwtMT
-U3MTQ2ODkyMCwtMjk3NjU5NjcxLDE5NzgwOTg1NTcsMTUwNzM4
-NTU5OSwyOTE5OTEyMTcsLTEwMjU2NjQ2MTUsLTIxMDUxMDc5OS
-wtMTkzMTU2NTgyNSwtMTM0OTczNTM5OCwyMDc2NTEzNTA5LC0x
-ODYyNDI0OTk3LC02NzY0Njg0NTcsLTE2ODE3OTc2MDEsLTYyNz
-k0MTM0MywtMTYzODk0MDM5NCwtMjA2Mzg5MTA1NCwtMjM1MDIy
-MjM3LDE5MDc4NzI2MzFdfQ==
+eyJoaXN0b3J5IjpbLTEzOTI3NDcwMjksLTE3MDU2MTMzNjgsMT
+Q3MTkyMjc5NiwtMTU3MTQ2ODkyMCwtMjk3NjU5NjcxLDE5Nzgw
+OTg1NTcsMTUwNzM4NTU5OSwyOTE5OTEyMTcsLTEwMjU2NjQ2MT
+UsLTIxMDUxMDc5OSwtMTkzMTU2NTgyNSwtMTM0OTczNTM5OCwy
+MDc2NTEzNTA5LC0xODYyNDI0OTk3LC02NzY0Njg0NTcsLTE2OD
+E3OTc2MDEsLTYyNzk0MTM0MywtMTYzODk0MDM5NCwtMjA2Mzg5
+MTA1NCwtMjM1MDIyMjM3XX0=
 -->
