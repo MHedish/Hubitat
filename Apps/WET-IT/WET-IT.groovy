@@ -78,13 +78,14 @@
 *  1.2.2.7   –– Reworked skipNextProgram() to skip a single scheduled instance without affecting program cadence.
 *  1.2.2.8   –– Reworked skip logic to support multiple skipped program instances using atomicState list; added transitional “recalculating” UI state and improved Next Program display feedback.
 *  1.2.2.9   –– UI improvements; updated detectSettingsChange(); clear skipProgramInstances when a program is deleted.
+*  1.2.3.0   –– Version bump for public release.
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="1.2.2.9"
+@Field static final String APP_VERSION="1.2.3.0"
 @Field static final String APP_MODIFIED="2026-03-10"
 @Field static final String JSON_SCHEMA="wetit.unified.v1"
 @Field static final String REPO_ROOT="https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT"
@@ -102,7 +103,7 @@ import groovy.json.JsonOutput
 @Field static def cachedChild=null
 @Field static Integer cachedZoneCount=null
 @Field static final Map CHILD_DRIVERS=[
-    data:[name:"WET-IT Data",minVer:"1.2.2.2",required:true],
+    data:[name:"WET-IT Data",minVer:"1.2.3.0",required:true],
     echo:[name:"WET-IT Echo",minVer:"1.1.0.0",required:false]
 ]
 
