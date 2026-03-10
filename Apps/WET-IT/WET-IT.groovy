@@ -69,14 +69,23 @@
 *  1.2.1.15  –– Final version of getNextScheduledProgram(), best performance ~40ms.
 *  1.2.1.16  –– Updated verifySystem() to include astronomical cache validation and update to nextProgram
 *  1.2.2.0   –– Version bump for public release.
+*  1.2.2.1   –– Rename getNextScheduledProgram() → calcNextProgramEvent() for clarification.
+*  1.2.2.2   –– Created schedule map for JSON publishing; correcced persisent activeAlerts attribute when no alerts exist.
+*  1.2.2.3   –– Restored publshing nextProgram* to child unconditionally.
+*  1.2.2.4   –– Added runNextProgram and skipNextProgram.
+*  1.2.2.5   –– Added weather alert notifications; added runNextProgram and skipNextProgram UI.
+*  1.2.2.6   –– Reverted
+*  1.2.2.7   –– Reworked skipNextProgram() to skip a single scheduled instance without affecting program cadence.
+*  1.2.2.8   –– Reworked skip logic to support multiple skipped program instances using atomicState list; added transitional “recalculating” UI state and improved Next Program display feedback.
+*  1.2.2.9   –– UI improvements; updated detectSettingsChange(); clear skipProgramInstances when a program is deleted.
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="1.2.2.0"
-@Field static final String APP_MODIFIED="2026-03-05"
+@Field static final String APP_VERSION="1.2.2.9"
+@Field static final String APP_MODIFIED="2026-03-10"
 @Field static final String JSON_SCHEMA="wetit.unified.v1"
 @Field static final String REPO_ROOT="https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT"
 @Field static final String RAW_ROOT="https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT"
@@ -93,7 +102,7 @@ import groovy.json.JsonOutput
 @Field static def cachedChild=null
 @Field static Integer cachedZoneCount=null
 @Field static final Map CHILD_DRIVERS=[
-    data:[name:"WET-IT Data",minVer:"1.2.2.0",required:true],
+    data:[name:"WET-IT Data",minVer:"1.2.2.2",required:true],
     echo:[name:"WET-IT Echo",minVer:"1.1.0.0",required:false]
 ]
 
@@ -241,6 +250,36 @@ def mainPage(){
 			"<p>Changes here directly affect how WET-IT calculates run order, timing windows, and weather safety overrides across all irrigation cycles.</p>"
 		)
 		buildProgramDirectory()
+		section(){
+			if(settings.schedulingActive){
+				def c=getDataChild(true);nextName=c?.currentValue('nextProgramName');def ap=atomicState.activeProgram;def nextText=c?.currentValue('nextProgramText')
+				def nextEvt=(nextName=="recalculating")?calcNextProgramEvent():null;def btnName=nextEvt?.name?:((nextName&&nextName!="recalculating")?nextName:"Next Program")
+				def disp=(nextName=="recalculating")?"<font color='red'>Recalculating...</font>":"<font color='#3057C2'>${nextName?:'Unknown'} — ${nextText?:'Unknown'}</font>"
+				def skipBlocked=false
+				if(settings.resetSkipNextConfirm){
+					def next=calcNextProgramEvent()
+					if(next){
+						def testList=(atomicState.skipProgramInstances?:[])+[[program:next.program,epoch:next.epoch]]
+						if(!calcNextProgramEvent(testList))skipBlocked=true
+					}
+				}
+				section("🗓️ Next Scheduled Program<br>${disp}",hideable:true,hidden:false){
+					if(!ap){
+			            def runTitle=settings.resetRunNextConfirm?"⚠️ Confirm Run $btnName Now":"▶️ Run $btnName Now"
+			            if(!settings.resetSkipNextConfirm)input"btnRunNextProgram","button",title:runTitle,width:3
+			            if(settings.resetRunNextConfirm)input"btnCancelRunNextProgram","button",title:"❌ Cancel"
+					}
+			        def skipTitle=settings.resetSkipNextConfirm?"⚠️ Confirm Skip $btnName. (Cannot be Undone)":"⏭️ Skip $btnName"
+					if(!settings.resetRunNextConfirm){
+						if(settings.resetSkipNextConfirm&&skipBlocked){paragraph"<font color='maroon'>⚠️ Cannot skip $btnName</font> — all upcoming programs have already been skipped."}
+						else{input"btnSkipNextProgram","button",title:skipTitle,width:3}
+					}
+					if(settings.resetSkipNextConfirm)
+					input"btnCancelSkipNextProgram","button",title:"❌ Cancel"
+					if(nextName=="recalculating")input"btnNextProgramRefresh","button",title:"🔄 Refresh",width:3
+			    detectSettingsChange("MainPage")}
+			}else{paragraph"<i>Disabled</i>"}
+		}
 		section("⚙️ Program Settings (Advanced)",hideable:true,hidden:true){
 		input"progMinTime","number",title:"Minimum program runtime (seconds). Default: 60 Range: (5–120)<br><small>A program will be skipped if its total adjusted runtime for all zones is less than this amount.</small>",range:"5..120",width:5,defaultValue:60,submitOnChange:true
 		def minTime=Math.max(5,Math.min(settings.progMinTime?:60,120));if(minTime)app.updateSetting("progMinTime",[value:minTime,type:"number"])
@@ -371,7 +410,6 @@ def mainPage(){
 			paragraph""
 			if(atomicState.tempDiagMsg){paragraph "<b>Last Diagnostic:</b> ${atomicState.tempDiagMsg}";atomicState.tempDiagMsg="&nbsp;"}
 			def c=getDataChild(true);def loc=c?.currentValue('wxLocation');def wxKey=c?.currentValue('wxSource');def wx=WX_LABEL[wxKey]?:wxKey?:'n/a'
-			if(settings.schedulingActive){paragraph"📅 Next Program → ${c?.currentValue('nextProgramName')?:'Unknown'} — ${c?.currentValue('nextProgramText')?:'Unknown'}"}else{paragraph"📅 Scheduling Disabled"}
 			paragraph "🌦️ Weather → ${loc?loc+'':'Unknown'} — ${wx} Forecast: ${c?.currentValue('wxTimestamp')?:'n/a'}, Checked: ${c?.currentValue('wxChecked')?:'n/a'}"
 			def sd=atomicState.solarData?.days?.get(new Date().format(DATE_FMT,location.timeZone))?:[:]
 			if(sd){
@@ -489,7 +527,7 @@ def zonePage(params){
 			input"name_${z}","text",title:"Zone Name (optional)<br><small>Friendly name for this zone.</small>",width:4,required:false
 			input"zoneActive_${z}","bool",title:"Zone Active?",defaultValue:true,submitOnChange:true
 			paragraph ""
-            input"baseTimeValue_${z}","number",title:"${htmlTitleLink('Base Runtime',"${REPO_ROOT}/DOCUMENTATION.md#-base-runtime-reference","#A0522D")}<br><small>Enter the normal irrigation time for this zone (0–360).</small>",range:"0..360", width:4,required:false,submitOnChange:true
+            input"baseTimeValue_${z}","number",title:"${htmlTitleLink('Base Runtime',"${REPO_ROOT}/DOCUMENTATION.md#-base-runtime-reference","#A0522D")}<br><small>Enter the normal irrigation time for this zone (0–360).</small>",range:"0..360",width:4,required:false,submitOnChange:true
 			def unit=settings["baseTimeUnit_${z}"]?:"min";def val=settings["baseTimeValue_${z}"]?:0;def totalSeconds=(unit=="min")?(val*60):val
 			def hh=(int)(totalSeconds/3600);def mm=(int)((totalSeconds%3600)/60);def ss=(int)(totalSeconds%60)
 			def formatted=sprintf("%02d:%02d:%02d", hh, mm, ss);def label=(unit=="min")?"🕒 Minutes":"⏱️ Seconds"
@@ -680,25 +718,30 @@ def appButtonHandler(String btn){
     if(btn=="btnGetSoilType"){getSoilTypeFromUSDA();return}
 	if(btn=="btnCancelUsdaCopy"){app.updateSetting("usdaCopyConfirm",[value:false,type:"bool"]);atomicState.usdaSoilMsg="";return}
 	if(btn=="btnCopyUsdaSoil"){if(!settings.usdaCopyConfirm){app.updateSetting("usdaCopyConfirm",[value:true,type:"bool"]);return};def soil=atomicState?.defaultSoilType?.trim();def valid=["Sand","Loamy Sand","Sandy Loam","Loam","Clay Loam","Silty Clay","Clay"];if(soil&&valid.contains(soil)){(1..cachedZoneCount).each{z->app.updateSetting("soil_${z}",[value:soil,type:"enum"])};app.clearSetting("usdaCopyConfirm");atomicState.usdaSoilMsg="✅ All zone soil types set to ${soil} (USDA default).";logInfo"${atomicState.usdaSoilMsg}"}else{atomicState.usdaSoilMsg="⚠️ Invalid USDA soil type '${soil?:'unknown'}'; copy aborted.";logWarn"${atomicState.usdaSoilMsg}"};return}
-	if(btn.startsWith("btnDeleteZone_")){Integer z=(btn-"btnDeleteZone_")as Integer;def a=atomicState.activeProgram;if(a&&a.zones*.id?.contains(z)){def pname=a.name?:("Program ${a.program}");atomicState.lastZoneMsg="<b>⚠️ Cannot delete Zone ${z} — part of ${pname} currently running.</b> Stop program before deleting.";return};if(!settings["deleteZoneConfirm_${z}"]){app.updateSetting("deleteZoneConfirm_${z}",[value:true,type:"bool"]);return};deleteZone(z);app.removeSetting("deleteZoneConfirm_${z}");atomicState.lastZoneMsg="<b>✅ Zone ${z} deleted successfully.</b> Press ${htmlHeButton('Done')} to return to the zone list.";return}
-	if(btn.startsWith("btnCancelDeleteZone_")){Integer z=(btn-"btnCancelDeleteZone_")as Integer;app.updateSetting("deleteZoneConfirm_${z}",[value:false,type:"bool"]);return}
-	if(btn.startsWith("btnDeleteProgram_")){Integer p=(btn-"btnDeleteProgram_")as Integer;if(atomicState.activeProgram||atomicState.manualZone){def pname=settings["programName_${p}"]?:"Program ${p}";def running=atomicState.activeProgram?("Program ${atomicState.activeProgram.program}:${atomicState.activeProgram.name}"):"a manual zone";atomicState.lastProgramMsg="<b>⚠️ Cannot delete ${pname} while ${running} is running.</b> Stop all active programs/zones before deleting.";return};if(!settings["deleteProgConfirm_${p}"]){app.updateSetting("deleteProgConfirm_${p}",[value:true,type:"bool"]);return};deleteProgram(p);app.removeSetting("deleteProgConfirm_${p}");atomicState.lastProgramMsg="<b>✅ Program deleted successfully.</b> Press ${htmlHeButton('Done')} to return to the program list or continue editing ${settings["programName_${p}"]?:'Program '+p}.";return}
-	if(btn.startsWith("btnCancelDeleteProg_")){Integer p=(btn-"btnCancelDeleteProg_")as Integer;app.updateSetting("deleteProgConfirm_${p}",[value:false,type:"bool"]);return}
-	if(btn.startsWith("resetAdv_")){Integer z=(btn-"resetAdv_")as Integer;resetAdvancedForZone(z);return}
 	if(btn=="btnResetAllSoil"){if(!settings.resetAllConfirm){app.updateSetting("resetAllConfirm",[value:true,type:"bool"]);return};resetAllSoilMemory();app.updateSetting("resetAllConfirm",[value:false,type:"bool"]);return}
 	if(btn=="btnCancelResetAll"){app.updateSetting("resetAllConfirm",[value:false,type:"bool"]);return}
-	if(btn.startsWith("btnResetSoil_")){def z=(btn-"btnResetSoil_")as Integer;if(!settings["soilResetConfirm_${z}"]){app.updateSetting("soilResetConfirm_${z}",[value:true,type:"bool"]);return};resetSoilForZone(z);app.updateSetting("soilResetConfirm_${z}",[value:false,type:"bool"]);return}
-	if(btn.startsWith("btnCancelReset_")){def z=(btn-"btnCancelReset_")as Integer;app.updateSetting("soilResetConfirm_${z}",[value:false,type:"bool"]);return}
-	if(btn.startsWith("manualStart_")){Integer z=(btn-"manualStart_")as Integer;startZoneManually([zone:z])}
-	if(btn.startsWith("manualStop_")){Integer z=(btn-"manualStop_")as Integer;stopZoneManually([zone:z])}
-	if(btn.startsWith("manualProgramStart_")){Integer p=(btn-"manualProgramStart_")as Integer;runProgram([program:p,manual:true])}
-	if(btn.startsWith("manualProgramStop_")){stopActiveProgram()}
     if(btn=="btnDisableDebug"){disableDebugLoggingNow();return}
     if(btn=="btnRunWeatherUpdate"){def wx=fetchWeather(true);if(wx?.failed){def msg="❌ Unable to retrieve weather update (${wx.source})";logWarn msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return};runWeatherUpdate();def msg=getDataChild(true)?.currentValue("summaryText")?:'⚠️ No ET summary available';logInfo"✅ ET run completed: ${msg}";app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
 	if(btn=="btnVerifyChild"){def ok=verifyDataChild();def msg=ok?"✅ Data child verified successfully.":"⚠️ Data child verification failed. Check logs.";logInfo msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
 	if(btn=="btnVerifySystem"){def ok=verifySystem(true);def msg=ok?"✅ System verification passed.":"⚠️ System verification failed. See logs for details.";logInfo msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
+	if(btn=="btnRunNextProgram"){if(!settings.resetRunNextConfirm){app.updateSetting("resetRunNextConfirm",[value:true,type:"bool"]);return};runNextProgram();app.updateSetting("resetRunNextConfirm",[value:false,type:"bool"]);return}
+	if(btn=="btnCancelRunNextProgram"){app.updateSetting("resetRunNextConfirm",[value:false,type:"bool"]);return}
+	if(btn=="btnSkipNextProgram"){if(!settings.resetSkipNextConfirm){app.updateSetting("resetSkipNextConfirm",[value:true,type:"bool"]);return};skipNextProgram();app.updateSetting("resetSkipNextConfirm",[value:false,type:"bool"]);return}
+	if(btn=="btnNextProgramRefresh"){return}
+	if(btn=="btnCancelSkipNextProgram"){app.updateSetting("resetSkipNextConfirm",[value:false,type:"bool"]);return}
+	if(btn.startsWith("btnDeleteZone_")){Integer z=(btn-"btnDeleteZone_")as Integer;def a=atomicState.activeProgram;if(a&&a.zones*.id?.contains(z)){def pname=a.name?:("Program ${a.program}");atomicState.lastZoneMsg="<b>⚠️ Cannot delete Zone ${z} — part of ${pname} currently running.</b> Stop program before deleting.";return};if(!settings["deleteZoneConfirm_${z}"]){app.updateSetting("deleteZoneConfirm_${z}",[value:true,type:"bool"]);return};deleteZone(z);app.removeSetting("deleteZoneConfirm_${z}");atomicState.lastZoneMsg="<b>✅ Zone ${z} deleted successfully.</b> Press ${htmlHeButton('Done')} to return to the zone list.";return}
+	if(btn.startsWith("btnCancelDeleteZone_")){Integer z=(btn-"btnCancelDeleteZone_")as Integer;app.updateSetting("deleteZoneConfirm_${z}",[value:false,type:"bool"]);return}
+	if(btn.startsWith("btnDeleteProgram_")){Integer p=(btn-"btnDeleteProgram_")as Integer;if(atomicState.activeProgram||atomicState.manualZone){def pname=settings["programName_${p}"]?:"Program ${p}";def running=atomicState.activeProgram?("Program ${atomicState.activeProgram.program}:${atomicState.activeProgram.name}"):"a manual zone";atomicState.lastProgramMsg="<b>⚠️ Cannot delete ${pname} while ${running} is running.</b> Stop all active programs/zones before deleting.";return};if(!settings["deleteProgConfirm_${p}"]){app.updateSetting("deleteProgConfirm_${p}",[value:true,type:"bool"]);return};deleteProgram(p);app.removeSetting("deleteProgConfirm_${p}");atomicState.lastProgramMsg="<b>✅ Program deleted successfully.</b> Press ${htmlHeButton('Done')} to return to the program list or continue editing ${settings["programName_${p}"]?:'Program '+p}.";calcProgramDurations();return}
+	if(btn.startsWith("btnCancelDeleteProg_")){Integer p=(btn-"btnCancelDeleteProg_")as Integer;app.updateSetting("deleteProgConfirm_${p}",[value:false,type:"bool"]);return}
+	if(btn.startsWith("resetAdv_")){Integer z=(btn-"resetAdv_")as Integer;resetAdvancedForZone(z);return}
+	if(btn.startsWith("btnResetSoil_")){def z=(btn-"btnResetSoil_")as Integer;if(!settings["soilResetConfirm_${z}"]){app.updateSetting("soilResetConfirm_${z}",[value:true,type:"bool"]);return};resetSoilForZone(z);app.updateSetting("soilResetConfirm_${z}",[value:false,type:"bool"]);return}
+	if(btn.startsWith("btnCancelReset_")){def z=(btn-"btnCancelReset_")as Integer;app.updateSetting("soilResetConfirm_${z}",[value:false,type:"bool"]);return}
+	if(btn.startsWith("manualStart_")){Integer z=(btn-"manualStart_")as Integer;startZoneManually([zone:z]);return}
+	if(btn.startsWith("manualStop_")){Integer z=(btn-"manualStop_")as Integer;stopZoneManually([zone:z]);return}
+	if(btn.startsWith("manualProgramStart_")){Integer p=(btn-"manualProgramStart_")as Integer;runProgram([program:p,manual:true]);return}
+	if(btn.startsWith("manualProgramStop_")){stopActiveProgram();return}
 	if(btn.startsWith("btnToggleUnit_")){def z=(btn-"btnToggleUnit_")as Integer;def current=settings["baseTimeUnit_${z}"]?:"min";def newUnit=(current=="min")?"s":"min";app.updateSetting("baseTimeUnit_${z}",[value:newUnit,type:"enum"]);return}
-	if(btn.startsWith("manualProgram_")){Integer p=(btn-"manualProgram_")as Integer;runProgram([program:p,manual:true])}
+	if(btn.startsWith("manualProgram_")){Integer p=(btn-"manualProgram_")as Integer;runProgram([program:p,manual:true]);return}
 	if(btn=="btnTestWx"){
 	    logInfo"Manual weather API test requested"
 	    lat=(state.geo?.lat).setScale(1,BigDecimal.ROUND_HALF_UP);lon=(state.geo?.lon).setScale(1,BigDecimal.ROUND_HALF_UP)
@@ -708,10 +751,8 @@ def appButtonHandler(String btn){
 	        switch(src){
 	            case"openweather":
 	                if(!owmApiKey){msg="❌ OpenWeather: Missing API key";break}
-	                httpGet([uri:"https://api.openweathermap.org/data/3.0/onecall",
-	                         query:[lat:lat,lon:lon,appid:owmApiKey,exclude:"minutely,hourly,alerts",units:"imperial"]]){
-	                    r->
-	                    if(r.status!=200){msg="❌ OpenWeather: HTTP ${r.status} error";return}
+	                httpGet([uri:"https://api.openweathermap.org/data/3.0/onecall",query:[lat:lat,lon:lon,appid:owmApiKey,exclude:"minutely,hourly,alerts",units:"imperial"]]){
+	                    r->if(r.status!=200){msg="❌ OpenWeather: HTTP ${r.status} error";return}
 	                    msg=(r.status==200&&r.data?.current)?"✅ OpenWeather API key validated successfully":"❌ OpenWeather API key invalid or no data"
 	                };break
 	            case"tempest":
@@ -738,8 +779,7 @@ def appButtonHandler(String btn){
 	                httpGet([uri:"https://api.tomorrow.io/v4/weather/forecast",
 	                         query:[location:"${lat},${lon}",timesteps:"1d",apikey:tioApiKey],
 	                         headers:["User-Agent":"Hubitat-WET-IT"]]){
-	                    r->
-	                    if(r.status!=200){msg="❌ Tomorrow.io: HTTP ${r.status} error";return}
+	                    r->if(r.status!=200){msg="❌ Tomorrow.io: HTTP ${r.status} error";return}
 	                    msg=(r.status==200&&r.data?.timelines)?"✅ Tomorrow.io API key validated successfully":"❌ Tomorrow.io API key invalid or no data"
 	                };break
 	            case"noaa":
@@ -832,8 +872,7 @@ private void updateSoilMemory(){
     try{
         def zoneMap=[:]
         (1..getZoneCountCached()).each{z->
-            def k="zoneDepletion_${z}";def t="zoneDepletionTs_${z}"
-            def dep=(state[k] instanceof Number)?state[k]:0G;def ts=state[t]
+            def k="zoneDepletion_${z}";def t="zoneDepletionTs_${z}";def dep=(state[k] instanceof Number)?state[k]:0G;def ts=state[t]
             zoneMap["${z}"]=[depletion:dep,updated:ts]
         }
     }catch(e){logWarn"updateSoilMemory(): ${e}"}
@@ -966,7 +1005,7 @@ private void deleteProgram(Integer p){
         catch(e){logWarn"deleteProgram(${p}): normalization failed for ${k} (${v}) → ${e.message}"}
     }
     ["programRuntime_${p}","programConflict_${p}","programLastRun_${p}","programSummary_${p}"].each{atomicState.remove(it)}
-    def msg="✅ ${pName} deleted successfully.";logInfo msg;atomicState.lastProgramMsg=msg;calcProgramDurations('deleteProgram')
+    def msg="✅ ${pName} deleted successfully.";logInfo msg;atomicState.lastProgramMsg=msg;calcProgramDurations('deleteProgram');atomicState.remove("skipProgramInstances")
 }
 
 private String inferType(val){
@@ -1228,7 +1267,7 @@ private boolean verifySystem(boolean force=false){
 	else if(!(sd.days instanceof Map)){issues<<"Astronomical cache structure invalid";solarOk=false}
 	else if(!sd.days[today]){issues<<"Astronomical cache missing entry for ${today}";solarOk = false}
 	if(solarOk)logInfo "🌘 Astronomical cache verified."
-	def next=getNextScheduledProgram();if((!next)&&(settings.schedulingActive))issues<<"Next scheduled program not calculated."else logInfo"📅️ Next scheduled program verified."
+	def next=calcNextProgramEvent();if((!next)&&(settings.schedulingActive))issues<<"Next scheduled program not calculated."else logInfo"📅️ Next scheduled program verified."
     def wx=child.currentValue("wxSource")?:'Unknown'
     if(wx in ['Unknown','Not yet fetched',''])issues<<"invalid weather source (${wx})"
     if(issues){issues.each{logWarn"System Verification: ⚠️ ${it}"};logInfo"❌ Issues detected during system verification";return false}
@@ -1724,7 +1763,8 @@ private publishZoneData(Map results){
 	String json=new groovy.json.JsonOutput().toJson(combined)
 	String summaryText=zones.collect{z->"${z.zone}: ET ${z.etBudgetPct}%, Seasonal ${z.seasonalBudgetPct}%, ET Adjusted ${z.etAdjustedTime}s"}.join(" | ")
 	def alerts=[];if(freeze.freezeAlert)alerts<<"🧊️ Freeze";if(rain.rainAlert)alerts<<"☔ Rain";if(wind.windAlert)alerts<<"💨 Wind";if(alerts)summaryText+=" | Alerts: ${alerts.join(', ')}"
-	childEmitEvent(c,"activeAlerts","${alerts.join(', ')}","Active alert summary",null,true)
+	if(alerts&&settings.enableNotifications)sendLocationEvent(name:"wet-it alert",value:"${APP_NAME} has detected a weather event within the next 24 hours. ${alerts.join(', ')}","APP_NOTIFICATION",isStateChange:true)
+	childEmitEvent(c,"activeAlerts",alerts?alerts.join(', '):"none","Active alert summary",null,true)
 	childEmitEvent(c,"summaryText",summaryText,"Zone and Alert summary",null,true)
 	childEmitEvent(c,"summaryTimestamp",ts,"Summary timestamp updated",null,true)
 	logInfo"📊 Summary text published (${zones.size()} zones)"
@@ -1994,6 +2034,7 @@ private void irrigationTick(){
 	try{
 		if(settings.schedulingActive?.toString()!="true"){logDebug"⛔ Scheduling inactive — skipping tick";return}
 		atomicState.saturationSkipPrograms=atomicState.saturationSkipPrograms?.findAll{it<=settings.programCount}
+		def skips=atomicState.skipProgramInstances;if(skips)atomicState.skipProgramInstances=skips=skips.findAll{it.epoch>now()}
 		def now=new Date();Integer pCount=(settings.programCount?:0)as Integer;if(pCount<1)return
 		def solar=atomicState.solarData?.days?.get(new Date().format(DATE_FMT,location.timeZone))
 		Date sunrise=solar?.sunrise?Date.parse(TS_FMT_ISO,solar.sunrise):getSunriseAndSunset().sunrise
@@ -2027,6 +2068,7 @@ private void irrigationTick(){
 			Integer minTime=(settings.progMinTime?:60)as Integer
 			if(total<minTime){logInfo"⛔ ${name} skipped — runtime ${total}s < min ${minTime}s";return}
 			if((atomicState.saturationSkipPrograms?:[]).contains(p)){logInfo"🌧️ ${name} skipped — all zones at/above field capacity (Saturation Skip)";return}
+			if(skips?.any{it.program==p&&Math.abs(it.epoch-target.time)<60000}){logInfo"⏭️ ${name} skipped — user requested skip.";return}
 			logInfo(endBy
 				?(glyph[startMode]?"${glyph[startMode]} ${name} endby=${startMode}":"⏰ ${name} endby=${target.format('HH:mm')}")
 				:(glyph[startMode]?"${glyph[startMode]} ${name} start=${startMode}":"🚀 ${name} start=${target.format('HH:mm')}")
@@ -2036,27 +2078,29 @@ private void irrigationTick(){
 	}catch(e){logError"irrigationTick(): ${e.message}"}
 	def ap=atomicState.activeProgram;if(ap)return
 	def c=getDataChild();if(!c)return
-	def next=getNextScheduledProgram();Long ts=next?.start?.time?:0L;logDebug"Next Scheduled Program: ${(next?.name?:'None')} | ${ts}"
+	if(!publishJSON){childEmitChangedEvent(c,"nextProgramScheduleJson","unknown")}
+	def next=calcNextProgramEvent()
+	if(next?.schedule){def json=JsonOutput.toJson(next.schedule);childEmitChangedEvent(c,"nextProgramScheduleJson",json,"📅 Program schedule JSON published ($pCount programs)")}
+	Long ts=next?.start?.time?:0L;logDebug"Next Scheduled Program: ${(next?.name?:'None')} | ${ts}"
 	def cs=c.currentState("nextProgramEpoch");Long cur=(cs?.value?.toString()?.isLong()?cs.value.toString().toLong():0L)
-    logDebug"cs: [${cs}] | cur: [${cur}] | ts: [${ts}]"
+	logDebug"cs: [${cs}] | cur: [${cur}] | ts: [${ts}]"
 	if(cur!=ts){
 	    childEmitChangedEvent(c,"nextProgramName",next?.name?:"unknown","📅 Next scheduled program name updated")
-	    childEmitChangedEvent(c,"nextProgramText",next?.start?next.start.format(TS_FMT_LOCAL,location.timeZone):"unknown","📅️ Next scheduled program time updated")
+	    childEmitChangedEvent(c,"nextProgramText",next?.start?next.start.format(TS_FMT_LOCAL,location.timeZone):"unknown","📅️ Next scheduled program time published")
 	    childEmitChangedEvent(c,"nextProgramEpoch",ts,"⏰ Next scheduled program epoch updated")
 	}else{logDebug"No change in next scheduled program."}
 }
 
-private Map getNextScheduledProgram(){
+private Map calcNextProgramEvent(List skipOverride=null){
 	if(settings.schedulingActive?.toString()!="true")return null
 	Integer pCount=(settings.programCount?:0)as Integer;if(pCount<1)return null
 	def tz=location?.timeZone?:TimeZone.getDefault();long ts=now();long today0=new Date().clearTime().time;def cal=Calendar.getInstance(tz)
+	def skips=(skipOverride!=null)?skipOverride:atomicState.skipProgramInstances;if(skips&&skipOverride==null)atomicState.skipProgramInstances=skips=skips.findAll{it.epoch>ts}
 	def df=new java.text.SimpleDateFormat(DATE_FMT);df.setTimeZone(tz);def dow=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
 	String[] dayStr=new String[8];int[] dayDow=new int[8];long[] dayMs=new long[8]
-	for(int off=0;off<8;off++){
-		long ms=today0+(off*DAY_MS);dayMs[off]=ms;def d=new Date(ms);dayStr[off]=d.format(DATE_FMT,tz);cal.time=d;dayDow[off]=cal.get(Calendar.DAY_OF_WEEK)-1
-	}
+	Date d=new Date(today0);for(int off=0;off<8;off++){long ms=today0+(off*DAY_MS);dayMs[off]=ms;d.setTime(ms);dayStr[off]=d.format(DATE_FMT,tz);cal.time=d;dayDow[off]=cal.get(Calendar.DAY_OF_WEEK)-1}
 	def solarDays=atomicState.solarData?.days
-	long nextKey=Long.MAX_VALUE;Map next=null;int nextTotal=0
+	long nextKey=Long.MAX_VALUE;Map next=null;int nextTotal=0;List schedule=[]
 	for(int p=1;p<=pCount;p++){
 		if(settings["programActive_${p}"]?.toString()!="true")continue
 		def pr=atomicState."programRuntime_${p}";Integer total=(pr instanceof Map)?(pr.total?:0):(pr instanceof Number?pr:0);if(total<=0)continue
@@ -2097,13 +2141,21 @@ private Map getNextScheduledProgram(){
 				baseMs=Date.parse(TS_FMT_ISO,iso).time
 			}
 			long targetMs=endBy?(baseMs-((total+soakAdj)*1000L)):baseMs;if(targetMs<=ts)continue
-			long key=(targetMs<<5)+p;if(key<nextKey){nextKey=key;next=[program:p,name:name,epoch:targetMs];nextTotal=total} //Adjust mask if MAX_PROGRAMS > 32
+			if(skips?.any{it.program==p&&it.epoch==targetMs})continue
+			long key=(targetMs<<5)+p;schedule<<[program:p,name:name,epoch:targetMs,key:key];if(key<nextKey){nextKey=key;next=[program:p,name:name,epoch:targetMs];nextTotal=total}
 			break
 		}
 	}
+	if(publishJSON){
+		schedule.sort{it.key}
+		for(int i=1;i<schedule.size();i++){if(schedule[i].epoch==schedule[i-1].epoch){schedule[i].conflict=true;schedule[i-1].conflict=true}}
+		def tf=new java.text.SimpleDateFormat(TS_FMT_LOCAL);tf.setTimeZone(tz)
+		schedule.each{it.text=tf.format(new Date(it.epoch));it.remove("key");if(!it.conflict)it.conflict=false}
+	}
 	if(!next)return null
-	next.start=new Date(next.epoch);next.end=new Date(next.epoch+(nextTotal*1000L));done=now()
-	logDebug"getNextScheduledProgram(): Evaluated ${pCount} programs in ${(done-ts)}ms. ${next} wins."
+	next.start=new Date(next.epoch);next.end=new Date(next.epoch+(nextTotal*1000L))
+	if(publishJSON)next.schedule=[schema:JSON_SCHEMA,version:APP_VERSION,schedule:schedule]
+	done=now();logDebug"calcNextProgramEvent(): Evaluated ${pCount} programs in ${(done-ts)}ms. ${next} wins."
 	return next
 }
 
@@ -2225,8 +2277,7 @@ private void endProgram(ap){
     else atomicState.remove("lastManualEnd")
     atomicState.remove("programClock");atomicState.clockFace="🕛";atomicState.countdown=""
     def c=getDataChild();if(c)c.updateProgramTimes(0L,0L)
-    childEmitChangedEvent(c,"activeProgram",0,"No active program",null,true)
-    childEmitChangedEvent(c,"activeProgramName","idle","No active program",null,true)
+    childEmitChangedEvent(c,"activeProgram",0,"No active program",null,true);childEmitChangedEvent(c,"activeProgramName","idle","No active program",null,true)
     def ec=getEchoChild(p);if(ec){childEmitChangedEvent(ec,"valve","closed","Program ${p} stopped",null,true);childEmitChangedEvent(ec,"switch","off","Program ${p} stopped",null,true)}
     logInfo"Program(${p}): All active zones complete (${ap.zones.size()}/${ap.zones.size()})"
     logDebug"Program(${p}) end recorded at ${endTs.format(TS_FMT_LOCAL,location.timeZone)} manual=${ap.manual}"
@@ -2279,15 +2330,48 @@ private void calcProgramDurations(String reason='manual'){
     logDebug"calcProgramDurations(): refreshed ${pCount} programs (trigger=${reason})"
 }
 
+def runNextProgram(){
+	def next=calcNextProgramEvent();if(!next)return false
+	logInfo "Run Now requested for program ${next.program} (${next.name})";runProgram([program:next.program,manual:true])
+	return true
+}
+
+def skipNextProgram(){
+	def next=calcNextProgramEvent();if(!next)return false
+	if(!(atomicState.skipProgramInstances instanceof List))atomicState.skipProgramInstances=[]
+	def skips=atomicState.skipProgramInstances
+	if(!skips.find{it.program==next.program&&it.epoch==next.epoch}){
+		def testList=skips+[[program:next.program,epoch:next.epoch]]
+		def old=atomicState.skipProgramInstances;atomicState.skipProgramInstances=testList
+		def testNext=calcNextProgramEvent();atomicState.skipProgramInstances=old
+		if(!testNext){logWarn"Skip rejected — would suppress all programs in forecast window";return false}
+		skips<<[program:next.program,epoch:next.epoch];atomicState.skipProgramInstances=skips
+	}
+	childEmitChangedEvent(getDataChild(),"nextProgramName","recalculating","Skipping program ${next.name} scheduled for ${next.start.format(TS_FMT_LOCAL,location.timeZone)} — recalculating schedule")
+	return true
+}
+
 /* ---------- Detect Settings Change ---------- */
 private void detectSettingsChange(String page){
 	try{
+		Integer pCount=(settings.programCount?:0)as Integer
+		for(int p=1;p<=pCount;p++){
+			def k="programInterval_${p}";def v=settings[k]
+			if(v instanceof CharSequence){
+				String s=v.toString().trim()
+				if(s.isInteger())settings[k]=s.toInteger()
+				else if(!s||s in ["[","]","[]","null"])settings[k]=null
+				else{logWarn"detectSettingsChange(${page}): ignoring invalid ${k}=${v}";settings[k]=null}
+			}
+		}
 		def newHash=settings.hashCode();def lastHash=atomicState.lastSettingsHash?:state.lastSettingsHash
 		if(lastHash!=newHash){
 			atomicState.lastSettingsHash=newHash;state.lastSettingsHash=newHash
-			settings.each{k,v->if(k.startsWith("programInterval_")&&v instanceof String)settings[k]=v.toInteger()}
-			calcProgramDurations(page);if(page=="zonePage")atomicState.bootstrap=true;if(page=="schedulePage")checkProgramConflicts()
-			def anyEchoEnabled=settings.find{k,v->k.startsWith("programEchoEnabled_")&&v==true};if(anyEchoEnabled)syncEchoChildren()
+			try{calcProgramDurations(page)}catch(e){logWarn"detectSettingsChange(${page}): calcProgramDurations(): ${e.message}"}
+			if(page=="zonePage")atomicState.bootstrap=true
+			if(page=="schedulePage"){try{checkProgramConflicts()}catch(e){logWarn"detectSettingsChange(${page}): checkProgramConflicts(): ${e.message}"}}
+			def anyEchoEnabled=settings.find{k,v->k.startsWith("programEchoEnabled_")&&v?.toString()=="true"}
+			if(anyEchoEnabled){try{syncEchoChildren()}catch(e){logWarn"detectSettingsChange(${page}): syncEchoChildren(): ${e.message}"}}
 			logDebug"detectSettingsChange(): configuration change detected on ${page}, recalculated program durations."
 		}
 	}catch(e){logWarn"detectSettingsChange(${page}): ${e.message}"}
