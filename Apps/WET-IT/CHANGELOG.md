@@ -198,11 +198,11 @@
 	- runNextProgram()
 	-  skipNextProgram()
 
-Added the ability to s
+Added the ability to immediately run the next scheduled program or to skip over the next scheduled program(s).
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTMyODk4MTYzNiwtMTcyNTEyMTg3OCwtMT
-kyNjQ1MTIzLDEyMzQ2MjY4MTMsMTE3MjU4NzE5OSw1MjMwMjgy
-MywtMTE3NDIzMTkxNiwxMzgzMzgwNDQ2LDE3MjUyODQ1NjksLT
-EwMjk5Nzg0NywtODEyMDcyMzU4LDE4NDcwMzc4MDNdfQ==
+eyJoaXN0b3J5IjpbMzk3NDYxMjI3LC0xNzI1MTIxODc4LC0xOT
+I2NDUxMjMsMTIzNDYyNjgxMywxMTcyNTg3MTk5LDUyMzAyODIz
+LC0xMTc0MjMxOTE2LDEzODMzODA0NDYsMTcyNTI4NDU2OSwtMT
+AyOTk3ODQ3LC04MTIwNzIzNTgsMTg0NzAzNzgwM119
 -->
