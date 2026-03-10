@@ -192,12 +192,17 @@
 
 ## ☀️ 1.2.3.0 — Public Release
 
-**App v1.2.3.0 / Driver v1.2.0.0**
--   Added astronomical data attributes.
+**App v1.2.3.0 / Driver v1.2.3.0**
+-  Added nextProgramScheduleJson
+- Added child driver commands:
+	- runNextProgram()
+	-  skipNextProgram()
+
+Added the ability to s
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE5NjAzNzgxNDgsLTE3MjUxMjE4NzgsLT
-E5MjY0NTEyMywxMjM0NjI2ODEzLDExNzI1ODcxOTksNTIzMDI4
-MjMsLTExNzQyMzE5MTYsMTM4MzM4MDQ0NiwxNzI1Mjg0NTY5LC
-0xMDI5OTc4NDcsLTgxMjA3MjM1OCwxODQ3MDM3ODAzXX0=
+eyJoaXN0b3J5IjpbMTMyODk4MTYzNiwtMTcyNTEyMTg3OCwtMT
+kyNjQ1MTIzLDEyMzQ2MjY4MTMsMTE3MjU4NzE5OSw1MjMwMjgy
+MywtMTE3NDIzMTkxNiwxMzgzMzgwNDQ2LDE3MjUyODQ1NjksLT
+EwMjk5Nzg0NywtODEyMDcyMzU4LDE4NDcwMzc4MDNdfQ==
 -->
