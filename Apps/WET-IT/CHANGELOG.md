@@ -201,9 +201,13 @@
 
 Added the ability to immediately run the next scheduled program or to skip over the next scheduled program(s).
 
+## 🪲 1.2.3.1 — Bug Fix
+**App v1.2.3.1 / Driver v1.2.3.0**
+- Fixed notification alert error
+- Enhanced solar cache detection and self-repair
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTkyNTk2NjM5NywtMTcyNTEyMTg3OCwtMT
-kyNjQ1MTIzLDEyMzQ2MjY4MTMsMTE3MjU4NzE5OSw1MjMwMjgy
-MywtMTE3NDIzMTkxNiwxMzgzMzgwNDQ2LDE3MjUyODQ1NjksLT
-EwMjk5Nzg0NywtODEyMDcyMzU4LDE4NDcwMzc4MDNdfQ==
+eyJoaXN0b3J5IjpbLTEzODcxMjkwODAsLTE3MjUxMjE4NzgsLT
+E5MjY0NTEyMywxMjM0NjI2ODEzLDExNzI1ODcxOTksNTIzMDI4
+MjMsLTExNzQyMzE5MTYsMTM4MzM4MDQ0NiwxNzI1Mjg0NTY5LC
+0xMDI5OTc4NDcsLTgxMjA3MjM1OCwxODQ3MDM3ODAzXX0=
 -->
