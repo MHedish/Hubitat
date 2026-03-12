@@ -1,9 +1,9 @@
 {
   "packageName": "WET-IT",
   "author": "Marc Hedish",
-  "version": "1.2.3.0",
+  "version": "1.2.3.1",
   "minimumHEVersion": "2.3.8",
-  "dateReleased": "2026-03-10",
+  "dateReleased": "2026-03-12",
   "releaseNotes": "v1.2.3.0 — Corrected attribute persistence in alertText; Added runNextProgram and skipNextProgram command to the child driver; Added JSON publishing of next scheduled program events; added the ability to run a scheduled program now and/or skip the next scheduled program.\n\nv1.2.3.1 — Bug Fix: Fixed notification alert error; Enhanced solar cache detection and self-repair",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md",
   "communityLink": "https://community.hubitat.com/t/wet-it-weather-enhanced-time-based-irrigation-tuning-for-hubitat/160224",
