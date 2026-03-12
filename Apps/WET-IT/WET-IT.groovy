@@ -79,14 +79,15 @@
 *  1.2.2.8   –– Reworked skip logic to support multiple skipped program instances using atomicState list; added transitional “recalculating” UI state and improved Next Program display feedback.
 *  1.2.2.9   –– UI improvements; updated detectSettingsChange(); clear skipProgramInstances when a program is deleted.
 *  1.2.3.0   –– Version bump for public release.
+*  1.2.3.1   –– Fixed notification alert error; Enhanced solar cache detection and self-repair.
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="1.2.3.0"
-@Field static final String APP_MODIFIED="2026-03-10"
+@Field static final String APP_VERSION="1.2.3.1"
+@Field static final String APP_MODIFIED="2026-03-12"
 @Field static final String JSON_SCHEMA="wetit.unified.v1"
 @Field static final String REPO_ROOT="https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT"
 @Field static final String RAW_ROOT="https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT"
@@ -139,6 +140,7 @@ private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){se
 private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=app.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 private childEmitEvent(dev,n,v,d=null,u=null,boolean f=false){try{dev.emitEvent(n,v,d,u,f)}catch(e){logWarn"childEmitEvent(): ${e.message}"}}
 private childEmitChangedEvent(dev,n,v,d=null,u=null,boolean f=false){try{dev.emitChangedEvent(n,v,d,u,f)}catch(e){logWarn"childEmitChangedEvent(): ${e.message}"}}
+private void sendAppAlert(String msg,boolean notify=true){if(logEvents)logWarn msg;if(notify&&settings.enableNotifications)sendLocationEvent(name:"APP_NOTIFICATION",value:msg,isStateChange:true);childEmitEvent(getDataChild(),"activeAlerts",msg,"⚠️ ${msg}",null,true)}
 private getDataChild(boolean fresh=false){def dni="wetit_data_${app.id}";if(fresh||!cachedChild||!getChildDevice(dni))cachedChild=ensureDataDevice();return cachedChild}
 private getEchoChild(Integer p,boolean fresh=false){def dni="wetit_echo_${app.id}_${p}";def d=getChildDevice(dni);return(d?:null)}
 private autoDisableDebugLogging(){try{unschedule("autoDisableDebugLogging");atomicState.logEnable=false;app.updateSetting("logEnable",[type:"bool",value:false]);logInfo"Debug logging disabled (auto)"}catch(e){logDebug"autoDisableDebugLogging(): ${e.message}"}}
@@ -1266,7 +1268,7 @@ private boolean verifySystem(boolean force=false){
 	def solarOk=true;def sd=atomicState.solarData;def today=new Date().format("yyyy-MM-dd",location.timeZone)
 	if(!sd){issues<<"Astronomical cache missing";solarOk=false}
 	else if(!(sd.days instanceof Map)){issues<<"Astronomical cache structure invalid";solarOk=false}
-	else if(!sd.days[today]){issues<<"Astronomical cache missing entry for ${today}";solarOk = false}
+	else if(!sd.days[today]){issues<<"Astronomical cache missing entry for ${today}";solarOk=false}
 	if(solarOk)logInfo "🌘 Astronomical cache verified."
 	def next=calcNextProgramEvent();if((!next)&&(settings.schedulingActive))issues<<"Next scheduled program not calculated."else logInfo"📅️ Next scheduled program verified."
     def wx=child.currentValue("wxSource")?:'Unknown'
@@ -1652,7 +1654,7 @@ private boolean getAstronomicalData(){
         if(!(atomicState.solarData?.days instanceof Map)){atomicState.solarData=[days:[:],order:[]]}
         def sd=atomicState.solarData;sd.days=sd.days?:[:];sd.order=sd.order?:[]
         if(sd.days.isEmpty()){
-            for(int i=0;i<7;i++){
+            for(int i=0;i<8;i++){
                 def d=new Date(base+DAY_MS*i).format(DATE_FMT,tz)
                 httpGet(uri:"https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&date=${d}&formatted=0"){r->
                     if(r?.status!=200||r?.data?.status!="OK")return
@@ -1662,15 +1664,9 @@ private boolean getAstronomicalData(){
                 }
             }
         }else if(!sd.days[today]){
-            def oldest=sd.order.remove(0);sd.days.remove(oldest)
-            def d=new Date(base+DAY_MS*6).format(DATE_FMT,tz)
-            httpGet(uri:"https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&date=${d}&formatted=0"){r->
-                if(r?.status!=200||r?.data?.status!="OK")return
-                def x=r.data.results
-                sd.days[d]=[sunrise:x.sunrise,sunset:x.sunset,civilTwilightBegin:x.civil_twilight_begin,civilTwilightEnd:x.civil_twilight_end,solarNoon:x.solar_noon,dayLength:(x.day_length as Integer),nauticalTwilightBegin:x.nautical_twilight_begin,nauticalTwilightEnd:x.nautical_twilight_end,astronomicalTwilightBegin:x.astronomical_twilight_begin,astronomicalTwilightEnd:x.astronomical_twilight_end]
-                sd.order<<d
-            }
-        }
+		    logWarn"🌘 Astronomical cache drift detected — rebuilding"
+		    sd.days.clear();sd.order.clear();atomicState.solarData=sd;return getAstronomicalData()
+		}
         sd.solarDate=today;atomicState.solarData=sd
         return true
     }catch(e){logWarn"getAstronomicalData():${e.message}"}
@@ -1764,7 +1760,7 @@ private publishZoneData(Map results){
 	String json=new groovy.json.JsonOutput().toJson(combined)
 	String summaryText=zones.collect{z->"${z.zone}: ET ${z.etBudgetPct}%, Seasonal ${z.seasonalBudgetPct}%, ET Adjusted ${z.etAdjustedTime}s"}.join(" | ")
 	def alerts=[];if(freeze.freezeAlert)alerts<<"🧊️ Freeze";if(rain.rainAlert)alerts<<"☔ Rain";if(wind.windAlert)alerts<<"💨 Wind";if(alerts)summaryText+=" | Alerts: ${alerts.join(', ')}"
-	if(alerts&&settings.enableNotifications)sendLocationEvent(name:"wet-it alert",value:"${APP_NAME} has detected a weather event within the next 24 hours. ${alerts.join(', ')}","APP_NOTIFICATION",isStateChange:true)
+	if(alerts)sendAppAlert("${APP_NAME} has detected a weather event within the next 24 hours. ${alerts.unique().join(', ')}")
 	childEmitEvent(c,"activeAlerts",alerts?alerts.join(', '):"none","Active alert summary",null,true)
 	childEmitEvent(c,"summaryText",summaryText,"Zone and Alert summary",null,true)
 	childEmitEvent(c,"summaryTimestamp",ts,"Summary timestamp updated",null,true)
@@ -2101,6 +2097,13 @@ private Map calcNextProgramEvent(List skipOverride=null){
 	String[] dayStr=new String[8];int[] dayDow=new int[8];long[] dayMs=new long[8]
 	Date d=new Date(today0);for(int off=0;off<8;off++){long ms=today0+(off*DAY_MS);dayMs[off]=ms;d.setTime(ms);dayStr[off]=d.format(DATE_FMT,tz);cal.time=d;dayDow[off]=cal.get(Calendar.DAY_OF_WEEK)-1}
 	def solarDays=atomicState.solarData?.days
+	if(solarDays){
+		for(int off=0;off<8;off++){
+			if(!solarDays[dayStr[off]]){
+			logWarn"⚠️ Astronomical cache missing entry for ${dayStr[off]}";getAstronomicalData();solarDays=atomicState.solarData?.days;break
+			}
+		}
+	}
 	long nextKey=Long.MAX_VALUE;Map next=null;int nextTotal=0;List schedule=[]
 	for(int p=1;p<=pCount;p++){
 		if(settings["programActive_${p}"]?.toString()!="true")continue
