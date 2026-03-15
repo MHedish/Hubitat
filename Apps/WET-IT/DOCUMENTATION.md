@@ -5,7 +5,7 @@
 *Comprehensive Technical & Integration Reference (App v1.3.0.0 / Data Driver v1.3.0.0 / Echo Driver v1.1.0.0)*
 
 ![Platform](https://img.shields.io/badge/Platform-Hubitat-blue)
-![Version](https://img.shields.io/badge/Version-1.2.3.1-green?t=20260305)
+![Version](https://img.shields.io/badge/Version-1.3.0.1-green?t=20260305)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
 WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water modeling** for Hubitat.
@@ -1982,11 +1982,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEwMDE3MDA3NDksODc0ODUwMDM4LDkxNz
-IxMzE2OSwtMTEwNjA3NjU2MSwtMTcwNTYxMzM2OCwxNDcxOTIy
-Nzk2LC0xNTcxNDY4OTIwLC0yOTc2NTk2NzEsMTk3ODA5ODU1Ny
-wxNTA3Mzg1NTk5LDI5MTk5MTIxNywtMTAyNTY2NDYxNSwtMjEw
-NTEwNzk5LC0xOTMxNTY1ODI1LC0xMzQ5NzM1Mzk4LDIwNzY1MT
-M1MDksLTE4NjI0MjQ5OTcsLTY3NjQ2ODQ1NywtMTY4MTc5NzYw
-MSwtNjI3OTQxMzQzXX0=
+eyJoaXN0b3J5IjpbLTM3NDkzOTY3LC0xMDAxNzAwNzQ5LDg3ND
+g1MDAzOCw5MTcyMTMxNjksLTExMDYwNzY1NjEsLTE3MDU2MTMz
+NjgsMTQ3MTkyMjc5NiwtMTU3MTQ2ODkyMCwtMjk3NjU5NjcxLD
+E5NzgwOTg1NTcsMTUwNzM4NTU5OSwyOTE5OTEyMTcsLTEwMjU2
+NjQ2MTUsLTIxMDUxMDc5OSwtMTkzMTU2NTgyNSwtMTM0OTczNT
+M5OCwyMDc2NTEzNTA5LC0xODYyNDI0OTk3LC02NzY0Njg0NTcs
+LTE2ODE3OTc2MDFdfQ==
 -->
