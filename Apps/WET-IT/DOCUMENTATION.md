@@ -2,7 +2,7 @@
 # 🌿 Weather-Enhanced Time-based Irrigation Tuning (WET-IT)
 
 ## Full Documentation
-*Comprehensive Technical & Integration Reference (App v1.2.3.1 / Data Driver v1.3.0.0 / Echo Driver v1.1.0.0)*
+*Comprehensive Technical & Integration Reference (App v1.3.0.0 / Data Driver v1.3.0.0 / Echo Driver v1.1.0.0)*
 
 ![Platform](https://img.shields.io/badge/Platform-Hubitat-blue)
 ![Version](https://img.shields.io/badge/Version-1.2.3.1-green?t=20260305)
@@ -1982,11 +1982,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbODc0ODUwMDM4LDkxNzIxMzE2OSwtMTEwNj
-A3NjU2MSwtMTcwNTYxMzM2OCwxNDcxOTIyNzk2LC0xNTcxNDY4
-OTIwLC0yOTc2NTk2NzEsMTk3ODA5ODU1NywxNTA3Mzg1NTk5LD
-I5MTk5MTIxNywtMTAyNTY2NDYxNSwtMjEwNTEwNzk5LC0xOTMx
-NTY1ODI1LC0xMzQ5NzM1Mzk4LDIwNzY1MTM1MDksLTE4NjI0Mj
-Q5OTcsLTY3NjQ2ODQ1NywtMTY4MTc5NzYwMSwtNjI3OTQxMzQz
-LC0xNjM4OTQwMzk0XX0=
+eyJoaXN0b3J5IjpbLTEwMDE3MDA3NDksODc0ODUwMDM4LDkxNz
+IxMzE2OSwtMTEwNjA3NjU2MSwtMTcwNTYxMzM2OCwxNDcxOTIy
+Nzk2LC0xNTcxNDY4OTIwLC0yOTc2NTk2NzEsMTk3ODA5ODU1Ny
+wxNTA3Mzg1NTk5LDI5MTk5MTIxNywtMTAyNTY2NDYxNSwtMjEw
+NTEwNzk5LC0xOTMxNTY1ODI1LC0xMzQ5NzM1Mzk4LDIwNzY1MT
+M1MDksLTE4NjI0MjQ5OTcsLTY3NjQ2ODQ1NywtMTY4MTc5NzYw
+MSwtNjI3OTQxMzQzXX0=
 -->
