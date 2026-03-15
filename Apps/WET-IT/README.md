@@ -40,7 +40,108 @@ Notifications are not sent directly by WET-IT. Instead, the application publishe
 - Speech Devices
 - Voice Assistants
 
+### Logging & Tools Help
 
+The **Logging & Tools** section controls diagnostic logging, on-screen help visibility, and the system notification interface used by WET-IT.
+
+Logging features help with troubleshooting and system monitoring, while notifications provide real-time feedback about irrigation activity, weather alerts, and zone operation.
+
+---
+
+#### Log All Events
+When enabled, WET-IT writes detailed operational events to the Hubitat log.
+
+Events include:
+
+- program start and completion
+- zone activation and shutdown
+- weather alert changes
+- scheduling decisions
+- system status messages
+
+This option is useful for understanding normal system behavior or diagnosing unexpected conditions.
+
+---
+
+#### Enable Debug Logging
+Enables verbose debug logging for troubleshooting and development.
+
+Debug logs include additional internal state information such as:
+
+- scheduler evaluations
+- zone runtime calculations
+- program arbitration decisions
+- device control operations
+- forecast processing
+
+For safety and performance reasons, debug logging **automatically disables itself after 30 minutes**.
+
+---
+
+#### Disable Debug Logging Now
+Immediately turns off debug logging without waiting for the automatic timeout.
+
+This is useful if debugging has completed and log verbosity should be reduced.
+
+---
+
+#### Hide On-screen Tooltips
+Hides the contextual help panels displayed throughout the WET-IT configuration interface.
+
+Tooltips provide explanations of settings and operational indicators. Advanced users may prefer to hide them once the system is familiar.
+
+---
+
+#### Enable System Notifications
+Allows WET-IT to generate notification events for external delivery through the Hubitat **Notifications** app.
+
+Notifications are not sent directly by WET-IT. Instead, the application publishes events that can be routed by the Notifications app to devices such as:
+
+- mobile push notifications
+- text messages
+- speech devices
+- voice assistants
+
+This design allows notification delivery, rate limiting, and scheduling to be managed centrally by Hubitat.
+
+---
+
+#### Test Notifications
+Sends a test notification event through the system.
+
+Use this to verify that:
+
+- the Notifications app is configured correctly
+- devices are receiving WET-IT alerts
+- message routing is working as expected
+
+The test message will appear as a WET-IT alert event.
+
+---
+
+### Notification Event Categories
+
+WET-IT emits several types of notification events that can be subscribed to in the Notifications app.
+
+| Button | Event Type | Description |
+|------|-------------|-------------|
+| **1** | Weather Alerts | Freeze, rain, wind, and forecast availability notifications |
+| **2** | Program Lifecycle | Program start and completion events |
+| **3** | Zone Activity | Zone activation and shutdown events |
+
+These event categories allow notification rules to be tailored to specific types of irrigation activity.
+
+### Example Notifications
+
+Typical messages include:
+
+- `Program Lawn Front now active`
+- `Zone 3 now active`
+- `Program Garden Beds complete`
+- `Weather alerts cleared`
+- `Forecast data restored`
+
+Notifications provide situational awareness while allowing the Hubitat Notifications app to control how and when messages are delivered.
 
 This design allows notification delivery, rate limiting, and scheduling to be managed centrally by Hubitat.
 
@@ -384,11 +485,11 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEwNDcxMDgxLC0yNTY4NjU1Miw0NjE0NT
-MwOTUsLTg1MjA3ODg4MywxNTAxNzMxNTU4LDk1NjUzOTAzOSw2
-ODQ3ODg0OTIsMTQ5NzQ5ODIwOSwtMTcwNjQwNjMwNCw3MDYzNj
-c4NTAsLTIwNDUwODMxNDMsMjExNDYwNzM2MiwxNjQyNTIzMTA0
-LC0xMjM1MDc3NDE4LC0xODcwODQyNzcsMTM3OTQzNjI1MywtMT
-U2MjU1ODMwOSwxMjI2MjYxNzcyLDEzNzU1OTcxMiwyMTE5ODU4
-MjIzXX0=
+eyJoaXN0b3J5IjpbMTczNjI4MjQyOSwtMjU2ODY1NTIsNDYxND
+UzMDk1LC04NTIwNzg4ODMsMTUwMTczMTU1OCw5NTY1MzkwMzks
+Njg0Nzg4NDkyLDE0OTc0OTgyMDksLTE3MDY0MDYzMDQsNzA2Mz
+Y3ODUwLC0yMDQ1MDgzMTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEw
+NCwtMTIzNTA3NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLT
+E1NjI1NTgzMDksMTIyNjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1
+ODIyM119
 -->
