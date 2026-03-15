@@ -2097,7 +2097,7 @@ private void irrigationTick(){
 	if(next?.schedule){def json=JsonOutput.toJson(next.schedule);childEmitChangedEvent(c,"nextProgramScheduleJson",json,"📅 Program schedule JSON published ({$pCount} programs)")}
 	Long ts=next?.start?.time?:0L;logDebug"Next Scheduled Program: ${(next?.name?:'None')} | ${ts}"
 	def cs=c.currentState("nextProgramEpoch");Long cur=(cs?.value?.toString()?.isLong()?cs.value.toString().toLong():0L);logDebug"cs: [${cs}] | cur: [${cur}] | ts: [${ts}]"
-	if(cur!=ts||curName=="recalculating"){
+	if(cur!=ts||c.currentValue("nextProgramName")=="recalculating"){
 	    childEmitChangedEvent(c,"nextProgramName",next?.name?:"unknown","📅 Next scheduled program name updated")
 	    childEmitChangedEvent(c,"nextProgramText",next?.start?next.start.format(TS_FMT_LOCAL,location.timeZone):"unknown","📅️ Next scheduled program time published")
 	    childEmitChangedEvent(c,"nextProgramEpoch",ts,"⏰ Next scheduled program epoch updated")
