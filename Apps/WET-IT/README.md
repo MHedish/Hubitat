@@ -30,7 +30,8 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 
 ### 🆕 *What’s New in v1.3.0.0* 🆕
 
-Added the ability to *restore* skipped programs
+Added the ability to *restore* skipped programs.
+Completed work on the Astronomical Cache.  Events are now cached for a full week so 
 
 The Notification system is finally complete!
 WET-IT now generates notification events for external delivery through the Hubitat *Notification*s app.
@@ -67,7 +68,7 @@ Notifications provide situational awareness while allowing the Hubitat Notificat
 
 This design allows notification delivery, rate limiting, and scheduling to be managed centrally by Hubitat.
 
-
+---
 
 ###  *What’s was new in v1.2.3.0* 
 
@@ -86,6 +87,8 @@ You might want to skip the next scheduled time because of a broken valve or perh
 
 Skips can also be stacked so you can temporarily skip multiple programs in the schedule.
 
+---
+
 ###  *What’s Was New in v1.2.2.0* 
 
 Corrected persistence bug in weather alert summary.
@@ -96,6 +99,8 @@ Added next scheduled program attributes:
 - nextProgramText
 
 It's also reported in the System Diagnostics section of the Main Page. 
+
+---
 
 ### *What Was New in v1.1.0.0*
 
@@ -408,11 +413,11 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNTY2OTIzNTg2LC0xMTk2NTEwMzg1LC0yNT
-Y4NjU1Miw0NjE0NTMwOTUsLTg1MjA3ODg4MywxNTAxNzMxNTU4
-LDk1NjUzOTAzOSw2ODQ3ODg0OTIsMTQ5NzQ5ODIwOSwtMTcwNj
-QwNjMwNCw3MDYzNjc4NTAsLTIwNDUwODMxNDMsMjExNDYwNzM2
-MiwxNjQyNTIzMTA0LC0xMjM1MDc3NDE4LC0xODcwODQyNzcsMT
-M3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2MjYxNzcyLDEzNzU1
-OTcxMl19
+eyJoaXN0b3J5IjpbLTI2MDg0NTczMSwtMTE5NjUxMDM4NSwtMj
+U2ODY1NTIsNDYxNDUzMDk1LC04NTIwNzg4ODMsMTUwMTczMTU1
+OCw5NTY1MzkwMzksNjg0Nzg4NDkyLDE0OTc0OTgyMDksLTE3MD
+Y0MDYzMDQsNzA2MzY3ODUwLC0yMDQ1MDgzMTQzLDIxMTQ2MDcz
+NjIsMTY0MjUyMzEwNCwtMTIzNTA3NzQxOCwtMTg3MDg0Mjc3LD
+EzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2MTc3MiwxMzc1
+NTk3MTJdfQ==
 -->
