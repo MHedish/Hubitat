@@ -208,20 +208,19 @@ Added the ability to immediately run the next scheduled program or to skip over 
 - Enhanced solar cache detection and self-repair
 
 ## ☀️ 1.3.0.0 — Public Release
-- 🪲 Corrected GetAstronomicalCache()
-- Updated event notification scaffolding.
-- Added app and device notification test buttons.
-- Added the ability to skip the next scheduled program
-- Added the ability to restore skipped programs.
+- 🪲 Corrected GetAstronomicalCache() and self-repair
+- Updated event notification scaffolding
+- Added app and device notification test buttons
+- Added the ability to restore skipped programs
 - Added program notifications
-- Added Zone notifications;
+- Added Zone notifications
 - Added advisory for mismatched nozzles within the same program
 - Fixed deleteProgram() to remove residual [useCycleSoak,cycleCount,cyclePauseMin] when deleting programs.
-- Added Tool Tips for Logging & Tools section.
+- Added Tool Tips for Logging & Tools section
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEzNDc0MDIyNjYsLTEzODcxMjkwODAsLT
-E3MjUxMjE4NzgsLTE5MjY0NTEyMywxMjM0NjI2ODEzLDExNzI1
-ODcxOTksNTIzMDI4MjMsLTExNzQyMzE5MTYsMTM4MzM4MDQ0Ni
-wxNzI1Mjg0NTY5LC0xMDI5OTc4NDcsLTgxMjA3MjM1OCwxODQ3
-MDM3ODAzXX0=
+eyJoaXN0b3J5IjpbNjA3NjE5MzM1LC0xMzg3MTI5MDgwLC0xNz
+I1MTIxODc4LC0xOTI2NDUxMjMsMTIzNDYyNjgxMywxMTcyNTg3
+MTk5LDUyMzAyODIzLC0xMTc0MjMxOTE2LDEzODMzODA0NDYsMT
+cyNTI4NDU2OSwtMTAyOTk3ODQ3LC04MTIwNzIzNTgsMTg0NzAz
+NzgwM119
 -->
