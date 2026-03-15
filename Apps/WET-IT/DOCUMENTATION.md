@@ -1090,14 +1090,135 @@ These options control scheduling, weather sources, soil modeling, and automation
 
 ---
 
-### 🔔 Notifications & Logging
 
-| Setting | Description |
-|:--|:--|
-| **Event Logging Level** | Off / Info / Debug. Controls verbosity of driver and app logs. |
-| **Send Alerts to Devices** | Optional: Push notifications for freeze, rain, or wind skips. |
-| **Dashboard Summary Tile** | Enables publishing of summary data to a single dashboard tile. |
-| **Advanced Debug Mode** | Logs detailed ET math and program execution traces. Disable for normal operation. |
+## 📑 Logging & Tools
+
+### Notifications
+
+WET-IT integrates with the Hubitat **Notifications** app to provide real-time alerts about irrigation activity, weather conditions, and zone operation.
+
+WET-IT does **not send notifications directly**. Instead, it emits events from its data child device which the Notifications app can subscribe to and route to notification devices such as:
+
+- Mobile push notifications
+- SMS messages
+- Speech devices
+- Voice assistants
+- Dashboards or automation rules
+
+This design keeps WET-IT focused on irrigation logic while allowing Hubitat to manage message delivery, rate limiting, and scheduling.
+
+---
+
+### Notification Event Model
+
+WET-IT uses a **button-based event model** for notifications.
+
+Each event category is represented by a button number on the WET-IT data child device.
+
+| Button | Category | Description |
+|------|-----------|-------------|
+| **1** | Weather Alerts | Freeze, rain, wind, and forecast availability alerts |
+| **2** | Program Lifecycle | Program start and completion events |
+| **3** | Zone Activity | Zone activation and shutdown events |
+
+This allows users to create separate notification rules for different types of irrigation events.
+
+---
+
+### Event Types
+
+Two Hubitat button event types are used:
+
+| Event | Meaning |
+|------|---------|
+| **pushed** | Event became active |
+| **released** | Event ended / returned to normal |
+
+These events allow the Notifications app to distinguish between **start** and **stop** conditions.
+
+---
+
+### Example Events
+
+#### Weather Alerts (Button 1)
+
+| Event | Example Message |
+|------|------------------|
+| pushed | `Freeze warning active` |
+| pushed | `High wind alert` |
+| released | `Weather alerts cleared` |
+| pushed | `Forecast unavailable beyond diurnal variance` |
+| released | `Forecast data restored` |
+
+---
+
+#### Program Lifecycle (Button 2)
+
+| Event | Example Message |
+|------|------------------|
+| pushed | `Front Lawn now active` |
+| released | `Front Lawn is complete` |
+
+These events indicate when irrigation programs begin and end.
+
+---
+
+#### Zone Activity (Button 3)
+
+| Event | Example Message |
+|------|------------------|
+| pushed | `Zone 3 now active` |
+| released | `Zone 3 no longer active` |
+
+These events provide real-time updates about zone operation during irrigation.
+
+---
+
+### Configuring Notifications
+
+To receive WET-IT notifications:
+
+1. Open the **Hubitat Notifications** app.
+2. Select the **WET-IT Data Device** as a trigger device.
+3. Choose the button event(s) to monitor.
+4. Select the notification delivery device(s).
+
+Example configuration:
+
+| Notification Type | Trigger |
+|------------------|--------|
+| Weather alerts | Button **1 pushed** |
+| Program start | Button **2 pushed** |
+| Program complete | Button **2 released** |
+| Zone active | Button **3 pushed** |
+
+---
+
+### Testing Notifications
+
+The **Test Notifications** button in the **Logging & Tools** section sends a test alert through the WET-IT notification system.
+
+This verifies that:
+
+- the Notifications app is configured correctly
+- message routing is working
+- selected devices receive alerts
+
+The test message uses the same event mechanism as normal WET-IT notifications.
+
+---
+
+### Why WET-IT Uses This Design
+
+Using the Hubitat Notifications app provides several advantages:
+
+- centralized message routing
+- configurable delivery devices
+- rate limiting
+- scheduled quiet hours
+- integration with other automations
+
+Because WET-IT only emits events, the notification system remains flexible and easy to customize.
 
 ---
 
@@ -1861,11 +1982,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbOTE3MjEzMTY5LC0xMTA2MDc2NTYxLC0xNz
-A1NjEzMzY4LDE0NzE5MjI3OTYsLTE1NzE0Njg5MjAsLTI5NzY1
-OTY3MSwxOTc4MDk4NTU3LDE1MDczODU1OTksMjkxOTkxMjE3LC
-0xMDI1NjY0NjE1LC0yMTA1MTA3OTksLTE5MzE1NjU4MjUsLTEz
-NDk3MzUzOTgsMjA3NjUxMzUwOSwtMTg2MjQyNDk5NywtNjc2ND
-Y4NDU3LC0xNjgxNzk3NjAxLC02Mjc5NDEzNDMsLTE2Mzg5NDAz
-OTQsLTIwNjM4OTEwNTRdfQ==
+eyJoaXN0b3J5IjpbODc0ODUwMDM4LDkxNzIxMzE2OSwtMTEwNj
+A3NjU2MSwtMTcwNTYxMzM2OCwxNDcxOTIyNzk2LC0xNTcxNDY4
+OTIwLC0yOTc2NTk2NzEsMTk3ODA5ODU1NywxNTA3Mzg1NTk5LD
+I5MTk5MTIxNywtMTAyNTY2NDYxNSwtMjEwNTEwNzk5LC0xOTMx
+NTY1ODI1LC0xMzQ5NzM1Mzk4LDIwNzY1MTM1MDksLTE4NjI0Mj
+Q5OTcsLTY3NjQ2ODQ1NywtMTY4MTc5NzYwMSwtNjI3OTQxMzQz
+LC0xNjM4OTQwMzk0XX0=
 -->
