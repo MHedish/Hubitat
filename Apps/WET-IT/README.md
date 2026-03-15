@@ -3,13 +3,13 @@
 *A Hubitat App for Weather-Based Smart Irrigation Using Real Evapotranspiration (ET) Modeling & Scheduling*
 
 ![Platform](https://img.shields.io/badge/Platform-Hubitat-blue) 
-![Version](https://img.shields.io/badge/Version-1.3.0.0-green?t=20260315)
+![Version](https://img.shields.io/badge/Version-1.2.3.1-green?t=2026005)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
-**App Version:** 1.3.0.0
-**Driver Version:** 1.3.0.0
+**App Version:** 1.2.3.1
+**Driver Version:** 1.2.3.0
 **Echo Version:** 1.1.0.0
-**Release Date:** 2026-03-15
+**Release Date:** 2026-03-12
 
 ---
 
@@ -27,125 +27,7 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 
 ### 💡 Highlights
 
-### 🆕 *What’s New in v1.3.0.0* 🆕
-
-Added the ability to *restore* skipped programs
-
-The Notification system is finally complete!
-WET-IT now generates notification events for external delivery through the Hubitat *Notifications* app.
-
-Notifications are not sent directly by WET-IT. Instead, the application publishes events that can be routed by the Notifications app to devices such as:
-- Mobile Push Notifications
-- Text Messages
-- Speech Devices
-- Voice Assistants
-
-### Logging & Tools Help
-
-The **Logging & Tools** section controls diagnostic logging, on-screen help visibility, and the system notification interface used by WET-IT.
-
-Logging features help with troubleshooting and system monitoring, while notifications provide real-time feedback about irrigation activity, weather alerts, and zone operation.
-
----
-
-#### Log All Events
-When enabled, WET-IT writes detailed operational events to the Hubitat log.
-
-Events include:
-
-- program start and completion
-- zone activation and shutdown
-- weather alert changes
-- scheduling decisions
-- system status messages
-
-This option is useful for understanding normal system behavior or diagnosing unexpected conditions.
-
----
-
-#### Enable Debug Logging
-Enables verbose debug logging for troubleshooting and development.
-
-Debug logs include additional internal state information such as:
-
-- scheduler evaluations
-- zone runtime calculations
-- program arbitration decisions
-- device control operations
-- forecast processing
-
-For safety and performance reasons, debug logging **automatically disables itself after 30 minutes**.
-
----
-
-#### Disable Debug Logging Now
-Immediately turns off debug logging without waiting for the automatic timeout.
-
-This is useful if debugging has completed and log verbosity should be reduced.
-
----
-
-#### Hide On-screen Tooltips
-Hides the contextual help panels displayed throughout the WET-IT configuration interface.
-
-Tooltips provide explanations of settings and operational indicators. Advanced users may prefer to hide them once the system is familiar.
-
----
-
-#### Enable System Notifications
-Allows WET-IT to generate notification events for external delivery through the Hubitat **Notifications** app.
-
-Notifications are not sent directly by WET-IT. Instead, the application publishes events that can be routed by the Notifications app to devices such as:
-
-- mobile push notifications
-- text messages
-- speech devices
-- voice assistants
-
-This design allows notification delivery, rate limiting, and scheduling to be managed centrally by Hubitat.
-
----
-
-#### Test Notifications
-Sends a test notification event through the system.
-
-Use this to verify that:
-
-- the Notifications app is configured correctly
-- devices are receiving WET-IT alerts
-- message routing is working as expected
-
-The test message will appear as a WET-IT alert event.
-
----
-
-### Notification Event Categories
-
-WET-IT emits several types of notification events that can be subscribed to in the Notifications app.
-
-| Button | Event Type | Description |
-|------|-------------|-------------|
-| **1** | Weather Alerts | Freeze, rain, wind, and forecast availability notifications |
-| **2** | Program Lifecycle | Program start and completion events |
-| **3** | Zone Activity | Zone activation and shutdown events |
-
-These event categories allow notification rules to be tailored to specific types of irrigation activity.
-
-### Example Notifications
-
-Typical messages include:
-
-- `Program Lawn Front now active`
-- `Zone 3 now active`
-- `Program Garden Beds complete`
-- `Weather alerts cleared`
-- `Forecast data restored`
-
-Notifications provide situational awareness while allowing the Hubitat Notifications app to control how and when messages are delivered.
-
-This design allows notification delivery, rate limiting, and scheduling to be managed centrally by Hubitat.
-
-###  *What’s was new in v1.2.3.0* 
+### 🆕 *What’s New in v1.2.3.0* 🆕
 
 Added next scheduled program attributes:
 - nextProgramScheduleJson
@@ -162,7 +44,7 @@ You might want to skip the next scheduled time because of a broken valve or perh
 
 Skips can also be stacked so you can temporarily skip multiple programs in the schedule.
 
-###  *What’s Was New in v1.2.2.0* 
+### 🆕 *What’s Was New in v1.2.2.0* 🆕
 
 Corrected persistence bug in weather alert summary.
 
@@ -353,7 +235,7 @@ Optional backup for alerts an observational data is available.
 ## 🧭 Configuration Reference
 
 WET-IT includes three primary configuration pages — **Zone Setup**, **Soil Settings**, and **Scheduling** — which define the foundation of irrigation behavior.  
-Each page affects how programs calculate run times, react to weather, and control hardware.
+Each page affects how progras calculate run times, react to weather, and control hardware.
 
 ---
 
@@ -485,11 +367,11 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTgxNjk4NTIxOCwtMjU2ODY1NTIsNDYxND
-UzMDk1LC04NTIwNzg4ODMsMTUwMTczMTU1OCw5NTY1MzkwMzks
-Njg0Nzg4NDkyLDE0OTc0OTgyMDksLTE3MDY0MDYzMDQsNzA2Mz
-Y3ODUwLC0yMDQ1MDgzMTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEw
-NCwtMTIzNTA3NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLT
-E1NjI1NTgzMDksMTIyNjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1
-ODIyM119
+eyJoaXN0b3J5IjpbLTExOTY1MTAzODUsLTI1Njg2NTUyLDQ2MT
+Q1MzA5NSwtODUyMDc4ODgzLDE1MDE3MzE1NTgsOTU2NTM5MDM5
+LDY4NDc4ODQ5MiwxNDk3NDk4MjA5LC0xNzA2NDA2MzA0LDcwNj
+M2Nzg1MCwtMjA0NTA4MzE0MywyMTE0NjA3MzYyLDE2NDI1MjMx
+MDQsLTEyMzUwNzc0MTgsLTE4NzA4NDI3NywxMzc5NDM2MjUzLC
+0xNTYyNTU4MzA5LDEyMjYyNjE3NzIsMTM3NTU5NzEyLDIxMTk4
+NTgyMjNdfQ==
 -->
