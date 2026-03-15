@@ -7,60 +7,7 @@
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  1.0.0.0 – 1.0.4.0 See https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/CHANGELOG.md
-*  1.0.5.0   –– Added automatic soil type detection via USDA – Lat/Lon determination of soil type, US Only. SoilGrids is beta and unreliable.  Will add when stable.
-*  1.0.5.1   –– Added copy USDA default to all.
-*  1.0.5.2   –– Reverted.
-*  1.0.5.3   –– Added soilOptionsUi()
-*  1.0.6.0   –– Added "Saturation Skip" logic: Evaluates each ET-adjusted program and skips it if all zones are already at or above their calculated field capacity.
-*  1.0.7.0   –– Begin Soak & Cycle; corrected global atomicState.saturationSkipPrograms clearing.
-*  1.0.7.1   –– Reverted.
-*  1.0.7.2   –– Added per-program cycle splitting and soak delay logic to improve infiltration and prevent runoff. Fully integrated with ET and Saturation Skip systems.
-*  1.0.8.0   –– Added bi-directional program/zone start/stop and time reporting with child driver; Fixed removal of zone${z}Et in cleanupUnusedChildData(); renamed updateClockEmoji() to updateClockState()
-*  1.0.8.1   –– Updated childEmitChangedEvent()
-*  1.0.9.0   –– Echo voice integration via Hubitat's built-in Amazon Echo Skill.
-*  1.0.9.1   –– Additional child device reporting, rename child device dynamically.
-*  1.0.9.2   –– Echo child device verification and program name sync complete.
-*  1.0.9.3   –– Rename Alex to Echo
-*  1.0.9.4   –– Reworked echoSync and echoVerify
-*  1.0.9.5   –– Established child driver version checking.
-*  1.0.9.6   –– Fixed hardcoded prefix in verifyEchoChildren
-*  1.0.9.7   –– Updated detectSettingsChange() to call syncEchoChildren() if any echo settings exist.
-*  1.0.9.8   –– Initialize Echo child valve/switch state.
-*  1.0.9.9   –– Updated child driver version and presence control.
-*  1.0.9.10  –– Fixed checkChildDriver()
-*  1.0.9.11  –– Fixed checkChildDriver() leaving orphan devices.
-*  1.0.9.12  –– Added ping() as No-Op to force version update in child devices.
-*  1.0.9.13  –– Added cleanupProbeDevices() to ensure we cleanup probe orphans.
-*  1.0.10.0  –– Incorporated "soak & cycle" into "end by time/sunrise" feature.
-*  1.0.10.1  –– Moved soak & cycle to program based instead of zone based.
-*  1.0.10.2  –– Removed runCycleSoak(), handleCycleEnd(), resumeCycleSoak(), runZoneCycle()
-*  1.0.10.3  –– Refactored irrigationTick() to prevent recurring skips of the same program.
-*  1.0.10.4  –– Added ISO 3166-2 location.
-*  1.0.10.5  –– Refactored to use state.geo.lat and state.geo.lon
-*  1.0.10.6  –– Added explicit USDA SDA capability check.
-*  1.0.10.7  –– Reverted.
-*  1.0.10.8  –– Reverted.
-*  1.0.10.9  –– Reverted.
-*  1.0.10.10 –– Fixed partial Et rest for partial zone completion.
-*  1.0.10.11 –– Added ISO 3166-2 iconography
-*  1.0.11.0  –– Implemented parent/child success/failure for program and zones.
-*  1.0.11.1  –– Various improvements to child/echo responses; added guard against running multiple programs simultaneously.
-*  1.0.11.2  –– Corrected data child runProgram null param.
-*  1.0.11.3  –– Updated fetchGeo() and verifySystem() to original intent to only update if lat/lon changes.
-*  1.0.11.4  –– Removed legacy getRainForecastInches()
-*  1.0.11.5  –– Added Open-Meteo as wx provider.
-*  1.0.11.6  –– Corrected wx provider backup bool. Previous was legacy code and was not implemented.
-*  1.0.11.7  –– Fixed backup wx source gate at forecast retrieval; enabled system wide notification for wx forecast failure; separated wx observations from ET data.
-*  1.1.0.0   –– Version bump for public release.
-*  1.1.0.1   –– Added astronomical API call for dusk/dawn/twilight.
-*  1.1.0.2   –– Moved from internal solar day calls to atomicState map; fixed sticky tempestRain setting; expose solarData to combined JSON map.
-*  1.1.0.3   –– Corrected stopZoneManually() from blocking calls with missing params.
-*  1.1.0.4   –– Corrected atomicState deep-map mutation causing loss of solarData.solarDate; enforced single-write reassignment semantics.
-*  1.1.0.5   –– Corrected program overlap detection and advisory messaging for solar-based schedules (dawn/dusk/sunrise/sunset); improved conflict clarity using program labels and schedule semantics; fixed program summary text to accurately reflect configured solar start/end events.
-*  1.1.0.6   –– Updated schedulePage() to emit confict messages.
-*  1.1.0.7   –– Really fixed the conflict messages.
-*  1.1.0.8   –– Included conflict "flag" on scheduled programs grid; fixed wxForecast events.
+*  1.0.0.0 – 1.1.0.8 See https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/CHANGELOG.md
 *  1.2.0.0   –– Version bump for public release.
 *  1.2.1.0   –– Begin update to publish next program.
 *  1.2.1.6   –– Added nextProgramEpoch, nextProgramName, and nextProgramText
@@ -70,7 +17,7 @@
 *  1.2.1.16  –– Updated verifySystem() to include astronomical cache validation and update to nextProgram
 *  1.2.2.0   –– Version bump for public release.
 *  1.2.2.1   –– Rename getNextScheduledProgram() → calcNextProgramEvent() for clarification.
-*  1.2.2.2   –– Created schedule map for JSON publishing; correcced persisent activeAlerts attribute when no alerts exist.
+*  1.2.2.2   –– Created schedule map for JSON publishing; corrected persisent activeAlerts attribute when no alerts exist.
 *  1.2.2.3   –– Restored publshing nextProgram* to child unconditionally.
 *  1.2.2.4   –– Added runNextProgram and skipNextProgram.
 *  1.2.2.5   –– Added weather alert notifications; added runNextProgram and skipNextProgram UI.
@@ -80,14 +27,22 @@
 *  1.2.2.9   –– UI improvements; updated detectSettingsChange(); clear skipProgramInstances when a program is deleted.
 *  1.2.3.0   –– Version bump for public release.
 *  1.2.3.1   –– Fixed notification alert error; Enhanced solar cache detection and self-repair.
+*  1.2.3.2   –– Reverted -- Continuous logWarn
+*  1.2.3.3   –– Corrected GetAstronomicalCache()
+*  1.2.3.4   –– Updated event notification scaffolding. Added app and device test buttons.
+*  1.2.3.5   –– Added restore skipped programs.
+*  1.2.3.6   –– Added Program notifications; completed work on program restore.
+*  1.2.3.7   –– Added Zone notifications; Added advisory for mismatched nozzles within the same program; fixed deleteProgram() to remove residual [useCycleSoak,cycleCount,cyclePauseMin] when deleting programs.
+*  1.2.3.8   –– Added Tool Tips for Logging & Tools section.
+*  1.3.0.0   –– Version bump for public release.
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="1.2.3.1"
-@Field static final String APP_MODIFIED="2026-03-12"
+@Field static final String APP_VERSION="1.3.0.0"
+@Field static final String APP_MODIFIED="2026-03-15"
 @Field static final String JSON_SCHEMA="wetit.unified.v1"
 @Field static final String REPO_ROOT="https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT"
 @Field static final String RAW_ROOT="https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT"
@@ -104,7 +59,7 @@ import groovy.json.JsonOutput
 @Field static def cachedChild=null
 @Field static Integer cachedZoneCount=null
 @Field static final Map CHILD_DRIVERS=[
-    data:[name:"WET-IT Data",minVer:"1.2.3.0",required:true],
+    data:[name:"WET-IT Data",minVer:"1.3.0.0",required:true],
     echo:[name:"WET-IT Echo",minVer:"1.1.0.0",required:false]
 ]
 
@@ -123,7 +78,7 @@ definition(
     singleInstance:true
 )
 
-preferences {
+preferences{
     page(name:"mainPage")
     page(name:"zonePage")
     page(name:"soilPage")
@@ -140,7 +95,6 @@ private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){se
 private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=app.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 private childEmitEvent(dev,n,v,d=null,u=null,boolean f=false){try{dev.emitEvent(n,v,d,u,f)}catch(e){logWarn"childEmitEvent(): ${e.message}"}}
 private childEmitChangedEvent(dev,n,v,d=null,u=null,boolean f=false){try{dev.emitChangedEvent(n,v,d,u,f)}catch(e){logWarn"childEmitChangedEvent(): ${e.message}"}}
-private void sendAppAlert(String msg,boolean notify=true){if(logEvents)logWarn msg;if(notify&&settings.enableNotifications)sendLocationEvent(name:"APP_NOTIFICATION",value:msg,isStateChange:true);childEmitEvent(getDataChild(),"activeAlerts",msg,"⚠️ ${msg}",null,true)}
 private getDataChild(boolean fresh=false){def dni="wetit_data_${app.id}";if(fresh||!cachedChild||!getChildDevice(dni))cachedChild=ensureDataDevice();return cachedChild}
 private getEchoChild(Integer p,boolean fresh=false){def dni="wetit_echo_${app.id}_${p}";def d=getChildDevice(dni);return(d?:null)}
 private autoDisableDebugLogging(){try{unschedule("autoDisableDebugLogging");atomicState.logEnable=false;app.updateSetting("logEnable",[type:"bool",value:false]);logInfo"Debug logging disabled (auto)"}catch(e){logDebug"autoDisableDebugLogging(): ${e.message}"}}
@@ -240,6 +194,8 @@ def mainPage(){
 			"<li><b><font color='darkorange'>[Conflict]</font></b> – Indicates a program that has a schedule that overlaps with one or more other programs. You can exclude inactive programs from these warnings under <b>Program Settings (Advanced)</b>.</li>"+
 			"<li><b><font color='red'>[Disabled]</font></b> – Indicates a program is inactive and will be skipped by the scheduler until re-enabled.</li>"+
 			"</ul>"+
+			"<p><b>Next Scheduled Program</b> – Displays the next scheduled event (program name, date and time). You can chose to force that program to run now or you can tell the scheduler to skip the program's next event.</p>"+
+			"</ul>"+
 			"<p>The <b>⚙️ Program Settings (Advanced)</b> panel controls global timing and weather-based behaviors that apply to all programs.</p>"+
 			"<ul>"+
 			"<li><b>Minimum Program Runtime</b> – If a program’s total adjusted runtime (after ET and seasonal scaling) falls below this limit, it is skipped. Prevents unnecessary short runs.</li>"+
@@ -272,15 +228,27 @@ def mainPage(){
 			            if(!settings.resetSkipNextConfirm)input"btnRunNextProgram","button",title:runTitle,width:3
 			            if(settings.resetRunNextConfirm)input"btnCancelRunNextProgram","button",title:"❌ Cancel"
 					}
-			        def skipTitle=settings.resetSkipNextConfirm?"⚠️ Confirm Skip $btnName. (Cannot be Undone)":"⏭️ Skip $btnName"
+			        def skipTitle=settings.resetSkipNextConfirm?"⚠️ Confirm Skip $btnName. (<font color='seagreen'>Can be Restored</font>)":"⏭️ Skip $btnName"
 					if(!settings.resetRunNextConfirm){
 						if(settings.resetSkipNextConfirm&&skipBlocked){paragraph"<font color='maroon'>⚠️ Cannot skip $btnName</font> — all upcoming programs have already been skipped."}
-						else{input"btnSkipNextProgram","button",title:skipTitle,width:3}
+						else{input"btnSkipNextProgram","button",title:skipTitle,width:4}
 					}
-					if(settings.resetSkipNextConfirm)
-					input"btnCancelSkipNextProgram","button",title:"❌ Cancel"
-					if(nextName=="recalculating")input"btnNextProgramRefresh","button",title:"🔄 Refresh",width:3
-			    detectSettingsChange("MainPage")}
+					if(settings.resetSkipNextConfirm){input"btnCancelSkipNextProgram","button",title:"❌ Cancel"}
+					def skips=atomicState.skipProgramInstances
+					if(nextName=="recalculating"&&!settings.resetRunNextConfirm&&!settings.resetSkipNextConfirm){input"btnNextProgramRefresh","button",title:"🔄 Refresh",width:2}
+					if(settings.restoreProgramInstances){
+						def sel=settings.restoreProgramInstances;logDebug"sel: ${sel}"
+						if(sel&&!(sel instanceof List))sel=[sel]
+						skips=skips?.findAll{s->!sel.any{def(p,e)=it.split(/\|/);s.program==(p as Integer)&&s.epoch==(e as Long)}}
+						atomicState.skipProgramInstances=skips;app.updateSetting("restoreProgramInstances",[value:null,type:"enum"])
+						logDebug"restoreProgramInstances = ${settings.restoreProgramInstances}"
+					}
+					def restoreOpts=[:];def now=now()
+					skips?.findAll{it.epoch>now}?.sort{it.epoch}.each{
+						def pName=settings["programName_${it.program}"]?:"Program ${it.program}";def t=new Date(it.epoch).format(TS_FMT_LOCAL,location.timeZone);restoreOpts["${it.program}|${it.epoch}"]="${pName} — ${t}"
+					}
+					if(restoreOpts&&!settings.resetRunNextConfirm&&!settings.resetSkipNextConfirm)input"restoreProgramInstances","enum",title:"↩️ Restore skipped program instances",width:3,options:restoreOpts,multiple:true,submitOnChange:true
+                    detectSettingsChange("MainPage")}
 			}else{paragraph"<i>Disabled</i>"}
 		}
 		section("⚙️ Program Settings (Advanced)",hideable:true,hidden:true){
@@ -394,13 +362,41 @@ def mainPage(){
 		    paragraph"<hr style='margin-top:8px;margin-bottom:10px;'>"
 		}
         section(){
-			paragraph htmlHeading("📑 Logging & Tools","#1E90FF")
+			paragraph htmlHeadingLink("📑️","Logging & Tools","${REPO_ROOT}/DOCUMENTATION.md#-logging--tools","#1E90FF")
             paragraph"Controls for event and debug log management."
+			if(!settings.hideHelp)includeHelpSection(
+			"Logging & Tools Help",
+			"<p>The <b>Logging & Tools</b> section controls diagnostic logging, on-screen help visibility, and the system notification interface used by WET-IT.</p>"+
+			"<ul>"+
+			"<li><b>Log All Events</b> – When enabled, WET-IT writes detailed operational events to the Hubitat system log.</li>"+
+			"<li><b>Enable Debug Logging</b> – Enables verbose debug logging for troubleshooting and development.  For safety and performance reasons, debug logging <i>automatically disables itself after 30 minutes</i>.<br>"+
+			"The ${htmlHeButton('🛑 Disable Debug Logging Now')} button immediately turns off debug logging without waiting for the automatic timeout.</li>"+
+			"<li><b>Hide On-screen Tooltips</b> – Hides the contextual help panels displayed throughout the WET-IT configuration interface. <small>What you are reading now.</small></li>"+
+			"<li><b>Enable System Notifications</b> – Allows WET-IT to generate notification events for external delivery through the Hubitat <b><i>Notifications</i></b> app.<br>"+
+			"Notifications are not sent directly by WET-IT. Instead, the application publishes events that can be routed by the Notifications app to devices such as:"+
+			"<ul>"+
+			"<li>Mobile Push Notifications</li>"+
+			"<li>Text Messages</li>"+
+			"<li>Speech Devices</li>"+
+			"<li>Voice Assistants</li>"+
+			"</ul>"+
+			"This design allows notification delivery, rate limiting, and scheduling to be managed centrally by Hubitat.<br>"+
+			"The ${htmlHeButton('🧪 Test Notifications')} button sends a test notification event through the system.</li>"+
+			"</ul>"+
+			"<p>WET-IT emits several types of notification events that can be subscribed to in the Notifications app.</p>"+
+			"<ol>"+
+			"<li><b><font color='red'>[Weather Alerts]</font></b> – Freeze, rain, wind, and forecast availability alerts</li>"+
+			"<li><b><font color='green'>[Program Lifecycle]</font></b> – Program start and completion notifications</li>"+
+			"<li><b><font color='blue'>[Zone Activity]</font></b> – Zone activation and shutdown notifications</li>"+
+			"</ol>"+
+			"<p>Notifications provide situational awareness while allowing the Hubitat Notifications app to control how and when messages are delivered.</p>"
+		)
 		    input"logEvents","bool",title:"Log All Events",defaultValue:false,submitOnChange:true
 		    input"logEnable","bool",title:"Enable Debug Logging<br><small>Auto-off after 30 minutes.</small>",width:3,defaultValue:false,submitOnChange:true
             input"btnDisableDebug","button",title:"🛑 Disable Debug Logging Now",width:3,disabled:(!logEnable)
 		    input"hideHelp","bool",title:"Hide On-screen Tooltips",defaultValue:false,submitOnChange:true
-			input"enableNotifications","bool",title:"Enable System Notifications",defaultValue:true,submitOnChange:true
+			input"enableNotifications","bool",title:"Enable System Notifications<br><small>Be sure to configure $APP_NAME in the Notifications app.</small>",width:3,defaultValue:true,submitOnChange:true
+			input"btnTestNotifications","button",title:"🧪 Test Notifications",width:3,disabled:(!enableNotifications)
             paragraph"<hr style='margin-top:8px;margin-bottom:2px;border:0;border-top:1px solid #ccc;opacity:0.5;'>"
 		}
         section(){
@@ -646,6 +642,12 @@ def schedulePage(params){
 			paragraph htmlHeading("🌱 Zones","#2E8B57")
 			def zCount=settings.zoneCount?:1;def zoneOpts=(1..zCount).collectEntries{[it,"Zone ${it} (${settings["name_${it}"]?:''})"]}
 			input"programZones_${p}","enum",title:"Select Zones to Include",width:4,options:zoneOpts,multiple:true,required:false,submitOnChange:true
+			def famMap=["Spray":"spray","Rotor":"rotor/mp","MP Rotator":"rotor/mp","Drip Emitter":"drip emitter","Drip Line":"drip line","Bubbler":"bubbler"]
+			def fams=[];for(int z=1;z<=zCount;z++){def n=settings["nozzle_${z}"]?.toString();if(n)fams<<(famMap[n]?:n.toLowerCase())};fams=fams.unique()
+			if(fams.size()>1){
+				atomicState.conflictRefresh=true;def famText=fams.join(' + ')
+				paragraph"⚠️ <b>Advisory</b>: This program mixes irrigation types (${famText}). Separate programs may improve watering efficiency."
+			}
 		}
 		section(){
 			paragraph htmlHeading("🌊 Smart Cycle & Soak","#008B8B")
@@ -724,6 +726,7 @@ def appButtonHandler(String btn){
 	if(btn=="btnResetAllSoil"){if(!settings.resetAllConfirm){app.updateSetting("resetAllConfirm",[value:true,type:"bool"]);return};resetAllSoilMemory();app.updateSetting("resetAllConfirm",[value:false,type:"bool"]);return}
 	if(btn=="btnCancelResetAll"){app.updateSetting("resetAllConfirm",[value:false,type:"bool"]);return}
     if(btn=="btnDisableDebug"){disableDebugLoggingNow();return}
+    if(btn=="btnTestNotifications"){def msg="🧪 ${APP_NAME} alert test";childEmitEvent(getDataChild(),"pushed",1,msg,null,true);return}
     if(btn=="btnRunWeatherUpdate"){def wx=fetchWeather(true);if(wx?.failed){def msg="❌ Unable to retrieve weather update (${wx.source})";logWarn msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return};runWeatherUpdate();def msg=getDataChild(true)?.currentValue("summaryText")?:'⚠️ No ET summary available';logInfo"✅ ET run completed: ${msg}";app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
 	if(btn=="btnVerifyChild"){def ok=verifyDataChild();def msg=ok?"✅ Data child verified successfully.":"⚠️ Data child verification failed. Check logs.";logInfo msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
 	if(btn=="btnVerifySystem"){def ok=verifySystem(true);def msg=ok?"✅ System verification passed.":"⚠️ System verification failed. See logs for details.";logInfo msg;app.updateSetting("dummyRefresh",[value:"${now()}",type:"string"]);atomicState.tempDiagMsg=msg;return}
@@ -987,7 +990,8 @@ private void deleteProgram(Integer p){
     logDebug"⚙️ deleteProgram(${p}) START — removing '${pName}' (count=${pCount})"
     List<String> keys=["programName","programActive","programStartMode","programStartTime","programEndBySunrise","programZones",
         "programAdjustMode","programDaysMode","programWeekdays","programInterval","programRuntime","programMinTime",
-        "programLastRun","programNextRun","programDisabled","programConflict","programDuration","programSummary","deleteProgConfirm"]
+        "programLastRun","programNextRun","programDisabled","programConflict","programDuration","programSummary","useCycleSoak",
+        "cycleCount","cyclePauseMin","deleteProgConfirm"]
     if(p<pCount){
         ((p+1)..pCount).each{Integer i->
             keys.each{k->
@@ -1183,7 +1187,7 @@ def verifyDataChild(){
 
 private cleanupUnusedChildData(){
     def c=getDataChild();if(!c)return
-	logInfo"🧹 Cleaning unused child data."
+	logInfo"🧹 Cleaning unused child data"
     if(!settings.publishJSON){
         try{c.deleteCurrentState("datasetJson")}catch(e){logDebug"cleanupUnusedChildData(): datasetJson missing or already removed (${e.message})"}
     }
@@ -1264,13 +1268,13 @@ private boolean verifySystem(boolean force=false){
 	}
 	if(settings.find{k,v->k.startsWith("programEchoEnabled_")&&v}){try{verifyEchoChildren();logInfo"✅ Echo child devices verified"}catch(e){logWarn"verifySystem(): Echo verify failed ${e.message}";issues<<"Echo verification failed (${e.message})"}}
 	cleanupProbeDevices()
-	if(!fetchGeo(force))issues<<"Unable to populate geolocation cache"else logInfo"✅ Geolocation cache verified."
+	if(!fetchGeo(force))issues<<"Unable to populate geolocation cache"else logInfo"✅ Geolocation cache verified"
 	def solarOk=true;def sd=atomicState.solarData;def today=new Date().format("yyyy-MM-dd",location.timeZone)
 	if(!sd){issues<<"Astronomical cache missing";solarOk=false}
 	else if(!(sd.days instanceof Map)){issues<<"Astronomical cache structure invalid";solarOk=false}
 	else if(!sd.days[today]){issues<<"Astronomical cache missing entry for ${today}";solarOk=false}
-	if(solarOk)logInfo "🌘 Astronomical cache verified."
-	def next=calcNextProgramEvent();if((!next)&&(settings.schedulingActive))issues<<"Next scheduled program not calculated."else logInfo"📅️ Next scheduled program verified."
+	if(solarOk)logInfo "✅ Astronomical cache verified"
+	def next=calcNextProgramEvent();if((!next)&&(settings.schedulingActive))issues<<"Next scheduled program not calculated."else logInfo"✅️ Next scheduled program verified"
     def wx=child.currentValue("wxSource")?:'Unknown'
     if(wx in ['Unknown','Not yet fetched',''])issues<<"invalid weather source (${wx})"
     if(issues){issues.each{logWarn"System Verification: ⚠️ ${it}"};logInfo"❌ Issues detected during system verification";return false}
@@ -1295,15 +1299,25 @@ private Map fetchWeather(boolean force=false){
             if(wx){wx<<[source:"${src} → ${fb} fallback"];obsOnly=true}
         }else if(wx)wx<<[source:src]
     }catch(e){wx=[:];logWarn"fetchWeather(): ${src.toUpperCase()} fetch failed — ${e.message}"}
-    if((!wx||wx.failed)&&!force){
-        atomicState.forecastMissCount=(atomicState.forecastMissCount?:0)+1;logWarn"fetchWeather(): forecast authority lost. Missed (${atomicState.forecastMissCount}) forecast requests"
-        if(atomicState.forecastMissCount>=6){
-            atomicState.tempDiagMsg="⚠️ Forecast unavailable beyond diurnal variance. ET is stale."
-            if(settings.enableNotifications)sendLocationEvent(name:"wet-it alert",value:"Forecast (${src}) unavailable beyond diurnal variance. Program scheduling suspended.","APP_NOTIFICATION",isStateChange:true)
-            if(settings.suspendOnStaleForecast){logWarn"fetchWeather(): program scheduling suspended by user policy";settings.schedulingActive=false}
-        }else if(atomicState.forecastMissCount>=3)
-            atomicState.tempDiagMsg="⚠️ Forecast data stale for multiple cycles; ET continuing on last known forecast."
-    }else if(wx&&!wx.failed)atomicState.forecastMissCount=0
+	if((!wx||wx.failed)&&!force){
+	    atomicState.forecastMissCount=(atomicState.forecastMissCount?:0)+1
+	    logWarn"fetchWeather(): forecast authority lost. Missed (${atomicState.forecastMissCount}) forecast requests"
+	    if(atomicState.forecastMissCount>=6){
+	        atomicState.tempDiagMsg="⚠️ Forecast unavailable beyond diurnal variance. ET is stale."
+	        if(enableNotifications){
+	            def c=getDataChild();def msg="Forecast (${src}) unavailable beyond diurnal variance. Program scheduling suspended."
+	            childEmitChangedEvent(c,"activeAlerts",msg,"Forecast unavailable");childEmitEvent(c,"pushed",1,msg,null,true)
+	        }
+	        if(settings.suspendOnStaleForecast){logWarn"fetchWeather(): program scheduling suspended by user policy";settings.schedulingActive=false}
+	    }else if(atomicState.forecastMissCount>=3){
+	        def c=getDataChild();def msg="Forecast (${src}) unavailable for multiple cycles."
+	        childEmitChangedEvent(c,"activeAlerts",msg,"Forecast degraded");childEmitEvent(c,"pushed",1,msg,null,true)
+	        atomicState.tempDiagMsg="⚠️ Forecast data stale for multiple cycles; ET continuing on last known forecast."
+	    }
+	}else if(wx&&!wx.failed){
+	    def prevMiss=atomicState.forecastMissCount?:0;atomicState.forecastMissCount=0
+	    if(prevMiss>=3&&prevMiss<6){def c=getDataChild();def msg="Forecast (${src}) data restored.";childEmitChangedEvent(c,"activeAlerts","none","Forecast data restored");childEmitEvent(c,"released",1,msg,null,true)}
+	}
     if(!wx||wx.isEmpty()){logWarn"fetchWeather(): ❌ ${src.toUpperCase()} fetch failed — no data returned";return [failed:true,source:src.toUpperCase()]}
     def nowStr=new Date().format(TS_FMT_LOCAL,location.timeZone);atomicState.wxChecked=nowStr
     if(obsOnly){
@@ -1628,8 +1642,7 @@ private runWeatherUpdate(){
 	            saturatedPrograms<<p
 	        }
 	    }
-	    atomicState.saturationSkipPrograms=saturatedPrograms
-	    logDebug"runWeatherUpdate(): Saturation Skip analysis complete (${saturatedPrograms.size()} programs flagged)"
+	    atomicState.saturationSkipPrograms=saturatedPrograms;logDebug"runWeatherUpdate(): Saturation Skip analysis complete (${saturatedPrograms.size()} programs flagged)"
 	}
 }
 
@@ -1647,30 +1660,40 @@ private Map getCurrentSeasons(BigDecimal lat){
 private Map solarForDay(Date d){def sd=atomicState.solarData?.days;if(!sd)return null;String k=d.format(DATE_FMT,location.timeZone);return sd[k]}
 
 private boolean getAstronomicalData(){
-    try{
-        def lat=state.geo?.lat,lon=state.geo?.lon;if(!lat||!lon)return false
-        def tz=location.timeZone;def today=new Date().format(DATE_FMT,tz);long base=new Date().clearTime().time
-        if(atomicState.solarData?.sunrise){logInfo"🌘 Migrating legacy solar cache";atomicState.remove("solarData")}
-        if(!(atomicState.solarData?.days instanceof Map)){atomicState.solarData=[days:[:],order:[]]}
-        def sd=atomicState.solarData;sd.days=sd.days?:[:];sd.order=sd.order?:[]
-        if(sd.days.isEmpty()){
-            for(int i=0;i<8;i++){
-                def d=new Date(base+DAY_MS*i).format(DATE_FMT,tz)
-                httpGet(uri:"https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&date=${d}&formatted=0"){r->
-                    if(r?.status!=200||r?.data?.status!="OK")return
-                    def x=r.data.results
-                    sd.days[d]=[sunrise:x.sunrise,sunset:x.sunset,civilTwilightBegin:x.civil_twilight_begin,civilTwilightEnd:x.civil_twilight_end,solarNoon:x.solar_noon,dayLength:(x.day_length as Integer),nauticalTwilightBegin:x.nautical_twilight_begin,nauticalTwilightEnd:x.nautical_twilight_end,astronomicalTwilightBegin:x.astronomical_twilight_begin,astronomicalTwilightEnd:x.astronomical_twilight_end]
-                    if(!sd.order.contains(d))sd.order<<d
-                }
-            }
-        }else if(!sd.days[today]){
-		    logWarn"🌘 Astronomical cache drift detected — rebuilding"
-		    sd.days.clear();sd.order.clear();atomicState.solarData=sd;return getAstronomicalData()
+	try{
+		def lat=state.geo?.lat,lon=state.geo?.lon;if(!lat||!lon)return false
+		def tz=location?.timeZone?:TimeZone.getDefault();long base=new Date().clearTime().time;String today=new Date(base).format(DATE_FMT,tz)
+		if(atomicState.solarData?.sunrise){logInfo"🌘 Migrating legacy solar cache";atomicState.remove("solarData")}
+		if(!(atomicState.solarData instanceof Map)||!(atomicState.solarData?.days instanceof Map)||!(atomicState.solarData?.order instanceof List))atomicState.remove("solarData")
+		Map cur=(atomicState.solarData instanceof Map)?atomicState.solarData:[:];Map days=(cur.days instanceof Map)?[:]+cur.days:[:]
+		List order=(cur.order instanceof List)?(cur.order as List):[];List needed=[];for(int i=0;i<8;i++)needed<<new Date(base+(DAY_MS*i)).format(DATE_FMT,tz)
+		boolean rebuild=(days.size()!=8||order.size()!=8);List missing=[];needed.each{if(!(days[it] instanceof Map))missing<<it}
+		if(rebuild){days.clear();order.clear();missing=needed}
+		else{
+			order=order.findAll{days[it] instanceof Map}
+			if(order.size()==8 && missing.size()==1){
+				String newDay=missing[0];String oldDay=order[0];days.remove(oldDay);order=order.drop(1)
+			}
 		}
-        sd.solarDate=today;atomicState.solarData=sd
-        return true
-    }catch(e){logWarn"getAstronomicalData():${e.message}"}
-    false
+		boolean changed=false
+		missing.each{String ds->
+			httpGet(uri:"https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&date=${ds}&formatted=0"){r->
+				if(r?.status!=200||r?.data?.status!="OK")return
+				def x=r.data.results
+				days[ds]=[
+					sunrise:x.sunrise,sunset:x.sunset,
+					civilTwilightBegin:x.civil_twilight_begin,civilTwilightEnd:x.civil_twilight_end,
+					solarNoon:x.solar_noon,dayLength:(x.day_length as Integer),
+					nauticalTwilightBegin:x.nautical_twilight_begin,nauticalTwilightEnd:x.nautical_twilight_end,
+					astronomicalTwilightBegin:x.astronomical_twilight_begin,astronomicalTwilightEnd:x.astronomical_twilight_end
+				]
+				order<<ds;changed=true
+			}
+		}
+		if(changed||cur.solarDate!=today||cur.order!=order)atomicState.solarData=[days:days,order:order,solarDate:today]
+		return true
+	}catch(e){logWarn"getAstronomicalData():${e.message}"}
+	false
 }
 
 private void fetchWxLocation(){
@@ -1693,8 +1716,7 @@ private void fetchWxLocation(){
 				def t=c&&s?
 					(wx&&rd?"${c}, ${s} (${wx}/${rd})":wx?"${c}, ${s} (${wx})":rd?"${c}, ${s} (${rd})":"${c}, ${s}"):
 					wx&&rd?"${wx}/${rd}":wx?wx:rd?rd:''
-				atomicState.wxLocation=t
-				childEmitChangedEvent(getDataChild(),"wxLocation",t,"Weather forecast location (NOAA)")
+				atomicState.wxLocation=t;childEmitChangedEvent(getDataChild(),"wxLocation",t,"Weather forecast location (NOAA)")
 			}
 			return
 		}
@@ -1728,21 +1750,10 @@ private publishZoneData(Map results){
         logDebug "publishZoneData(): atomicState weather alerts persisted"
     }catch(e){logWarn "publishZoneData(): failed to persist atomicState alerts (${e.message})"}
 	def meta=[
-		schema:JSON_SCHEMA,
-		version:APP_VERSION,
-		timestamp:ts,
-		wxChecked:atomicState.wxChecked?:"",
-		wxLocation:atomicState.wxLocation?:"",
-		wxSource:atomicState.wxSource?:"Unknown",
-		wxTimestamp:atomicState.wxTimestamp?:"",
-		freezeAlert:(c?.currentValue("freezeAlert")?.toString()=="true"),
-		freezeLowTemp:c?.currentValue("freezeLowTemp")?:"",
-		rainAlert:(c?.currentValue("rainAlert")?.toString()=="true"),
-		rainForecast:c?.currentValue("rainForecast")?:"",
-		windAlert:(c?.currentValue("windAlert")?.toString()=="true"),
-		windSpeed:c?.currentValue("windSpeed")?:"",
-		units:settings.tempUnits?:"°F",
-		zoneCount:zoneCount
+		schema:JSON_SCHEMA,version:APP_VERSION,timestamp:ts,
+		wxChecked:atomicState.wxChecked?:"",wxLocation:atomicState.wxLocation?:"",wxSource:atomicState.wxSource?:"Unknown",wxTimestamp:atomicState.wxTimestamp?:"",
+		freezeAlert:(c?.currentValue("freezeAlert")?.toString()=="true"),freezeLowTemp:c?.currentValue("freezeLowTemp")?:"",rainAlert:(c?.currentValue("rainAlert")?.toString()=="true"),rainForecast:c?.currentValue("rainForecast")?:"",
+		windAlert:(c?.currentValue("windAlert")?.toString()=="true"),windSpeed:c?.currentValue("windSpeed")?:"",units:settings.tempUnits?:"°F",zoneCount:zoneCount
 	]
 	def soilMap=getSoilMemorySummary();def zones=[]
     results.each{k,v->
@@ -1759,9 +1770,13 @@ private publishZoneData(Map results){
 	def solarDate=ts.substring(0,10);def sd=atomicState.solarData?.days?.get(solarDate)?:[:];def combined=[meta:meta,zones:zones,solar:[solarDate:solarDate]+sd];atomicState.zoneDataset=zones
 	String json=new groovy.json.JsonOutput().toJson(combined)
 	String summaryText=zones.collect{z->"${z.zone}: ET ${z.etBudgetPct}%, Seasonal ${z.seasonalBudgetPct}%, ET Adjusted ${z.etAdjustedTime}s"}.join(" | ")
-	def alerts=[];if(freeze.freezeAlert)alerts<<"🧊️ Freeze";if(rain.rainAlert)alerts<<"☔ Rain";if(wind.windAlert)alerts<<"💨 Wind";if(alerts)summaryText+=" | Alerts: ${alerts.join(', ')}"
-	if(alerts)sendAppAlert("${APP_NAME} has detected a weather event within the next 24 hours. ${alerts.unique().join(', ')}")
-	childEmitEvent(c,"activeAlerts",alerts?alerts.join(', '):"none","Active alert summary",null,true)
+	def alerts=[];if(freeze.freezeAlert)alerts<<"🧊️ Freeze";if(rain.rainAlert)alerts<<"☔ Rain";if(wind.windAlert)alerts<<"💨 Wind"
+	def alertsMsg=alerts?alerts.join(', '):"none";if(alertsMsg!="none")summaryText+=" | Alerts: ${alertsMsg}"
+	if(enableNotifications){
+	    if(alertsMsg!="none"){childEmitEvent(c,"pushed",1,alertsMsg,null,true)}
+	    else if(c.currentValue("activeAlerts")!="none"){childEmitEvent(c,"released",1,"Weather alerts cleared",null,true)}
+	}
+	childEmitEvent(c,"activeAlerts",alertsMsg,"Active alert summary",null,true)
 	childEmitEvent(c,"summaryText",summaryText,"Zone and Alert summary",null,true)
 	childEmitEvent(c,"summaryTimestamp",ts,"Summary timestamp updated",null,true)
 	logInfo"📊 Summary text published (${zones.size()} zones)"
@@ -1894,11 +1909,13 @@ private Boolean controlValve(Map data){
 			if(dev.hasCommand("open"))dev.open()
 			else if(dev.hasCommand("on"))dev.on()
 			if(c){childEmitChangedEvent(c,"activeZone",z,"Zone ${z} active",null,true);childEmitChangedEvent(c,"activeZoneName",zoneName,"${zoneName} active",null,true)}
+			if(enableNotifications)childEmitEvent(c,"pushed",3,"${zoneName} now active.",null,true)
 			logInfo"${dev.displayName} activated: (${z}, ${action})";return true
 		}else if(action in ["close","off"]){
 			if(dev.hasCommand("close"))dev.close()
 			else if(dev.hasCommand("off"))dev.off()
 			if(c){c.updateZoneTimes(0L,0L);childEmitChangedEvent(c,"activeZone",0,"No active zone",null,true);childEmitChangedEvent(c,"activeZoneName","idle","No active zone",null,true)}
+			if(enableNotifications&&!atomicState.activeProgram)childEmitEvent(c,"released",3,"${zoneName} no longer active.",null,true)
 			logInfo"${dev.displayName} deactivated: (${z}, ${action})";return true
 		}else{logWarn"controlValve(${z}): invalid action '${action}'";return false}
 	}catch(e){logWarn"controlValve(${z},${action}): ${e.message}";return false}
@@ -2077,11 +2094,10 @@ private void irrigationTick(){
 	def c=getDataChild();if(!c)return
 	if(!publishJSON){childEmitChangedEvent(c,"nextProgramScheduleJson","unknown")}
 	def next=calcNextProgramEvent()
-	if(next?.schedule){def json=JsonOutput.toJson(next.schedule);childEmitChangedEvent(c,"nextProgramScheduleJson",json,"📅 Program schedule JSON published ($pCount programs)")}
+	if(next?.schedule){def json=JsonOutput.toJson(next.schedule);childEmitChangedEvent(c,"nextProgramScheduleJson",json,"📅 Program schedule JSON published ({$pCount} programs)")}
 	Long ts=next?.start?.time?:0L;logDebug"Next Scheduled Program: ${(next?.name?:'None')} | ${ts}"
-	def cs=c.currentState("nextProgramEpoch");Long cur=(cs?.value?.toString()?.isLong()?cs.value.toString().toLong():0L)
-	logDebug"cs: [${cs}] | cur: [${cur}] | ts: [${ts}]"
-	if(cur!=ts){
+	def cs=c.currentState("nextProgramEpoch");Long cur=(cs?.value?.toString()?.isLong()?cs.value.toString().toLong():0L);logDebug"cs: [${cs}] | cur: [${cur}] | ts: [${ts}]"
+	if(cur!=ts||curName=="recalculating"){
 	    childEmitChangedEvent(c,"nextProgramName",next?.name?:"unknown","📅 Next scheduled program name updated")
 	    childEmitChangedEvent(c,"nextProgramText",next?.start?next.start.format(TS_FMT_LOCAL,location.timeZone):"unknown","📅️ Next scheduled program time published")
 	    childEmitChangedEvent(c,"nextProgramEpoch",ts,"⏰ Next scheduled program epoch updated")
@@ -2096,13 +2112,12 @@ private Map calcNextProgramEvent(List skipOverride=null){
 	def df=new java.text.SimpleDateFormat(DATE_FMT);df.setTimeZone(tz);def dow=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
 	String[] dayStr=new String[8];int[] dayDow=new int[8];long[] dayMs=new long[8]
 	Date d=new Date(today0);for(int off=0;off<8;off++){long ms=today0+(off*DAY_MS);dayMs[off]=ms;d.setTime(ms);dayStr[off]=d.format(DATE_FMT,tz);cal.time=d;dayDow[off]=cal.get(Calendar.DAY_OF_WEEK)-1}
-	def solarDays=atomicState.solarData?.days
-	if(solarDays){
-		for(int off=0;off<8;off++){
-			if(!solarDays[dayStr[off]]){
-			logWarn"⚠️ Astronomical cache missing entry for ${dayStr[off]}";getAstronomicalData();solarDays=atomicState.solarData?.days;break
-			}
-		}
+	def solarDays=atomicState.solarData?.days;boolean needSolar=false
+	for(int p=1;p<=pCount&&!needSolar;p++){if(settings["programActive_${p}"]?.toString()=="true"){String sm=(settings["programStartMode_${p}"]?:'time').toString().toLowerCase();if(sm in["sunrise","sunset","dawn","dusk"])needSolar=true}}
+	if(needSolar){
+		boolean miss=!(solarDays instanceof Map)
+		if(!miss)for(int off=0;off<8;off++)if(!solarDays[dayStr[off]]){logWarn"⚠️ Astronomical cache missing entry for ${dayStr[off]}";miss=true;break}
+		if(miss){getAstronomicalData();solarDays=atomicState.solarData?.days}
 	}
 	long nextKey=Long.MAX_VALUE;Map next=null;int nextTotal=0;List schedule=[]
 	for(int p=1;p<=pCount;p++){
@@ -2136,9 +2151,9 @@ private Map calcNextProgramEvent(List skipOverride=null){
 				if(iv<1)continue
 				if(anchor0){long diff=((dayMs[off]-anchor0)/DAY_MS);if(diff%iv!=0)continue}
 			}
-			long baseMs=0L;if(sm=="time"){
-				baseMs=dayMs[off]+tDelta
-			}else{
+			long baseMs=0L
+			if(sm=="time")baseMs=dayMs[off]+tDelta
+			else{
 				def s=(solarDays instanceof Map)?solarDays[dayStr[off]]:null;if(!s)continue
 				def iso=(sm=="sunrise")?s.sunrise:(sm=="sunset")?s.sunset:(sm=="dawn")?s.civilTwilightBegin:(sm=="dusk")?s.civilTwilightEnd:null
 				if(!iso)continue
@@ -2159,7 +2174,7 @@ private Map calcNextProgramEvent(List skipOverride=null){
 	if(!next)return null
 	next.start=new Date(next.epoch);next.end=new Date(next.epoch+(nextTotal*1000L))
 	if(publishJSON)next.schedule=[schema:JSON_SCHEMA,version:APP_VERSION,schedule:schedule]
-	done=now();logDebug"calcNextProgramEvent(): Evaluated ${pCount} programs in ${(done-ts)}ms. ${next} wins."
+	def done=now();logDebug"calcNextProgramEvent(): Evaluated ${pCount} programs in ${(done-ts)}ms. ${next} wins."
 	return next
 }
 
@@ -2272,6 +2287,7 @@ def runProgram(Map data){
 	atomicState.clockIndex=0;updateClockState(true)
 	def c=getDataChild();childEmitChangedEvent(c,"activeProgram",p,"Program ${p} active",null,true);childEmitChangedEvent(c,"activeProgramName","${name}","${name} active",null,true)
 	def ec=getEchoChild(p);if(ec)childEmitChangedEvent(ec,"valve","open","Program ${p} active",null,true)
+	if(enableNotifications)childEmitEvent(c,"pushed",2,"${name} now active.",null,true)
     atomicState.activeProgram=[program:p,name:name,adjMode:adjMode,zones:zoneList,index:0,manual:manual,total:zoneList.size()];startNextZone();if(fromChild||fromEcho)return true
 }
 
@@ -2280,9 +2296,10 @@ private void endProgram(ap){
     if(ap.manual)atomicState.lastManualEnd=atomicState.lastProgramEnd
     else atomicState.remove("lastManualEnd")
     atomicState.remove("programClock");atomicState.clockFace="🕛";atomicState.countdown=""
-    def c=getDataChild();if(c)c.updateProgramTimes(0L,0L)
+    def c=getDataChild();if(c)c.updateProgramTimes(0L,0L);def name=settings["programName_${p}"]?:"Program ${p}"
     childEmitChangedEvent(c,"activeProgram",0,"No active program",null,true);childEmitChangedEvent(c,"activeProgramName","idle","No active program",null,true)
     def ec=getEchoChild(p);if(ec){childEmitChangedEvent(ec,"valve","closed","Program ${p} stopped",null,true);childEmitChangedEvent(ec,"switch","off","Program ${p} stopped",null,true)}
+	if(enableNotifications)childEmitEvent(c,"released",2,"${name} is complete.",null,true)
     logInfo"Program(${p}): All active zones complete (${ap.zones.size()}/${ap.zones.size()})"
     logDebug"Program(${p}) end recorded at ${endTs.format(TS_FMT_LOCAL,location.timeZone)} manual=${ap.manual}"
     if(atomicState.saturationSkipPrograms){def m=atomicState.saturationSkipPrograms;m=m?m.findAll{it!=p}:m;atomicState.saturationSkipPrograms=m}
