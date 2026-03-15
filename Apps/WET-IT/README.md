@@ -41,6 +41,30 @@ Notifications are not sent directly by WET-IT. Instead, the application publishe
 - Speech Devices
 - Voice Assistants
 
+### Notification Event Categories
+
+WET-IT emits several types of notification events that can be subscribed to in the Notifications app.
+
+| Button | Event Type | Description |
+|------|-------------|-------------|
+| **1** | Weather Alerts | Freeze, rain, wind, and forecast availability notifications |
+| **2** | Program Lifecycle | Program start and completion events |
+| **3** | Zone Activity | Zone activation and shutdown events |
+
+These event categories allow notification rules to be tailored to specific types of irrigation activity.
+
+### Example Notifications
+
+Typical messages include:
+
+- `Program Lawn Front now active`
+- `Zone 3 now active`
+- `Program Garden Beds complete`
+- `Weather alerts cleared`
+- `Forecast data restored`
+
+Notifications provide situational awareness while allowing the Hubitat Notifications app to control how and when messages are delivered.
+
 This design allows notification delivery, rate limiting, and scheduling to be managed centrally by Hubitat.
 
 
@@ -384,11 +408,11 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTQ2Mjg5ODQ3OSwtMTE5NjUxMDM4NSwtMj
-U2ODY1NTIsNDYxNDUzMDk1LC04NTIwNzg4ODMsMTUwMTczMTU1
-OCw5NTY1MzkwMzksNjg0Nzg4NDkyLDE0OTc0OTgyMDksLTE3MD
-Y0MDYzMDQsNzA2MzY3ODUwLC0yMDQ1MDgzMTQzLDIxMTQ2MDcz
-NjIsMTY0MjUyMzEwNCwtMTIzNTA3NzQxOCwtMTg3MDg0Mjc3LD
-EzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2MTc3MiwxMzc1
-NTk3MTJdfQ==
+eyJoaXN0b3J5IjpbNTY2OTIzNTg2LC0xMTk2NTEwMzg1LC0yNT
+Y4NjU1Miw0NjE0NTMwOTUsLTg1MjA3ODg4MywxNTAxNzMxNTU4
+LDk1NjUzOTAzOSw2ODQ3ODg0OTIsMTQ5NzQ5ODIwOSwtMTcwNj
+QwNjMwNCw3MDYzNjc4NTAsLTIwNDUwODMxNDMsMjExNDYwNzM2
+MiwxNjQyNTIzMTA0LC0xMjM1MDc3NDE4LC0xODcwODQyNzcsMT
+M3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2MjYxNzcyLDEzNzU1
+OTcxMl19
 -->
