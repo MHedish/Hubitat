@@ -34,7 +34,7 @@ Added the ability to *restore* skipped programs.
 
 Completed work on the Astronomical Cache.  Events are now cached for a full week in advance.  Astronomical based programs (dawn, dusk, etc) will continue to work even if the hub loses internet connectivity or the API is unavailable.
 
-Thenotificationn system is finally complete!
+The notification system is finally complete!
 WET-IT now generates notification events for external delivery through the Hubitat *Notifications* app.
 
 Notifications are not sent directly by WET-IT. Instead, the application publishes events that can be routed by the Notifications app to devices such as:
@@ -414,11 +414,11 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTc0MzIyNDgxNSwtMTE5NjUxMDM4NSwtMj
-U2ODY1NTIsNDYxNDUzMDk1LC04NTIwNzg4ODMsMTUwMTczMTU1
-OCw5NTY1MzkwMzksNjg0Nzg4NDkyLDE0OTc0OTgyMDksLTE3MD
-Y0MDYzMDQsNzA2MzY3ODUwLC0yMDQ1MDgzMTQzLDIxMTQ2MDcz
-NjIsMTY0MjUyMzEwNCwtMTIzNTA3NzQxOCwtMTg3MDg0Mjc3LD
-EzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2MTc3MiwxMzc1
-NTk3MTJdfQ==
+eyJoaXN0b3J5IjpbOTU0NjAzNTc3LC03NDMyMjQ4MTUsLTExOT
+Y1MTAzODUsLTI1Njg2NTUyLDQ2MTQ1MzA5NSwtODUyMDc4ODgz
+LDE1MDE3MzE1NTgsOTU2NTM5MDM5LDY4NDc4ODQ5MiwxNDk3ND
+k4MjA5LC0xNzA2NDA2MzA0LDcwNjM2Nzg1MCwtMjA0NTA4MzE0
+MywyMTE0NjA3MzYyLDE2NDI1MjMxMDQsLTEyMzUwNzc0MTgsLT
+E4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYyNTU4MzA5LDEyMjYy
+NjE3NzJdfQ==
 -->
