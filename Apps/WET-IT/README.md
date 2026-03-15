@@ -32,10 +32,10 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 
 Added the ability to *restore* skipped programs.
 
-Completed work on the Astronomical Cache.  Events are now cached for a full week in advance.  Astronomical based programs (dawn, dusk, etc) will continue to work even if the hub is disconnected from the
+Completed work on the Astronomical Cache.  Events are now cached for a full week in advance.  Astronomical based programs (dawn, dusk, etc) will continue to work even if the hub loses internet connectivity or the API is unavailable.
 
-The Notification system is finally complete!
-WET-IT now generates notification events for external delivery through the Hubitat *Notification*s app.
+Thenotificationn system is finally complete!
+WET-IT now generates notification events for external delivery through the Hubitat *Notifications* app.
 
 Notifications are not sent directly by WET-IT. Instead, the application publishes events that can be routed by the Notifications app to devices such as:
 - Mobile Push Notifications
@@ -414,7 +414,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTczMDA4MTI1MiwtMTE5NjUxMDM4NSwtMj
+eyJoaXN0b3J5IjpbLTM0NDA4NjI5OCwtMTE5NjUxMDM4NSwtMj
 U2ODY1NTIsNDYxNDUzMDk1LC04NTIwNzg4ODMsMTUwMTczMTU1
 OCw5NTY1MzkwMzksNjg0Nzg4NDkyLDE0OTc0OTgyMDksLTE3MD
 Y0MDYzMDQsNzA2MzY3ODUwLC0yMDQ1MDgzMTQzLDIxMTQ2MDcz
