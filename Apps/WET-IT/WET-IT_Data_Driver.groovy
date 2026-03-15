@@ -33,13 +33,15 @@
 *  1.2.2.1  –– Added nextProgramSchedule attribute.
 *  1.2.2.2  –– Restored appInfo attribute; added runNextProgram() and skipNextProgram()
 *  1.2.3.0  –– Version bump for public release
+*  1.2.3.1  –– Added pushableButton capability for use by notifications.
+*  1.3.0.0  –– Version bump for public release
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "WET-IT Data"
-@Field static final String DRIVER_VERSION  = "1.2.3.0"
-@Field static final String DRIVER_MODIFIED = "2026-03-10"
+@Field static final String DRIVER_VERSION  = "1.3.0.0"
+@Field static final String DRIVER_MODIFIED = "2026-03-15"
 @Field static final int MAX_ZONES = 48
 
 metadata {
@@ -51,6 +53,7 @@ metadata {
         importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/WET-IT_Data_Driver.groovy"
     ) {
 		capability "Actuator"
+        capability "PushableButton"
         capability "Sensor"
         capability "Refresh"
 
@@ -118,7 +121,7 @@ metadata {
 				[name:"Mark Zone Watered",description:"Clears ET data for this specific zone.",type:"NUMBER",required:true],
 		        [name:"Percentage",description:"(1-100)",type:"NUMBER",constraints:[1..100],required:false]
 				]
-
+		command "push",[[name:"Alert Notification Test",type:"",description:""]]
 		command "runNextProgram"
 		command "skipNextProgram"
 		command "runProgram",["NUMBER"]
@@ -148,13 +151,14 @@ def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.upda
 def ping(){emitChangedEvent("driverVersion",DRIVER_VERSION)}
 
 /* =============================== Lifecycle =============================== */
-def installed(){logInfo"Installed: ${driverInfoString()}";initialize()}
+def installed(){logInfo"Installed: ${driverInfoString()}";sendEvent(name:"numberOfButtons",value:3,displayed:false);initialize()}
 def updated(){logInfo"Updated: ${driverInfoString()}";initialize()}
 def initialize(){emitEvent("driverInfo",driverInfoString());emitEvent("driverVersion",DRIVER_VERSION);unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)}
 def refresh(){parent.runWeatherUpdate();logInfo"Manual refresh: summary=${device.currentValue("summaryText")}, timestamp=${device.currentValue("summaryTimestamp")}"}
 
 /* ============================= Core Commands ============================= */
 private String formatTime(Long s){Long m=(s/60L)as Long;Long r=(s%60L)as Long;return String.format("%d:%02d",m,r)}
+def push(btn=null){def msg="🧪 ${DRIVER_NAME} alert test";sendEvent(name:"pushed",value:1,descriptionText:msg,isStateChange:true)}
 
 def runNextProgram(){
 	logDebug"runNextProgram()";boolean ok=false
