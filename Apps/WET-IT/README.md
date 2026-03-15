@@ -32,7 +32,7 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 Added the ability to *restore* skipped programs
 
 The Notification system is finally complete!
-WET-IT now generates notification events for external delivery through the Hubitat *Notification*s app.
+WET-IT now generates notification events for external delivery through the Hubitat *Notifications* app.
 
 Notifications are not sent directly by WET-IT. Instead, the application publishes events that can be routed by the Notifications app to devices such as:
 - Mobile Push Notifications
@@ -40,9 +40,9 @@ Notifications are not sent directly by WET-IT. Instead, the application publishe
 - Speech Devices
 - Voice Assistants
 
+
+
 This design allows notification delivery, rate limiting, and scheduling to be managed centrally by Hubitat.
-
-
 
 ###  *What’s was new in v1.2.3.0* 
 
@@ -384,11 +384,11 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjExNzM3Njc4NSwtMjU2ODY1NTIsNDYxND
-UzMDk1LC04NTIwNzg4ODMsMTUwMTczMTU1OCw5NTY1MzkwMzks
-Njg0Nzg4NDkyLDE0OTc0OTgyMDksLTE3MDY0MDYzMDQsNzA2Mz
-Y3ODUwLC0yMDQ1MDgzMTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEw
-NCwtMTIzNTA3NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLT
-E1NjI1NTgzMDksMTIyNjI2MTc3MiwxMzc1NTk3MTIsMjExOTg1
-ODIyM119
+eyJoaXN0b3J5IjpbLTEwNDcxMDgxLC0yNTY4NjU1Miw0NjE0NT
+MwOTUsLTg1MjA3ODg4MywxNTAxNzMxNTU4LDk1NjUzOTAzOSw2
+ODQ3ODg0OTIsMTQ5NzQ5ODIwOSwtMTcwNjQwNjMwNCw3MDYzNj
+c4NTAsLTIwNDUwODMxNDMsMjExNDYwNzM2MiwxNjQyNTIzMTA0
+LC0xMjM1MDc3NDE4LC0xODcwODQyNzcsMTM3OTQzNjI1MywtMT
+U2MjU1ODMwOSwxMjI2MjYxNzcyLDEzNzU1OTcxMiwyMTE5ODU4
+MjIzXX0=
 -->
