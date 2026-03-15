@@ -208,13 +208,14 @@ Added the ability to immediately run the next scheduled program or to skip over 
 - Enhanced solar cache detection and self-repair
 
 ## ☀️ 1.3.0.0 — Public Release
-🪲  — Bug Fix
- - Corrected GetAstronomicalCache()
+- 🪲 Corrected GetAstronomicalCache()
+- Updated event notification scaffolding.
+- Added app and device test buttons.
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE3ODMwODM4ODcsLTEzODcxMjkwODAsLT
-E3MjUxMjE4NzgsLTE5MjY0NTEyMywxMjM0NjI2ODEzLDExNzI1
-ODcxOTksNTIzMDI4MjMsLTExNzQyMzE5MTYsMTM4MzM4MDQ0Ni
-wxNzI1Mjg0NTY5LC0xMDI5OTc4NDcsLTgxMjA3MjM1OCwxODQ3
-MDM3ODAzXX0=
+eyJoaXN0b3J5IjpbMTcwODAzOTY0OSwtMTM4NzEyOTA4MCwtMT
+cyNTEyMTg3OCwtMTkyNjQ1MTIzLDEyMzQ2MjY4MTMsMTE3MjU4
+NzE5OSw1MjMwMjgyMywtMTE3NDIzMTkxNiwxMzgzMzgwNDQ2LD
+E3MjUyODQ1NjksLTEwMjk5Nzg0NywtODEyMDcyMzU4LDE4NDcw
+Mzc4MDNdfQ==
 -->
