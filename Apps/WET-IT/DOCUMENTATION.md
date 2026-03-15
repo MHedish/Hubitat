@@ -28,7 +28,7 @@ WET-IT provides **local-first, hybrid evapotranspiration (ET) and seasonal water
    - [🚨 Active Weather Alerts](#-weather-alerts)
    - [☔ Rain Sensor](#-rain-sensor)
 6. [📊 Data Publishing](#-data-publishing)
-7. [📊 ](#-data-publishing)
+7. [📑 Logging & Tools](#-logging--tools)
 8. [⚙️ System Diagnostics](#-system-diagnostics)
 
 ---
@@ -1982,11 +1982,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIwOTU4NzIzODcsLTEwMDE3MDA3NDksOD
-c0ODUwMDM4LDkxNzIxMzE2OSwtMTEwNjA3NjU2MSwtMTcwNTYx
-MzM2OCwxNDcxOTIyNzk2LC0xNTcxNDY4OTIwLC0yOTc2NTk2Nz
-EsMTk3ODA5ODU1NywxNTA3Mzg1NTk5LDI5MTk5MTIxNywtMTAy
-NTY2NDYxNSwtMjEwNTEwNzk5LC0xOTMxNTY1ODI1LC0xMzQ5Nz
-M1Mzk4LDIwNzY1MTM1MDksLTE4NjI0MjQ5OTcsLTY3NjQ2ODQ1
-NywtMTY4MTc5NzYwMV19
+eyJoaXN0b3J5IjpbMTczNTczMTYzNiwtMTAwMTcwMDc0OSw4Nz
+Q4NTAwMzgsOTE3MjEzMTY5LC0xMTA2MDc2NTYxLC0xNzA1NjEz
+MzY4LDE0NzE5MjI3OTYsLTE1NzE0Njg5MjAsLTI5NzY1OTY3MS
+wxOTc4MDk4NTU3LDE1MDczODU1OTksMjkxOTkxMjE3LC0xMDI1
+NjY0NjE1LC0yMTA1MTA3OTksLTE5MzE1NjU4MjUsLTEzNDk3Mz
+UzOTgsMjA3NjUxMzUwOSwtMTg2MjQyNDk5NywtNjc2NDY4NDU3
+LC0xNjgxNzk3NjAxXX0=
 -->
