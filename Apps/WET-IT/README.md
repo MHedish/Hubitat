@@ -4,13 +4,13 @@
 *A Hubitat App for Weather-Based Smart Irrigation Using Real Evapotranspiration (ET) Modeling & Scheduling*
 
 ![Platform](https://img.shields.io/badge/Platform-Hubitat-blue) 
-![Version](https://img.shields.io/badge/Version-1.2.3.1-green?t=20260205)
+![Version](https://img.shields.io/badge/Version-1.3.0.0-green?t=20260315)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
-**App Version:** 1.2.3.1
-**Driver Version:** 1.2.3.0
+**App Version:** 1.3.0.0
+**Driver Version:** 1.3.0.0
 **Echo Version:** 1.1.0.0
-**Release Date:** 2026-03-12
+**Release Date:** 2026-03-15
 
 ---
 
@@ -414,11 +414,11 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNjczOTc1OTUyLC0xMTk2NTEwMzg1LC0yNT
-Y4NjU1Miw0NjE0NTMwOTUsLTg1MjA3ODg4MywxNTAxNzMxNTU4
-LDk1NjUzOTAzOSw2ODQ3ODg0OTIsMTQ5NzQ5ODIwOSwtMTcwNj
-QwNjMwNCw3MDYzNjc4NTAsLTIwNDUwODMxNDMsMjExNDYwNzM2
-MiwxNjQyNTIzMTA0LC0xMjM1MDc3NDE4LC0xODcwODQyNzcsMT
-M3OTQzNjI1MywtMTU2MjU1ODMwOSwxMjI2MjYxNzcyLDEzNzU1
-OTcxMl19
+eyJoaXN0b3J5IjpbLTc0MzIyNDgxNSwtMTE5NjUxMDM4NSwtMj
+U2ODY1NTIsNDYxNDUzMDk1LC04NTIwNzg4ODMsMTUwMTczMTU1
+OCw5NTY1MzkwMzksNjg0Nzg4NDkyLDE0OTc0OTgyMDksLTE3MD
+Y0MDYzMDQsNzA2MzY3ODUwLC0yMDQ1MDgzMTQzLDIxMTQ2MDcz
+NjIsMTY0MjUyMzEwNCwtMTIzNTA3NzQxOCwtMTg3MDg0Mjc3LD
+EzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2MTc3MiwxMzc1
+NTk3MTJdfQ==
 -->
