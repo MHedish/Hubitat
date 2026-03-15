@@ -211,16 +211,17 @@ Added the ability to immediately run the next scheduled program or to skip over 
 - 🪲 Corrected GetAstronomicalCache()
 - Updated event notification scaffolding.
 - Added app and device notification test buttons.
+- Added the ability to skip the next scheduled program
 - Added the ability to restore skipped programs.
-- Added Program notifications; completed work on program restore.
+- Added program notifications
 - Added Zone notifications;
 - Added advisory for mismatched nozzles within the same program
 - Fixed deleteProgram() to remove residual [useCycleSoak,cycleCount,cyclePauseMin] when deleting programs.
-*  1.2.3.8   –– Added Tool Tips for Logging & Tools section.
+- Added Tool Tips for Logging & Tools section.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEzNTMwNjc1NCwtMTM4NzEyOTA4MCwtMT
-cyNTEyMTg3OCwtMTkyNjQ1MTIzLDEyMzQ2MjY4MTMsMTE3MjU4
-NzE5OSw1MjMwMjgyMywtMTE3NDIzMTkxNiwxMzgzMzgwNDQ2LD
-E3MjUyODQ1NjksLTEwMjk5Nzg0NywtODEyMDcyMzU4LDE4NDcw
-Mzc4MDNdfQ==
+eyJoaXN0b3J5IjpbLTEzNDc0MDIyNjYsLTEzODcxMjkwODAsLT
+E3MjUxMjE4NzgsLTE5MjY0NTEyMywxMjM0NjI2ODEzLDExNzI1
+ODcxOTksNTIzMDI4MjMsLTExNzQyMzE5MTYsMTM4MzM4MDQ0Ni
+wxNzI1Mjg0NTY5LC0xMDI5OTc4NDcsLTgxMjA3MjM1OCwxODQ3
+MDM3ODAzXX0=
 -->
