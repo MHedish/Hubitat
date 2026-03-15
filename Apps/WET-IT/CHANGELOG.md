@@ -1,5 +1,5 @@
 # 🧾 WET-IT — Unified Changelog  
-> Covers development from v0.4.0.0 through v1.4.0.0
+> Covers development from v0.4.0.0 through v1.3.0.0
 > Major architectural and stability milestones.
 
 ---
@@ -218,9 +218,9 @@ Added the ability to immediately run the next scheduled program or to skip over 
 - Fixed deleteProgram() to remove residual [useCycleSoak,cycleCount,cyclePauseMin] when deleting programs.
 - Added Tool Tips for Logging & Tools section
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNjA3NjE5MzM1LC0xMzg3MTI5MDgwLC0xNz
-I1MTIxODc4LC0xOTI2NDUxMjMsMTIzNDYyNjgxMywxMTcyNTg3
-MTk5LDUyMzAyODIzLC0xMTc0MjMxOTE2LDEzODMzODA0NDYsMT
-cyNTI4NDU2OSwtMTAyOTk3ODQ3LC04MTIwNzIzNTgsMTg0NzAz
-NzgwM119
+eyJoaXN0b3J5IjpbLTgzNzM0Mjk3MCwtMTM4NzEyOTA4MCwtMT
+cyNTEyMTg3OCwtMTkyNjQ1MTIzLDEyMzQ2MjY4MTMsMTE3MjU4
+NzE5OSw1MjMwMjgyMywtMTE3NDIzMTkxNiwxMzgzMzgwNDQ2LD
+E3MjUyODQ1NjksLTEwMjk5Nzg0NywtODEyMDcyMzU4LDE4NDcw
+Mzc4MDNdfQ==
 -->
