@@ -1,9 +1,10 @@
+
 # 🌿 Weather-Enhanced Time-based Irrigation Tuning (WET-IT)
 
 *A Hubitat App for Weather-Based Smart Irrigation Using Real Evapotranspiration (ET) Modeling & Scheduling*
 
 ![Platform](https://img.shields.io/badge/Platform-Hubitat-blue) 
-![Version](https://img.shields.io/badge/Version-1.2.3.1-green?t=2026005)
+![Version](https://img.shields.io/badge/Version-1.2.3.1-green?t=20260205)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
 **App Version:** 1.2.3.1
@@ -27,7 +28,24 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 
 ### 💡 Highlights
 
-### 🆕 *What’s New in v1.2.3.0* 🆕
+### 🆕 *What’s New in v1.3.0.0* 🆕
+
+Added the ability to *restore* skipped programs
+
+The Notification system is finally complete!
+WET-IT now generates notification events for external delivery through the Hubitat *Notification*s app.
+
+Notifications are not sent directly by WET-IT. Instead, the application publishes events that can be routed by the Notifications app to devices such as:
+- Mobile Push Notifications
+- Text Messages
+- Speech Devices
+- Voice Assistants
+
+This design allows notification delivery, rate limiting, and scheduling to be managed centrally by Hubitat.
+
+
+
+###  *What’s was new in v1.2.3.0* 
 
 Added next scheduled program attributes:
 - nextProgramScheduleJson
@@ -44,7 +62,7 @@ You might want to skip the next scheduled time because of a broken valve or perh
 
 Skips can also be stacked so you can temporarily skip multiple programs in the schedule.
 
-### 🆕 *What’s Was New in v1.2.2.0* 🆕
+###  *What’s Was New in v1.2.2.0* 
 
 Corrected persistence bug in weather alert summary.
 
@@ -235,7 +253,7 @@ Optional backup for alerts an observational data is available.
 ## 🧭 Configuration Reference
 
 WET-IT includes three primary configuration pages — **Zone Setup**, **Soil Settings**, and **Scheduling** — which define the foundation of irrigation behavior.  
-Each page affects how progras calculate run times, react to weather, and control hardware.
+Each page affects how programs calculate run times, react to weather, and control hardware.
 
 ---
 
@@ -365,13 +383,12 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 ---
 
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
-
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTExOTY1MTAzODUsLTI1Njg2NTUyLDQ2MT
-Q1MzA5NSwtODUyMDc4ODgzLDE1MDE3MzE1NTgsOTU2NTM5MDM5
-LDY4NDc4ODQ5MiwxNDk3NDk4MjA5LC0xNzA2NDA2MzA0LDcwNj
-M2Nzg1MCwtMjA0NTA4MzE0MywyMTE0NjA3MzYyLDE2NDI1MjMx
-MDQsLTEyMzUwNzc0MTgsLTE4NzA4NDI3NywxMzc5NDM2MjUzLC
-0xNTYyNTU4MzA5LDEyMjYyNjE3NzIsMTM3NTU5NzEyLDIxMTk4
-NTgyMjNdfQ==
+eyJoaXN0b3J5IjpbLTQ2Mjg5ODQ3OSwtMTE5NjUxMDM4NSwtMj
+U2ODY1NTIsNDYxNDUzMDk1LC04NTIwNzg4ODMsMTUwMTczMTU1
+OCw5NTY1MzkwMzksNjg0Nzg4NDkyLDE0OTc0OTgyMDksLTE3MD
+Y0MDYzMDQsNzA2MzY3ODUwLC0yMDQ1MDgzMTQzLDIxMTQ2MDcz
+NjIsMTY0MjUyMzEwNCwtMTIzNTA3NzQxOCwtMTg3MDg0Mjc3LD
+EzNzk0MzYyNTMsLTE1NjI1NTgzMDksMTIyNjI2MTc3MiwxMzc1
+NTk3MTJdfQ==
 -->
