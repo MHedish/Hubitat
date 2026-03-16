@@ -2,6 +2,15 @@
 All notable changes to the UniFi Presence Drivers will be documented in this file.
 
 ---
+
+## v1.8.6.7 (2026-03-16) – Stability and authentication hardening release
+
+### Improved
+- Hardened connection recovery; added resetConnectionState() and improved WSS/auth self-recovery.
+- Updated initialize() to perforam complete WSS reset.
+
+---
+
 ## v1.8.6.6 (2026-03-07) – Stability and authentication hardening release
 
 ### Fixed
