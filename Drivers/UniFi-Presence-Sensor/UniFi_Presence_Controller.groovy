@@ -140,7 +140,7 @@ def initialize(){
         if(logRawEvents){logInfo"📊 Raw UniFi event logging enabled for 30 minutes";unschedule("autoDisableRawEventLogging");runIn(1800,"autoDisableRawEventLogging")}
         try{
             closeEventSocket();atomicState.useProxyPrefix=detectProxyPrefix();logDebug "Proxy prefix required: ${atomicState.useProxyPrefix}"
-            refreshConnectionState();refreshCookie()
+            resetConnectionState();refreshCookie()
             if(atomicState.cookie&&atomicState.csrf){
                 atomicState.remove("reconnectDelay");emitEvent("commStatus","good","✅ REST connection established",null,true)
                 runIn(2,"refresh");runIn(4,"checkChildDriver");runIn(6,"openEventSocket");querySysInfo();updateChildAndGuestSummaries()
