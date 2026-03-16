@@ -38,6 +38,7 @@
 *  1.8.6.4  -- Updated UnFIOS type determination
 *  1.8.6.5  -- Reverted
 *  1.8.6.6  -- Reset stale cookies during initialization and add automatic 401 authentication recovery
+*  1.8.6.7  -- Hardened connection recovery; added resetConnectionState() and improved WSS/auth self-recovery.
 */
 
 import groovy.transform.Field
@@ -46,8 +47,8 @@ import groovy.json.JsonOutput
 import java.net.URLEncoder
 
 @Field static final String DRIVER_NAME="UniFi Presence Controller"
-@Field static final String DRIVER_VERSION="1.8.6.6"
-@Field static final String DRIVER_MODIFIED="2026.03.07"
+@Field static final String DRIVER_VERSION="1.8.6.7"
+@Field static final String DRIVER_MODIFIED="2026.03.16"
 @Field static final Integer AUTO_CREATE_DAYS=1
 @Field static final Integer AUTO_CREATE_MAX=50
 @Field static final Map CHILD_DRIVER=[name:"UniFi Presence Device",minVer:"1.8.6.0",required:true]
@@ -138,8 +139,8 @@ def initialize(){
         if(logEnable){logInfo"🪲 Debug logging enabled for 30 minutes";unschedule("autoDisableDebugLogging");runIn(1800,"autoDisableDebugLogging")}
         if(logRawEvents){logInfo"📊 Raw UniFi event logging enabled for 30 minutes";unschedule("autoDisableRawEventLogging");runIn(1800,"autoDisableRawEventLogging")}
         try{
-            closeEventSocket();atomicState.useProxyPrefix=detectProxyPrefix()
-            logDebug "Proxy prefix required: ${atomicState.useProxyPrefix}";atomicState.cookie=null;atomicState.csrf=null;refreshCookie()
+            closeEventSocket();atomicState.useProxyPrefix=detectProxyPrefix();logDebug "Proxy prefix required: ${atomicState.useProxyPrefix}"
+            refreshConnectionState();refreshCookie()
             if(atomicState.cookie&&atomicState.csrf){
                 atomicState.remove("reconnectDelay");emitEvent("commStatus","good","✅ REST connection established",null,true)
                 runIn(2,"refresh");runIn(4,"checkChildDriver");runIn(6,"openEventSocket");querySysInfo();updateChildAndGuestSummaries()
@@ -372,15 +373,21 @@ private formatTimestamp(rawTime){
    =============================== */
 def webSocketStatus(String status){
 	if(status.startsWith("status: open")){emitEvent("commStatus","good","🔗️ WebSocket connection established",null,true);emitEvent("driverInfo",driverInfoString(),"✅ Initialization complete",null,true);atomicState.reconnectDelay=1}
-	else if(status.startsWith("status: closing")){emitEvent("commStatus","closing","⛓️‍💥️ WebSocket disconnecting",null,true)}
-	else if(status.startsWith("status: closed")){
-		logWarn"⚠️ WebSocket closed"
-		if(!atomicState.wasExpectedClose){
-			logWarn"⚠ WebSocket closed unexpectedly, scheduling reinitialize()";reinitialize()
-		}else atomicState.wasExpectedClose=false
-	}
-	else if(status.startsWith("failure:")){logError"❌ WebSocket failure: ${status}";emitEvent("commStatus","error","❌ WSS Failure");reinitialize()}
-	else logDebug"Unhandled WebSocket status: ${status}"
+    else if(status.startsWith("status: closing")){emitEvent("commStatus","closing","⛓️‍💥️ WebSocket disconnecting",null,true)}
+    else if(status.startsWith("status: closed")){
+		logWarn "⚠️ WebSocket closed"
+        if(!atomicState.wasExpectedClose){
+            if(atomicState.cookie && atomicState.csrf){
+                logWarn "⚠ WebSocket closed unexpectedly — reopening socket";runIn(10,"openEventSocket")}
+                else{logWarn "⚠ WebSocket closed and auth missing — reinitializing";runIn(10,"initialize")}
+        }else{atomicState.wasExpectedClose=false}
+    }
+    else if(status.startsWith("failure:")){
+        logError "❌ WebSocket failure: ${status}";emitEvent("commStatus","error","❌ WSS Failure")
+        if(atomicState.cookie && atomicState.csrf){logWarn "Attempting WebSocket reconnect";runIn(10,"openEventSocket")}
+        else{logWarn "Auth missing — reinitializing";runIn(10,"initialize")}
+    }
+    else{logDebug "Unhandled WebSocket status: ${status}"}
 }
 
 void webSocketMessage(String message){try{parse(message)}catch(e){logError"webSocketMessage() failed: ${sanitizePayload(e.message)}"}}
@@ -454,25 +461,27 @@ private void closeEventSocket(){
 }
 
 private void refreshCookie(){
-	logDebug "refreshCookie(): cookie=${atomicState.cookie?'present':'null'}, csrf=${atomicState.csrf?'present':'null'}, refreshing=${atomicState.refreshingCookie}"
-    if(atomicState.refreshingCookie)return
+    logDebug "refreshCookie(): cookie=${atomicState.cookie?'present':'null'}, csrf=${atomicState.csrf?'present':'null'}, refreshing=${atomicState.refreshingCookie}"
+    if(atomicState.refreshingCookie){logDebug "refreshCookie(): already in progress";return}
     atomicState.refreshingCookie=true
     try{
         unschedule("refreshCookie");login()
-        if(atomicState.cookie&&atomicState.csrf){
-            emitEvent("commStatus","good","🍪 Cookie refreshed");atomicState.rateLimitedUntil=null
-        }else{emitEvent("commStatus","error","❌ Auth Failure")}
+        if(atomicState.cookie && atomicState.csrf){emitEvent("commStatus","good","🍪 Cookie refreshed");atomicState.rateLimitedUntil=null}
+        else{logWarn "refreshCookie(): login returned without cookie/csrf";emitEvent("commStatus","error","❌ Auth Failure");runIn(60,"initialize")}
     }catch(groovyx.net.http.HttpResponseException e){
         if(e.response?.status==429){
-            atomicState.rateLimitedUntil=now()+60000;logWarn"⏳ Login rate-limited (429). Backing off for 60 seconds.";emitEvent("commStatus","error","❌ Rate Limited – retrying later");return
+            atomicState.rateLimitedUntil=now()+60000;logWarn "⏳ Login rate-limited (429). Backing off for 60 seconds."
+            emitEvent("commStatus","error","❌ Rate Limited – retrying later");runIn(60,"initialize");return
         }
-        logError"refreshCookie() failed: ${sanitizePayload(e.message)}";emitEvent("commStatus","error","❌ Auth Failure during cookie refresh")
+        logError "refreshCookie() failed: ${sanitizePayload(e.message)}";emitEvent("commStatus","error","❌ Auth Failure during cookie refresh");runIn(60,"initialize")
     }catch(e){
-        logError"refreshCookie() failed: ${sanitizePayload(e.message)}";emitEvent("commStatus","error","❌ Auth Failure during cookie refresh")
+        logError "refreshCookie() failed: ${sanitizePayload(e.message)}";emitEvent("commStatus","error","❌ Auth Failure during cookie refresh");runIn(60,"initialize")
     }finally{atomicState.refreshingCookie=false}
 }
 
 def invalidateCookie(){logout();emitEvent("commStatus","unknown","Logged Out",null,true)}
+
+private void resetConnectionState(){logDebug"Resetting connection state.";atomicState.cookie=null;atomicState.csrf=null;atomicState.rateLimitedUntil=null;atomicState.reconnectDelay=null;atomicState.refreshingCookie=false}
 
 private void login(){
 	logDebug "login(): cookie=${cookie?'received':'missing'}, csrf=${csrf?'received':'missing'}"
@@ -501,7 +510,7 @@ private void logout(){
     try{
 		httpExec("POST",genParamsAuth("logout"))
     }catch(e){logWarn"logout() failed: ${sanitizePayload(e.message)}"
-    }finally{atomicState.cookie=null;atomicState.csrf=null;unschedule("refreshCookie")}
+    }finally{closeEventSocket();resetConnectionState();unschedule("refreshCookie")}
 }
 
 def runQuery(suffix,throwToCaller=false,body=null){
@@ -556,7 +565,7 @@ def httpExecWithAuthCheck(op,params,throwToCaller=false){
     catch(groovyx.net.http.HttpResponseException e){
         def status=e.response?.status
         if(status==401&&!params._retry){
-		    logWarn "Auth failed (401), refreshing cookie";atomicState.cookie=null;atomicState.csrf=null;if(!atomicState.refreshingCookie)refreshCookie()
+		    logWarn "Auth failed (401), refreshing cookie";resetConnectionState();if(!atomicState.refreshingCookie)refreshCookie()
 		    if(atomicState.cookie){
 		        params.headers["Cookie"]=atomicState.cookie;params.headers["X-CSRF-Token"]=atomicState.csrf;params._retry=true;return httpExec(op,params)
 		    }
