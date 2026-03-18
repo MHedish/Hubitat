@@ -74,3 +74,6 @@
 
 **1.0.4.0 — Updated for AP9641**
 - Added NUL (0x00) stripping in parse() to ensure compatibility with AP9641 (NMC3) Telnet CR/NULL/LF line framing.
+<!--stackedit_data:
+eyJoaXN0b3J5IjpbLTYwNTg1NjA3M119
+-->
