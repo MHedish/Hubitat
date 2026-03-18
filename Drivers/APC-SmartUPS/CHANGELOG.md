@@ -74,6 +74,32 @@
 
 **1.0.4.0 — Updated for AP9641**
 - Added NUL (0x00) stripping in parse() to ensure compatibility with AP9641 (NMC3) Telnet CR/NULL/LF line framing.
+
+**1.1.0.0 — AP9641 Support + Telnet Stability Refinement**
+
+- Added full support for **AP9641 (NMC3)** alongside existing AP9631 (NMC2) compatibility.
+- Normalized Telnet daemon behavioral differences between NMC2 and NMC3:
+  - Improved line handling and prompt detection across differing CR/LF/NULL framing.
+  - Stabilized parsing pipeline for mixed-response segmentation.
+- Refined **line-driven parser and prompt recognition** using normalized `apc>` detection.
+- Hardened **command queue gating**:
+  - Eliminated null-return edge case in `isPendingSendReady()`.
+  - Resolved rare queue stall condition at `whoami`.
+- Improved **session watchdog accuracy**:
+  - Eliminated false-positive triggers under normal operation.
+  - Better alignment with actual session lifecycle and timing.
+- Optimized **notification model**:
+  - Removed redundant `released` events; now emits `pushed` only for signal clarity.
+  - Reduced notification noise and improved downstream handling consistency.
+- Corrected **shutdown logic in `handleBatteryData()`**:
+  - Fixed conditional flow (brace/else issue) that could trigger unintended shutdowns.
+- Refined **Hub shutdown execution path**:
+  - Removed callback-dependent notification emission.
+  - Retained callback logging as non-blocking telemetry.
+- Verified **stable multi-instance operation**:
+  - Sustained soak across AP9631 and AP9641 with consistent polling intervals.
+  - Typical execution cycle stabilized (~2.5s NMC2, ~3s NMC3).
+
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTYwNTg1NjA3M119
+eyJoaXN0b3J5IjpbLTU3MTI2Nzc4NCwtNjA1ODU2MDczXX0=
 -->
