@@ -52,7 +52,7 @@ import groovy.transform.Field
 import java.util.regex.Pattern
 import java.util.Collections
 
-@Field static final String DRIVER_NAME     = "APC SmartUPS Status (Test Track)"
+@Field static final String DRIVER_NAME     = "APC SmartUPS Status"
 @Field static final String DRIVER_VERSION  = "1.1.0.0"
 @Field static final String DRIVER_MODIFIED = "2026.03.18"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
