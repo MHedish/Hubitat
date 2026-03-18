@@ -75,29 +75,45 @@
 **1.0.4.0 — Updated for AP9641**
 - Added NUL (0x00) stripping in parse() to ensure compatibility with AP9641 (NMC3) Telnet CR/NULL/LF line framing.
 
-**1.1.0.0 — AP9641 Support + Telnet Stability Refinement**
+
+**1.1.0.0 — AP9641 Support + Notification System Introduction**
 
 - Added full support for **AP9641 (NMC3)** alongside existing AP9631 (NMC2) compatibility.
-- Normalized Telnet daemon behavioral differences between NMC2 and NMC3:
-  - Improved line handling and prompt detection across differing CR/LF/NULL framing.
-  - Stabilized parsing pipeline for mixed-response segmentation.
-- Refined **line-driven parser and prompt recognition** using normalized `apc>` detection.
-- Hardened **command queue gating**:
-  - Eliminated null-return edge case in `isPendingSendReady()`.
-  - Resolved rare queue stall condition at `whoami`.
-- Improved **session watchdog accuracy**:
-  - Eliminated false-positive triggers under normal operation.
-  - Better alignment with actual session lifecycle and timing.
-- Added **notification model**:
-  - Reduced notification noise and improved downstream handling consistency.
-- Corrected **shutdown logic in `handleBatteryData()`**:
-- Refined **Hub shutdown execution path**:
-  - Removed callback-dependent notification emission.
-  - Retained callback logging as non-blocking telemetry.
-- Verified **stable multi-instance operation**:
-  - Sustained soak across AP9631 and AP9641 with consistent polling intervals.
-  - Typical execution cycle stabilized (~2.5s NMC2, ~3s NMC3).
+- Introduced a **driver-level notification system** leveraging Hubitat’s button capability for integration with the Notifications app:
+  - `b1` = UPS-originated events (authoritative state)
+  - `b2` = driver-originated events (derived/informational)
+  - Events emit as `pushed` only for clear edge-based signaling
+- Designed notification model to complement (not replace) native NMC alerting, providing a polling-based fallback and visibility layer.
 
+- Implemented robust **line-driven Telnet parser** compatible across NMC2 and NMC3:
+  - Normalized CR/LF/NULL framing differences (AP9631 vs AP9641)
+  - Stabilized prompt detection (`apc>`) and response segmentation
+
+- Hardened **command queue and session control**:
+  - Resolved rare queue stall at `whoami`
+  - Fixed null-return edge case in `isPendingSendReady()`
+  - Improved deterministic command gating and execution flow
+
+- Refined **session watchdog behavior**:
+  - Eliminated false-positive triggers under normal operation
+  - Improved alignment with actual session lifecycle and recovery timing
+
+- Corrected **shutdown logic in `handleBatteryData()`**:
+  - Fixed conditional flow issue that could trigger unintended shutdowns
+  - Ensured `state.hubShutdownIssued` is set prior to shutdown invocation
+
+- Updated **Hub shutdown execution path**:
+  - Notification emitted prior to shutdown request (deterministic)
+  - Callback path reduced to logging-only telemetry (non-authoritative)
+
+- Verified **stable multi-instance operation**:
+  - Sustained soak across AP9631 and AP9641
+  - Consistent polling performance (~2.5s NMC2, ~3s NMC3)
+
+- General cleanup:
+  - Removed residual debug artifacts from parser normalization
+  - Minor internal consistency improvements
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjQ4ODc2ODM3LC02MDU4NTYwNzNdfQ==
+eyJoaXN0b3J5IjpbOTUwMjkyNTEzLDI0ODg3NjgzNywtNjA1OD
+U2MDczXX0=
 -->
