@@ -88,11 +88,9 @@
 - Improved **session watchdog accuracy**:
   - Eliminated false-positive triggers under normal operation.
   - Better alignment with actual session lifecycle and timing.
-- Optimized **notification model**:
-  - Removed redundant `released` events; now emits `pushed` only for signal clarity.
+- Added **notification model**:
   - Reduced notification noise and improved downstream handling consistency.
 - Corrected **shutdown logic in `handleBatteryData()`**:
-  - Fixed conditional flow (brace/else issue) that could trigger unintended shutdowns.
 - Refined **Hub shutdown execution path**:
   - Removed callback-dependent notification emission.
   - Retained callback logging as non-blocking telemetry.
@@ -101,5 +99,5 @@
   - Typical execution cycle stabilized (~2.5s NMC2, ~3s NMC3).
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTU3MTI2Nzc4NCwtNjA1ODU2MDczXX0=
+eyJoaXN0b3J5IjpbMjQ4ODc2ODM3LC02MDU4NTYwNzNdfQ==
 -->
