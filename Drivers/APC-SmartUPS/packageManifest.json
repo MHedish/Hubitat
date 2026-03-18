@@ -16,7 +16,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/APC-SmartUPS/APC-SmartUPS-Status.groovy",
       "required": true,
-      "version": "1.0.4.0"
+      "version": "1.1.0.0"
     }
   ]
 }
