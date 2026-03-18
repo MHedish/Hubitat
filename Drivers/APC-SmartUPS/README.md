@@ -1,11 +1,14 @@
 # ⚡ APC SmartUPS Status (Hubitat Driver)
 
-[![Version](https://img.shields.io/badge/version-1.0.4.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.1.0.0-blue.svg)](./CHANGELOG.md)
 [![Status](https://img.shields.io/badge/release-STABLE-success.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
 
 **APC SmartUPS Status** is a high-performance Hubitat driver for APC Smart-UPS devices equipped with Network Management Cards (NMC).  
+
+Starting with version 1.1.0.0, both **NMC2** (AP963x) and **NMC3** (AP964x) are fully supported.
+
 It uses a **deterministic Telnet session model** to collect complete UPS telemetry in under five seconds while avoiding race conditions and connection timeouts common to continuous Telnet sessions.
 
 Built on a **transient context architecture**, the driver eliminates unnecessary persistent state, improving efficiency and reliability.  
@@ -20,7 +23,10 @@ All events and telemetry are fully **Rule Machine and WebCoRE compatible**, enab
 The **APC SmartUPS Status** driver enables full monitoring and limited control of APC UPS systems from your Hubitat hub.  
 It uses a Telnet-based session architecture designed for **deterministic lifecycle management** and **transient state isolation**, ensuring clean, non-blocking communication with the UPS.
 
-This driver supports real-time status updates, automated reconnoiters, self-test initiation, and optional outlet group control on compatible models.
+This driver supports real-time status updates, automated reconnoiters, self-
+test initiation, and optional outlet group control on compatible models.
+
+Includes an integrated notification system for seamless Hubitat Notifications app integration.
 
 ---
 
@@ -59,6 +65,7 @@ Average reconnoiter runtime: **<5 seconds**, with deterministic session closure 
 
 ## 🔑 Key Features
 
+- 🔔 **Integrated notification system** via Hubitat button events (UPS + driver signaling)
 - 📡 **Telnet lifecycle isolation** — deterministic connect/execute/disconnect model  
 - 🧠 **Transient context engine** — replaces persistent `state.*` usage for fast, reliable in-memory tracking  
 - ⚙️ **Safe Telnet handling** via `safeTelnetConnect()` and deferred connection retries  
@@ -70,9 +77,71 @@ Average reconnoiter runtime: **<5 seconds**, with deterministic session closure 
 - 🔋 **Battery and power metrics:** voltage, runtime, temperature, load percentage, input/output voltage, and frequency  
 - 🧰 **Self-test control and alarm query support**  
 - 🚨 **Error handling and recovery** without blocking or stale sessions  
-- 🧩 **Minimal persistent state**, maximizing driver stability and speed (sub-5-second reconnoiters)
-- 🐕‍🦺 **Built-in watchdog**, automatic attribute udpdate when internal watchdog recognizes an infitinte loop or communication drops
+- 🧩 **Minimal persistent state**, maximizing driver stability and speed (sub-4-second reconnoiters for NMC3, sub-3-second reconnoiters for NMC2)
+- 🐕‍🦺 **Built-in watchdog**, automatic attribute update when internal watchdog recognizes an infinite loop or communication drops
+
 ---
+
+## 🔔 Notification System (v1.1.0.0+)
+
+This driver introduces a **lightweight notification system** designed to integrate seamlessly with Hubitat’s built-in **Notifications app** using the `PushableButton` capability.
+
+### 📡 Event Model
+
+The driver emits structured button events as follows:
+
+| Button | Source | Meaning |
+|--------|--------|--------|
+| **1** | UPS (NMC) | Authoritative UPS state changes |
+| **2** | Driver | Derived or inferred conditions (polling-based) |
+
+All notifications are emitted as **`pushed` events only**, representing an **active condition**.  
+
+No `released` events are generated, eliminating notification noise and simplifying automation logic.
+
+---
+
+### 🧠 Design Intent
+
+- **UPS (NMC) alerts remain the authoritative source** of truth.  
+- The driver provides a **polling-based fallback and visibility layer**.  
+- Driver-generated notifications (Button 2) are **informational** and may not capture all transient states.
+
+---
+
+### ⚙️ Hubitat UI Behavior (Intentional Design)
+
+To simplify the user experience:
+
+- The driver reports **`numberOfButtons = 1`** in the UI  
+- Internally, it emits both **Button 1 and Button 2 events**
+
+This is intentional and allows:
+- Clean UI configuration (no button selection prompts)
+- Advanced notification routing without user complexity
+
+> ⚠️ This is a controlled deviation from standard capability usage and is fully supported by Hubitat’s event model.
+
+---
+
+### 🔧 Example Usage (Notifications App)
+
+- Configure a notification trigger on:
+  - **Button Device → “Button 1 pushed”** → UPS events  
+  - **Button Device → “Button 2 pushed”** → Driver events  
+
+This allows separation of:
+- **Critical UPS alerts**
+- **Driver-level insights (e.g., shutdown initiation)**
+
+---
+
+### ⚠️ Important Notes
+
+- Driver notifications are **best-effort** and depend on polling intervals  
+- Some events (e.g., shutdown acknowledgment) may not always be observed due to platform execution timing  
+- Logs (`logWarn`, `logError`) provide additional diagnostic confirmation
+
 
 ## 🧱 Architecture
 
@@ -134,6 +203,7 @@ Each setting plays a specific role in how the driver connects to and interprets 
 | **Check Interval When On Battery (minutes, 1–59)** | When the UPS is running on battery, status is polled more frequently to improve responsiveness. Recommended: 2. | 2 |
 | **Shutdown Hubitat when UPS battery is low** | Automatically issue shutdown command to Hubitat hub when UPS battery is low. | `true` |
 | **UPS Time Zone Offset (minutes)** | Adjusts for UPS-reported time differences relative to the Hubitat hub. Used to verify and correct **clock drift** for accurate event correlation. Range: `-720` to `+840` minutes. Example: `-300` for EST. | 0 |
+| **Enable System Notifications** | Enables system notifications via Hubitat's built-in *Notifications* app. | `true` |
 | **Enable Debug Logging** | Enables detailed driver-level debug logs. Automatically turns off after 30 minutes. | `false` |
 | **Log All Events** | When enabled, logs all attribute changes to the Hubitat log for traceability. Recommended for testing or troubleshooting. | `false` |
 
@@ -210,8 +280,8 @@ The driver provides multi-tiered logging:
 - `logError` — Critical errors or failed operations
 - `logDebug` — Full execution trace for troubleshooting
 
-Performance data such as **session runtime** is displayed automatically:
-Data Capture Runtime = 4.831s
+Performance data, such as **session runtime**, is displayed automatically:
+Data Capture Runtime = 3.631s
 
 ---
 
@@ -253,7 +323,7 @@ These values can be used in **dashboards**, **Rule Machine triggers**, **notific
 
 ### 🧠 Notes
 - Many attributes are normalized and human-readable (for example, `79 Days 6 Hours 47 Minutes` instead of seconds).  
-- `lastUpdate` includes capture runtime (e.g., *Data Capture Runtime = 4.831s*) to verify driver efficiency.  
+- `lastUpdate` includes capture runtime (e.g., *Data Capture Runtime = 2.831s*) to verify driver efficiency.  
 - Attributes are optimized for Hubitat dashboards — numeric types are provided where possible for charting and rules.  
 - Transient or derived attributes (e.g., session runtime, NMC parsing context) are not persisted, ensuring a clean device state.
 
@@ -266,7 +336,7 @@ This driver follows semantic-style versioning:
 
 | Version | Status | Description |
 |----------|----------|-------------|
-| 1.0.0.0 | Release  | Initial stable release; validated under sustained load and reboot recovery |
+| 1.x.0.0 | Release  | Initial stable release; validated under sustained load and reboot recovery |
 | 0.3.x.x | Stable | Deterministic Telnet lifecycle, finalized cleanup model |
 | 0.2.x.x | Legacy | State-based control, early session management |
 | 0.1.x.x | Prototype | Initial Hubitat SmartUPS driver |
@@ -281,13 +351,14 @@ Unlike typical polling-based integrations, **APC SmartUPS Status** is engineered
 
 By avoiding persistent connections and using transient in-memory context instead of long-lived state variables, the driver delivers consistent, predictable performance regardless of hub load or network latency.
 
-Every component — from the buffer parser to the UPS command scheduler — was designed for **clarity, safety, and diagnostic transparency**, ensuring clean recovery even under edge conditions like dropped Telnet streams or incomplete NMC responses.
+Every component—from the buffer parser to the UPS command scheduler—was designed for **clarity, safety, and diagnostic transparency**, ensuring clean recovery even under edge conditions like dropped Telnet streams or incomplete NMC responses.
 
 ---
 
 ## 👥 Contributors
 
-**Author:** Marc Hedish (@MHedish)  
+**Author:** Marc Hedish (@MHedish)
+**Contributor:** Ferrell (@Ferrell)
 **Documentation:** ChatGPT (OpenAI)  
 **Platform:** [Hubitat Elevation](https://hubitat.com)
 
