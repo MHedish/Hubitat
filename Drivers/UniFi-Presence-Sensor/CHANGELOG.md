@@ -7,7 +7,7 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 
 ### Improved
 - Hardened connection recovery; added resetConnectionState() and improved WSS/auth self-recovery.
-- Updated initialize() to perforam complete WSS reset.
+- Updated initialize() to perform complete WSS reset.
 
 ---
 
