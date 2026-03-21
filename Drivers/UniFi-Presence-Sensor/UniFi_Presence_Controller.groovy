@@ -39,6 +39,9 @@
 *  1.8.6.5  -- Reverted
 *  1.8.6.6  -- Reset stale cookies during initialization and add automatic 401 authentication recovery
 *  1.8.6.7  -- Hardened connection recovery; added resetConnectionState() and improved WSS/auth self-recovery.
+*  1.8.6.8  -- Added system notifications
+*  1.8.6.9  -- Added emitNotification(); updated notification canon.
+*  1.9.0.0  -- Stable Release - Reversioned
 */
 
 import groovy.transform.Field
@@ -47,11 +50,11 @@ import groovy.json.JsonOutput
 import java.net.URLEncoder
 
 @Field static final String DRIVER_NAME="UniFi Presence Controller"
-@Field static final String DRIVER_VERSION="1.8.6.7"
-@Field static final String DRIVER_MODIFIED="2026.03.16"
+@Field static final String DRIVER_VERSION="1.9.0.0"
+@Field static final String DRIVER_MODIFIED="2026.03.21"
 @Field static final Integer AUTO_CREATE_DAYS=1
 @Field static final Integer AUTO_CREATE_MAX=50
-@Field static final Map CHILD_DRIVER=[name:"UniFi Presence Device",minVer:"1.8.6.0",required:true]
+@Field static final Map CHILD_DRIVER=[name:"UniFi Presence Device",minVer:"1.9.0.0",required:true]
 @Field List connectingEvents=["EVT_WU_Connected","EVT_WG_Connected"]
 @Field List roamingEvents=["EVT_WU_Roam","EVT_WU_RoamRadio"]
 @Field List disconnectingEvents=["EVT_WU_Disconnected","EVT_WG_Disconnected"]
@@ -64,6 +67,7 @@ metadata {
     definition(name: DRIVER_NAME, namespace: "MHedish", author: "Marc Hedish",
         importUrl: "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy"){
         capability "Initialize"
+        capability "PushableButton"
         capability "Refresh"
 
         attribute "commStatus","string"
@@ -80,6 +84,7 @@ metadata {
         command "createClientDevice",[[name:"name",type:"STRING",description:"Friendly Name "],[name:"mac",type:"STRING",description:"Full MAC Address (colon or hyphen separated) "]]
         command "disableDebugLoggingNow"
         command "disableRawEventLoggingNow"
+        command "push",[[name:"Alert Notification Test",type:"",description:""]]
         command "refreshAllChildren"
         command "reconnectAllChildren"
         command "autoCreateClients",[[name:"Last Seen (days) ",type:"NUMBER",description:"Create wireless clients seen in the last XX days (default=$AUTO_CREATE_DAYS) up to $AUTO_CREATE_MAX maximum "]]
@@ -102,6 +107,7 @@ preferences {
     input"monitorHotspot","bool",title:"Monitor Hotspot Clients",defaultValue:true
     input"ignoreUnmanagedDevices","bool",title:"Ignore unmanaged Wi-Fi devices",defaultValue:true
     input"ignoreSSLIssues","bool",title:"Ignore SSL Certificate Issues",defaultValue:true
+    input"enableNotifications","bool",title:"Enable System Notifications<br><small style='color:#444449;font-weight:300'>Be sure to configure $DRIVER_NAME in the Notifications app.</small>",defaultValue:true
     input"logRawEvents","bool",title:"Enable raw UniFi event debug logging",defaultValue:false
     input"logEvents","bool",title:"Log all events",defaultValue:false
     input"logEnable","bool",title:"Enable Debug Logging",defaultValue:false
@@ -120,19 +126,22 @@ private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){se
 private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:f);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 private childEmitEvent(dev,n,v,d=null,u=null,boolean f=false){try{dev.emitEvent(n,v,d,u,f)}catch(e){logWarn"childEmitEvent(): ${e.message}"}}
 private childEmitChangedEvent(dev,n,v,d=null,u=null,boolean f=false){try{dev.emitChangedEvent(n,v,d,u,f)}catch(e){logWarn"childEmitChangedEvent(): ${e.message}"}}
+private emitNotification(String n,def v,String d=null,boolean s=true){if(enableNotifications){sendEvent(name:n,value:v,descriptionText:d,isStateChange:s)}}
 private boolean verGate(String cur,String min){if(!cur)return false;def ca=cur.tokenize('.')*.toInteger(),ma=min.tokenize('.')*.toInteger();int l=Math.max(ca.size(),ma.size());for(int i=0;i<l;i++){int cv=i<ca.size()?ca[i]:0,mv=i<ma.size()?ma[i]:0;if(cv!=mv)return cv>mv};true}
 private void autoDisableDebugLogging(){try{unschedule("autoDisableDebugLogging");device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "🪲 Debug logging disabled (auto)"}catch(e){logDebug "autoDisableDebugLogging(): ${e.message}"}}
 private void autoDisableRawEventLogging(){try{device.updateSetting("logRawEvents",[value:"false",type:"bool"]);logInfo"📊 Raw UniFi event logging disabled (auto)"}catch(e){logDebug"autoDisableRawEventLogging(): ${e.message}"}}
 def disableDebugLoggingNow(){try{unschedule("autoDisableDebugLogging");device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo "🪲 Debug logging disabled (manual)"}catch(e){logDebug "disableDebugLoggingNow(): ${e.message}"}}
 def disableRawEventLoggingNow(){try{unschedule("autoDisableRawEventLogging");device.updateSetting("logRawEvents",[value:"false",type:"bool"]);logInfo"📊 Raw UniFi event logging disabled (manual)"}catch(e){logDebug"disableRawEventLoggingNow(): ${e.message}"}}
+def push(btn=null){def msg="🧪 ${DRIVER_NAME} alert test";sendEvent(name:"pushed",value:1,descriptionText:msg,isStateChange:true)}
 
 /* ===============================
    Lifecycle
    =============================== */
-def installed(){logInfo"Installed";initialize()}
-def updated(){logInfo"⚙ Preferences updated";if(monitorHotspot){createHotspotChild()}else{deleteHotspotChild()}
+def installed(){logInfo"Installed: ${driverInfoString()}";sendEvent(name:"numberOfButtons",value:1,displayed:false);initialize()}
+def updated(){logInfo"⚙️ Preferences updated";if(monitorHotspot){createHotspotChild()}else{deleteHotspotChild()}
 	logDebug"⚙️ Preferences – Site: ${siteName} | Refresh: ${refreshInterval} | Debounce: ${disconnectDebounce} | HTTP Timeout: ${httpTimeout} | Ignore Unmanaged: ${ignoreUnmanagedDevices}";initialize()}
 def initialize(){
+    def prevCommStatus=device.currentValue("commStatus")
     emitEvent("driverInfo",driverInfoString(),"☑️ Initializing",null,true);emitEvent("commStatus","unknown","☑️ Initializing",null,true)
     recoverDisconnectTimers()
     if(controllerIP&&username&&password){
@@ -142,13 +151,16 @@ def initialize(){
             closeEventSocket();atomicState.useProxyPrefix=detectProxyPrefix();logDebug "Proxy prefix required: ${atomicState.useProxyPrefix}"
             resetConnectionState();refreshCookie()
             if(atomicState.cookie&&atomicState.csrf){
-                atomicState.remove("reconnectDelay");emitEvent("commStatus","good","✅ REST connection established",null,true)
+                atomicState.remove("reconnectDelay");emitNotification("pushed",2,"🔗 REST connection established");emitEvent("commStatus","good","✅ REST connection established",null,true)
                 runIn(2,"refresh");runIn(4,"checkChildDriver");runIn(6,"openEventSocket");querySysInfo();updateChildAndGuestSummaries()
             }else{emitEvent("commStatus","error","❌ Not authenticated")}
-        }catch(e){logError"initialize() failed: ${e.message}";emitEvent("commStatus","error","⚠️ initialize_exception");reinitialize()}
+        }catch(e){
+			logError"initialize() failed: ${e.message}"
+        	if(enableNotifications)sendEvent(name:"pushed",value:1,descriptionText:"⚠️ initialize_exception",isStateChange:true)
+        	emitEvent("commStatus","error","⚠️ initialize_exception");reinitialize()
+        	}
     }else logWarn"⚠️ Cannot initialize. Preferences must be set."
 }
-
 def reinitialize(){def delay=Math.min((atomicState.reconnectDelay?:1)*2,600);atomicState.reconnectDelay=delay;runIn(delay,"initialize")}
 def refresh(){unschedule("refresh");refreshAllChildren();runIn(refreshInterval,"refresh")}
 def uninstalled(){unschedule();invalidateCookie()}
@@ -215,7 +227,7 @@ private Map checkChildDriver(){
    Bulk Management
    =============================== */
 private void refreshAllChildren(){
-    logInfo"🔄 Refreshing all children..."
+    logInfo"🔄 Refreshing all child devices"
     def children=getChildDevices()?:[];def hotspotDone=false
     children.each{child->
         if(child.getDataValue("hotspot")=="true"){if(!hotspotDone){refreshHotspotChild();hotspotDone=true}}
@@ -235,7 +247,7 @@ private void updateChildAndGuestSummaries(){
         def children=getChildDevices()?:[];def normal=children.findAll{it.getDataValue("hotspot")!="true"};def present=normal.count{it.currentValue("presence")=="present"}
         def prevChildTotal=(device.currentValue("childDevices")=~/of\s+(\d+)\s+Present/)?.with{it.find()?it.group(1).toInteger():normal.size()}
         def childDelta=normal.size()-prevChildTotal
-        emitEvent("childDevices","${present} of ${normal.size()} Present",childDelta>0?"⬆️ ${childDelta} child device${childDelta==1?'':'s'} added":childDelta<0?"⬇️ ${Math.abs(childDelta)} child device${childDelta==-1?'':'s'} removed":null)
+        emitChangedEvent("childDevices","${present} of ${normal.size()} Present",childDelta>0?"⬆️ ${childDelta} child device${childDelta==1?'':'s'} added":childDelta<0?"⬇️ ${Math.abs(childDelta)} child device${childDelta==-1?'':'s'} removed":null)
         def hotspot=children.find{it.getDataValue("hotspot")=="true"}
         if(monitorHotspot&&!hotspot){if(!atomicState.hotspotMissingWarned){logWarn"❌ Hotspot child device missing. Hotspot clients cannot be registered. Toggle \"Monitor Hotspot Clients\" in preferences to restore Guest device.";atomicState.hotspotMissingWarned=true}}
         if(hotspot){
@@ -243,10 +255,10 @@ private void updateChildAndGuestSummaries(){
             def guests=hotspot.currentValue("hotspotGuests")?:0;def total=hotspot.currentValue("totalHotspotClients")?:0
             def prevGuestTotal=(device.currentValue("guestDevices")=~/of\s+(\d+)\s+Present/)?.with{it.find()?it.group(1).toInteger():total}
             def guestDelta=total-prevGuestTotal
-            emitEvent("guestDevices","${guests} of ${total} Present",guestDelta>0?"⬆️ ${guestDelta} guest${guestDelta==1?'':'s'} added":guestDelta<0?"⬇️ ${Math.abs(guestDelta)} guest${guestDelta==-1?'':'s'} removed":null)
+            emitChangedEvent("guestDevices","${guests} of ${total} Present",guestDelta>0?"⬆️ ${guestDelta} guest${guestDelta==1?'':'s'} added":guestDelta<0?"⬇️ ${Math.abs(guestDelta)} guest${guestDelta==-1?'':'s'} removed":null)
         }else{
             def prevGuestTotal=(device.currentValue("guestDevices")=~/of\s+(\d+)\s+Present/)?.with{it.find()?it.group(1).toInteger():0};def guestDelta=0-prevGuestTotal
-            emitEvent("guestDevices","0 of 0 Present",guestDelta>0?"⬆️ ${guestDelta} guest${guestDelta==1?'':'s'} added":guestDelta<0?"⬇️ ${Math.abs(guestDelta)} guest${guestDelta==-1?'':'s'} removed":null)
+            emitChangedEvent("guestDevices","0 of 0 Present",guestDelta>0?"⬆️ ${guestDelta} guest${guestDelta==1?'':'s'} added":guestDelta<0?"⬇️ ${Math.abs(guestDelta)} guest${guestDelta==-1?'':'s'} removed":null)
         }
     }catch(e){logError"updateChildAndGuestSummaries() failed: ${e.message}"}
 }
@@ -345,7 +357,8 @@ void parse(String message){
 			child.refreshFromParent([accessPoint:evt.ap?:"unknown",accessPointName:evt.ap_displayName?:"unknown",ssid:ssidVal,ipAddress:ip,presenceChanged:formatTimestamp(evt.time)])
 		}
 		if(summaryDirty)updateChildAndGuestSummaries()
-	}catch(e){logError"parse() failed: ${e.message}"}
+	}catch(e){logError"parse() failed: ${e.message}";if(enableNotifications)sendEvent(name:"pushed",value:1,descriptionText:"parse() failed: ${e.message}",isStateChange:true)
+}
 }
 
 def debounceHotspotRefresh(){
@@ -372,19 +385,26 @@ private formatTimestamp(rawTime){
    WebSocket Handling
    =============================== */
 def webSocketStatus(String status){
-	if(status.startsWith("status: open")){emitEvent("commStatus","good","🔗️ WebSocket connection established",null,true);emitEvent("driverInfo",driverInfoString(),"✅ Initialization complete",null,true);atomicState.reconnectDelay=1}
+	if(status.startsWith("status: open")){
+	    emitNotification("pushed",2,"🔗 WebSocket connection established")
+	    emitEvent("commStatus","good","🔗️ WebSocket connection established",null,true)
+	    emitEvent("driverInfo",driverInfoString(),"✅ Initialization complete",null,true)
+	    atomicState.reconnectDelay=1
+	}
     else if(status.startsWith("status: closing")){emitEvent("commStatus","closing","⛓️‍💥️ WebSocket disconnecting",null,true)}
     else if(status.startsWith("status: closed")){
 		logWarn "⚠️ WebSocket closed"
         if(!atomicState.wasExpectedClose){
-            if(atomicState.cookie && atomicState.csrf){
+			emitNotification("released",2,"⛓️‍💥 WebSocket disconnected");emitNotification("pushed",1,"⚠️ WebSocket closed unexpectedly")
+            if(atomicState.cookie&&atomicState.csrf){
                 logWarn "⚠ WebSocket closed unexpectedly — reopening socket";runIn(10,"openEventSocket")}
                 else{logWarn "⚠ WebSocket closed and auth missing — reinitializing";runIn(10,"initialize")}
         }else{atomicState.wasExpectedClose=false}
     }
     else if(status.startsWith("failure:")){
         logError "❌ WebSocket failure: ${status}";emitEvent("commStatus","error","❌ WSS Failure")
-        if(atomicState.cookie && atomicState.csrf){logWarn "Attempting WebSocket reconnect";runIn(10,"openEventSocket")}
+        if(enableNotifications)sendEvent(name:"pushed",value:1,descriptionText:"❌ UniFi WebSocket failure: ${status}",isStateChange:true)
+        if(atomicState.cookie&&atomicState.csrf){logWarn "Attempting WebSocket reconnect";runIn(10,"openEventSocket")}
         else{logWarn "Auth missing — reinitializing";runIn(10,"initialize")}
     }
     else{logDebug "Unhandled WebSocket status: ${status}"}
@@ -466,16 +486,19 @@ private void refreshCookie(){
     atomicState.refreshingCookie=true
     try{
         unschedule("refreshCookie");login()
-        if(atomicState.cookie && atomicState.csrf){emitEvent("commStatus","good","🍪 Cookie refreshed");atomicState.rateLimitedUntil=null}
+        if(atomicState.cookie&&atomicState.csrf){
+		    emitEvent("commStatus","good","🍪 Cookie refreshed");atomicState.rateLimitedUntil=null
+		}
         else{logWarn "refreshCookie(): login returned without cookie/csrf";emitEvent("commStatus","error","❌ Auth Failure");runIn(60,"initialize")}
     }catch(groovyx.net.http.HttpResponseException e){
         if(e.response?.status==429){
             atomicState.rateLimitedUntil=now()+60000;logWarn "⏳ Login rate-limited (429). Backing off for 60 seconds."
+            if(enableNotifications)sendEvent(name:"pushed",value:1,descriptionText:"⚠️ controller API rate limited (429)",isStateChange:true)
             emitEvent("commStatus","error","❌ Rate Limited – retrying later");runIn(60,"initialize");return
         }
-        logError "refreshCookie() failed: ${sanitizePayload(e.message)}";emitEvent("commStatus","error","❌ Auth Failure during cookie refresh");runIn(60,"initialize")
+        logError "refreshCookie() failed: ${sanitizePayload(e.message)}";emitNotification("pushed",1,"❌ Authentication failure");emitNotification("released",2,"⛓️‍💥 REST disconnected");emitEvent("commStatus","error","❌ Auth Failure during cookie refresh");runIn(60,"initialize")
     }catch(e){
-        logError "refreshCookie() failed: ${sanitizePayload(e.message)}";emitEvent("commStatus","error","❌ Auth Failure during cookie refresh");runIn(60,"initialize")
+        logError "refreshCookie() failed: ${sanitizePayload(e.message)}";emitNotification("pushed",1,"❌ Authentication failure");emitNotification("released",2,"⛓️‍💥 REST disconnected");emitEvent("commStatus","error","❌ Auth Failure during cookie refresh");runIn(60,"initialize")
     }finally{atomicState.refreshingCookie=false}
 }
 
@@ -514,14 +537,17 @@ private void logout(){
 }
 
 def runQuery(suffix,throwToCaller=false,body=null){
-	if(!atomicState.cookie)return null
+    if(!atomicState.cookie)return null
     try{
-		if(atomicState.rateLimitedUntil&&now()<atomicState.rateLimitedUntil){
-		    logWarn"⏳ Skipping REST call – rate limited";return null
-		}
-		return httpExecWithAuthCheck("GET",genParamsMain(suffix, body),throwToCaller)}
-    catch(e){if(!throwToCaller){logDebug sanitizePayload(e);emitEvent("commStatus","error","❌ Error during runQuery()");return}
-    throw e
+        if(atomicState.rateLimitedUntil&&now()<atomicState.rateLimitedUntil){logWarn"⏳ Skipping REST call – rate limited";return null}
+        return httpExecWithAuthCheck("GET",genParamsMain(suffix,body),throwToCaller)
+    }catch(e){
+        if(!throwToCaller){
+            logDebug sanitizePayload(e);emitNotification("released",2,"⛓️‍💥 REST disconnected");emitNotification("pushed",1,"❌ controller REST query failed")
+            emitEvent("commStatus","error","❌ Error during runQuery()")
+            return
+        }
+        throw e
     }
 }
 
