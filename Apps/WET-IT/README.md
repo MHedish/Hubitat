@@ -28,7 +28,13 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 
 ### 💡 Highlights
 
-###  *What’s New in v1.3.0.0* 
+###  *What’s New in v1.3.1.0* 
+- Updated child version detection in verifySystem().
+- Updated irrigationTick() to use solar cache as authoritative (increases *resolution*) with hub fallback. 
+- Added notifications when operating in degraded mode.
+- Updated getAstronomicalData().
+- Updated verifyDataChild() to include call checkChildDriver() for version control
+- Removed 'Disable Debug Logging Now' button - incorporated it in detectSettingsChange() to simplify UI.
 
 ####  *What Was New in v1.3.0.0* 
 
@@ -92,7 +98,7 @@ Skips can also be stacked so you can temporarily skip multiple programs in the s
 
 ---
 
-###  *What’s Was New in v1.2.2.0* 
+###  *What Was New in v1.2.2.0* 
 
 Corrected persistence bug in weather alert summary.
 
@@ -416,11 +422,11 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbOTM2MTkxODk0LDk1NDYwMzU3NywtNzQzMj
-I0ODE1LC0xMTk2NTEwMzg1LC0yNTY4NjU1Miw0NjE0NTMwOTUs
-LTg1MjA3ODg4MywxNTAxNzMxNTU4LDk1NjUzOTAzOSw2ODQ3OD
-g0OTIsMTQ5NzQ5ODIwOSwtMTcwNjQwNjMwNCw3MDYzNjc4NTAs
-LTIwNDUwODMxNDMsMjExNDYwNzM2MiwxNjQyNTIzMTA0LC0xMj
-M1MDc3NDE4LC0xODcwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1
-ODMwOV19
+eyJoaXN0b3J5IjpbLTE2MzA2NDU4NDMsOTU0NjAzNTc3LC03ND
+MyMjQ4MTUsLTExOTY1MTAzODUsLTI1Njg2NTUyLDQ2MTQ1MzA5
+NSwtODUyMDc4ODgzLDE1MDE3MzE1NTgsOTU2NTM5MDM5LDY4ND
+c4ODQ5MiwxNDk3NDk4MjA5LC0xNzA2NDA2MzA0LDcwNjM2Nzg1
+MCwtMjA0NTA4MzE0MywyMTE0NjA3MzYyLDE2NDI1MjMxMDQsLT
+EyMzUwNzc0MTgsLTE4NzA4NDI3NywxMzc5NDM2MjUzLC0xNTYy
+NTU4MzA5XX0=
 -->
