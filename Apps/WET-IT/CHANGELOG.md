@@ -228,10 +228,11 @@ Added the ability to immediately run the next scheduled program or to skip over 
 - Updated verifyDataChild() to include call checkChildDriver() for version control
 - Removed 'Disable Debug Logging Now' button - incorporated it in detectSettingsChange() to simplify UI.
 - Added retry to try/catch when probing for child driver presence.
+- UI Cleanup
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTg0NDcxOTY4NCwtMTM4NzEyOTA4MCwtMT
-cyNTEyMTg3OCwtMTkyNjQ1MTIzLDEyMzQ2MjY4MTMsMTE3MjU4
-NzE5OSw1MjMwMjgyMywtMTE3NDIzMTkxNiwxMzgzMzgwNDQ2LD
-E3MjUyODQ1NjksLTEwMjk5Nzg0NywtODEyMDcyMzU4LDE4NDcw
-Mzc4MDNdfQ==
+eyJoaXN0b3J5IjpbMTc4Mzg1OTk2NywtODQ0NzE5Njg0LC0xMz
+g3MTI5MDgwLC0xNzI1MTIxODc4LC0xOTI2NDUxMjMsMTIzNDYy
+NjgxMywxMTcyNTg3MTk5LDUyMzAyODIzLC0xMTc0MjMxOTE2LD
+EzODMzODA0NDYsMTcyNTI4NDU2OSwtMTAyOTk3ODQ3LC04MTIw
+NzIzNTgsMTg0NzAzNzgwM119
 -->
