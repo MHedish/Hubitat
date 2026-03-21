@@ -1,15 +1,15 @@
 {
   "packageName": "UniFi Presence Drivers",
   "author": "Marc Hedish",
-  "version": "1.8.6.7",
+  "version": "1.9.0.0",
   "minimumHEVersion": "2.3.8",
-  "dateReleased": "2026-03-07",
+  "dateReleased": "2026-03-21",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/README.md",
   "communityLink": "https://community.hubitat.com/t/release-unifi-presence-drivers-for-hubitat/156847",
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/CHANGELOG.md",
   "category": "Utility",
   "tags": ["LAN", "Monitoring", "Presence & Location", "Tools & Utilities"],  
-  "releaseNotes": "1.8.6.7 (2026-03-16):  Hardened connection recovery; added resetConnectionState() and improved WSS/auth self-recovery.",
+  "releaseNotes": "1.9.0.0 (2026-03-21):  Hardened connection recovery; added resetConnectionState() and improved WSS/auth self-recovery.",
   "drivers": [
     {
       "id": "unifi-presence-controller",
@@ -17,7 +17,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Controller.groovy",
       "required": true,
-      "version": "1.8.6.7"
+      "version": "1.9.0.0"
     },
     {
       "id": "unifi-presence-device",
@@ -25,7 +25,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Sensor/UniFi_Presence_Device.groovy",
       "required": true,
-      "version": "1.8.6.0"
+      "version": "1.9.0.0"
     }
   ]
 }
