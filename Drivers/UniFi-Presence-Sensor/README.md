@@ -139,7 +139,7 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 |`ssid`|`string`|SSID of the WiFi network to which the child is connected
 |`ipAddress`|`string`|Current IP Address of the child device|
 |`presence`|`string`|Current state of the child `present|not present`|
-|`presenceChanged`|`string`|Current state of the child `present|not present`|
+|`presenceChanged`|`string`|Timestamp of the last presence state change|
 
 
 ### Guest Child Driver (If In Use)
@@ -149,7 +149,7 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 |`driverVersion`|`string`|Driver version number|
 |`hotspotGuests`|`number`
 |`totalHotspotClients`|`number`
-|`presenceChanged`|`string`|
+|`presenceChanged`|`string`|Timestamp of the last guest |
 |`hotspotGuestList`|`string`|
 |`hotspotGuestListRaw`|`string`|
 
@@ -208,7 +208,7 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMzQyMDE4ODMxLC0xNzk3MDM2NjgwLDI2ND
-I2MTcxNywtMTk4NDk1NjgyMywtMTAzOTg5OTU2NCw1NjMxMTY2
-OTcsMTE5ODA1MTk2M119
+eyJoaXN0b3J5IjpbLTUwNzEyNjk1MCwtMTc5NzAzNjY4MCwyNj
+QyNjE3MTcsLTE5ODQ5NTY4MjMsLTEwMzk4OTk1NjQsNTYzMTE2
+Njk3LDExOTgwNTE5NjNdfQ==
 -->
