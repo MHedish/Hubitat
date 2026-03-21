@@ -29,7 +29,7 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 ### 💡 Highlights
 
 ###  🆕 *What’s New in v1.3.1.0* 
-- Updated child version detection in verifySystem().  The previous verions only looked for the presence of the child device, not i
+- Updated child version detection in verifySystem().  Previous versions only looked for the presence of the child device rather than verifying it was also the correct version.
 - Updated irrigationTick() to use solar cache as authoritative (increases *resolution*) with hub fallback.  The WET-IT solar cache provides all six solar events with one-second resolution rather than the two events Hubitat provides with one-minute resolution.
 - Added notifications when operating in degraded mode.
 - Application UI cleanup 
@@ -420,11 +420,11 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNzI1NTg4NDY5LDk1NDYwMzU3NywtNzQzMj
-I0ODE1LC0xMTk2NTEwMzg1LC0yNTY4NjU1Miw0NjE0NTMwOTUs
-LTg1MjA3ODg4MywxNTAxNzMxNTU4LDk1NjUzOTAzOSw2ODQ3OD
-g0OTIsMTQ5NzQ5ODIwOSwtMTcwNjQwNjMwNCw3MDYzNjc4NTAs
-LTIwNDUwODMxNDMsMjExNDYwNzM2MiwxNjQyNTIzMTA0LC0xMj
-M1MDc3NDE4LC0xODcwODQyNzcsMTM3OTQzNjI1MywtMTU2MjU1
-ODMwOV19
+eyJoaXN0b3J5IjpbMTQ5MjM0MDQ2Myw5NTQ2MDM1NzcsLTc0Mz
+IyNDgxNSwtMTE5NjUxMDM4NSwtMjU2ODY1NTIsNDYxNDUzMDk1
+LC04NTIwNzg4ODMsMTUwMTczMTU1OCw5NTY1MzkwMzksNjg0Nz
+g4NDkyLDE0OTc0OTgyMDksLTE3MDY0MDYzMDQsNzA2MzY3ODUw
+LC0yMDQ1MDgzMTQzLDIxMTQ2MDczNjIsMTY0MjUyMzEwNCwtMT
+IzNTA3NzQxOCwtMTg3MDg0Mjc3LDEzNzk0MzYyNTMsLTE1NjI1
+NTgzMDldfQ==
 -->
