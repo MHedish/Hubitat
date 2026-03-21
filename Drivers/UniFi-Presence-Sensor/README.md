@@ -102,7 +102,17 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 ## 📊 Attributes & Controls
 
 ### Parent Driver
-- **Attributes:** `commStatus`, `deviceType`, `eventStream`, `driverInfo`, `childDevices`, `guestDevices`, `hostName`, `network`, `UniFiOS`.  
+| Attribute | Type | Description |
+|:--|:--|:--|
+|`childDevices`|`string`|Text of the number of child devices present out of the number configured|
+|`commStatus`|`string`|Overall comm status combining WSS and REST.|
+|`deviceType`|`string`|UniFi device type|
+|`driverInfo`|`string`|App version|
+|`eventStream`|`string`|JSON containing last WSS event from the controller|
+|`guestDevices`|`string`|Test of the number of guest devices present out of the number registered|
+|`hostName`|`string`|Controller hostname|
+|`network`|`string`|Detected UnFi Network app version|
+|`UniFiOS`|`string`|Detected UniFi OS version|
 
 - **Commands (buttons):** `autoCreateClients`, `createClientDevice`, `disableDebugLoggingNow`, `disableRawEventLoggingNow`, `push`, `reconnectAllChildren`, `refreshAllChildren`.
 
@@ -159,6 +169,6 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE5ODQ5NTY4MjMsLTEwMzk4OTk1NjQsNT
-YzMTE2Njk3LDExOTgwNTE5NjNdfQ==
+eyJoaXN0b3J5IjpbMjY0MjYxNzE3LC0xOTg0OTU2ODIzLC0xMD
+M5ODk5NTY0LDU2MzExNjY5NywxMTk4MDUxOTYzXX0=
 -->
