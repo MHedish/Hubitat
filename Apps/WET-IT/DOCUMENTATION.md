@@ -367,25 +367,10 @@ Each Echo device represents a **single irrigation program**, not a physical valv
 
 ---
 
-### 🌊 Cycle & Soak
+### 🌊 Cycle & Soak (Rotor & High-Runtime Zones)
 
-Cycle & Soak allows irrigation to be applied in multiple shorter cycles instead of a single continuous run, improving absorption and reducing runoff.
 
-When enabled:
-
-- Each zone’s runtime is divided into multiple watering cycles
-- A configurable soak period is inserted between cycles
-- Total watering duration remains unchanged
-
-### Benefits
-
-- Reduces runoff on slopes or compacted soil
-- Improves water penetration into the root zone
-- Increases overall irrigation efficiency
-
-## Cycle & Soak (Rotor & High-Runtime Zones)
-
-Cycle & Soak improves watering efficiency by spliting a long irrigation event into multiple shorter watering passes separated by soak delays. This allows water to absorb into the soil instead of running off the surface.
+Cycle & Soak improves watering efficiency by splitting a long irrigation event into multiple shorter watering passes separated by soak delays. This allows water to absorb into the soil instead of running off the surface.
 
 This feature is especially useful for rotor zones, clay soils, and sloped landscapes.
 
@@ -500,6 +485,22 @@ If soil dries too quickly between watering cycles:
 Increase Base Time slightly.
 
 Most systems stabilize quickly after one or two adjustments.
+
+Cycle & Soak allows irrigation to be applied in multiple shorter cycles instead of a single continuous run, improving absorption and reducing runoff.
+
+When enabled:
+
+- Each zone’s runtime is divided into multiple watering cycles
+- A configurable soak period is inserted between cycles
+- Total watering duration remains unchanged
+
+### Benefits
+
+- Reduces runoff on slopes or compacted soil
+- Improves water penetration into the root zone
+- Increases overall irrigation efficiency
+
+Cycle & Soak is applied automatically during program execution once configured.
 
 ---
 
@@ -2097,11 +2098,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTE2NTQ2ODgxOSwtNjM5NjcxODE4LDE3Mz
-U3MzE2MzYsLTEwMDE3MDA3NDksODc0ODUwMDM4LDkxNzIxMzE2
-OSwtMTEwNjA3NjU2MSwtMTcwNTYxMzM2OCwxNDcxOTIyNzk2LC
-0xNTcxNDY4OTIwLC0yOTc2NTk2NzEsMTk3ODA5ODU1NywxNTA3
-Mzg1NTk5LDI5MTk5MTIxNywtMTAyNTY2NDYxNSwtMjEwNTEwNz
-k5LC0xOTMxNTY1ODI1LC0xMzQ5NzM1Mzk4LDIwNzY1MTM1MDks
-LTE4NjI0MjQ5OTddfQ==
+eyJoaXN0b3J5IjpbNjkxMTQzNDEzLC02Mzk2NzE4MTgsMTczNT
+czMTYzNiwtMTAwMTcwMDc0OSw4NzQ4NTAwMzgsOTE3MjEzMTY5
+LC0xMTA2MDc2NTYxLC0xNzA1NjEzMzY4LDE0NzE5MjI3OTYsLT
+E1NzE0Njg5MjAsLTI5NzY1OTY3MSwxOTc4MDk4NTU3LDE1MDcz
+ODU1OTksMjkxOTkxMjE3LC0xMDI1NjY0NjE1LC0yMTA1MTA3OT
+ksLTE5MzE1NjU4MjUsLTEzNDk3MzUzOTgsMjA3NjUxMzUwOSwt
+MTg2MjQyNDk5N119
 -->
