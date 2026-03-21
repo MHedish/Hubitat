@@ -7,42 +7,22 @@
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  1.0.0.0 – 1.1.0.8 See https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/CHANGELOG.md
-*  1.2.0.0   –– Version bump for public release.
-*  1.2.1.0   –– Begin update to publish next program.
-*  1.2.1.6   –– Added nextProgramEpoch, nextProgramName, and nextProgramText
-*  1.2.1.7   –– Added Next Program to diag/dashboard area. Cleaned up some of the dash prompts.
-*  1.2.1.8   –– Implemented astronomical data forecasting for better nextProgram precision.
-*  1.2.1.15  –– Final version of getNextScheduledProgram(), best performance ~40ms.
-*  1.2.1.16  –– Updated verifySystem() to include astronomical cache validation and update to nextProgram
-*  1.2.2.0   –– Version bump for public release.
-*  1.2.2.1   –– Rename getNextScheduledProgram() → calcNextProgramEvent() for clarification.
-*  1.2.2.2   –– Created schedule map for JSON publishing; corrected persisent activeAlerts attribute when no alerts exist.
-*  1.2.2.3   –– Restored publshing nextProgram* to child unconditionally.
-*  1.2.2.4   –– Added runNextProgram and skipNextProgram.
-*  1.2.2.5   –– Added weather alert notifications; added runNextProgram and skipNextProgram UI.
-*  1.2.2.6   –– Reverted
-*  1.2.2.7   –– Reworked skipNextProgram() to skip a single scheduled instance without affecting program cadence.
-*  1.2.2.8   –– Reworked skip logic to support multiple skipped program instances using atomicState list; added transitional “recalculating” UI state and improved Next Program display feedback.
-*  1.2.2.9   –– UI improvements; updated detectSettingsChange(); clear skipProgramInstances when a program is deleted.
-*  1.2.3.0   –– Version bump for public release.
-*  1.2.3.1   –– Fixed notification alert error; Enhanced solar cache detection and self-repair.
-*  1.2.3.2   –– Reverted -- Continuous logWarn
-*  1.2.3.3   –– Corrected GetAstronomicalCache()
-*  1.2.3.4   –– Updated event notification scaffolding. Added app and device test buttons.
-*  1.2.3.5   –– Added restore skipped programs.
-*  1.2.3.6   –– Added Program notifications; completed work on program restore.
-*  1.2.3.7   –– Added Zone notifications; Added advisory for mismatched nozzles within the same program; fixed deleteProgram() to remove residual [useCycleSoak,cycleCount,cyclePauseMin] when deleting programs.
-*  1.2.3.8   –– Added Tool Tips for Logging & Tools section.
+*  1.0.0.0 – 1.2.3.8 See https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/CHANGELOG.md
 *  1.3.0.0   –– Version bump for public release.
+*  1.3.0.0   –– Updated child version detection in verifySystem.
+*  1.3.0.2   –– Updated irrigationTick() to use solar cache as authoritative (increases resolution) with hub fallback; notifications when operating in degraded mode.
+*  1.3.0.3   –– Updated getAstronomicalData().
+*  1.3.0.4   –– Updated verifyDataChild() to include call checkChildDriver() for version control; removed 'Disable Debug Logging Now' button - incorporated it in detectSettingsChange() to simplify UI. UI cleanup.
+*  1.3.0.5   –– Added retry to try/catch when probing for child driver presence.
+*  1.3.1.0   –– Version bump for public release.
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="1.3.0.0"
-@Field static final String APP_MODIFIED="2026-03-15"
+@Field static final String APP_VERSION="1.3.1.0"
+@Field static final String APP_MODIFIED="2026-03-21"
 @Field static final String JSON_SCHEMA="wetit.unified.v1"
 @Field static final String REPO_ROOT="https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT"
 @Field static final String RAW_ROOT="https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT"
@@ -98,7 +78,6 @@ private childEmitChangedEvent(dev,n,v,d=null,u=null,boolean f=false){try{dev.emi
 private getDataChild(boolean fresh=false){def dni="wetit_data_${app.id}";if(fresh||!cachedChild||!getChildDevice(dni))cachedChild=ensureDataDevice();return cachedChild}
 private getEchoChild(Integer p,boolean fresh=false){def dni="wetit_echo_${app.id}_${p}";def d=getChildDevice(dni);return(d?:null)}
 private autoDisableDebugLogging(){try{unschedule("autoDisableDebugLogging");atomicState.logEnable=false;app.updateSetting("logEnable",[type:"bool",value:false]);logInfo"Debug logging disabled (auto)"}catch(e){logDebug"autoDisableDebugLogging(): ${e.message}"}}
-def disableDebugLoggingNow(){try{unschedule("autoDisableDebugLogging");atomicState.logEnable=false;app.updateSetting("logEnable",[type:"bool",value:false]);logInfo"Debug logging disabled (manual)"}catch(e){logDebug"disableDebugLoggingNow(): ${e.message}"}}
 
 /* ---------- Preferences & Main Page ---------- */
 def mainPage(){
@@ -370,7 +349,6 @@ def mainPage(){
 			"<ul>"+
 			"<li><b>Log All Events</b> – When enabled, WET-IT writes detailed operational events to the Hubitat system log.</li>"+
 			"<li><b>Enable Debug Logging</b> – Enables verbose debug logging for troubleshooting and development.  For safety and performance reasons, debug logging <i>automatically disables itself after 30 minutes</i>.<br>"+
-			"The ${htmlHeButton('🛑 Disable Debug Logging Now')} button immediately turns off debug logging without waiting for the automatic timeout.</li>"+
 			"<li><b>Hide On-screen Tooltips</b> – Hides the contextual help panels displayed throughout the WET-IT configuration interface. <small>What you are reading now.</small></li>"+
 			"<li><b>Enable System Notifications</b> – Allows WET-IT to generate notification events for external delivery through the Hubitat <b><i>Notifications</i></b> app.<br>"+
 			"Notifications are not sent directly by WET-IT. Instead, the application publishes events that can be routed by the Notifications app to devices such as:"+
@@ -391,9 +369,8 @@ def mainPage(){
 			"</ol>"+
 			"<p>Notifications provide situational awareness while allowing the Hubitat Notifications app to control how and when messages are delivered.</p>"
 		)
-		    input"logEvents","bool",title:"Log All Events",defaultValue:false,submitOnChange:true
+		    input"logEvents","bool",title:"Log All Events",width:3,defaultValue:false,submitOnChange:true
 		    input"logEnable","bool",title:"Enable Debug Logging<br><small>Auto-off after 30 minutes.</small>",width:3,defaultValue:false,submitOnChange:true
-            input"btnDisableDebug","button",title:"🛑 Disable Debug Logging Now",width:3,disabled:(!logEnable)
 		    input"hideHelp","bool",title:"Hide On-screen Tooltips",defaultValue:false,submitOnChange:true
 			input"enableNotifications","bool",title:"Enable System Notifications<br><small>Be sure to configure $APP_NAME in the Notifications app.</small>",width:3,defaultValue:true,submitOnChange:true
 			input"btnTestNotifications","button",title:"🧪 Test Notifications",width:3,disabled:(!enableNotifications)
@@ -402,13 +379,13 @@ def mainPage(){
         section(){
 			paragraph htmlHeadingLink("⚙️","System Diagnostics","${REPO_ROOT}/DOCUMENTATION.md#-system-diagnostics","#1E90FF")
             paragraph"Utilities for testing and verification."
-            input"btnVerifyChild","button",title: "☑️ Verify Data Child Device",width:4
-            def anyEchoEnabled=settings.find{k,v->k.startsWith("programEchoEnabled_")&&v==true};if(anyEchoEnabled){input"btnVerifyEcho","button",title: "☑️ Verify Echo Child Devices",width:4}
-            input"btnVerifySystem","button",title: "✅ Verify System Integrity",width:4
-            input"btnRunWeatherUpdate","button",title: "🔄 Run Weather/ET Updates Now",width:4
-			paragraph""
+            input"btnVerifyChild","button",title: "☑️ Verify Data Child Device",width:3
+            def anyEchoEnabled=settings.find{k,v->k.startsWith("programEchoEnabled_")&&v==true};if(anyEchoEnabled){input"btnVerifyEcho","button",title: "☑️ Verify Echo Child Devices",width:3}
+            input"btnVerifySystem","button",title: "✅ Verify System Integrity",width:3
+            input"btnRunWeatherUpdate","button",title: "🔄 Run Weather/ET Updates Now",width:3
 			if(atomicState.tempDiagMsg){paragraph "<b>Last Diagnostic:</b> ${atomicState.tempDiagMsg}";atomicState.tempDiagMsg="&nbsp;"}
 			def c=getDataChild(true);def loc=c?.currentValue('wxLocation');def wxKey=c?.currentValue('wxSource');def wx=WX_LABEL[wxKey]?:wxKey?:'n/a'
+            paragraph"<hr style='margin-top:8px;margin-bottom:2px;border:0;border-top:1px solid #ccc;opacity:0.5;'>"
 			paragraph "🌦️ Weather → ${loc?loc+'':'Unknown'} — ${wx} Forecast: ${c?.currentValue('wxTimestamp')?:'n/a'}, Checked: ${c?.currentValue('wxChecked')?:'n/a'}"
 			def sd=atomicState.solarData?.days?.get(new Date().format(DATE_FMT,location.timeZone))?:[:]
 			if(sd){
@@ -421,10 +398,8 @@ def mainPage(){
 			paragraph "<i><small>Ensure hub time zone and location are correct for accurate ET calculations.</i></small>"
 			paragraph"<p style='opacity:0.75;'><small>Astronomical data provided by <a href='https://sunrise-sunset.org/' target='_blank'>Sunrise-Sunset.org</a>."+
 				"${state.geo?.iso?' Reverse geocoding powered by <a href=\'https://www.geoapify.com/\' target=\'_blank\'>Geoapify</a>. Map data © <a href=\'https://www.openstreetmap.org/copyright\' target=\'_blank\'>OpenStreetMap contributors</a>.':''}</small></p>"
-        }
-		/* ---------- 7️ About / Version Info (Footer) ---------- */
-        section(){
-            paragraph "<hr><div style='text-align:center; font-size:90%;'><b>${APP_NAME}</b> v${APP_VERSION} (${APP_MODIFIED})<br>© 2026 Marc Hedish – Licensed under Apache 2.0<br><a href='https://github.com/MHedish/Hubitat' target='_blank'>GitHub Repository</a></div>"
+			/* ---------- 7️ About / Version Info (Footer) ---------- */
+			paragraph "<hr><div style='text-align:center; font-size:90%;'><b>${APP_NAME}</b> v${APP_VERSION} (${APP_MODIFIED})<br>© 2026 Marc Hedish – Licensed under Apache 2.0<br><a href='https://github.com/MHedish/Hubitat' target='_blank'>GitHub Repository</a></div>"
         }
         detectSettingsChange("mainPage")
     }
@@ -1175,6 +1150,7 @@ def ensureDataDevice(){
 }
 
 def verifyDataChild(){
+    def r=checkChildDriver("data");if(!r.ok){logWarn"❌ ${r.reason}";return false}
     def dni="wetit_data_${app.id}";def c=getChildDevice(dni)
     if(!c){logWarn"❌ No child device found (DNI=${dni})";return false}
     c.ping()
@@ -1209,12 +1185,19 @@ private Map checkChildDriver(String key){
     def dni="__probe__${app.id}_${key}"
     try{addChildDevice("MHedish",cd.name,dni,[label:"probe",isComponent:false])}
     catch(e){r.ok=false;r.reason="Missing driver: ${cd.name}";return r}
-    try{deleteChildDevice(dni)}catch(ignore){}
-    def dev=null
-    if(key=="data")dev=getChildDevice("wetit_data_${app.id}")
-    else dev=getChildDevices()?.find{it.deviceNetworkId?.startsWith("wetit_echo_${app.id}_")}
-    def dv=dev?.currentValue("driverVersion")
-    if(dv&&!verGate(dv,cd.minVer)){r.ok=false;r.reason="${cd.name} out of date: is (${dv}, need ${cd.minVer})"}
+    try{deleteChildDevice(dni)}
+    catch(e){
+        try{pauseExecution(75);deleteChildDevice(dni)}
+        catch(ignore){logWarn"checkChildDriver(): probe cleanup failed (${dni})"}
+    }
+    def devs=[]
+    if(key=="data"){def d=getChildDevice("wetit_data_${app.id}");if(d)devs<<d}
+    else if(key=="echo"){devs=getChildDevices()?.findAll{it.deviceNetworkId?.startsWith("wetit_echo_${app.id}_")}?:[]}
+    devs.each{dev->
+        def dv=dev?.currentValue("driverVersion")
+        if(!dv){r.ok=false;r.reason="${cd.name} driver too old (no driverVersion published)"}
+        else if(!verGate(dv,cd.minVer)){r.ok=false;r.reason="${cd.name} out of date: (is ${dv}, need ${cd.minVer})"}
+    }
     return r
 }
 
@@ -1245,36 +1228,29 @@ private boolean verifySystem(boolean force=false){
         if(!child.hasAttribute(it))issues<<"missing ${it}"
     }
     (1..cachedZoneCount).each{
-	    if(!child.hasAttribute("zone${it}Name"))issues<<"missing zone${it}Name"
-	    if(!child.hasAttribute("zone${it}Et"))issues<<"missing zone${it}Et"
-	    if(!child.hasAttribute("zone${it}Seasonal"))issues<<"missing zone${it}Seasonal"
-	    atomicState."zoneDepletion_${it}"=(atomicState."zoneDepletion_${it}"?:0G)
-	    atomicState."zoneDepletionTs_${it}"=(atomicState."zoneDepletionTs_${it}"?:"—")
-	}
-	logInfo"✅ Attributes verified for ${cachedZoneCount} zones"
-	(1..(pc)).each{p->
-	    if(!settings["programStartTime_${p}"])app.updateSetting("programStartTime_${p}",[value:"00:00",type:"time"])
-	    if(!settings["programActive_${p}"])app.updateSetting("programActive_${p}",[value:"false",type:"bool"])
-	}
-	logInfo"✅ Parameters verified for ${pc} programs"
-	if(settings.find{k,v->k.startsWith("programEchoEnabled_")&&v}){def r=checkChildDriver("echo");if(!r.ok)issues<<r.reason}
-	def kids=getChildDevices()?:[];logDebug"Child Devices: ${kids}"
-  	kids.each{k->
-	    def dv=k.currentValue("driverVersion");logDebug"Child: (${k}) Driver Version: (${dv})"
-	    def cd=child_drivers.find{_,v->v.name==k.typeName}?.value
-	    if(!cd)return
-	    if(!dv)issues<<"${cd.name} driver too old (no driverVersion published)"
-	    else if(!verGate(dv,cd.minVer))issues<<"${cd.name} driver out of date (${dv}, need ${cd.minVer})"
-	}
-	if(settings.find{k,v->k.startsWith("programEchoEnabled_")&&v}){try{verifyEchoChildren();logInfo"✅ Echo child devices verified"}catch(e){logWarn"verifySystem(): Echo verify failed ${e.message}";issues<<"Echo verification failed (${e.message})"}}
-	cleanupProbeDevices()
-	if(!fetchGeo(force))issues<<"Unable to populate geolocation cache"else logInfo"✅ Geolocation cache verified"
-	def solarOk=true;def sd=atomicState.solarData;def today=new Date().format("yyyy-MM-dd",location.timeZone)
-	if(!sd){issues<<"Astronomical cache missing";solarOk=false}
-	else if(!(sd.days instanceof Map)){issues<<"Astronomical cache structure invalid";solarOk=false}
-	else if(!sd.days[today]){issues<<"Astronomical cache missing entry for ${today}";solarOk=false}
-	if(solarOk)logInfo "✅ Astronomical cache verified"
-	def next=calcNextProgramEvent();if((!next)&&(settings.schedulingActive))issues<<"Next scheduled program not calculated."else logInfo"✅️ Next scheduled program verified"
+        if(!child.hasAttribute("zone${it}Name"))issues<<"missing zone${it}Name"
+        if(!child.hasAttribute("zone${it}Et"))issues<<"missing zone${it}Et"
+        if(!child.hasAttribute("zone${it}Seasonal"))issues<<"missing zone${it}Seasonal"
+        atomicState."zoneDepletion_${it}"=(atomicState."zoneDepletion_${it}"?:0G)
+        atomicState."zoneDepletionTs_${it}"=(atomicState."zoneDepletionTs_${it}"?:"—")
+    }
+    logInfo"✅ Attributes verified for ${cachedZoneCount} zones"
+    (1..(pc)).each{p->
+        if(!settings["programStartTime_${p}"])app.updateSetting("programStartTime_${p}",[value:"00:00",type:"time"])
+        if(!settings["programActive_${p}"])app.updateSetting("programActive_${p}",[value:"false",type:"bool"])
+    }
+    logInfo"✅ Parameters verified for ${pc} programs"
+    if(settings.find{k,v->k.startsWith("programEchoEnabled_")&&v}){def r=checkChildDriver("echo");if(!r.ok)issues<<r.reason}
+    if(settings.find{k,v->k.startsWith("programEchoEnabled_")&&v}){try{verifyEchoChildren();logInfo"✅ Echo child devices verified"}catch(e){logWarn"verifySystem(): Echo verify failed ${e.message}";issues<<"Echo verification failed (${e.message})"}}
+    cleanupProbeDevices()
+    if(!fetchGeo(force))issues<<"Unable to populate geolocation cache"else logInfo"✅ Geolocation cache verified"
+    def solarOk=true;def sd=atomicState.solarData;def today=new Date().format("yyyy-MM-dd",location.timeZone)
+    if(!sd){issues<<"Astronomical cache missing";solarOk=false}
+    else if(!(sd.days instanceof Map)){issues<<"Astronomical cache structure invalid";solarOk=false}
+    else if(!sd.days[today]){issues<<"Astronomical cache missing entry for ${today}";solarOk=false}
+    else if(atomicState.astronomicalDataDegraded){solarOk=false}
+    if(solarOk)logInfo"✅ Astronomical cache verified"
+    def next=calcNextProgramEvent();if((!next)&&(settings.schedulingActive))issues<<"Next scheduled program not calculated."else logInfo"✅️ Next scheduled program verified"
     def wx=child.currentValue("wxSource")?:'Unknown'
     if(wx in ['Unknown','Not yet fetched',''])issues<<"invalid weather source (${wx})"
     if(issues){issues.each{logWarn"System Verification: ⚠️ ${it}"};logInfo"❌ Issues detected during system verification";return false}
@@ -1671,23 +1647,49 @@ private boolean getAstronomicalData(){
 		if(rebuild){days.clear();order.clear();missing=needed}
 		else{
 			order=order.findAll{days[it] instanceof Map}
-			if(order.size()==8 && missing.size()==1){
-				String newDay=missing[0];String oldDay=order[0];days.remove(oldDay);order=order.drop(1)
-			}
+			if(order.size()==8&&missing.size()==1){String newDay=missing[0];String oldDay=order[0];days.remove(oldDay);order=order.drop(1)}
 		}
 		boolean changed=false
 		missing.each{String ds->
-			httpGet(uri:"https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&date=${ds}&formatted=0"){r->
-				if(r?.status!=200||r?.data?.status!="OK")return
-				def x=r.data.results
-				days[ds]=[
-					sunrise:x.sunrise,sunset:x.sunset,
-					civilTwilightBegin:x.civil_twilight_begin,civilTwilightEnd:x.civil_twilight_end,
-					solarNoon:x.solar_noon,dayLength:(x.day_length as Integer),
-					nauticalTwilightBegin:x.nautical_twilight_begin,nauticalTwilightEnd:x.nautical_twilight_end,
-					astronomicalTwilightBegin:x.astronomical_twilight_begin,astronomicalTwilightEnd:x.astronomical_twilight_end
-				]
-				order<<ds;changed=true
+			boolean ok=false
+			try{
+				httpGet(uri:"https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&date=${ds}&formatted=0"){r->
+					if(r?.status==200&&r?.data?.status=="OK"){
+						def x=r.data.results
+						days[ds]=[
+							sunrise:x.sunrise,sunset:x.sunset,
+							civilTwilightBegin:x.civil_twilight_begin,civilTwilightEnd:x.civil_twilight_end,
+							solarNoon:x.solar_noon,dayLength:(x.day_length as Integer),
+							nauticalTwilightBegin:x.nautical_twilight_begin,nauticalTwilightEnd:x.nautical_twilight_end,
+							astronomicalTwilightBegin:x.astronomical_twilight_begin,astronomicalTwilightEnd:x.astronomical_twilight_end
+						]
+						if(atomicState.astronomicalDataDegraded){
+							logInfo"🌘 Astronomical data restored — leaving degraded solar mode"
+							if(enableNotifications)childEmitEvent(getDataChild(),"released",1,"Astronomical data restored — normal solar calculations resumed.",null,true)
+						}
+					order<<ds;changed=true;ok=true;atomicState.astronomicalDataDegraded=false
+					}
+				}
+			}catch(ignore){}
+			if(!ok && ds==today){
+				def hub=getSunriseAndSunset()
+				Date sr=hub?.sunrise;Date ss=hub?.sunset
+				if(sr&&ss){
+					Date dawn=new Date(sr.time-(30*60*1000));Date dusk=new Date(ss.time+(30*60*1000))
+					long len=(ss.time-sr.time)/1000L;days.clear();order.clear()
+					days[ds]=[
+						sunrise:sr.format(TS_FMT_ISO,tz),sunset:ss.format(TS_FMT_ISO,tz),
+						civilTwilightBegin:dawn.format(TS_FMT_ISO,tz),civilTwilightEnd:dusk.format(TS_FMT_ISO,tz),
+						solarNoon:new Date((sr.time+ss.time)/2).format(TS_FMT_ISO,tz),dayLength:len as Integer,
+						nauticalTwilightBegin:dawn.format(TS_FMT_ISO,tz),nauticalTwilightEnd:dusk.format(TS_FMT_ISO,tz),
+						astronomicalTwilightBegin:dawn.format(TS_FMT_ISO,tz),astronomicalTwilightEnd:dusk.format(TS_FMT_ISO,tz)
+					]
+					order<<ds;changed=true
+					if(!atomicState.astronomicalDataDegraded){
+						atomicState.astronomicalDataDegraded=true;logInfo"⚠️ Astronomical API unavailable — degraded solar mode (today only)"
+						if(enableNotifications)childEmitEvent(getDataChild(),"pushed",1,"Astronomical API unavailable — degraded solar mode active.",null,true)
+					}
+				}
 			}
 		}
 		if(changed||cur.solarDate!=today||cur.order!=order)atomicState.solarData=[days:days,order:order,solarDate:today]
@@ -2051,8 +2053,8 @@ private void irrigationTick(){
 		def skips=atomicState.skipProgramInstances;if(skips)atomicState.skipProgramInstances=skips=skips.findAll{it.epoch>now()}
 		def now=new Date();Integer pCount=(settings.programCount?:0)as Integer;if(pCount<1)return
 		def solar=atomicState.solarData?.days?.get(new Date().format(DATE_FMT,location.timeZone))
-		Date sunrise=solar?.sunrise?Date.parse(TS_FMT_ISO,solar.sunrise):getSunriseAndSunset().sunrise
-		Date sunset=solar?.sunset?Date.parse(TS_FMT_ISO,solar.sunset):getSunriseAndSunset().sunset
+		Date sunrise=solar?.sunrise?Date.parse(TS_FMT_ISO,solar.sunrise):null
+		Date sunset=solar?.sunset?Date.parse(TS_FMT_ISO,solar.sunset):null
 		Date dawn=solar?.civilTwilightBegin?Date.parse(TS_FMT_ISO,solar.civilTwilightBegin):null
 		Date dusk=solar?.civilTwilightEnd?Date.parse(TS_FMT_ISO,solar.civilTwilightEnd):null
 		def glyph=[sunrise:"☀️",dawn:"🌅",sunset:"🌇",dusk:"🌃"]
@@ -2116,7 +2118,7 @@ private Map calcNextProgramEvent(List skipOverride=null){
 	for(int p=1;p<=pCount&&!needSolar;p++){if(settings["programActive_${p}"]?.toString()=="true"){String sm=(settings["programStartMode_${p}"]?:'time').toString().toLowerCase();if(sm in["sunrise","sunset","dawn","dusk"])needSolar=true}}
 	if(needSolar){
 		boolean miss=!(solarDays instanceof Map)
-		if(!miss)for(int off=0;off<8;off++)if(!solarDays[dayStr[off]]){logWarn"⚠️ Astronomical cache missing entry for ${dayStr[off]}";miss=true;break}
+		if(!miss)for(int off=0;off<8;off++)if(!solarDays[dayStr[off]]){logInfo"🌘 Astronomical cache miss detected for (${dayStr[off]}) — rebuilding";miss=true;break}
 		if(miss){getAstronomicalData();solarDays=atomicState.solarData?.days}
 	}
 	long nextKey=Long.MAX_VALUE;Map next=null;int nextTotal=0;List schedule=[]
@@ -2391,8 +2393,12 @@ private void detectSettingsChange(String page){
 			try{calcProgramDurations(page)}catch(e){logWarn"detectSettingsChange(${page}): calcProgramDurations(): ${e.message}"}
 			if(page=="zonePage")atomicState.bootstrap=true
 			if(page=="schedulePage"){try{checkProgramConflicts()}catch(e){logWarn"detectSettingsChange(${page}): checkProgramConflicts(): ${e.message}"}}
-			def anyEchoEnabled=settings.find{k,v->k.startsWith("programEchoEnabled_")&&v?.toString()=="true"}
-			if(anyEchoEnabled){try{syncEchoChildren()}catch(e){logWarn"detectSettingsChange(${page}): syncEchoChildren(): ${e.message}"}}
+			def anyEchoEnabled=settings.find{k,v->k.startsWith("programEchoEnabled_")&&v?.toString()=="true"};if(anyEchoEnabled){try{syncEchoChildren()}catch(e){logWarn"detectSettingsChange(${page}): syncEchoChildren(): ${e.message}"}}
+			if(settings.logEnable!=atomicState.logEnable){
+			    atomicState.logEnable=settings.logEnable
+			    if(settings.logEnable){unschedule("autoDisableDebugLogging");runIn(1800,"autoDisableDebugLogging");logInfo"Debug logging enabled (auto-off in 30 minutes)"}
+			    else{unschedule("autoDisableDebugLogging");logInfo"Debug logging disabled"}
+			}
 			logDebug"detectSettingsChange(): configuration change detected on ${page}, recalculated program durations."
 		}
 	}catch(e){logWarn"detectSettingsChange(${page}): ${e.message}"}
