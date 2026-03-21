@@ -141,6 +141,13 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 |`presence`|`string`|Current state of the child `present|not present`|
 |`presenceChanged`|`string`|Timestamp of the last presence state change|
 
+- **Commands (buttons):**
+
+| Command | Description |
+|:--|:--|
+|`Arrived`|Change child device state to present|
+|`Departed`|Change child device state to departed|
+
 
 ### Guest Child Driver (If In Use)
 | Attribute | Type | Description |
@@ -150,15 +157,8 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 |`hotspotGuests`|`number`|Count of guests currently present|
 |`totalHotspotClients`|`number`|Total number of guest clients|
 |`presenceChanged`|`string`|Timestamp of the last guest arrival or departure|
-|`hotspotGuestList`|`string`|Full 
-|`hotspotGuestListRaw`|`string`|
-
-- **Commands (buttons):**
-
-| Command | Description |
-|:--|:--|
-|`Arrived`|Change child device state to present|
-|`Departed`| Change child device state to departed|
+|`hotspotGuestList`|`string`|MAC address of each connected guest device|
+|`hotspotGuestListRaw`|`string`|MAC address of each connected guest device|
 
 ---
 
@@ -208,7 +208,7 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE5OTc0NjE3MTcsLTE3OTcwMzY2ODAsMj
-Y0MjYxNzE3LC0xOTg0OTU2ODIzLC0xMDM5ODk5NTY0LDU2MzEx
-NjY5NywxMTk4MDUxOTYzXX0=
+eyJoaXN0b3J5IjpbLTIxMzY0MDE0NDgsLTE5OTc0NjE3MTcsLT
+E3OTcwMzY2ODAsMjY0MjYxNzE3LC0xOTg0OTU2ODIzLC0xMDM5
+ODk5NTY0LDU2MzExNjY5NywxMTk4MDUxOTYzXX0=
 -->
