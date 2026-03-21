@@ -16,6 +16,7 @@ Supports wireless clients and hotspot guest monitoring with automatic child devi
 ##  🆕🔔 System Notifications 🆕
 
 The **UniFi Presence Controller** includes a built-in notification interface designed to integrate with Hubitat’s **Notifications app**.  
+
 These notifications provide visibility into controller connectivity, authentication status, and internal driver health conditions.
 
 Notifications are exposed using the **PushableButton** capability and follow a structured signal model:
@@ -358,8 +359,8 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTQ0OTcxNDMyNywtMTc1ODk0MzE0OSwtMj
-EzNjQwMTQ0OCwtMTk5NzQ2MTcxNywtMTc5NzAzNjY4MCwyNjQy
-NjE3MTcsLTE5ODQ5NTY4MjMsLTEwMzk4OTk1NjQsNTYzMTE2Nj
-k3LDExOTgwNTE5NjNdfQ==
+eyJoaXN0b3J5IjpbLTM1Mzg3MDI5NSwxNDQ5NzE0MzI3LC0xNz
+U4OTQzMTQ5LC0yMTM2NDAxNDQ4LC0xOTk3NDYxNzE3LC0xNzk3
+MDM2NjgwLDI2NDI2MTcxNywtMTk4NDk1NjgyMywtMTAzOTg5OT
+U2NCw1NjMxMTY2OTcsMTE5ODA1MTk2M119
 -->
