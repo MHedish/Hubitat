@@ -1,7 +1,7 @@
 # UniFi Presence Drivers
 
 ![status](https://img.shields.io/badge/release-stable-green)
-![version](https://img.shields.io/badge/version-v1.-blue)
+![version](https://img.shields.io/badge/version-v1.9.0.0-blue)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
 
 Hubitat driver pair for detecting presence using a UniFi Network Controller or UniFi OS Console.  
@@ -159,6 +159,6 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTI4MzAwMjQwLC0xMDM5ODk5NTY0LDU2Mz
+eyJoaXN0b3J5IjpbMjUxNjY4NjE1LC0xMDM5ODk5NTY0LDU2Mz
 ExNjY5NywxMTk4MDUxOTYzXX0=
 -->
