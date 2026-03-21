@@ -136,8 +136,9 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 |`accessPointName`|`string`|Hostname of the AP to which the child is connected|
 |`driverInfo`|`string`|Full driver version|
 |`driverVersion`|`string`|Driver version number|
-|`ssid`|`string`|SSID of the WiFi to which the child is connected
-|`ipAddress`|`string`|
+|`ssid`|`string`|SSID of the WiFi network to which the child is connected
+|`ipAddress`|`string`|Current IP Address of the child device|
+
 |`hotspotGuests`|`number`
 |`totalHotspotClients`|`number`
 |`presenceChanged`|`string`|
@@ -199,7 +200,7 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTMyNzEwOTc4NiwtMTc5NzAzNjY4MCwyNj
-QyNjE3MTcsLTE5ODQ5NTY4MjMsLTEwMzk4OTk1NjQsNTYzMTE2
-Njk3LDExOTgwNTE5NjNdfQ==
+eyJoaXN0b3J5IjpbMzA1MjQyOTQwLC0xNzk3MDM2NjgwLDI2ND
+I2MTcxNywtMTk4NDk1NjgyMywtMTAzOTg5OTU2NCw1NjMxMTY2
+OTcsMTE5ODA1MTk2M119
 -->
