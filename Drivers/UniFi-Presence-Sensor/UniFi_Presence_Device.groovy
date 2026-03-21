@@ -8,10 +8,6 @@
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  1.7.0.0  -- Removed Switch capability and on/off commands
-*  1.7.1.0  -- Added sync of device name/label to data values in refreshed()
-*  1.7.4.0  -- Stable release - aligned with parent, ASCII-safe cleanup, logging fixes (dashes/colons, arrows)
-*  1.7.5.0  -- Version bump for alignment with parent (no functional changes)
 *  1.8.0.0  -- Refactored with modern library
 *  1.8.1.0  -- Added child IP Address attribute
 *  1.8.2.0  -- Added driverVersion attribute
@@ -20,13 +16,14 @@
 *  1.8.5.0  -- Stable release
 *  1.8.5.1  -- Updated description text for manual presence change
 *  1.8.6.0  -- Version bump for alignment with parent (no functional changes)
+*  1.9.0.0  -- Version bump for alignment with parent (no functional changes)
 */
 
 import groovy.transform.Field
 
 @Field static final String DRIVER_NAME     = "UniFi Presence Device"
-@Field static final String DRIVER_VERSION  = "1.8.6.0"
-@Field static final String DRIVER_MODIFIED = "2026.02.19"
+@Field static final String DRIVER_VERSION  = "1.9.0.0"
+@Field static final String DRIVER_MODIFIED = "2026.03.21"
 
 metadata {
     definition(
@@ -47,8 +44,8 @@ metadata {
         attribute "hotspotGuests","number"
         attribute "totalHotspotClients","number"
         attribute "presenceChanged","string"
-        attribute "hotspotGuestList","string"     // Friendly names or placeholder
-        attribute "hotspotGuestListRaw","string"  // Raw MAC addresses
+        attribute "hotspotGuestList","string"
+        attribute "hotspotGuestListRaw","string"
 
         command "arrived"
         command "departed"
