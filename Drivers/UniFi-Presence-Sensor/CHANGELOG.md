@@ -3,7 +3,7 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 
 ---
 
-## v1.8.6.7 (2026-03-16) – Stability and authentication hardening release
+## v1.8.6.79.0.0 (2026-03-216) – Stability and authentication hardening release
 
 ### Improved
 - Hardened connection recovery; added resetConnectionState() and improved WSS/auth self-recovery.
@@ -11,7 +11,9 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 
 ---
 
-## v1.8.6.6 (2026-03-07) – Stability and authentication hardening release
+Connection re
+
+### v1.8.6.6 (2026-03-07) – Stability and authentication hardening release
 
 ### Fixed
 -   **Authentication recovery issues** that could cause repeated `401 Unauthorized` errors after a controller session expired or was invalidated.
@@ -389,6 +391,7 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE4MTIzODg3NjQsMTQxODYzNDQwMiwxNj
-U1NTQzNDQwLDQ1NzMxODUwMCwtOTIzMzc4MTY4XX0=
+eyJoaXN0b3J5IjpbMTUzMDUzOTI2MiwtMTgxMjM4ODc2NCwxND
+E4NjM0NDAyLDE2NTU1NDM0NDAsNDU3MzE4NTAwLC05MjMzNzgx
+NjhdfQ==
 -->
