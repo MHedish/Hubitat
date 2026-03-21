@@ -129,7 +129,21 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 
 
 ### Child Driver
-- **Attributes:** `presence`, `presenceChanged`, `accessPoint`, `accessPointName`, `ipAddress`, `ssid`, hotspot guest fields.  
+**Attributes:**
+| Attribute | Type | Description |
+|:--|:--|:--|
+|`childDevices`|`string`|
+|`accessPoint`|`string`|
+|`accessPointName`|`string`
+|`driverInfo`|`string`|
+|`driverVersion`|`string`|
+|`ssid`|`string`|
+|`ipAddress`|`string`|
+|`hotspotGuests`|`number`
+|`totalHotspotClients`|`number`
+|`presenceChanged`|`string`|
+|`hotspotGuestList`|`string`|
+|`hotspotGuestListRaw`|`string`|
 
 - **Commands (buttons):**
 
@@ -186,7 +200,7 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE3OTcwMzY2ODAsMjY0MjYxNzE3LC0xOT
-g0OTU2ODIzLC0xMDM5ODk5NTY0LDU2MzExNjY5NywxMTk4MDUx
-OTYzXX0=
+eyJoaXN0b3J5IjpbODU1NDQ0MDgsLTE3OTcwMzY2ODAsMjY0Mj
+YxNzE3LC0xOTg0OTU2ODIzLC0xMDM5ODk5NTY0LDU2MzExNjY5
+NywxMTk4MDUxOTYzXX0=
 -->
