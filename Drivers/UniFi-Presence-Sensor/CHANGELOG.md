@@ -6,7 +6,7 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 ## v1.9.0.0 (2026-03-21) – Connection recovery and notifications release
 
 ### New
-- Added system event notifications
+- Added system [event notifications](https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/README.md#-system-notifications-)
 
 ---
 
@@ -396,7 +396,7 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNjI1NzM0NDMzLC0xNTcxMDQwMTM5LC0xOD
-EyMzg4NzY0LDE0MTg2MzQ0MDIsMTY1NTU0MzQ0MCw0NTczMTg1
-MDAsLTkyMzM3ODE2OF19
+eyJoaXN0b3J5IjpbMTA2NzExMzQzNCw2MjU3MzQ0MzMsLTE1Nz
+EwNDAxMzksLTE4MTIzODg3NjQsMTQxODYzNDQwMiwxNjU1NTQz
+NDQwLDQ1NzMxODUwMCwtOTIzMzc4MTY4XX0=
 -->
