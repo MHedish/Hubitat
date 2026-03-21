@@ -102,6 +102,7 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 ## 📊 Attributes & Controls
 
 ### Parent Driver
+**Attributes:**
 | Attribute | Type | Description |
 |:--|:--|:--|
 |`childDevices`|`string`|Text of the number of child devices present out of the number configured|
@@ -114,7 +115,18 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 |`network`|`string`|Detected UnFi Network app version|
 |`UniFiOS`|`string`|Detected UniFi OS version|
 
-- **Commands (buttons):** `autoCreateClients`, `createClientDevice`, `disableDebugLoggingNow`, `disableRawEventLoggingNow`, `push`, `reconnectAllChildren`, `refreshAllChildren`.
+**Commands (buttons):**
+
+| Command | Description |
+|:--|:--|
+|`autoCreateClients`|Create wireless clients seen in the last XX days (default=1) up to 50 maximum|
+|`createClientDevice`|Manually create a child device by entring the MAC address and label (Friendly Name)|
+|`disableDebugLoggingNow`|Disables debug logging and cancels 30 min automatic debug shutoff|
+|`disableRawEventLoggingNow`|Disables raw WSS event logging and cancels 30 min automatic shutoff|
+|`push`|Sends test notification to the built-in Notifications app|
+|`reconnectAllChildren`|Resets child device timers and performs a `refreshAllChildren`|
+|`refreshAllChildren`|Performs a validation of each child device along with a REST refresh of presence|
+
 
 ### Child Driver
 - **Attributes:** `presence`, `presenceChanged`, `accessPoint`, `accessPointName`, `ipAddress`, `ssid`, hotspot guest fields.  
@@ -169,6 +181,7 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjY0MjYxNzE3LC0xOTg0OTU2ODIzLC0xMD
-M5ODk5NTY0LDU2MzExNjY5NywxMTk4MDUxOTYzXX0=
+eyJoaXN0b3J5IjpbLTIwMzU5NDcyNzcsMjY0MjYxNzE3LC0xOT
+g0OTU2ODIzLC0xMDM5ODk5NTY0LDU2MzExNjY5NywxMTk4MDUx
+OTYzXX0=
 -->
