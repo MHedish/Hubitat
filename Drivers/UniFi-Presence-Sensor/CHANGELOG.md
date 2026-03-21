@@ -5,11 +5,18 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 
 ## v1.9.0.0 (2026-03-21) – Connection recovery and notifications release
 
+### New
+- Added system event notifications
+
+---
+
+### v1.8.6.7 (2026-03-16) – Stability and authentication hardening release
+
 ### Improved
 - Hardened connection recovery; added resetConnectionState() and improved WSS/auth self-recovery.
-- Updated initialize() to perform complete WSS reset.
+- Updated initialize() to perform a complete WSS reset.
 
-
+---
 
 ### v1.8.6.6 (2026-03-07) – Stability and authentication hardening release
 
@@ -389,7 +396,7 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE1NzEwNDAxMzksLTE4MTIzODg3NjQsMT
-QxODYzNDQwMiwxNjU1NTQzNDQwLDQ1NzMxODUwMCwtOTIzMzc4
-MTY4XX0=
+eyJoaXN0b3J5IjpbNjI1NzM0NDMzLC0xNTcxMDQwMTM5LC0xOD
+EyMzg4NzY0LDE0MTg2MzQ0MDIsMTY1NTU0MzQ0MCw0NTczMTg1
+MDAsLTkyMzM3ODE2OF19
 -->
