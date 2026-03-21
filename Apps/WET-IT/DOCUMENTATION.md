@@ -1029,7 +1029,6 @@ This JSON mirrors the internal data model and can be parsed directly by Rule Mac
 | **`refresh()`** | none | Immediately requests a new weather update from the parent app and recalculates ET values. |
 | **`markZoneWatered(zone, percent)`** | *number, number (optional)* | Marks a specific zone as watered and resets its ET depletion. Optionally specify a percent (e.g., `50`) to partially refill soil memory. |
 | **`markAllZonesWatered()`** | none | Resets all zones’ ET data and soil memory, as if the entire system has been watered. |
-| **`disableDebugLoggingNow()`** | none | Turns off driver debug logging immediately. |
 | **`runNextProgram()`** | none | Immediately runs the next scheduled program. |
 | **`skipNextProgram()`** | none | Skips the next scheduled program. |
 
@@ -1982,7 +1981,7 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE2NjkxMDAyMDUsMTczNTczMTYzNiwtMT
+eyJoaXN0b3J5IjpbLTE5MzY1MjEyMjcsMTczNTczMTYzNiwtMT
 AwMTcwMDc0OSw4NzQ4NTAwMzgsOTE3MjEzMTY5LC0xMTA2MDc2
 NTYxLC0xNzA1NjEzMzY4LDE0NzE5MjI3OTYsLTE1NzE0Njg5Mj
 AsLTI5NzY1OTY3MSwxOTc4MDk4NTU3LDE1MDczODU1OTksMjkx
