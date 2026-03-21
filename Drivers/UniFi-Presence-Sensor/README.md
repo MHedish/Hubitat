@@ -13,9 +13,7 @@ Supports wireless clients and hotspot guest monitoring with automatic child devi
 
 ---
 
-## 🆕👉System Notifications👈
-
-## 🔔 System Notifications
+##  🆕🔔 System Notifications 🆕
 
 The **UniFi Presence Controller** includes a built-in notification interface designed to integrate with Hubitat’s **Notifications app**.  
 These notifications provide visibility into controller connectivity, authentication status, and internal driver health conditions.
@@ -115,10 +113,57 @@ Use this to confirm Notifications app configuration.
    - etc.
 8. Optionally prepend text to the message
 
-Example prefix:
-
-
-
+Example prefix:  
+  
+UniFi Controller: %text%  
+  
+## 🔁 Controlling Alert Frequency  
+  
+Because the driver emits alerts whenever a condition exists, repetition should be controlled inside the **Notifications app**.  
+  
+Examples:  
+  
+- notify once  
+- notify once every 5 minutes  
+- notify only during daytime  
+- notify after a delay  
+- notify different devices for different buttons  
+  
+This provides flexible behavior without sacrificing visibility.  
+  
+## ✅ Recommended Configuration  
+  
+A typical setup is:  
+  
+- **Button 1** → notify immediately, optionally repeating every 10–30 minutes  
+- **Button 2** → notify once per transition  
+  
+Example delivery choices:  
+  
+- SMS for alerts  
+- mobile push for connection state  
+- Echo announcement for both  
+  
+## 🧠 Why Notifications Are Implemented This Way  
+  
+This driver intentionally separates:  
+  
+- alert conditions  
+- connection state  
+  
+This allows users to build their own notification and automation policy without changing the driver.  
+  
+Examples:  
+  
+- controller outage detection  
+- alert escalation workflows  
+- watchdog monitoring  
+- maintenance awareness  
+- speech announcements  
+- diagnostic dashboards  
+  
+The driver provides the signal.  
+The Notifications app controls how, when, and where that signal is delivered.
 
 ## ⚡ Quick Start
 
@@ -316,8 +361,8 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE3NTg5NDMxNDksLTIxMzY0MDE0NDgsLT
-E5OTc0NjE3MTcsLTE3OTcwMzY2ODAsMjY0MjYxNzE3LC0xOTg0
-OTU2ODIzLC0xMDM5ODk5NTY0LDU2MzExNjY5NywxMTk4MDUxOT
-YzXX0=
+eyJoaXN0b3J5IjpbLTk3ODc2MjU3NSwtMTc1ODk0MzE0OSwtMj
+EzNjQwMTQ0OCwtMTk5NzQ2MTcxNywtMTc5NzAzNjY4MCwyNjQy
+NjE3MTcsLTE5ODQ5NTY4MjMsLTEwMzk4OTk1NjQsNTYzMTE2Nj
+k3LDExOTgwNTE5NjNdfQ==
 -->
