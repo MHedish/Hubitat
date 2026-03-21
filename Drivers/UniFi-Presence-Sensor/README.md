@@ -156,7 +156,7 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 |`driverVersion`|`string`|Driver version number|
 |`hotspotGuests`|`number`|Count of guests currently present|
 |`totalHotspotClients`|`number`|Total number of guest clients|
-|`presence`|`string`|`present` if *any* guest device is connected|
+|`presence`|`string`|`present` if *any* guest device is connected. `not present` if no guest device is connected.|
 |`presenceChanged`|`string`|Timestamp of the last guest arrival or departure|
 |`hotspotGuestList`|`string`|MAC address of each connected guest device|
 |`hotspotGuestListRaw`|`string`|MAC address of each connected guest device|
@@ -209,7 +209,7 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIxOTg0OTUwNSwtMjEzNjQwMTQ0OCwtMT
+eyJoaXN0b3J5IjpbLTM0NzAwNTc1MCwtMjEzNjQwMTQ0OCwtMT
 k5NzQ2MTcxNywtMTc5NzAzNjY4MCwyNjQyNjE3MTcsLTE5ODQ5
 NTY4MjMsLTEwMzk4OTk1NjQsNTYzMTE2Njk3LDExOTgwNTE5Nj
 NdfQ==
