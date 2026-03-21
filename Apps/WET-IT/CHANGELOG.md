@@ -221,10 +221,15 @@ Added the ability to immediately run the next scheduled program or to skip over 
 ---
 
 ## ☀️ 1.3.1.0 — Public Release
+- Updated child version detection in verifySystem().
+ - Updated irrigationTick() to use solar cache as authoritative (increases *resolution*) with hub fallback; notifications when operating in degraded mode.
+- Updated getAstronomicalData().
+- Updated verifyDataChild() to include call checkChildDriver() for version control; removed 'Disable Debug Logging Now' button - incorporated it in detectSettingsChange() to simplify UI. UI cleanup.
+- Added retry to try/catch when probing for child driver presence.       
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNDQxNTcyNzc4LC0xMzg3MTI5MDgwLC0xNz
-I1MTIxODc4LC0xOTI2NDUxMjMsMTIzNDYyNjgxMywxMTcyNTg3
-MTk5LDUyMzAyODIzLC0xMTc0MjMxOTE2LDEzODMzODA0NDYsMT
-cyNTI4NDU2OSwtMTAyOTk3ODQ3LC04MTIwNzIzNTgsMTg0NzAz
-NzgwM119
+eyJoaXN0b3J5IjpbLTEwNzY3NjY0ODgsLTEzODcxMjkwODAsLT
+E3MjUxMjE4NzgsLTE5MjY0NTEyMywxMjM0NjI2ODEzLDExNzI1
+ODcxOTksNTIzMDI4MjMsLTExNzQyMzE5MTYsMTM4MzM4MDQ0Ni
+wxNzI1Mjg0NTY5LC0xMDI5OTc4NDcsLTgxMjA3MjM1OCwxODQ3
+MDM3ODAzXX0=
 -->
