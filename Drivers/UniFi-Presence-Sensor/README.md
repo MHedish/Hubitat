@@ -131,7 +131,12 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 ### Child Driver
 - **Attributes:** `presence`, `presenceChanged`, `accessPoint`, `accessPointName`, `ipAddress`, `ssid`, hotspot guest fields.  
 
-- **Commands (buttons):** `Arrived`, `Departed`.  
+- **Commands (buttons):**
+
+| Command | Description |
+|:--|:--|
+|`Arrived`|Change child device state to present|
+|`Departed`| Change child device state to departed|
 
 ---
 
@@ -181,7 +186,7 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIwMzU5NDcyNzcsMjY0MjYxNzE3LC0xOT
+eyJoaXN0b3J5IjpbLTE3OTcwMzY2ODAsMjY0MjYxNzE3LC0xOT
 g0OTU2ODIzLC0xMDM5ODk5NTY0LDU2MzExNjY5NywxMTk4MDUx
 OTYzXX0=
 -->
