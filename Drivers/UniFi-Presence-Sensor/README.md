@@ -102,7 +102,7 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 ## 📊 Attributes & Controls
 
 ### Parent Driver
-- **Attributes:** `commStatus`, `eventStream`, `driverInfo`, `childDevices`, `guestDevices`, sysinfo fields.  
+- **Attributes:** `commStatus`, `deviceType`, `eventStream`, `driverInfo`, `childDevices`, `guestDevices`, `hostName`, `network`, `UniFiOsysinfo fields.  
 - **Commands (buttons):** Create Client Device, Auto Create Clients, Refresh All Children, Reconnect All Children.  
 
 ### Child Driver
@@ -157,5 +157,5 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTg5Njc1MDE2NywxMTk4MDUxOTYzXX0=
+eyJoaXN0b3J5IjpbLTEzMTEwOTI3NTgsMTE5ODA1MTk2M119
 -->
