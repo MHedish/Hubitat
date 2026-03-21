@@ -374,8 +374,6 @@ Cycle & Soak improves watering efficiency by splitting a long irrigation event i
 
 This feature is especially useful for rotor zones, clay soils, and sloped landscapes.
 
----
-
 ### Why Cycle & Soak is Important
 
 Rotor heads typically apply water slowly and often require longer runtimes than spray zones. Running a rotor zone continuously for 30–60 minutes can exceed the soil’s infiltration rate and cause runoff.
@@ -488,7 +486,7 @@ Most systems stabilize quickly after one or two adjustments.
 
 Cycle & Soak allows irrigation to be applied in multiple shorter cycles instead of a single continuous run, improving absorption and reducing runoff.
 
-When enabled:
+### When enabled:
 
 - Each zone’s runtime is divided into multiple watering cycles
 - A configurable soak period is inserted between cycles
@@ -2098,7 +2096,7 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNjkxMTQzNDEzLC02Mzk2NzE4MTgsMTczNT
+eyJoaXN0b3J5IjpbNjgyNDgzMzEzLC02Mzk2NzE4MTgsMTczNT
 czMTYzNiwtMTAwMTcwMDc0OSw4NzQ4NTAwMzgsOTE3MjEzMTY5
 LC0xMTA2MDc2NTYxLC0xNzA1NjEzMzY4LDE0NzE5MjI3OTYsLT
 E1NzE0Njg5MjAsLTI5NzY1OTY3MSwxOTc4MDk4NTU3LDE1MDcz
