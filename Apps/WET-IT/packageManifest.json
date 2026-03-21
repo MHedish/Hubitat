@@ -1,10 +1,10 @@
 {
   "packageName": "WET-IT",
   "author": "Marc Hedish",
-  "version": "1.3.0.0",
+  "version": "1.3.1.0",
   "minimumHEVersion": "2.3.8",
-  "dateReleased": "2026-03-15",
-  "releaseNotes": "v1.3.0.0 — Astronomical cache fixed. Notification system finally complete. Program skip and program restore complete.",
+  "dateReleased": "2026-03-21",
+  "releaseNotes": ""v1.3.1.0 — Updated child verification; Ensured solar cache is authoritative; UI Cleanup.\n\nv1.3.0.0 — Astronomical cache fixed. Notification system finally complete. Program skip and program restore complete.",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT/DOCUMENTATION.md",
   "communityLink": "https://community.hubitat.com/t/wet-it-weather-enhanced-time-based-irrigation-tuning-for-hubitat/160224",
   "description": "Local-first evapotranspiration (ET) and soil-moisture modeling app for Hubitat. Provides professional-grade irrigation intelligence similar to Rachio, Orbit, and Hydrawise, running entirely on-hub.",
@@ -18,7 +18,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Apps/WET-IT/WET-IT.groovy",
       "required": true,
-      "version": "1.3.0.0",
+      "version": "1.3.1.0",
       "oauth": false,
       "primary": true
     }
