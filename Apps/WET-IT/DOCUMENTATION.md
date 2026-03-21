@@ -383,7 +383,123 @@ When enabled:
 - Improves water penetration into the root zone
 - Increases overall irrigation efficiency
 
-Cycle & Soak is applied automatically during program execution once configured.
+## Cycle & Soak (Rotor & High-Runtime Zones)
+
+Cycle & Soak improves watering efficiency by spliting a long irrigation event into multiple shorter watering passes separated by soak delays. This allows water to absorb into the soil instead of running off the surface.
+
+This feature is especially useful for rotor zones, clay soils, and sloped landscapes.
+
+---
+
+### Why Cycle & Soak is Important
+
+Rotor heads typically apply water slowly and often require longer runtimes than spray zones. Running a rotor zone continuously for 30–60 minutes can exceed the soil’s infiltration rate and cause runoff.
+
+Cycle & Soak prevents this by automatically dividing the runtime into smaller watering segments.
+
+Example:
+
+```
+Base Time: 3600 seconds
+Cycle Count: 3
+Pause: 30 minutes
+```
+
+WET-IT automatically runs:
+
+```
+20 minutes → pause → 20 minutes → pause → 20 minutes
+```
+
+instead of:
+
+```
+60 continuous minutes
+```
+
+The same amount of water is applied, but absorption improves significantly.
+
+---
+
+### Important: Base Time Still Represents Total Runtime
+
+When Cycle & Soak is enabled:
+
+**Base Time should always represent the full runtime required for the zone.**
+
+Do **not** divide Base Time manually.
+
+Example:
+
+```
+Desired watering time: 45 minutes
+Base Time = 2700 seconds
+Cycle Count = 3
+Pause = 25 minutes
+```
+
+WET-IT automatically distributes the runtime across cycles.
+
+---
+
+### When to Enable Cycle & Soak
+
+Cycle & Soak is recommended if you observe:
+
+- Water running onto sidewalks or driveways
+- Puddling during irrigation
+- Sloped areas losing water downhill
+- Clay soil remaining glossy or saturated at the surface
+
+It is most commonly beneficial for:
+
+- Rotor zones
+- MP Rotator zones
+- Clay soil
+- Sloped lawns
+
+---
+
+### Suggested Starting Settings
+
+These values work well for most installations:
+
+| Soil Type | Cycle Count | Pause Length |
+|-----------|-------------|--------------|
+| Sandy     | 1–2 cycles  | 5–10 minutes |
+| Loam      | 2–3 cycles  | 15–30 minutes |
+| Clay      | 3–4 cycles  | 30–60 minutes |
+
+Adjust as needed based on runoff behavior.
+
+---
+
+### How WET-IT Uses Cycle & Soak
+
+Traditional irrigation controllers require manual runtime adjustments when splitting watering cycles.
+
+WET-IT automatically:
+
+- adjusts total runtime using ET modeling
+- preserves cycle structure
+- prevents watering when soil saturation is already sufficient
+- integrates forecast rainfall into scheduling decisions
+
+Once Base Time and Cycle & Soak values are configured, WET-IT handles the rest automatically.
+
+---
+
+### Practical Tuning Tip
+
+If runoff still occurs:
+
+Increase pause duration.
+
+If soil dries too quickly between watering cycles:
+
+Increase Base Time slightly.
+
+Most systems stabilize quickly after one or two adjustments.
 
 ---
 
@@ -1981,11 +2097,11 @@ Within **📊 Data Publishing** (app UI):
 
 > **WET-IT — bringing data-driven irrigation to life through meteorology, soil science, and Hubitat automation.**
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTYzOTY3MTgxOCwxNzM1NzMxNjM2LC0xMD
-AxNzAwNzQ5LDg3NDg1MDAzOCw5MTcyMTMxNjksLTExMDYwNzY1
-NjEsLTE3MDU2MTMzNjgsMTQ3MTkyMjc5NiwtMTU3MTQ2ODkyMC
-wtMjk3NjU5NjcxLDE5NzgwOTg1NTcsMTUwNzM4NTU5OSwyOTE5
-OTEyMTcsLTEwMjU2NjQ2MTUsLTIxMDUxMDc5OSwtMTkzMTU2NT
-gyNSwtMTM0OTczNTM5OCwyMDc2NTEzNTA5LC0xODYyNDI0OTk3
-LC02NzY0Njg0NTddfQ==
+eyJoaXN0b3J5IjpbMTE2NTQ2ODgxOSwtNjM5NjcxODE4LDE3Mz
+U3MzE2MzYsLTEwMDE3MDA3NDksODc0ODUwMDM4LDkxNzIxMzE2
+OSwtMTEwNjA3NjU2MSwtMTcwNTYxMzM2OCwxNDcxOTIyNzk2LC
+0xNTcxNDY4OTIwLC0yOTc2NTk2NzEsMTk3ODA5ODU1NywxNTA3
+Mzg1NTk5LDI5MTk5MTIxNywtMTAyNTY2NDYxNSwtMjEwNTEwNz
+k5LC0xOTMxNTY1ODI1LC0xMzQ5NzM1Mzk4LDIwNzY1MTM1MDks
+LTE4NjI0MjQ5OTddfQ==
 -->
