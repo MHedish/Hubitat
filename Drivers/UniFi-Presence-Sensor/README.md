@@ -13,7 +13,7 @@ Supports wireless clients and hotspot guest monitoring with automatic child devi
 
 ---
 
-## NEW
+## 🆕
 
 
 
@@ -213,8 +213,8 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNzQ3MTEzMTU0LC0yMTM2NDAxNDQ4LC0xOT
-k3NDYxNzE3LC0xNzk3MDM2NjgwLDI2NDI2MTcxNywtMTk4NDk1
-NjgyMywtMTAzOTg5OTU2NCw1NjMxMTY2OTcsMTE5ODA1MTk2M1
-19
+eyJoaXN0b3J5IjpbLTEzMzg4OTAzMjcsLTIxMzY0MDE0NDgsLT
+E5OTc0NjE3MTcsLTE3OTcwMzY2ODAsMjY0MjYxNzE3LC0xOTg0
+OTU2ODIzLC0xMDM5ODk5NTY0LDU2MzExNjY5NywxMTk4MDUxOT
+YzXX0=
 -->
