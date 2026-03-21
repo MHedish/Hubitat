@@ -7,7 +7,7 @@
 Hubitat driver pair for detecting presence using a UniFi Network Controller or UniFi OS Console.  
 Supports wireless clients and hotspot guest monitoring with automatic child device creation.
 
-> **Note:** This is the current **stable release** (`v1.`, 2026-03-).  
+> **Note:** This is the current **stable release** `(v1.9.0.0, 2026-03-21)`.  
 > See the [Changelog](../../changelog.md) for full release notes.  
 > All users are recommended to upgrade to this version.
 
@@ -159,6 +159,6 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEwMzk4OTk1NjQsNTYzMTE2Njk3LDExOT
-gwNTE5NjNdfQ==
+eyJoaXN0b3J5IjpbLTI4MzAwMjQwLC0xMDM5ODk5NTY0LDU2Mz
+ExNjY5NywxMTk4MDUxOTYzXX0=
 -->
