@@ -13,6 +13,10 @@ Supports wireless clients and hotspot guest monitoring with automatic child devi
 
 ---
 
+## NEW
+
+
+
 ## ⚡ Quick Start
 
 1. Install the drivers via **Hubitat Package Manager (HPM)** – search for **`unifi`** or **`presence`**.  
@@ -209,8 +213,8 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTM0NzAwNTc1MCwtMjEzNjQwMTQ0OCwtMT
-k5NzQ2MTcxNywtMTc5NzAzNjY4MCwyNjQyNjE3MTcsLTE5ODQ5
-NTY4MjMsLTEwMzk4OTk1NjQsNTYzMTE2Njk3LDExOTgwNTE5Nj
-NdfQ==
+eyJoaXN0b3J5IjpbNzQ3MTEzMTU0LC0yMTM2NDAxNDQ4LC0xOT
+k3NDYxNzE3LC0xNzk3MDM2NjgwLDI2NDI2MTcxNywtMTk4NDk1
+NjgyMywtMTAzOTg5OTU2NCw1NjMxMTY2OTcsMTE5ODA1MTk2M1
+19
 -->
