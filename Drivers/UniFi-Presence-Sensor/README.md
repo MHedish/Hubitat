@@ -147,10 +147,10 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 |:--|:--|:--|
 |`driverInfo`|`string`|Full driver version|
 |`driverVersion`|`string`|Driver version number|
-|`hotspotGuests`|`number`
-|`totalHotspotClients`|`number`
-|`presenceChanged`|`string`|Timestamp of the last guest |
-|`hotspotGuestList`|`string`|
+|`hotspotGuests`|`number`|Count of guests currently present|
+|`totalHotspotClients`|`number`|Total number of guest clients|
+|`presenceChanged`|`string`|Timestamp of the last guest arrival or departure|
+|`hotspotGuestList`|`string`|Full 
 |`hotspotGuestListRaw`|`string`|
 
 - **Commands (buttons):**
@@ -208,7 +208,7 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTUwNzEyNjk1MCwtMTc5NzAzNjY4MCwyNj
-QyNjE3MTcsLTE5ODQ5NTY4MjMsLTEwMzk4OTk1NjQsNTYzMTE2
-Njk3LDExOTgwNTE5NjNdfQ==
+eyJoaXN0b3J5IjpbLTE5OTc0NjE3MTcsLTE3OTcwMzY2ODAsMj
+Y0MjYxNzE3LC0xOTg0OTU2ODIzLC0xMDM5ODk5NTY0LDU2MzEx
+NjY5NywxMTk4MDUxOTYzXX0=
 -->
