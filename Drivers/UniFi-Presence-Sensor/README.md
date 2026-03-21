@@ -124,9 +124,7 @@ Because the driver emits alerts whenever a condition exists, repetition should b
 Examples:  
   
 - notify once  
-- notify once every 5 minutes  
 - notify only during daytime  
-- notify after a delay  
 - notify different devices for different buttons  
   
 This provides flexible behavior without sacrificing visibility.  
@@ -162,8 +160,7 @@ Examples:
 - speech announcements  
 - diagnostic dashboards  
   
-The driver provides the signal.  
-The Notifications app controls how, when, and where that signal is delivered.
+The driver provides the signal.  The Notifications app controls how, when, and where that signal is delivered.
 
 ## ⚡ Quick Start
 
@@ -361,7 +358,7 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTk3ODc2MjU3NSwtMTc1ODk0MzE0OSwtMj
+eyJoaXN0b3J5IjpbMTQ0OTcxNDMyNywtMTc1ODk0MzE0OSwtMj
 EzNjQwMTQ0OCwtMTk5NzQ2MTcxNywtMTc5NzAzNjY4MCwyNjQy
 NjE3MTcsLTE5ODQ5NTY4MjMsLTEwMzk4OTk1NjQsNTYzMTE2Nj
 k3LDExOTgwNTE5NjNdfQ==
