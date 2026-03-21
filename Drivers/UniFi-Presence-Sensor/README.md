@@ -13,7 +13,110 @@ Supports wireless clients and hotspot guest monitoring with automatic child devi
 
 ---
 
-## 🆕
+## 🆕👉System Notifications👈
+
+## 🔔 System Notifications
+
+The **UniFi Presence Controller** includes a built-in notification interface designed to integrate with Hubitat’s **Notifications app**.  
+These notifications provide visibility into controller connectivity, authentication status, and internal driver health conditions.
+
+Notifications are exposed using the **PushableButton** capability and follow a structured signal model:
+
+| Button | Meaning | Behavior |
+|--------|---------|----------|
+| **Button 1** | Alert / error condition | Repeats while the condition exists |
+| **Button 2** | Connection state changes | Emits only on transitions |
+
+## 📡 Notification Philosophy
+
+This driver intentionally **does not throttle or suppress alerts internally**.
+
+Instead:
+
+- **Driver** = condition detection
+- **Notifications app** = delivery policy
+
+This allows you to control:
+
+- delivery devices
+- repeat frequency
+- quiet hours
+- escalation logic
+- speech / SMS / push routing
+
+using Hubitat’s built-in **Notifications app** without modifying the driver.
+
+## ⚠️ Button 1 — Alert Conditions
+
+Button 1 emits when an error or abnormal condition exists.
+
+Examples include:
+
+- authentication failure
+- REST query failure
+- WebSocket failure
+- controller API rate limiting (429)
+- `initialize_exception`
+- `parse()` failure
+
+These alerts **repeat while the condition persists** so users remain aware of unresolved problems.
+
+Examples:
+
+- `❌ Authentication failure`
+- `⚠️ controller API rate limited (429)`
+
+When the condition clears, a release notification is emitted:
+
+- `✅ REST connection established`
+
+## 🔗 Button 2 — Connection State Changes
+
+Button 2 reports controller communication state transitions.
+
+Examples include:
+
+- `🔗 REST connection established`
+- `⛓️‍💥 REST disconnected`
+- `🔗 WebSocket connection established`
+- `⛓️‍💥 WebSocket disconnected`
+
+These emit **only when the state changes**.
+
+## 🧪 Testing Notifications
+
+A test notification can be generated from the device command:
+
+- `push()`
+
+This emits:
+
+- `🧪 UniFi Presence Controller alert test`
+
+Use this to confirm Notifications app configuration.
+
+## ⚙️ Configuring the Hubitat Notifications App
+
+1. Open **Apps**
+2. Select **Notifications**
+3. Choose **Create New Notification**
+4. Select your **UniFi Presence Controller** device
+5. Choose a trigger:
+   - **Button pushed**
+   - **Button released**
+6. Select the button number:
+   - **Button 1** = alerts
+   - **Button 2** = connection state
+7. Select one or more delivery devices:
+   - Hubitat mobile app
+   - Echo / speech devices
+   - SMS
+   - Pushover
+   - etc.
+8. Optionally prepend text to the message
+
+Example prefix:
+
 
 
 
@@ -213,7 +316,7 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEzMzg4OTAzMjcsLTIxMzY0MDE0NDgsLT
+eyJoaXN0b3J5IjpbLTE3NTg5NDMxNDksLTIxMzY0MDE0NDgsLT
 E5OTc0NjE3MTcsLTE3OTcwMzY2ODAsMjY0MjYxNzE3LC0xOTg0
 OTU2ODIzLC0xMDM5ODk5NTY0LDU2MzExNjY5NywxMTk4MDUxOT
 YzXX0=
