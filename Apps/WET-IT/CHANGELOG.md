@@ -1,5 +1,5 @@
 # 🧾 WET-IT — Unified Changelog  
-> Covers development from v0.4.0.0 through v1.3.0.0
+> Covers development from v0.4.0.0 through v1.3.1.0
 > Major architectural and stability milestones.
 
 ---
@@ -201,13 +201,13 @@
 
 Added the ability to immediately run the next scheduled program or to skip over the next scheduled program(s).
 
-## 🪲 1.2.3.1 — Bug Fix
+### 🪲 1.2.3.1 — Bug Fix
 
 **App v1.2.3.1 / Driver v1.2.3.0**
 - Fixed notification alert error
 - Enhanced solar cache detection and self-repair
 
-## ☀️ 1.3.0.0 — Public Release
+### ☀️ 1.3.0.0 — Public Release
 - 🪲 Corrected GetAstronomicalCache() and self-repair
 - Updated event notification scaffolding
 - Added app and device notification test buttons
@@ -217,10 +217,14 @@ Added the ability to immediately run the next scheduled program or to skip over 
 - Added advisory for mismatched nozzles within the same program
 - Fixed deleteProgram() to remove residual [useCycleSoak,cycleCount,cyclePauseMin] when deleting programs.
 - Added Tool Tips for Logging & Tools section
+
+---
+
+## ☀️ 1.3.1.0 — Public Release
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTgzNzM0Mjk3MCwtMTM4NzEyOTA4MCwtMT
-cyNTEyMTg3OCwtMTkyNjQ1MTIzLDEyMzQ2MjY4MTMsMTE3MjU4
-NzE5OSw1MjMwMjgyMywtMTE3NDIzMTkxNiwxMzgzMzgwNDQ2LD
-E3MjUyODQ1NjksLTEwMjk5Nzg0NywtODEyMDcyMzU4LDE4NDcw
-Mzc4MDNdfQ==
+eyJoaXN0b3J5IjpbNDQxNTcyNzc4LC0xMzg3MTI5MDgwLC0xNz
+I1MTIxODc4LC0xOTI2NDUxMjMsMTIzNDYyNjgxMywxMTcyNTg3
+MTk5LDUyMzAyODIzLC0xMTc0MjMxOTE2LDEzODMzODA0NDYsMT
+cyNTI4NDU2OSwtMTAyOTk3ODQ3LC04MTIwNzIzNTgsMTg0NzAz
+NzgwM119
 -->
