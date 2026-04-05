@@ -59,7 +59,7 @@ To achieve industrial-grade reliability for a Telnet-connected UPS, this driver 
    Session flow is traceable end-to-end through clear log messages.
 
 This design philosophy results in a driver that’s *fast*, *predictable*, and immune to session leaks or data contention.  
-Average reconnoiter runtime: **<5 seconds**, with deterministic session closure every cycle.
+Average reconnoiter runtime: **<3 seconds**, with deterministic session closure every cycle.
 
 ---
 
