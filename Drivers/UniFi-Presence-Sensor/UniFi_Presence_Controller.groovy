@@ -8,21 +8,6 @@
 *  https://paypal.me/MHedish
 *
 *  Changelog:
-*  1.8.0.0  -- Refactored with modern library
-*  1.8.0.1  -- Reverted
-*  1.8.0.2  -- Cleaned provisioning; hardened debounce; fixed ordering issues; rationalized lifecycle methods
-*  1.8.0.3  -- Added driver minver checking; added device.id to child devices; pruned atomicState to essentials
-*  1.8.0.4  -- Moved auto create constants to magic variables
-*  1.8.0.5  -- Removed duplicate functions of refreshChildren() and refreshAllChildren; Collapsed ReconnectAllChildren; Final code cleanup
-*  1.8.0.6  -- Remove customPortNum bool; gated portNum; reduced excess logging for refreshAllChildren()
-*  1.8.0.7  -- Updated hotspot deletion attribute-based, not DNI-based
-*  1.8.0.8  -- Fixed recursive child and guest summaries
-*  1.8.0.9  -- Added REST call for child IP address in parse()
-*  1.8.0.10 -- Added roamingEvents; updated event emission to not report roaming as presence change
-*  1.8.0.11 -- Refined event telemetry; deleted queryActiveClients() and queryKnownClients() wrappers; set child ipAddress=null when disconnected; added ipAddress to child.refreshFromParent() map
-*  1.8.0.12 -- Fixed reporting roaming events are presence change
-*  1.8.0.13 -- Added user preference to filter out non-managed devices events; improved telemetry for child creation
-*  1.8.0.14 -- Added descriptions when guest or child total count changes
 *  1.8.5.0  -- Stable Release - Reversioned
 *  1.8.5.1  -- Updated httpExecWithAuthCheck() to handle 429 errors; added sanitizePayload() to obfuscate UniFi password payload via regex; added one-time warn if hotspot device appears but guest device is missing/deleted
 *  1.8.5.2  -- Reverted
@@ -35,13 +20,16 @@
 *  1.8.6.2  -- Added param to ignore SSL errors; enhanced commStatus messages
 *  1.8.6.3  -- Removed logDebug 'login() succeeded' message; upodated encodeSiteName() to allow for spaces between 'words' in sitename; updated isUniFiOS() to not use 302 to identify UniFIOS
 *  1.8.6.3  -- Reverted
-*  1.8.6.4  -- Updated UnFIOS type determination
+*  1.8.6.4  -- Updated UnFiOS type determination
 *  1.8.6.5  -- Reverted
 *  1.8.6.6  -- Reset stale cookies during initialization and add automatic 401 authentication recovery
 *  1.8.6.7  -- Hardened connection recovery; added resetConnectionState() and improved WSS/auth self-recovery.
 *  1.8.6.8  -- Added system notifications
 *  1.8.6.9  -- Added emitNotification(); updated notification canon.
 *  1.9.0.0  -- Stable Release - Reversioned
+*  1.9.0.1  -- Quieted notifications and event logging in webSocketStatus()
+*  1.9.0.2  -- Added notification when WSS is closing
+*  1.9.1.0  -- Stable Release
 */
 
 import groovy.transform.Field
@@ -50,8 +38,8 @@ import groovy.json.JsonOutput
 import java.net.URLEncoder
 
 @Field static final String DRIVER_NAME="UniFi Presence Controller"
-@Field static final String DRIVER_VERSION="1.9.0.0"
-@Field static final String DRIVER_MODIFIED="2026.03.21"
+@Field static final String DRIVER_VERSION="1.9.1.0"
+@Field static final String DRIVER_MODIFIED="2026.04.05"
 @Field static final Integer AUTO_CREATE_DAYS=1
 @Field static final Integer AUTO_CREATE_MAX=50
 @Field static final Map CHILD_DRIVER=[name:"UniFi Presence Device",minVer:"1.9.0.0",required:true]
@@ -389,9 +377,10 @@ def webSocketStatus(String status){
 	    emitNotification("pushed",2,"🔗 WebSocket connection established")
 	    emitEvent("commStatus","good","🔗️ WebSocket connection established",null,true)
 	    emitEvent("driverInfo",driverInfoString(),"✅ Initialization complete",null,true)
-	    atomicState.reconnectDelay=1
+	    atomicState.reconnectDelay=1;atomicState.wasExpectedClose=false
 	}
-    else if(status.startsWith("status: closing")){emitEvent("commStatus","closing","⛓️‍💥️ WebSocket disconnecting",null,true)}
+    else if(status.startsWith("status: closing")){
+		emitNotification("released",2,"⛓️‍💥️ WebSocket disconnecting");emitEvent("commStatus","closing","⛓️‍💥️ WebSocket disconnecting",null,true)}
     else if(status.startsWith("status: closed")){
 		logWarn "⚠️ WebSocket closed"
         if(!atomicState.wasExpectedClose){
@@ -402,11 +391,13 @@ def webSocketStatus(String status){
         }else{atomicState.wasExpectedClose=false}
     }
     else if(status.startsWith("failure:")){
-        logError "❌ WebSocket failure: ${status}";emitEvent("commStatus","error","❌ WSS Failure")
-        if(enableNotifications)sendEvent(name:"pushed",value:1,descriptionText:"❌ UniFi WebSocket failure: ${status}",isStateChange:true)
-        if(atomicState.cookie&&atomicState.csrf){logWarn "Attempting WebSocket reconnect";runIn(10,"openEventSocket")}
-        else{logWarn "Auth missing — reinitializing";runIn(10,"initialize")}
-    }
+	    logError "❌ WebSocket failure: ${status}";emitEvent("commStatus","error","❌ WSS Failure")
+		    if(status.contains("Expected HTTP 101")){logWarn "⏳ Controller Network application still starting"}
+	    else if(status.contains("Failed to connect")){logWarn "⏳ Controller not yet reachable — retrying"}
+	    else{emitNotification("pushed",1,"❌ WebSocket connection failure")}
+	    if(atomicState.cookie&&atomicState.csrf){logWarn "Attempting WebSocket reconnect";runIn(10,"openEventSocket")}
+	    else{logWarn "Auth missing — reinitializing";runIn(10,"initialize")}
+	}
     else{logDebug "Unhandled WebSocket status: ${status}"}
 }
 
