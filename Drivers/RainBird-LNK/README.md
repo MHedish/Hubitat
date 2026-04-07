@@ -1,6 +1,6 @@
 # 🌧️ Rain Bird LNK/LNK2 WiFi Module Controller (Hubitat Driver)
 
-[![Version](https://img.shields.io/badge/version-0.1.3.3-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.3.5-blue.svg)](./CHANGELOG.md)
 [![Status](https://img.shields.io/badge/release-RC--STABLE-brightgreen.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
@@ -28,15 +28,10 @@ With advanced telemetry, adaptive pacing, and hourly drift correction, it’s de
 
 ---
 
-## 🌟 What’s New in v0.1.3.3
+## 🌟 What’s New in v0.1.3.5
 
-💧 **Manual Zone Device Creation** — automatic zone creation replaced with a self-healing manual command `createZoneChildren`  
-🔗 **Zone Child Driver** — new companion driver *Rain Bird LNK/LNK2 Zone Child* (Switch + Valve) provides per-zone control  
-⚙️ **Resilient Hubitat Integration** — gracefully handles missing child driver (warns user instead of erroring)  
-🧩 **Parent/Child Binding** — full support for on/off/open/close and `runZone(duration)` actions at the zone level  
-🪶 **Simplified Architecture** — stateless, deterministic, and backwards-compatible with all 2.1–3.2 firmware lines
-
-> 🧠 *This release introduces manual, self-healing zone device creation and a dedicated child driver for per-zone control.*
+- UI Cleanup; Allow child to pass duration of zero (0) to parent for no endtime while retaining null guard.
+- Fixed availableStations detection on ESP-Me hybrid firmware by retrying legacy opcode 03 when 3A returns ACK-only (003A02).
 
 ---
 
