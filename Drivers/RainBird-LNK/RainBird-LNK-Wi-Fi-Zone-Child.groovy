@@ -1,6 +1,6 @@
 /*
 *  Rain Bird LNK/LNK2 WiFi Zone Child Driver
-*  Copyright 2025 Marc Hedish
+*  Copyright 2026 Marc Hedish
 *  Licensed under the Apache License, Version 2.0
 *  https://www.apache.org/licenses/LICENSE-2.0
 *
@@ -11,14 +11,16 @@
 *  0.1.3.1  –– Added duration to RunZone()
 *  0.1.3.2  –– Added switch & valve attributes
 *  0.1.3.3  –– Modernized emitEvent and emitChangedEvent; Fixed child device creation.
+*  0.1.3.4  –– Added default time preference for On/Open
+*  0.1.3.5  –– Version match with parent
 */
 
 import groovy.transform.Field
 
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 Zone Child"
-@Field static final String DRIVER_VERSION  = "0.1.3.3"
-@Field static final String DRIVER_MODIFIED = "2025.12.17"
+@Field static final String DRIVER_VERSION  = "0.1.3.5"
+@Field static final String DRIVER_MODIFIED = "2026.04.07"
 
 metadata{
     definition(
@@ -37,6 +39,8 @@ metadata{
 
 	    preferences {
 	        input("docBlock", "hidden", title: driverDocBlock())
+	        input("defaultDuration","number",title:"Default Zone Duration (minutes)",description:"Prevents valve from being left on too long via manual On/Open.<br>Default=15. Set to 0 for controller maximum (360 minutes).",defaultValue:15,range:"0..360")
+
 		}
     }
 }
@@ -47,7 +51,7 @@ private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){se
 private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 
 def on(){
-    parent.runChild(device.deviceNetworkId,null)
+    parent.runChild(device.deviceNetworkId,defaultDuration)
     emitEvent("switch","on")
     emitEvent("valve","open")
 }
