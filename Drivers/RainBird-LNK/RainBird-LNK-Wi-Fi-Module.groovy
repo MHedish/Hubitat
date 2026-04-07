@@ -1,6 +1,6 @@
 /*
 *  Rain Bird LNK WiFi Module Driver
-*  Copyright 2025 Marc Hedish
+*  Copyright 2026 Marc Hedish
 *  Licensed under the Apache License, Version 2.0
 *  https://www.apache.org/licenses/LICENSE-2.0
 *
@@ -26,6 +26,8 @@
 *  0.1.3.1  –– Added explicit child driver.
 *  0.1.3.2  –– Updated getAvailableStations() to accomodate legacy 2.9 firmware; Added manual, self-healing child device creation command.
 *  0.1.3.3  –– Corrected emitEvent() and emitChangedEvent()
+*  0.1.3.4  –– UI Cleanup; Allow child to pass duration of zero (0) to parent for no endtime while retaining null guard.
+*  0.1.3.5  –– Fixed availableStations detection on ESP-Me hybrid firmware by retrying legacy opcode 03 when 3A returns ACK-only (003A02).
 */
 
 import groovy.transform.Field
@@ -38,8 +40,8 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "0.1.3.3"
-@Field static final String DRIVER_MODIFIED = "2025.12.17"
+@Field static final String DRIVER_VERSION  = "0.1.3.5"
+@Field static final String DRIVER_MODIFIED = "2026.04.07"
 @Field static final String PAD = "\u0016"
 @Field static final int BLOCK_SIZE = 16
 @Field static int delayMs=150
@@ -118,9 +120,6 @@ metadata {
         input("password","password",title:"Rain Bird Controller Password",required:true)
         input("zonePref","number",title:"Number of Zones", defaultValue:6,range:"1..16")
         input("autoTimeSync","bool",title:"Automatically sync Rain Bird to Hubitat clock",description:"Corrects any drift greater than ±5 seconds.<br>Automatically adjusts controller clock for DST.",defaultValue:true)
-        input("logEnable","bool",title:"Enable Debug Logging",description:"Auto-off after 30 minutes.",defaultValue:false)
-        input("logEvents","bool",title:"Log All Events",defaultValue:false)
-        input("wateringRefresh","bool",title:"Increase polling frequency during watering events",description:"Sets refresh to every 5 seconds during a watering event.",defaultValue:true)
         input name:"refreshInterval", type:"enum", title:"Refresh Interval",description:"Select from the list.",defaultValue:"5",
 		    options:[
 		        "0":"Manual","1":"Every minute","2":"Every 2 minutes","3":"Every 3 minutes",
@@ -128,6 +127,9 @@ metadata {
 		        "20":"Every 20 minutes","30":"Every 30 minutes","45":"Every 45 minutes","60":"Every hour",
 		        "120":"Every 2 hours","240":"Every 4 hours","480":"Every 8 hours"
 		    ]
+        input("wateringRefresh","bool",title:"Increase polling frequency during watering events",description:"Sets refresh to every 5 seconds during a watering event.",defaultValue:true)
+        input("logEvents","bool",title:"Log All Events",defaultValue:false)
+        input("logEnable","bool",title:"Enable Debug Logging",description:"Auto-off after 30 minutes.",defaultValue:false)
     }
 }
 
@@ -238,10 +240,11 @@ private normalizeZoneInput(zone){
 }
 
 def runZone(zone,duration=null){
-	if(!duration){duration=2;logWarn"Duration not set for starting zone ${zone}. Defaulting to 2 minutes."}
+	if(duration==null){duration=2;logWarn"Duration not set for starting zone ${zone}. Defaulting to 2 minutes."}
+	if(duration==0){duration=360;logDebug"Duration set to 0 → treating as manual run (360 minutes)."}
 	logDebug"Starting zone ${zone} for ${duration} minute(s)"
 	try{
-		def z=normalizeZoneInput(zone);def normDur=Math.max(1,Math.min(120,(duration?:1).toInteger()))
+		def z=normalizeZoneInput(zone);def normDur=Math.max(1,Math.min(360,duration.toInteger()))
 		def cmd=z.modern?"39${sprintf('%04X',z.normZone)}${sprintf('%02X',normDur)}":String.format("0300%02X%02X",z.normZone,normDur)
 		logDebug"runZone(): mode=${z.modern?'modern':'legacy'}, encoded=${cmd}"
 		def r=parseIfString(sendRainbirdCommand(cmd,z.modern?4:1),"runZone");def d=r?.result?.data
@@ -307,7 +310,7 @@ private getAvailableStations(){
 			if(isLegacyFirmware(2.11)&&hex.toUpperCase().startsWith("FF")){zones=(1..8).toList()
 			}else{def bits=new BigInteger(hex,16).toString(2).padLeft(32,'0').reverse();bits.eachWithIndex{b,i->if(b=='1')zones<<(i+1)}}
 			emitChangedEvent("availableStations",zones.join(","),"Available stations: ${zones.join(', ')}")
-		}else if(d=="003A02"&&legacy){
+		}else if(d=="003A02"){
 			logDebug"getAvailableStations(): 3A returned ACK; retrying with 03..."
 			def f=parseIfString(sendRainbirdCommand("030000",2),"getAvailableStations-fallback")?.result?.data
 			if(f?.startsWith("83")){def m=Integer.parseInt(f.substring(4,12),16);zones=(1..8).findAll{i->(m&(1<<(i-1)))!=0};emitChangedEvent("availableStations",zones.join(","),"Available stations: ${zones.join(', ')}")}
