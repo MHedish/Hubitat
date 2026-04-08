@@ -2,8 +2,8 @@
   "packageName": "Rain Bird LNK/LNK2 WiFi Module Controller",
   "author": "Marc Hedish",
   "version": "0.1.3.5",
-  "releaseNotes": "v0.1.3.5 Allow child to pass duration of zero (0) to parent for no endtime while retaining null guard; Fixed availableStations detection on ESP-Me hybrid firmware by retrying legacy opcode 03 when 3A returns ACK-only (003A02).",
-  "dateReleased": "2026-04-07",
+  "releaseNotes": "v0.1.3.11 Added automatic moduleFirmwareVersion detection with status.json → opcode 03 fallback and corrected hybrid firmware attribution; Refactored firmwarVersion to controllerFirmwareVersion and adapterFirmwareVersion; Various internal bug fixes.",
+  "dateReleased": "2026-04-08",
   "minimumHEVersion": "2.3.6",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md",
   "communityLink": "https://community.hubitat.com/t/release-rain-bird-lnk-lnk2-wifi-module-controller/159062",
@@ -17,7 +17,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Module.groovy",
       "required": true,
-      "version": "0.1.3.5"
+      "version": "0.1.3.11"
     },
     {
       "id": "rainbird-lnk-wifi-zone-child",
