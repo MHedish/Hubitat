@@ -28,6 +28,12 @@
 *  0.1.3.3  –– Corrected emitEvent() and emitChangedEvent()
 *  0.1.3.4  –– UI Cleanup; Allow child to pass duration of zero (0) to parent for no endtime while retaining null guard.
 *  0.1.3.5  –– Fixed availableStations detection on ESP-Me hybrid firmware by retrying legacy opcode 03 when 3A returns ACK-only (003A02).
+*  0.1.3.6  –– Fixed adapter firmware probe using incorrect deviceIp variable when 3A→03 fallback path executed.
+*  0.1.3.7  –– Corrected httpGet()
+*  0.1.3.8  –– Refactored firmwarVersion to controllerFirmwareVersion and adapterFirmwareVersion
+*  0.1.3.9  –– Added automatic moduleFirmwareVersion detection with status.json → opcode 03 fallback and corrected hybrid firmware attribution.
+*  0.1.3.10 –– Increased manual zone range from 16 to 22; Fixed internal zone range from fixed to dynamic (zoneCount).
+*  0.1.3.11 –– Updated zonePref description (only use for fallback).
 */
 
 import groovy.transform.Field
@@ -40,8 +46,8 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "0.1.3.5"
-@Field static final String DRIVER_MODIFIED = "2026.04.07"
+@Field static final String DRIVER_VERSION  = "0.1.3.11"
+@Field static final String DRIVER_MODIFIED = "2026.04.08"
 @Field static final String PAD = "\u0016"
 @Field static final int BLOCK_SIZE = 16
 @Field static int delayMs=150
@@ -70,55 +76,56 @@ metadata {
 		capability "Switch"
 		capability "Valve"
 
-		attribute "lastEventTime", "string"
-		attribute "rainSensorState", "enum", ["bypassed","dry","wet"]
-		attribute "switch", "enum", ["on","off"]
-		attribute "valve", "enum", ["open","closed"]
-		attribute "waterBudget", "number"
-		attribute "zoneAdjustments", "string"
-        attribute "activeZone", "number"
-        attribute "autoTimeSync", "boolean"
-        attribute "availableStations", "string"
-        attribute "clockDrift", "number"
-        attribute "controllerDate", "string"
-        attribute "controllerTime", "string"
-        attribute "delaySetting", "number"
-        attribute "driverInfo", "string"
-        attribute "driverStatus", "string"
-        attribute "firmwareVersion", "string"
-        attribute "irrigationState", "string"
-        attribute "lastSync", "string"
-        attribute "model", "string"
-        attribute "programScheduleSupport", "boolean"
-        attribute "rainDelay", "number"
-        attribute "remainingRuntime", "number"
-        attribute "seasonalAdjust", "number"
-        attribute "serialNumber", "string"
-        attribute "watering", "boolean"
-        attribute "wateringRefresh", "boolean"
-        attribute "zoneCount", "number"
+        attribute "activeZone","number"
+        attribute "autoTimeSync","boolean"
+        attribute "availableStations","string"
+        attribute "clockDrift","number"
+        attribute "controllerDate","string"
+        attribute "controllerFirmwareVersion","string"
+        attribute "controllerTime","string"
+        attribute "delaySetting","number"
+        attribute "driverInfo","string"
+        attribute "driverStatus","string"
+        attribute "irrigationState","string"
+		attribute "lastEventTime","string"
+        attribute "lastSync","string"
+        attribute "model","string"
+		attribute "moduleFirmwareVersion","string"
+        attribute "programScheduleSupport","boolean"
+        attribute "rainDelay","number"
+		attribute "rainSensorState","enum",["bypassed","dry","wet"]
+        attribute "remainingRuntime","number"
+        attribute "seasonalAdjust","number"
+        attribute "serialNumber","string"
+		attribute "switch","enum",["on","off"]
+		attribute "valve","enum",["open","closed"]
+		attribute "waterBudget","number"
+        attribute "watering","boolean"
+        attribute "wateringRefresh","boolean"
+		attribute "zoneAdjustments","string"
+        attribute "zoneCount","number"
 
         command "configure"
         command "disableDebugLoggingNow"
         command "getAllProgramSchedules"
-        command "runProgram",[[name: "program",type: "ENUM",description: "Select Rain Bird program to run manually ",constraints: ["A", "B", "C", "D"]]]
-        command "runZone",[[name:"Zone Number ",type:"NUMBER"],[name:"Duration (minutes) ", type:"NUMBER"]]
+        command "runProgram",[[name:"program",type:"ENUM",description: "Select Rain Bird program to run manually ",constraints:["A","B","C","D"]]]
+        command "runZone",[[name:"Zone Number ",type:"NUMBER"],[name:"Duration (minutes) ",type:"NUMBER"]]
         command "setRainDelay",[[name:"Rain Delay (0–14 days) ",type:"NUMBER"]]
         command "stopIrrigation"
-        command "advanceZone",[[name:"Advance Zone",type:"NUMBER"]]
-        command "testAllSupportedCommands",[[name:"Diagnostic: Validate supported LNK commands."]]
-        command "on",[[name: "Turn Irrigation On",description: "Starts watering using Program A (same as Run Program 'A')"]]
-		command "off", [[name: "Turn Irrigation Off",description: "Stops all irrigation activity (same as Stop Irrigation)"]]
-		command "open", [[name: "Open Valve",description: "Starts watering using Program A (same as Run Program 'A')"]]
-		command "close", [[name: "Close",description: "Stops watering and closes the valve (same as Stop Irrigation)"]]
-		command "createZoneChildren", [[name: "Create Zone Devices",description: "Creates individual child devices (Switch + Valve) for each irrigation zone based on available stations"]]
+        command "advanceZone",[[name:"Advance Zone ",type:"NUMBER"]]
+        command "testAllSupportedCommands",[[name:"<b>Diagnostic</b>: Validate supported LNK commands."]]
+        command "on",[[name:"Turn Irrigation On",description:"Starts watering using Program A (same as Run Program 'A')"]]
+		command "off",[[name:"Turn Irrigation Off",description:"Stops all irrigation activity (same as Stop Irrigation)"]]
+		command "open",[[name:"Open Valve",description:"Starts watering using Program A (same as Run Program 'A')"]]
+		command "close",[[name:"Close",description:"Stops watering and closes the valve (same as Stop Irrigation)"]]
+		command "createZoneChildren",[[name:"Create Zone Devices",description:"Creates individual child devices (Switch + Valve) for each irrigation zone based on available stations"]]
     }
 
     preferences {
-        input("docBlock", "hidden", title: driverDocBlock())
+        input("docBlock","hidden",title: driverDocBlock())
         input("ipAddress","text",title:"Rain Bird Controller IP",required:true)
         input("password","password",title:"Rain Bird Controller Password",required:true)
-        input("zonePref","number",title:"Number of Zones", defaultValue:6,range:"1..16")
+        input("zonePref","number",title:"Number of Zones",description:"Used <i>only</i> if the controller does not report available stations.<br>Leave unchanged unless running legacy firmware (≤2.11) or station detection fails.",defaultValue:6,range:"1..22")
         input("autoTimeSync","bool",title:"Automatically sync Rain Bird to Hubitat clock",description:"Corrects any drift greater than ±5 seconds.<br>Automatically adjusts controller clock for DST.",defaultValue:true)
         input name:"refreshInterval", type:"enum", title:"Refresh Interval",description:"Select from the list.",defaultValue:"5",
 		    options:[
@@ -155,7 +162,7 @@ def initialize(){
 	reconnoiter=true;state.failCount=0;emitEvent("driverInfo",driverInfoString());logDebug"Controller IP = ${ipAddress}, Password = ${password?.replaceAll(/./, '*')}"
 	if(ipAddress&&password){
 		unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)
-		driverStatus();getControllerIdentity();scheduleRefresh();reconnoiter=false;runInMillis(500,"refresh")
+		driverStatus();getControllerIdentity();getModuleFirmwareVersion();scheduleRefresh();reconnoiter=false;runInMillis(500,"refresh")
 	}else logWarn"Cannot initialize. Preferences must be set."
 }
 
@@ -177,8 +184,8 @@ private driverStatus(String controllerContext=null){
 
 private boolean isLegacyFirmware(BigDecimal minVersion=3.0){
     try{
-        def pvAttr=device.currentValue("firmwareVersion")
-        if(!pvAttr){logDebug"isLegacyFirmware(): firmwareVersion not yet available (initializing — deferring legacy check)";return false}
+        def pvAttr=device.currentValue("controllerFirmwareVersion")
+        if(!pvAttr){logDebug"isLegacyFirmware(): controllerFirmwareVersion not yet available (initializing — deferring legacy check)";return false}
         def pv=pvAttr.toString().replaceAll("[^0-9.]","").toBigDecimal()
         logDebug"Current firmware version ${pv} checked against minimum required: ${minVersion}. isLegacyFirmware=${pv<minVersion}"
         return pv<minVersion
@@ -193,7 +200,7 @@ private getCommandSupport(cmdToTest="4A"){
         if(!d){logWarn"getCommandSupport(): No valid response";return false}
         if(d.startsWith("84")){
             def echo=d.substring(2,4);def support=Integer.parseInt(d.substring(4,6),16);def supported=(support==1)
-            logDebug"Command 0x${echo} is ${supported ? 'supported' : 'not supported'} by controller";return supported
+            logDebug"Command 0x${echo} is ${supported?'supported':'not supported'} by controller";return supported
         }else{logWarn"getCommandSupport(): Unexpected data (${d})";return false}
     }catch(e){logError"getCommandSupport() failed: ${e.message}";return false}
 }
@@ -202,12 +209,10 @@ def testAllSupportedCommands(){
 	try{
 		logInfo"Running full command and firmware diagnostic..."
 		def r=parseIfString(sendRainbirdCommand("03",1),"diagnosticFirmwareReport");def d=r?.result?.data
-		def fw=parseFirmwareVersion(d);emitEvent("firmwareVersion",fw,"Controller firmware ${fw}")
-		logInfo"Controller firmware: ${d?:'none'} (parsed=${fw})"
+		def fw=(d?.size()>=6)?parseFirmwareVersion(d):'unknown';emitEvent("moduleFirmwareVersion",fw,"Module firmware ${fw}")
 		try{
-			def m=httpGet([uri:"http://${deviceIp}/irrigation/status.json",timeout:5])
-			def mv=m?.data?.ver?:'unavailable';emitEvent("moduleFirmware",mv,"LNK/LNK2 adapter firmware ${mv}")
-			logInfo"LNK/LNK2 adapter firmware: ${mv}"
+			def mv='unavailable';httpGet([uri:"http://${ipAddress}/irrigation/status.json",timeout:5]){resp->mv=resp?.data?.ver?:'unavailable'}
+			emitEvent("moduleFirmwareVersion",mv,"LNK/LNK2 module firmware ${mv}")
 		}catch(e){logWarn"Adapter firmware check failed: ${e.message}"}
 		def cmds=["02","03","04","05","10","12","30","32","36","37","38","39","3A","3E","3F","40","42","48","49","4A","4B","4C"];def results=[:]
 		cmds.each{c->try{
@@ -230,9 +235,9 @@ private parseFirmwareVersion(d){
 
 /* =============================== Manual Irrigation Control =============================== */
 private normalizeZoneInput(zone){
-	def fw=device.currentValue("firmwareVersion")?.toString()?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
+	def fw=device.currentValue("controllerFirmwareVersion")?.toString()?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
 	def legacy=isLegacyFirmware(3.0);def hybrid=(fw>=2.9&&fw<3.0);def modern=getCommandSupport("39")&&(fw>=2.9)
-	def maxZones=(state.zoneCount?:zoneCount?:device.currentValue("zoneCount")?.toInteger()?:8)
+	def maxZones=device.currentValue("zoneCount").toInteger()
 	def reqZone=(zone?:1).toInteger();def normZone=Math.max(1,Math.min(maxZones,reqZone))
 	def z=[fw:fw,legacy:legacy,hybrid:hybrid,modern:modern,maxZones:maxZones,reqZone:reqZone,normZone:normZone]
 	logDebug"Normalized zone input: requested=${z.reqZone}, final=${z.normZone}, maxZones=${z.maxZones}"
@@ -256,7 +261,7 @@ def runZone(zone,duration=null){
 
 def advanceZone(zone=0){
 	try{
-		def fw=device.currentValue("firmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
+		def fw=device.currentValue("controllerFirmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
 		def legacy=isLegacyFirmware(3.3);def encodedZone=Math.max(0,(zone?:0).toInteger());
 		def cmd=legacy?String.format("42%02X",encodedZone):String.format("4200%02X",encodedZone)
 		logDebug"advanceZone(): mode=${legacy?'legacy/hybrid':'modern'}, encoded=${cmd}"
@@ -288,7 +293,7 @@ def stopIrrigation(){
 
 private getAvailableStations(){
 	try{
-		def fw=device.currentValue("firmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
+		def fw=device.currentValue("controllerFirmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
 		logDebug"Requesting available stations (fw=${fw})..."
 		def legacy=isLegacyFirmware(3.0);def cmd=legacy?"030000":"3A00"
 		def r=parseIfString(sendRainbirdCommand(cmd,legacy?2:1),"getAvailableStations")
@@ -307,13 +312,13 @@ private getAvailableStations(){
 			}
 		}else if(d.startsWith("B2")){
 			def hex=d.substring(4)
-			if(isLegacyFirmware(2.11)&&hex.toUpperCase().startsWith("FF")){zones=(1..8).toList()
+			if(isLegacyFirmware(2.11)&&hex.toUpperCase().startsWith("FF")){zones=(1..device.currentValue("zoneCount").toInteger()).toList()
 			}else{def bits=new BigInteger(hex,16).toString(2).padLeft(32,'0').reverse();bits.eachWithIndex{b,i->if(b=='1')zones<<(i+1)}}
 			emitChangedEvent("availableStations",zones.join(","),"Available stations: ${zones.join(', ')}")
 		}else if(d=="003A02"){
 			logDebug"getAvailableStations(): 3A returned ACK; retrying with 03..."
 			def f=parseIfString(sendRainbirdCommand("030000",2),"getAvailableStations-fallback")?.result?.data
-			if(f?.startsWith("83")){def m=Integer.parseInt(f.substring(4,12),16);zones=(1..8).findAll{i->(m&(1<<(i-1)))!=0};emitChangedEvent("availableStations",zones.join(","),"Available stations: ${zones.join(', ')}")}
+			if(f?.startsWith("83")){def m=Integer.parseInt(f.substring(4,12),16);zones=(1..device.currentValue("zoneCount").toInteger()).findAll{i->(m&(1<<(i-1)))!=0};emitChangedEvent("availableStations",zones.join(","),"Available stations: ${zones.join(', ')}")}
 		}else logWarn"getAvailableStations(): Unexpected data (${d})"
 		return zones
 	}catch(e){logError"getAvailableStations() failed: ${e.message}"}
@@ -405,7 +410,7 @@ private getZoneSeasonalAdjustments(){
 private getRainSensorState(){
 	logDebug"Requesting rain sensor state..."
 	try{
-		def r=parseIfString(sendRainbirdCommand("3E",1),"getRainSensorState");def d=r?.result?.data;def fw=device.currentValue("firmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
+		def r=parseIfString(sendRainbirdCommand("3E",1),"getRainSensorState");def d=r?.result?.data;def fw=device.currentValue("controllerFirmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
 		if(!d){logWarn"getRainSensorState(): No valid response";return}
 		if(d.startsWith("BE")){if(isLegacyFirmware(3.0)){logDebug"getRainSensorState(): Firmware ${fw} does not expose bypass control; marking state as unknown.";emitChangedEvent("rainSensorState","unknown","Rain sensor (no bypass support): unknown");return}
 			def s=Integer.parseInt(d.substring(2,4),16);def stateStr=(s==0)?"dry":(s==1?"wet":"bypassed");emitChangedEvent("rainSensorState",stateStr,"Rain sensor state: ${stateStr}");return
@@ -462,7 +467,7 @@ def getProgramSchedule(prog='A'){
         def tData=t?.result?.data;def dData=d?.result?.data;def zData=z?.result?.data
         logDebug"Raw data (start times): ${tData}";logDebug"Raw data (days): ${dData}";logDebug"Raw data (zones): ${zData}"
         if(isStubProgramResponse(tData)&&isStubProgramResponse(dData)&&isStubProgramResponse(zData)){
-            logWarn"Program ${prog} query acknowledged but data unavailable (firmware ${device.currentValue('firmwareVersion')})."
+            logWarn"Program ${prog} query acknowledged but data unavailable (controller firmware ${device.currentValue('controllerFirmwareVersion')})."
             return false
         }
         def times=parseProgramTimes(tData);def days=parseProgramDays(dData);def zones=parseProgramZones(zData)
@@ -591,7 +596,7 @@ def refresh(){
 	}
 	try{
 		driverStatus()
-		def fw=device.currentValue("firmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
+		def fw=device.currentValue("controllerFirmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
 		def hybrid=(fw>=2.9&&fw<3.1)
 		if(getCommandSupport("4C")&&!hybrid){
 			def r=parseIfString(sendRainbirdCommand("4C",1),"refresh")
@@ -637,13 +642,13 @@ private scheduleRefresh(){
 
 /* =============================== Parsing Helpers =============================== */
 private verifyActiveZone(data=null,passive=false){
-	def fw=device.currentValue("firmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
+	def fw=device.currentValue("controllerFirmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
 	def hybrid=(fw>=2.9&&fw<3.1);def legacy=isLegacyFirmware(2.11);def watering=device.currentValue("watering")=="true";def zone=(device.currentValue("activeZone")?:0)as Integer;def raw=null;def mask=0
 	if(hybrid||getCommandSupport("3F")){
 		logDebug"verifyActiveZone(): firmware=${fw} (hybrid=${hybrid}); probing opcode 0x3F for BF response"
 		def s=parseIfString(sendRainbirdCommand("3F0000",2),"verifyActiveZone");def d=s?.result?.data;raw=d
 		if(d?.startsWith("BF")){
-			mask=Integer.parseInt(d.substring(4,6),16);def active=0;(1..8).each{i->if((mask&(1<<(i-1)))!=0)active=i}
+			mask=Integer.parseInt(d.substring(4,6),16);def active=0;(1..device.currentValue("zoneCount").toInteger()).each{i->if((mask&(1<<(i-1)))!=0)active=i}
 			if(!hybrid&&isLegacyFirmware(3.0)&&active>0)active++ // only bump for pre-2.9 legacy
 			zone=active;watering=zone>0;logDebug"verifyActiveZone(): decoded BF mask=${String.format('%02X',mask)} → zone=${zone}"
 		}else if(legacy && d=="003F02"){
@@ -713,7 +718,7 @@ private getControllerIdentity() {
             logWarn"ModelAndVersionRequest failed or unexpected: ${data02}"
         }
         emitChangedEvent("model","RainBird ${modelID}","Controller model: RainBird ${modelID}")
-        emitChangedEvent("firmwareVersion",fwareVersion,"Firmware version: ${fwareVersion}")
+        emitChangedEvent("controllerFirmwareVersion",fwareVersion,"Controller firmware version: ${fwareVersion}")
         def r05=parseIfString(sendRainbirdCommand("05",1),"getControllerIdentity-Serial")
         def data05=extractHexData(r05)
         def serial=(data05?.startsWith("85"))?data05.substring(2):"Unavailable"
@@ -721,6 +726,15 @@ private getControllerIdentity() {
     } catch(e){logError "getControllerIdentity() failed: ${e.message}"}
 }
 
+private getModuleFirmwareVersion(){
+	def mv=null
+	try{httpGet([uri:"http://${ipAddress}/irrigation/status.json",timeout:5]){resp->mv=resp?.data?.ver}}
+	catch(e){logDebug"Module firmware probe via status.json skipped (${e.message})"}
+	try{
+		if(!mv){def r=parseIfString(sendRainbirdCommand("03",1),"moduleFirmwareProbe");def d=r?.result?.data;if(d){mv=parseFirmwareVersion(d)}}
+		if(mv){emitEvent("moduleFirmwareVersion",mv,"LNK/LNK2 module firmware ${mv}")}else{logDebug"Module firmware version unavailable"}
+	}catch(e){logDebug"Module firmware probe via opcode 03 skipped (${e.message})"}
+}
 
 private parseCombinedControllerState(resp,boolean summaryOnly=false){
     try{
@@ -805,7 +819,7 @@ private parseProgramDays(hex){
 private parseProgramZones(hex){
     if(!hex){logWarn"parseProgramZones(): No data";return[]}
     def mask=Integer.parseInt(hex.substring(hex.length()-2),16)
-    def zones=(1..8).collect{mask&(1<<(it-1))?it:null}.findAll{it}
+    def zones=(1..device.currentValue("zoneCount").toInteger()).collect{mask&(1<<(it-1))?it:null}.findAll{it}
     return zones
 }
 
