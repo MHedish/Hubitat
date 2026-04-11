@@ -32,8 +32,8 @@ With advanced telemetry, adaptive pacing, and hourly drift correction, it’s de
 
 - Fixed clock sync retry loop by suppressing false ±86400-second drift after opcode 11 (Set Time)
 - Improved command support probing reliability by retrying ACK-only opcode 04XX responses.
--  Hardened opcode 04XX command-support detection
-- dded dynamic runtime controller-state opcode-family inference (4C vs 3F)
+- Hardened opcode 04XX command-support detection
+- Added dynamic runtime controller-state opcode-family inference (4C vs 3F)
 
 ---
 
