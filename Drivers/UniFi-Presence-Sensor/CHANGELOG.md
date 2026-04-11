@@ -6,9 +6,7 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 
 ## Update
 
-Updated `Site Name` description and [README.MD](https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/README.md#%EF%B8%8F-configuration) to help
-
-
+Updated `Site Name` description and [README.MD](https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/README.md#%EF%B8%8F-configuration) to help avoid Site ID vs Site Name vs Hostname misconfiguration.
 
 ### v1.9.1.0 (2026-04-05) – Notifications improvements
 
@@ -411,8 +409,7 @@ Updated `Site Name` description and [README.MD](https://github.com/MHedish/Hubit
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE1ODE0NjI2ODEsMzkyNjc2NzMxLDYyNT
-czNDQzMywtMTU3MTA0MDEzOSwtMTgxMjM4ODc2NCwxNDE4NjM0
-NDAyLDE2NTU1NDM0NDAsNDU3MzE4NTAwLC05MjMzNzgxNjhdfQ
-==
+eyJoaXN0b3J5IjpbLTMyNjE0MDkxNCwzOTI2NzY3MzEsNjI1Nz
+M0NDMzLC0xNTcxMDQwMTM5LC0xODEyMzg4NzY0LDE0MTg2MzQ0
+MDIsMTY1NTU0MzQ0MCw0NTczMTg1MDAsLTkyMzM3ODE2OF19
 -->
