@@ -34,6 +34,10 @@
 *  0.1.3.9  –– Added automatic moduleFirmwareVersion detection with status.json → opcode 03 fallback and corrected hybrid firmware attribution.
 *  0.1.3.10 –– Increased manual zone range from 16 to 22; Fixed internal zone range from fixed to dynamic (zoneCount).
 *  0.1.3.11 –– Updated zonePref description (only use for fallback).
+*  0.1.3.12 –– Fixed clock sync retry loop by suppressing false ±86400-second drift after opcode 11 (Set Time) across firmware variants while preserving DST and legitimate drift correction.
+*  0.1.3.13 –– Improved command support probing reliability by retrying ACK-only opcode 04XX responses to reduce intermittent unknown (?) capability results across firmware variants.
+*  0.1.3.14 –– Hardened opcode 04XX command-support detection with deterministic retry after ACK-only responses to eliminate intermittent false negatives across legacy, hybrid, and LNK2 firmware variants.
+*  0.1.3.15 –– Added dynamic runtime controller-state opcode-family inference (4C vs 3F) eliminating capability-probe ambiguity and stabilizing refresh behavior across legacy, hybrid, and LNK2 firmware variants.
 */
 
 import groovy.transform.Field
@@ -46,8 +50,8 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "0.1.3.11"
-@Field static final String DRIVER_MODIFIED = "2026.04.08"
+@Field static final String DRIVER_VERSION  = "0.1.3.15"
+@Field static final String DRIVER_MODIFIED = "2026.04.11"
 @Field static final String PAD = "\u0016"
 @Field static final int BLOCK_SIZE = 16
 @Field static int delayMs=150
@@ -162,7 +166,7 @@ def initialize(){
 	reconnoiter=true;state.failCount=0;emitEvent("driverInfo",driverInfoString());logDebug"Controller IP = ${ipAddress}, Password = ${password?.replaceAll(/./, '*')}"
 	if(ipAddress&&password){
 		unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)
-		driverStatus();getControllerIdentity();getModuleFirmwareVersion();scheduleRefresh();reconnoiter=false;runInMillis(500,"refresh")
+		driverStatus();getControllerIdentity();getCommandSupport("4C");getCommandSupport("3F");getModuleFirmwareVersion();scheduleRefresh();reconnoiter=false;runInMillis(500,"refresh")
 	}else logWarn"Cannot initialize. Preferences must be set."
 }
 
@@ -193,16 +197,23 @@ private boolean isLegacyFirmware(BigDecimal minVersion=3.0){
 }
 
 private getCommandSupport(cmdToTest="4A"){
-    logDebug"Querying command support for 0x${cmdToTest.toUpperCase()}..."
-    try{
-        def cmd="04${cmdToTest.padLeft(2,'0')}00";def r=parseIfString(sendRainbirdCommand(cmd,2),"getCommandSupport")
-        def d=r?.result?.data
-        if(!d){logWarn"getCommandSupport(): No valid response";return false}
-        if(d.startsWith("84")){
-            def echo=d.substring(2,4);def support=Integer.parseInt(d.substring(4,6),16);def supported=(support==1)
-            logDebug"Command 0x${echo} is ${supported?'supported':'not supported'} by controller";return supported
-        }else{logWarn"getCommandSupport(): Unexpected data (${d})";return false}
-    }catch(e){logError"getCommandSupport() failed: ${e.message}";return false}
+	logDebug"Querying command support for 0x${cmdToTest.toUpperCase()}..."
+	try{
+		def cmd="04${cmdToTest.padLeft(2,'0')}00";def r=parseIfString(sendRainbirdCommand(cmd,2),"getCommandSupport");def d=r?.result?.data
+		if(!d){logWarn"getCommandSupport(): No valid response";return false}
+		if(d.startsWith("84")){
+			def echo=d.substring(2,4);def support=Integer.parseInt(d.substring(4,6),16)==1;logDebug"Command 0x${echo} is ${support?'supported':'not supported'} by controller";return support
+		}
+		if(d=="004${cmdToTest}02"||d=="${cmdToTest}02"||d?.endsWith("02")){
+			logDebug"getCommandSupport(): ACK-only response for 0x${cmdToTest}; retrying probe..."
+			def rr=parseIfString(sendRainbirdCommand(cmd,2),"getCommandSupportRetry");def rd=rr?.result?.data
+			if(rd?.startsWith("84")){
+				def echo=rd.substring(2,4);def support=Integer.parseInt(rd.substring(4,6),16)==1;logDebug"Command 0x${echo} retry → ${support?'supported':'not supported'}";return support
+			}
+			logWarn"getCommandSupport(): Retry returned ${rd?:'null'}";return false
+		}
+		logWarn"getCommandSupport(): Unexpected data (${d})";return false
+	}catch(e){logError"getCommandSupport() failed: ${e.message}";return false}
 }
 
 def testAllSupportedCommands(){
@@ -213,12 +224,20 @@ def testAllSupportedCommands(){
 		try{
 			def mv='unavailable';httpGet([uri:"http://${ipAddress}/irrigation/status.json",timeout:5]){resp->mv=resp?.data?.ver?:'unavailable'}
 			emitEvent("moduleFirmwareVersion",mv,"LNK/LNK2 module firmware ${mv}")
-		}catch(e){logWarn"Adapter firmware check failed: ${e.message}"}
-		def cmds=["02","03","04","05","10","12","30","32","36","37","38","39","3A","3E","3F","40","42","48","49","4A","4B","4C"];def results=[:]
+		}catch(e){logDebug"Module firmware check failed: ${e.message}"}
+		def cmds=["02","03","04","05","10","12","4C","3F","30","32","36","37","38","39","3A","40","42","3E","48","49","4A","4B"];def results=[:]
 		cmds.each{c->try{
 			def rr=parseIfString(sendRainbirdCommand("04${c}00",2),"testCommandSupport-${c}");def dd=rr?.result?.data
-			if(dd?.startsWith("84")){def supported=Integer.parseInt(dd.substring(4,6),16)==1;results[c]=supported;logDebug"Command 0x${c} → ${supported?'supported':'not supported'}"}
-			else results[c]="?"
+			if(dd?.startsWith("84")){
+			    def supported=Integer.parseInt(dd.substring(4,6),16)==1;results[c]=supported;logDebug"Command 0x${c} → ${supported?'supported':'not supported'}"
+			}else if(dd=="004${c}02"||dd=="${c}02"||dd?.endsWith("02")){
+			    logDebug"Command 0x${c} returned ACK-only; retrying support probe...";def retry=parseIfString(sendRainbirdCommand("04${c}00",2),"testCommandSupportRetry-${c}")?.result?.data
+			    if(retry?.startsWith("84")){
+			        def supported=Integer.parseInt(retry.substring(4,6),16)==1;results[c]=supported;logDebug"Command 0x${c} retry → ${supported?'supported':'not supported'}"
+			    }else{
+			        results[c]="?";logDebug"Command 0x${c} retry returned ${retry ?: 'null'}"
+			    }
+			}else{results[c]="?"}
 		}catch(e){results[c]="ERR";logWarn"testAllSupportedCommands(): 0x${c} failed (${e.message})"}}
 		def supported=results.findAll{k,v->v==true}.collect{k->"0x${k}"}
 		def unsupported=results.findAll{k,v->v==false}.collect{k->"0x${k}"}
@@ -230,7 +249,7 @@ def testAllSupportedCommands(){
 
 private parseFirmwareVersion(d){
 	try{def h=d?.replaceAll('[^0-9A-Fa-f]','');if(h?.size()>=4){def M=Integer.parseInt(h[-4..-3],16);def m=Integer.parseInt(h[-2..-1],16);return String.format('%d.%d',M,m)}}catch(e){}
-	return'unknown'
+	return 'unknown'
 }
 
 /* =============================== Manual Irrigation Control =============================== */
@@ -296,8 +315,7 @@ private getAvailableStations(){
 		def fw=device.currentValue("controllerFirmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
 		logDebug"Requesting available stations (fw=${fw})..."
 		def legacy=isLegacyFirmware(3.0);def cmd=legacy?"030000":"3A00"
-		def r=parseIfString(sendRainbirdCommand(cmd,legacy?2:1),"getAvailableStations")
-		def d=r?.result?.data
+		def r=parseIfString(sendRainbirdCommand(cmd,legacy?2:1),"getAvailableStations");def d=r?.result?.data
 		if(!d){logWarn"getAvailableStations(): No response";return}
 		def zones=[]
 		if(d.startsWith("83")){
@@ -345,8 +363,7 @@ def createZoneChildren(){
 
 private runChild(String dni, Object duration){
     try{
-        def zone=(dni=~/zone(\d+)/)[0][1].toInteger()
-        def dur=(duration!=null)?duration.toInteger():null
+        def zone=(dni=~/zone(\d+)/)[0][1].toInteger();def dur=(duration!=null)?duration.toInteger():null
         runZone(zone,dur)
     }catch(e){logError"runChild() failed: ${e.message}"}
 }
@@ -375,8 +392,7 @@ private updateChildZoneStates(activeZone=0,watering=false){
 private getWaterBudget(){
     logDebug"Requesting water budget..."
     try{
-        def r=parseIfString(sendRainbirdCommand("300000",2),"getWaterBudget")
-        def d=r?.result?.data
+        def r=parseIfString(sendRainbirdCommand("300000",2),"getWaterBudget");def d=r?.result?.data
         if(!d){logWarn"getWaterBudget: No valid response";return}
         if(d.startsWith("B0")){
             def pct=Integer.parseInt(d.substring(4,8),16)
@@ -389,8 +405,7 @@ private getZoneSeasonalAdjustments(){
     logDebug"Requesting per-zone seasonal adjustments..."
     if(isLegacyFirmware(3.1)){logDebug"Skipping getZoneSeasonalAdjustments(): requires firmware ≥3.1";return}
     try{
-        def r=parseIfString(sendRainbirdCommand("320000",2),"getZoneSeasonalAdjustments")
-        def d=r?.result?.data
+        def r=parseIfString(sendRainbirdCommand("320000",2),"getZoneSeasonalAdjustments");def d=r?.result?.data
         if(!d){logWarn"getZoneSeasonalAdjustments: No valid response";return}
         if(d.startsWith("B2")){
             def hex=d.substring(4);def zones=[]
@@ -423,8 +438,7 @@ private getControllerEventTimestamp(){
     if(isLegacyFirmware(4.0)){logDebug"Skipping getControllerEventTimestamp(): requires firmware ≥4.0";return}
     logDebug"Requesting controller event timestamp..."
     try{
-        def r=parseIfString(sendRainbirdCommand("4A0000",2),"getControllerEventTimestamp")
-        def d=r?.result?.data
+        def r=parseIfString(sendRainbirdCommand("4A0000",2),"getControllerEventTimestamp");def d=r?.result?.data
         if(!d){logWarn"getControllerEventTimestamp: No valid response";return}
         if(d.startsWith("CA")){
             def ts=d.substring(4,12);def seconds=Long.parseLong(ts,16);def date=new Date(seconds*1000)
@@ -549,33 +563,34 @@ def setControllerDate(){logInfo"Controller date reporting only (LNK ignores SetD
 def setControllerTime(){
     def now=new Date();def cmd="11${sprintf('%02x',now.format('HH',location.timeZone).toInteger())}${sprintf('%02x',now.format('mm',location.timeZone).toInteger())}${sprintf('%02x',now.format('ss',location.timeZone).toInteger())}"
     logDebug"Setting controller time (encoded ${cmd})"
-    parseIfString(sendRainbirdCommand(cmd,4),"setControllerTime");getControllerTime()
+    parseIfString(sendRainbirdCommand(cmd,4),"setControllerTime");runInMillis(750,"getControllerDate");runInMillis(1250,"getControllerTime")
 }
 
 private void hourlyClockSync(){checkAndSyncClock(true)} // CRON Helper
 
 private checkAndSyncClock(poll=false){
     if(!autoTimeSync)return
-	if(poll){logDebug"checkAndSyncClock(poll): refreshing controller clock values before drift check";getControllerDate();getControllerTime();return}
+    if(poll){logDebug"checkAndSyncClock(poll): refreshing controller clock values before drift check";getControllerDate();getControllerTime();return}
     try{
         def cDate=device.currentValue("controllerDate");def cTime=device.currentValue("controllerTime")
         if(!cDate||!cTime){logDebug"checkAndSyncClock(): missing controller date/time";return}
         def fmt=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");fmt.setTimeZone(location.timeZone)
         def parsed=fmt.parse("${cDate} ${cTime}");if(!parsed){logWarn"checkAndSyncClock(): parse failed for ${cDate} ${cTime}";return}
         def controllerEpoch=parsed.time;def hubNow=now()
-        def clockDrift=(int)(Math.abs((hubNow.intdiv(1000))-(controllerEpoch.intdiv(1000))))
+        def clockDrift=(int)Math.abs((hubNow.intdiv(1000))-(controllerEpoch.intdiv(1000)))
         def dstAdj=(clockDrift>=3595&&clockDrift<=3605)
-        def desc=dstAdj?"Daylight Saving Time adjustment detected.":"Clock drift: ${clockDrift}s"
+        def dayBoundaryVariant=(clockDrift>=86395&&clockDrift<=86405)
+        def desc=dstAdj?"Daylight Saving Time adjustment detected.":dayBoundaryVariant?"Clock drift: ${clockDrift}s (date-boundary normalization variant)":"Clock drift: ${clockDrift}s"
         emitChangedEvent("clockDrift",clockDrift,desc,"s")
-        if(!poll&&!dstAdj&&clockDrift>5)syncRainbirdClock(clockDrift)
+        if(dstAdj||dayBoundaryVariant){logDebug"checkAndSyncClock(): suppressing opcode 11 retry (expected normalization window)";return}
+        if(!poll&&clockDrift>5)syncRainbirdClock(clockDrift)
     }catch(e){logError"checkAndSyncClock(): ${e.message}"}
 }
 
 private syncRainbirdClock(drift){
     try{
         setControllerTime();def nowStr=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())
-        emitEvent("lastSync",nowStr,"Clock synchronized at ${nowStr} (drift ${drift}s corrected)")
-        logInfo"Controller clock synchronized | Drift corrected: ${drift}s"
+        emitEvent("lastSync",nowStr,"Clock synchronized at ${nowStr} | Drift corrected: ${drift}s")
     }catch(e){logError"syncRainbirdClock() failed: ${e.message}"}
 }
 
@@ -597,13 +612,24 @@ def refresh(){
 	try{
 		driverStatus()
 		def fw=device.currentValue("controllerFirmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
-		def hybrid=(fw>=2.9&&fw<3.1)
-		if(getCommandSupport("4C")&&!hybrid){
-			def r=parseIfString(sendRainbirdCommand("4C",1),"refresh")
-			if(r)parseCombinedControllerState(r)
-		}else if(getCommandSupport("3F")){
-			def result=verifyActiveZone([:],true)
-		}else logWarn"No compatible controller-state opcode (4C/3F) supported; skipping zone status refresh."
+		def hybrid=(fw>=2.9&&fw<3.1);def r4C=null;def r3F=null
+		if(!hybrid){
+			r4C=parseIfString(sendRainbirdCommand("4C",1),"refresh-4C")
+			if(r4C?.result?.data?.startsWith("CC")||r4C?.result?.data?.startsWith("004C")){parseCombinedControllerState(r4C)}
+			else{
+				r3F=parseIfString(sendRainbirdCommand("3F0000",2),"refresh-3F")
+				if(r3F?.result?.data?.startsWith("BF")||r3F?.result?.data=="003F02"){verifyActiveZone([:],true)}
+				else logWarn"No compatible controller-state opcode (4C/3F) supported; skipping zone status refresh."
+			}
+		}else{
+			r3F=parseIfString(sendRainbirdCommand("3F0000",2),"refresh-3F")
+			if(r3F?.result?.data?.startsWith("BF")||r3F?.result?.data=="003F02"){verifyActiveZone([:],true)}
+			else{
+				r4C=parseIfString(sendRainbirdCommand("4C",1),"refresh-4C")
+				if(r4C?.result?.data?.startsWith("CC")||r4C?.result?.data?.startsWith("004C")){parseCombinedControllerState(r4C)}
+				else logWarn"No compatible controller-state opcode (4C/3F) supported; skipping zone status refresh."
+			}
+		}
 		getRainSensorState();getWaterBudget();getRainDelay();getZoneSeasonalAdjustments()
 		getAvailableStations();getControllerEventTimestamp();getControllerDate();getControllerTime()
 		def cs=device.currentValue("controllerState")?.toLowerCase()
@@ -717,7 +743,7 @@ private getControllerIdentity() {
         } else {
             logWarn"ModelAndVersionRequest failed or unexpected: ${data02}"
         }
-        emitChangedEvent("model","RainBird ${modelID}","Controller model: RainBird ${modelID}")
+        emitChangedEvent("model","RainBird ${modelID}","Controller model: Rain Bird ${modelID}")
         emitChangedEvent("controllerFirmwareVersion",fwareVersion,"Controller firmware version: ${fwareVersion}")
         def r05=parseIfString(sendRainbirdCommand("05",1),"getControllerIdentity-Serial")
         def data05=extractHexData(r05)
