@@ -30,6 +30,8 @@
 *  1.9.0.1  -- Quieted notifications and event logging in webSocketStatus()
 *  1.9.0.2  -- Added notification when WSS is closing
 *  1.9.1.0  -- Stable Release
+*  1.9.1.1  -- UI improvement - description for site ID
+*  1.9.2.0  -- Stable Release
 */
 
 import groovy.transform.Field
@@ -38,8 +40,8 @@ import groovy.json.JsonOutput
 import java.net.URLEncoder
 
 @Field static final String DRIVER_NAME="UniFi Presence Controller"
-@Field static final String DRIVER_VERSION="1.9.1.0"
-@Field static final String DRIVER_MODIFIED="2026.04.05"
+@Field static final String DRIVER_VERSION="1.9.2.0"
+@Field static final String DRIVER_MODIFIED="2026.04.11"
 @Field static final Integer AUTO_CREATE_DAYS=1
 @Field static final Integer AUTO_CREATE_MAX=50
 @Field static final Map CHILD_DRIVER=[name:"UniFi Presence Device",minVer:"1.9.0.0",required:true]
@@ -86,7 +88,7 @@ preferences {
 	input("docBlock","hidden",title:driverDocBlock())
     input"controllerIP","text",title:"UniFi Controller IP Address",required:true
     input"PortNum","number",range:"1..65535",title:"Port Number (<a href='https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/README.md#-faq--troubleshooting' target='_blank'><b>default=443; common alternative=8443</b></a>)",required:false,defaultValue:443
-    input"siteName","text",title:"Site Name",defaultValue:"default",required:true
+    input"siteName","text",title:"Site Name<br><small style='color:#444449;font-weight:300'>Typically \"default\". Change only for <i>legacy</i> multi-site UniFi controllers.</small>",defaultValue:"default",required:true
     input"username","text",title:"Username",required:true
     input"password","password",title:"Password",required:true
     input"refreshInterval","number",title:"Refresh/Reconnect Interval (seconds, recommended=300)",defaultValue:300
