@@ -1,6 +1,6 @@
 # 🌧️ Rain Bird LNK/LNK2 WiFi Module Controller — Changelog
 
-**Copyright © 2025 Marc Hedish**  
+**Copyright © 2026 Marc Hedish**  
 Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
 ---
@@ -105,17 +105,6 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 
 </details>
 
----
-
-## 🌧️ Rain Bird LNK/LNK2 WiFi Module Controller  
-### 🏷️ Release Candidate 0.1.2.0 — December 2, 2025
-
-**Firmware Tested:** 2.9 / 3.2  
-**Hubitat:** C-7 / C-8 / C-8 Pro (2.3.9+)  
-**Driver File:** [`RainBird_v0.1.2.0.groovy`](https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Module.groovy)
-
----
-
 ### 🚀 Highlights
 - Final hybrid/modern opcode alignment (`0x03`, `0x39`, `0x3F`, `0x42`)  
 - Unified legacy + LNK2 identity and firmware detection  
@@ -124,15 +113,20 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 - Added Switch and Valve capabilities for dashboard integration  
 - Encapsulation and security cleanup: private helpers, masked logs  
 
----
-
-### ✅ Summary
-This **Release Candidate (RC 0.1.3.0)** finalizes compatibility between legacy (2.1/2.9) and modern (3.2) Rain Bird controllers.  
+	This **Release Candidate (RC 0.1.3.0)** finalizes compatibility between legacy (2.1/2.9) and modern (3.2) Rain Bird controllers.  
 All command, telemetry, and refresh systems are now stable under both firmware lines, marking readiness for transition to the **0.1.x stable branch**.
+
+---
+- **Release Candidate 0.1.3.15** validated on firmware 2.9 and 3.2.  
+
+- Added `moduleFirmwareVersion` and `controllerFirmwareVersion` attributes replacing single `firmwareVersion`
+- Fixed clock sync retry loop by suppressing false ±86400-second drift after opcode 11 (Set Time)
+- Improved command support probing reliability by retrying ACK-only opcode 04XX responses.
+-  Hardened opcode 04XX command-support detection.
+-  Added dynamic runtime controller-state opcode-family inference (4C vs 3F).
 
 ---
 
 ### 📘 Credits
 Developed & Maintained by **Marc Hedish**  
 💧 Support ongoing development: [paypal.me/MHedish](https://paypal.me/MHedish)
-
