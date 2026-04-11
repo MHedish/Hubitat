@@ -239,7 +239,12 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 - **Controller IP** – UniFi Controller or UniFi OS hostname/IP.  
 - **Username / Password** – UniFi account credentials.  
 - **Site Name** – Typically `default`, or your UniFi site name.
-	**NOTE**: Leave as default unless using *legacy* multi-site controllers.
+	**NOTE**: Most UniFi OS-based controllers (UDM Pro, Dream Router, Cloud Gateway series, etc.)  
+use a single internal site named:  `default` even if the UI displays a different site name.  
+  
+Leave this field blank unless you are running a legacy multi-site UniFi controller.
+
+
 
 ### Optional
 - **Disconnect Debounce** – Delay before marking devices not present (default: 20s).  
@@ -360,9 +365,9 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE0MDAyOTMwODQsLTE5NzcxMzQyNiwtMT
-kwOTQ2NzYwMSwtMzUzODcwMjk1LDE0NDk3MTQzMjcsLTE3NTg5
-NDMxNDksLTIxMzY0MDE0NDgsLTE5OTc0NjE3MTcsLTE3OTcwMz
-Y2ODAsMjY0MjYxNzE3LC0xOTg0OTU2ODIzLC0xMDM5ODk5NTY0
-LDU2MzExNjY5NywxMTk4MDUxOTYzXX0=
+eyJoaXN0b3J5IjpbLTQ1MTk4NDMzNCwtMTk3NzEzNDI2LC0xOT
+A5NDY3NjAxLC0zNTM4NzAyOTUsMTQ0OTcxNDMyNywtMTc1ODk0
+MzE0OSwtMjEzNjQwMTQ0OCwtMTk5NzQ2MTcxNywtMTc5NzAzNj
+Y4MCwyNjQyNjE3MTcsLTE5ODQ5NTY4MjMsLTEwMzk4OTk1NjQs
+NTYzMTE2Njk3LDExOTgwNTE5NjNdfQ==
 -->
