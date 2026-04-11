@@ -2,8 +2,13 @@
 All notable changes to the UniFi Presence Drivers will be documented in this file.
 
 ---
-## v1.9.1.0 (2026-04-05) – Notifications improvements
+### v1.9.2.0 (2026-04-11) – Notifications improvements
 
+## Update
+
+Update to 
+
+### v1.9.1.0 (2026-04-05) – Notifications improvements
 ## Update
 - Updated [event notifications](https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/README.md#-system-notifications-) to quiet exeessive webSocketStatus() events.
 - Added notification for WSS closing
@@ -403,7 +408,7 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMzkyNjc2NzMxLDYyNTczNDQzMywtMTU3MT
-A0MDEzOSwtMTgxMjM4ODc2NCwxNDE4NjM0NDAyLDE2NTU1NDM0
-NDAsNDU3MzE4NTAwLC05MjMzNzgxNjhdfQ==
+eyJoaXN0b3J5IjpbLTEzNzIyMzk0MywzOTI2NzY3MzEsNjI1Nz
+M0NDMzLC0xNTcxMDQwMTM5LC0xODEyMzg4NzY0LDE0MTg2MzQ0
+MDIsMTY1NTU0MzQ0MCw0NTczMTg1MDAsLTkyMzM3ODE2OF19
 -->
