@@ -208,3 +208,6 @@ Platform: [Hubitat Elevation](https://hubitat.com)
 License: [Apache 2.0](./LICENSE)
 
 💧 Support development: [paypal.me/MHedish](https://paypal.me/MHedish)
+<!--stackedit_data:
+eyJoaXN0b3J5IjpbMTgxMTU3NDkxN119
+-->
