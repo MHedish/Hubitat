@@ -125,6 +125,7 @@ You can safely run this command multiple times — existing zones are skipped, a
 | `lastEventTime`          | string  | Timestamp of last received event                   |
 | `lastSync`               | string  | Timestamp of last successful time sync             |
 | `model`                  | string  | Controller model identifier                        |
+| `moduleFirmwareVersion`        | string  | LNK/LNK2 firmware revision 
 | `programScheduleSupport` | boolean | Indicates if controller supports program retrieval |
 | `rainDelay`              | number  | Current active rain delay days                     |
 | `rainSensorState`        | enum    | `unknown`, `bypassed`, `dry`, `wet`                |
@@ -211,5 +212,5 @@ License: [Apache 2.0](./LICENSE)
 
 💧 Support development: [paypal.me/MHedish](https://paypal.me/MHedish)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjYzODc2NDA4XX0=
+eyJoaXN0b3J5IjpbLTk1NzE4MDQyNV19
 -->
