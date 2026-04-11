@@ -120,7 +120,7 @@ You can safely run this command multiple times — existing zones are skipped, a
 | `delaySetting`           | number  | Rain delay duration (days)                         |
 | `driverInfo`             | string  | Driver metadata including version and mode         |
 | `driverStatus`           | string  | Current driver health or command response          |
-| `firmwareVersion`        | string  | Controller firmware revision                       |
+| `fcontrollerFirmwareVersion`        | string  | Controller firmware revision                       |
 | `irrigationState`        | string  | `watering`, `idle`, or `off`                       |
 | `lastEventTime`          | string  | Timestamp of last received event                   |
 | `lastSync`               | string  | Timestamp of last successful time sync             |
@@ -211,5 +211,5 @@ License: [Apache 2.0](./LICENSE)
 
 💧 Support development: [paypal.me/MHedish](https://paypal.me/MHedish)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjg5ODE1MTVdfQ==
+eyJoaXN0b3J5IjpbMjYzODc2NDA4XX0=
 -->
