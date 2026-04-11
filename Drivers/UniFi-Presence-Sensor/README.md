@@ -1,13 +1,13 @@
 # UniFi Presence Drivers
 
 ![status](https://img.shields.io/badge/release-stable-green)
-![version](https://img.shields.io/badge/version-v1.9.1.0-blue)
+![version](https://img.shields.io/badge/version-v1.9.2.0-blue)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
 
 Hubitat driver pair for detecting presence using a UniFi Network Controller or UniFi OS Console.  
 Supports wireless clients and hotspot guest monitoring with automatic child device creation.
 
-> **Note:** This is the current **stable release** (`v1.9.1.0, 2026-04-05`).  
+> **Note:** This is the current **stable release** (`v1.9.2.0, 2026-04-11`).  
 > See the [Changelog](../../changelog.md) for full release notes.  
 > All users are recommended to upgrade to this version.
 
@@ -238,7 +238,8 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 ### Required (Parent Driver)
 - **Controller IP** – UniFi Controller or UniFi OS hostname/IP.  
 - **Username / Password** – UniFi account credentials.  
-- **Site Name** – Typically `default`, or your UniFi site name.  
+- **Site Name** – Typically `default`, or your UniFi site name.
+	**NOTE**: Do not chang
 
 ### Optional
 - **Disconnect Debounce** – Delay before marking devices not present (default: 20s).  
@@ -359,9 +360,9 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE5NzcxMzQyNiwtMTkwOTQ2NzYwMSwtMz
-UzODcwMjk1LDE0NDk3MTQzMjcsLTE3NTg5NDMxNDksLTIxMzY0
-MDE0NDgsLTE5OTc0NjE3MTcsLTE3OTcwMzY2ODAsMjY0MjYxNz
-E3LC0xOTg0OTU2ODIzLC0xMDM5ODk5NTY0LDU2MzExNjY5Nywx
-MTk4MDUxOTYzXX0=
+eyJoaXN0b3J5IjpbMTg3MzM0NDI1NCwtMTk3NzEzNDI2LC0xOT
+A5NDY3NjAxLC0zNTM4NzAyOTUsMTQ0OTcxNDMyNywtMTc1ODk0
+MzE0OSwtMjEzNjQwMTQ0OCwtMTk5NzQ2MTcxNywtMTc5NzAzNj
+Y4MCwyNjQyNjE3MTcsLTE5ODQ5NTY4MjMsLTEwMzk4OTk1NjQs
+NTYzMTE2Njk3LDExOTgwNTE5NjNdfQ==
 -->
