@@ -31,7 +31,9 @@ With advanced telemetry, adaptive pacing, and hourly drift correction, it’s de
 ## 🌟 What’s New in v0.1.3.15
 
 - Fixed clock sync retry loop by suppressing false ±86400-second drift after opcode 11 (Set Time)
-- Fixed availableStations detection on ESP-Me hybrid firmware by retrying legacy opcode 03 when 3A returns ACK-only (003A02).
+- Improved command support probing reliability by retrying ACK-only opcode 04XX responses.
+-  Hardened opcode 04XX command-support detection
+- dded dynamic runtime controller-state opcode-family inference (4C vs 3F)
 
 ---
 
@@ -209,5 +211,5 @@ License: [Apache 2.0](./LICENSE)
 
 💧 Support development: [paypal.me/MHedish](https://paypal.me/MHedish)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTYwNTI4Njk0M119
+eyJoaXN0b3J5IjpbMjg5ODE1MTVdfQ==
 -->
