@@ -76,7 +76,6 @@ Button 2 reports controller communication state transitions.
 Examples include:
 
 - `🔗 REST connection established`
-- `⛓️‍💥 REST disconnected`
 - `🔗 WebSocket connection established`
 - `⛓️‍💥 WebSocket disconnected`
 
@@ -373,10 +372,10 @@ Latest release: **v1.9.2.0 (2026-04-11)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTgyNTg4NzU1NywtMTYyMjE4MDcxNiwtMz
-M4ODcwODkwLC0xOTc3MTM0MjYsLTE5MDk0Njc2MDEsLTM1Mzg3
-MDI5NSwxNDQ5NzE0MzI3LC0xNzU4OTQzMTQ5LC0yMTM2NDAxND
-Q4LC0xOTk3NDYxNzE3LC0xNzk3MDM2NjgwLDI2NDI2MTcxNywt
-MTk4NDk1NjgyMywtMTAzOTg5OTU2NCw1NjMxMTY2OTcsMTE5OD
-A1MTk2M119
+eyJoaXN0b3J5IjpbLTE2MjY3NjE4NzIsLTgyNTg4NzU1NywtMT
+YyMjE4MDcxNiwtMzM4ODcwODkwLC0xOTc3MTM0MjYsLTE5MDk0
+Njc2MDEsLTM1Mzg3MDI5NSwxNDQ5NzE0MzI3LC0xNzU4OTQzMT
+Q5LC0yMTM2NDAxNDQ4LC0xOTk3NDYxNzE3LC0xNzk3MDM2Njgw
+LDI2NDI2MTcxNywtMTk4NDk1NjgyMywtMTAzOTg5OTU2NCw1Nj
+MxMTY2OTcsMTE5ODA1MTk2M119
 -->
