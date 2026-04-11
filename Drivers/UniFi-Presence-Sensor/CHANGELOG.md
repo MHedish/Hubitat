@@ -6,7 +6,8 @@ All notable changes to the UniFi Presence Drivers will be documented in this fil
 
 ## Update
 
-Update to 
+Updated `Site Name` description and README.MD  
+Typically "default". Change only for  _legacy_  multi-site UniFi controllers.*
 
 ### v1.9.1.0 (2026-04-05) – Notifications improvements
 ## Update
@@ -408,7 +409,7 @@ Update to
 - Initial release (based on tomw’s work).
 - Parent and child driver pair for UniFi Presence integration.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEzNzIyMzk0MywzOTI2NzY3MzEsNjI1Nz
-M0NDMzLC0xNTcxMDQwMTM5LC0xODEyMzg4NzY0LDE0MTg2MzQ0
-MDIsMTY1NTU0MzQ0MCw0NTczMTg1MDAsLTkyMzM3ODE2OF19
+eyJoaXN0b3J5IjpbNDA1MzQzMTUzLDM5MjY3NjczMSw2MjU3Mz
+Q0MzMsLTE1NzEwNDAxMzksLTE4MTIzODg3NjQsMTQxODYzNDQw
+MiwxNjU1NTQzNDQwLDQ1NzMxODUwMCwtOTIzMzc4MTY4XX0=
 -->
