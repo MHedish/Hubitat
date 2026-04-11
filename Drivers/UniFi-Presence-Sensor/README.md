@@ -242,7 +242,7 @@ https://raw.githubusercontent.com/MHedish/Hubitat/main/Drivers/UniFi-Presence-Se
 
 	**NOTE**: Most UniFi OS-based controllers (UDM Pro, Dream Router, Cloud Gateway series, etc.)  use a single internal site named:  `default` even if the UI displays a different site name.  
   
-  	Leave this field blank unless you are running a *legacy* multi-site UniFi controller.
+  	Leave this field unchanged unless you are running a *legacy* multi-site UniFi controller.
 
 	These controllers all use `default`:
 	- UDM Pro
@@ -373,9 +373,10 @@ Latest release: **v1.9.2.0 (2026-04-11)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE2MjIxODA3MTYsLTMzODg3MDg5MCwtMT
-k3NzEzNDI2LC0xOTA5NDY3NjAxLC0zNTM4NzAyOTUsMTQ0OTcx
-NDMyNywtMTc1ODk0MzE0OSwtMjEzNjQwMTQ0OCwtMTk5NzQ2MT
-cxNywtMTc5NzAzNjY4MCwyNjQyNjE3MTcsLTE5ODQ5NTY4MjMs
-LTEwMzk4OTk1NjQsNTYzMTE2Njk3LDExOTgwNTE5NjNdfQ==
+eyJoaXN0b3J5IjpbLTgyNTg4NzU1NywtMTYyMjE4MDcxNiwtMz
+M4ODcwODkwLC0xOTc3MTM0MjYsLTE5MDk0Njc2MDEsLTM1Mzg3
+MDI5NSwxNDQ5NzE0MzI3LC0xNzU4OTQzMTQ5LC0yMTM2NDAxND
+Q4LC0xOTk3NDYxNzE3LC0xNzk3MDM2NjgwLDI2NDI2MTcxNywt
+MTk4NDk1NjgyMywtMTAzOTg5OTU2NCw1NjMxMTY2OTcsMTE5OD
+A1MTk2M119
 -->
