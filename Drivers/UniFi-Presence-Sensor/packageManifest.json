@@ -9,7 +9,7 @@
   "changelog": "https://github.com/MHedish/Hubitat/blob/main/Drivers/UniFi-Presence-Sensor/CHANGELOG.md",
   "category": "Utility",
   "tags": ["LAN", "Monitoring", "Presence & Location", "Tools & Utilities"],  
-  "releaseNotes": "1.9.1.0 (2026-04-05):  Updated preferences UI and documentation.\n1.9.1.0 (2026-04-05):  Updated event notifications to quiet exeessive webSocketStatus() events; Added notification for WSS closing.",
+  "releaseNotes": "1.9.2.0 (2026-04-11):  Updated preferences UI and documentation.\n1.9.1.0 (2026-04-05):  Updated event notifications to quiet exeessive webSocketStatus() events; Added notification for WSS closing.",
   "drivers": [
     {
       "id": "unifi-presence-controller",
