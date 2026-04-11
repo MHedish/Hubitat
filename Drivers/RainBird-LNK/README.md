@@ -1,6 +1,6 @@
 # 🌧️ Rain Bird LNK/LNK2 WiFi Module Controller (Hubitat Driver)
 
-[![Version](https://img.shields.io/badge/version-0.1.3.5-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.3.15-blue.svg)](./CHANGELOG.md)
 [![Status](https://img.shields.io/badge/release-RC--STABLE-brightgreen.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
@@ -28,9 +28,9 @@ With advanced telemetry, adaptive pacing, and hourly drift correction, it’s de
 
 ---
 
-## 🌟 What’s New in v0.1.3.5
+## 🌟 What’s New in v0.1.3.15
 
-- UI Cleanup; Allow child to pass duration of zero (0) to parent for no endtime while retaining null guard.
+- Fixed clock sync retry loop by suppressing false ±86400-second drift after opcode 11 (Set Time)
 - Fixed availableStations detection on ESP-Me hybrid firmware by retrying legacy opcode 03 when 3A returns ACK-only (003A02).
 
 ---
@@ -209,5 +209,5 @@ License: [Apache 2.0](./LICENSE)
 
 💧 Support development: [paypal.me/MHedish](https://paypal.me/MHedish)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTgxMTU3NDkxN119
+eyJoaXN0b3J5IjpbMTYwNTI4Njk0M119
 -->
