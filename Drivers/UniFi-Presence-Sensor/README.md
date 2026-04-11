@@ -364,7 +364,7 @@ A: Both debug and raw event logging auto-disable after 30 minutes. You can also 
 
 ## 📝 Version History
 See [Changelog](../../changelog.md) for full release notes.  
-Latest release: **v1.9.0.0 (2026-03-21)** – stable release.  
+Latest release: **v1.9.2.0 (2026-04-11)** – stable release.  
 
 ---
 
@@ -373,9 +373,9 @@ Latest release: **v1.9.0.0 (2026-03-21)** – stable release.
 
 © 2026 Marc Hedish
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTMzODg3MDg5MCwtMTk3NzEzNDI2LC0xOT
-A5NDY3NjAxLC0zNTM4NzAyOTUsMTQ0OTcxNDMyNywtMTc1ODk0
-MzE0OSwtMjEzNjQwMTQ0OCwtMTk5NzQ2MTcxNywtMTc5NzAzNj
-Y4MCwyNjQyNjE3MTcsLTE5ODQ5NTY4MjMsLTEwMzk4OTk1NjQs
-NTYzMTE2Njk3LDExOTgwNTE5NjNdfQ==
+eyJoaXN0b3J5IjpbLTE2MjIxODA3MTYsLTMzODg3MDg5MCwtMT
+k3NzEzNDI2LC0xOTA5NDY3NjAxLC0zNTM4NzAyOTUsMTQ0OTcx
+NDMyNywtMTc1ODk0MzE0OSwtMjEzNjQwMTQ0OCwtMTk5NzQ2MT
+cxNywtMTc5NzAzNjY4MCwyNjQyNjE3MTcsLTE5ODQ5NTY4MjMs
+LTEwMzk4OTk1NjQsNTYzMTE2Njk3LDExOTgwNTE5NjNdfQ==
 -->
