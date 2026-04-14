@@ -231,7 +231,7 @@ private parseFirmwareVersion(d){
 private normalizeZoneInput(zone){
 	def fw=device.currentValue("firmwareVersion")?.toString()?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
 	def legacy=isLegacyFirmware(3.0);def hybrid=(fw>=2.9&&fw<3.0);def modern=getCommandSupport("39")&&(fw>=2.9)
-	def maxZones=(state.zoneCount?:zoneCount?:device.currentValue("zoneCount")?.toInteger()?:8)
+	def maxZones=(state.zoneCount?:zoneCount?:device.currentValue("zoneCount")?.toInteger()?:10)
 	def reqZone=(zone?:1).toInteger();def normZone=Math.max(1,Math.min(maxZones,reqZone))
 	def z=[fw:fw,legacy:legacy,hybrid:hybrid,modern:modern,maxZones:maxZones,reqZone:reqZone,normZone:normZone]
 	logDebug"Normalized zone input: requested=${z.reqZone}, final=${z.normZone}, maxZones=${z.maxZones}"
