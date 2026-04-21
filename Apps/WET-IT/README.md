@@ -4,13 +4,13 @@
 *A Hubitat App for Weather-Based Smart Irrigation Using Real Evapotranspiration (ET) Modeling & Scheduling*
 
 ![Platform](https://img.shields.io/badge/Platform-Hubitat-blue) 
-![Version](https://img.shields.io/badge/Version-1.3.1.0-green?t=20260315)
+![Version](https://img.shields.io/badge/Version-1.3.2.0-green?t=20260315)
 ![License](https://img.shields.io/badge/License-Apache_2.0-yellow)
 
-**App Version:** 1.3.1.0
+**App Version:** 1.3.2.0
 **Driver Version:** 1.3.0.0
 **Echo Version:** 1.1.0.0
-**Release Date:** 2026-03-21
+**Release Date:** 2026-04-21
 
 ---
 
@@ -28,7 +28,10 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 
 ### 💡 Highlights
 
-###  🆕 *What’s New in v1.3.1.0* 
+###  🆕 *What’s New in v1.3.2.0* 
+- Corrected 24-hour rain forecast for Open-Meteo, 
+
+####  🆕 *What Was New in v1.3.1.0* 
 - Updated child version detection in verifySystem().  Previous versions only looked for the presence of the child device rather than verifying it was also the correct version.
 - Updated irrigationTick() to use solar cache as authoritative (increases *resolution*) with hub fallback.  The WET-IT solar cache provides all six solar events with one-second resolution rather than the two events Hubitat provides with one-minute resolution.
 - Added notifications when operating in degraded mode.
@@ -420,7 +423,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTQ5MjM0MDQ2Myw5NTQ2MDM1NzcsLTc0Mz
+eyJoaXN0b3J5IjpbMTUxMzEzNDc5OSw5NTQ2MDM1NzcsLTc0Mz
 IyNDgxNSwtMTE5NjUxMDM4NSwtMjU2ODY1NTIsNDYxNDUzMDk1
 LC04NTIwNzg4ODMsMTUwMTczMTU1OCw5NTY1MzkwMzksNjg0Nz
 g4NDkyLDE0OTc0OTgyMDksLTE3MDY0MDYzMDQsNzA2MzY3ODUw
