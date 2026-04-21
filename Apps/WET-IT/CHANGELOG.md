@@ -220,7 +220,7 @@ Added the ability to immediately run the next scheduled program or to skip over 
 
 ---
 
-## ☀️ 1.3.1.0 — Public Release
+### ☀️ 1.3.1.0 — Public Release
 - Updated child version detection in verifySystem().
 - Updated irrigationTick() to use solar cache as authoritative (increases *resolution*) with hub fallback
 - Added notifications when operating in degraded mode.
@@ -229,8 +229,13 @@ Added the ability to immediately run the next scheduled program or to skip over 
 - Removed 'Disable Debug Logging Now' button - incorporated it in detectSettingsChange() to simplify UI.
 - Added retry to try/catch when probing for child driver presence.
 - UI Cleanup
+
+## ☀️ 1.3.2.0 — Public Release
+- Added Base Time to documentation tooltip.
+- Next Program UI updated.
+- Correct
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTc4Mzg1OTk2NywtODQ0NzE5Njg0LC0xMz
+eyJoaXN0b3J5IjpbLTM0NDIwODQ2MCwtODQ0NzE5Njg0LC0xMz
 g3MTI5MDgwLC0xNzI1MTIxODc4LC0xOTI2NDUxMjMsMTIzNDYy
 NjgxMywxMTcyNTg3MTk5LDUyMzAyODIzLC0xMTc0MjMxOTE2LD
 EzODMzODA0NDYsMTcyNTI4NDU2OSwtMTAyOTk3ODQ3LC04MTIw
