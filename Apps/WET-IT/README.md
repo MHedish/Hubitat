@@ -29,7 +29,7 @@ WET-IT provides **per-zone correction factors** that any Hubitat automation (Rul
 ### 💡 Highlights
 
 ###  🆕 *What’s New in v1.3.2.0* 
-- Corrected 24-hour rain forecast for Open-Meteo, 
+- Corrected 24-hour rain forecast for Open-Meteo, OpenWeather, and tomorrow.io
 
 ####  🆕 *What Was New in v1.3.1.0* 
 - Updated child version detection in verifySystem().  Previous versions only looked for the presence of the child device rather than verifying it was also the correct version.
@@ -423,7 +423,7 @@ You can generate your own API Key for Tempest on their [website](https://tempest
 
 > © 2026 Marc Hedish – Licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTUxMzEzNDc5OSw5NTQ2MDM1NzcsLTc0Mz
+eyJoaXN0b3J5IjpbMTI3OTg3NTE0Myw5NTQ2MDM1NzcsLTc0Mz
 IyNDgxNSwtMTE5NjUxMDM4NSwtMjU2ODY1NTIsNDYxNDUzMDk1
 LC04NTIwNzg4ODMsMTUwMTczMTU1OCw5NTY1MzkwMzksNjg0Nz
 g4NDkyLDE0OTc0OTgyMDksLTE3MDY0MDYzMDQsNzA2MzY3ODUw
