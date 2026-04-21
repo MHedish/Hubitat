@@ -15,14 +15,18 @@
 *  1.3.0.4   –– Updated verifyDataChild() to include call checkChildDriver() for version control; removed 'Disable Debug Logging Now' button - incorporated it in detectSettingsChange() to simplify UI. UI cleanup.
 *  1.3.0.5   –– Added retry to try/catch when probing for child driver presence.
 *  1.3.1.0   –– Version bump for public release.
+*  1.3.1.1   –– Added Base Time documentation to tooltip.
+*  1.3.1.2   –– Updated runWeatherUpdate() -- potential seasonal adj bug.
+*  1.3.1.3   –– Next Program UI update; pCount declaration cleanup.
+*  1.3.2.0   –– Corrected 24-rain forecast ingestion openweather,tomorrow, openmeteo; corrected private void resetSoilForZone().
 */
 
 import groovy.transform.Field
 import groovy.json.JsonOutput
 
 @Field static final String APP_NAME="WET-IT"
-@Field static final String APP_VERSION="1.3.1.0"
-@Field static final String APP_MODIFIED="2026-03-21"
+@Field static final String APP_VERSION="1.3.2.0"
+@Field static final String APP_MODIFIED="2026-04-21"
 @Field static final String JSON_SCHEMA="wetit.unified.v1"
 @Field static final String REPO_ROOT="https://github.com/MHedish/Hubitat/blob/main/Apps/WET-IT"
 @Field static final String RAW_ROOT="https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT"
@@ -121,6 +125,11 @@ def mainPage(){
 			"<li><b>📋 Copy Zone Settings</b> – Duplicates configuration from one zone to all others for rapid setup.</li>"+
 			soilHelp+
 			"</ul>"+
+			"<p><b>Base Time</b> – The baseline runtime for a zone under normal watering conditions."+
+			"This is the amount of time the zone typically needs to apply a full watering depth before any seasonal or weather-based adjustments are applied.<br>"+
+			"WET-IT automatically increases or decreases runtime using ET, forecast conditions, and rainfall data, so the Base Time acts as a calibration reference rather than a fixed watering duration.<br>"+
+			"A simple way to determine this value is to run the zone manually until the soil is properly soaked and enter that runtime here.<br>"+
+			"<small><b>Typical starting ranges</b>: Spray heads (10–15 minutes), Rotors (30–60 minutes), Drip irrigation (30–90 minutes).</small></p>"+
 			"<p>Below the zone directory, the advanced <b>Evapotranspiration & Seasonal Settings</b> control how WET-IT models water loss and seasonal scaling.</p>"+
 			"<ul>"+
 			"<li><b>Enable Soil Moisture Tracking</b> – Activates persistent daily soil depletion modeling (similar to Rachio/Hydrawise behavior). Requires Hubitat’s state storage to maintain per-zone memory.</li>"+
@@ -201,7 +210,7 @@ def mainPage(){
 						if(!calcNextProgramEvent(testList))skipBlocked=true
 					}
 				}
-				section("🗓️ Next Scheduled Program<br>${disp}",hideable:true,hidden:false){
+				section("🗓️ Next Scheduled Program<br>${disp}",hideable:true,hidden:true){
 					if(!ap){
 			            def runTitle=settings.resetRunNextConfirm?"⚠️ Confirm Run $btnName Now":"▶️ Run $btnName Now"
 			            if(!settings.resetSkipNextConfirm)input"btnRunNextProgram","button",title:runTitle,width:3
@@ -806,7 +815,7 @@ private void copyZone1ToAll(){
 }
 
 private void copyProgram1ToAll(){
-    Integer pCount=(settings.programCount?:1).toInteger()
+    def pCount=(settings.programCount?:1).toInteger()
     if(pCount<=1){logInfo"copyProgram1ToAll(): nothing to copy";return}
     def startMode=settings["programStartMode_1"]
     def startTime=settings["programStartTime_1"]
@@ -838,9 +847,8 @@ private void resetAdvancedForZone(Integer z){
     logInfo"Reset advanced overrides for zone ${z}"
 }
 
-private void resetSoilForZone(Object... args){
+private void resetSoilForZone(Integer z, BigDecimal pct){
     try{
-        def z=(args.size()>0?args[0]:0)as Integer;def pct=(args.size()>1?args[1]:1.0)as BigDecimal
         pct=Math.min(Math.max(pct,0.0G),1.0G);def k="zoneDepletion_${z}";def tKey="zoneDepletionTs_${z}"
         def oldVal=(state[k]?:0G)as BigDecimal;def newVal=oldVal*(1.0-pct)
         state[k]=newVal;state[tKey]=new Date().format(TS_FMT_LOCAL,location.timeZone)
@@ -958,7 +966,7 @@ private void deleteZone(Integer z){
 }
 
 private void deleteProgram(Integer p){
-    Integer pCount=settings["programCount"]as Integer?:0
+    def pCount=(settings["programCount"]?:0) as Integer
     if(!p||pCount<1){logWarn"⚠️ deleteProgram(): Invalid or empty program list (p=${p}, count=${pCount})";return}
     if(p>pCount){logWarn"⚠️ deleteProgram(): Program ${p} out of range (max=${pCount})";return}
     def pName=settings["programName_${p}"]?:"Program ${p}"
@@ -1019,7 +1027,7 @@ private Map getProgramWindow(Integer p){
 
 private void checkProgramConflicts(){
     try{
-        Integer pCount=(settings.programCount?:0)as Integer;def conflicts=[]
+        def pCount=(settings.programCount?:0)as Integer;def conflicts=[]
         if(pCount<2)return
         (1..pCount).each{Integer p->
             if(!settings.progCheckInactive&&!settings["programActive_${p}"])return
@@ -1209,7 +1217,7 @@ private void cleanupUnusedZoneSettings(){
 	logInfo"🧹 Removed ${stale.size()} stale zone settings (>${zCount})"
 }
 private void cleanupUnusedProgramSettings(){
-	Integer pCount=(settings.programCount?:1)as Integer
+	def pCount=(settings.programCount?:1)as Integer
 	def stale=settings.keySet().findAll{it.startsWith("program")&&it==~/.*_\d+$/ && (it.split('_')[-1]as Integer)>pCount}
 	if(!stale){logDebug"cleanupUnusedProgramSettings(): no stale program settings found";return}
 	stale.each{app.removeSetting(it)};logInfo"🧹 Removed ${stale.size()} stale program settings (>${pCount})"
@@ -1325,16 +1333,17 @@ private Map fetchWeatherOwm(boolean force=false){
     if(!owmApiKey){logWarn"fetchWeatherOwm(): Missing API key";return null}
     String unit=(settings.tempUnits?:'F');def lat=state.geo?.lat;def lon=state.geo?.lon
     def p=[uri:"https://api.openweathermap.org/data/3.0/onecall",query:[lat:lat,lon:lon,exclude:"minutely,hourly,alerts",units:"imperial",appid:owmApiKey]]
+    logDebug"fetchWeatherOwm(): Uri=${p?:'none'}"
     try{
         def r=[:]
         httpGet(p){resp->
             if(resp.status!=200||!resp.data){logWarn"fetchWeatherOwm(): HTTP ${resp.status}, invalid data";return}
-            def d=resp.data.daily?.getAt(0);if(!d){logWarn"fetchWeatherOwm(): Missing daily[0]";return}
+            def d=resp.data.daily?.getAt(0);if(!d){logWarn"fetchWeatherOwm(): Missing daily[1]";return}
             def tsField=d.dt?:resp.data.current?.dt
             def providerTs=(tsField?(new Date(tsField*1000L)).format(TS_FMT_LOCAL,location.timeZone):null)
             BigDecimal tMaxF=(d.temp?.max?:0)as BigDecimal,tMinF=(d.temp?.min?:tMaxF)as BigDecimal
             BigDecimal tMax=convTemp(tMaxF,'F',unit),tMin=convTemp(tMinF,'F',unit)
-            BigDecimal rainMm=(d.rain?:0)as BigDecimal,rainIn=etMmToIn(rainMm)
+            BigDecimal rainIn=etMmToIn((d.rain?:0)as BigDecimal)
             BigDecimal windSpeedF=(resp.data?.current?.wind_speed?:0)as BigDecimal
             String windDir=(resp.data?.current?.wind_deg?:'')?.toString()
             r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,windSpeed:windSpeedF,windDir:windDir,windUnit:'mph',unit:unit,providerTs:providerTs]
@@ -1396,6 +1405,7 @@ private Map fetchWeatherTomorrow(boolean force=false){
     if(!tioApiKey){logWarn"fetchWeatherTomorrow(): Missing API key";return null}
     String unit=(settings.tempUnits?:'F');def lat=state.geo?.lat;def lon=state.geo?.lon
     def p=[uri:"https://api.tomorrow.io/v4/weather/forecast",query:[location:"${lat},${lon}",apikey:tioApiKey,units:"imperial",timesteps:"1d,1h"],headers:["User-Agent":"Hubitat-WET-IT"]]
+    logDebug"fetchWeatherTomorrow(): Uri=${p?:'none'}"
     try{
         def r=[:]
         httpGet(p){resp->
@@ -1405,18 +1415,26 @@ private Map fetchWeatherTomorrow(boolean force=false){
             def ts=dNode?.time?:resp.data?.timelines?.daily?.getAt(0)?.startTime
             def providerTs=ts?Date.parse(TS_FMT_ISO,ts).format(TS_FMT_LOCAL,location.timeZone):null
             def hourly=resp.data?.timelines?.hourly
-            BigDecimal tMaxF=(v.temperatureMax?:0)as BigDecimal,tMinF=(v.temperatureMin?:tMaxF)as BigDecimal
-            BigDecimal tMax=convTemp(tMaxF,'F',unit),tMin=convTemp(tMinF,'F',unit)
-            BigDecimal rainMm=(v.precipitationSum?:0)as BigDecimal,rainIn=etMmToIn(rainMm)
-            BigDecimal windSpeedF=0;String windDir=''
+            BigDecimal tMaxF=(v.temperatureMax?:0)as BigDecimal;BigDecimal tMinF=(v.temperatureMin?:tMaxF)as BigDecimal
+            BigDecimal tMax=convTemp(tMaxF,'F',unit);BigDecimal tMin=convTemp(tMinF,'F',unit)
+            BigDecimal rainIn=(v.rainAccumulationSum?:0)as BigDecimal
+            BigDecimal tMeanF=((tMaxF+tMinF)/2G).setScale(2,BigDecimal.ROUND_HALF_UP)
+            BigDecimal solarRadiationMJ=(v.solarRadiation?:0)as BigDecimal
+            BigDecimal rhMin=(v.humidityMin?:0)as BigDecimal;BigDecimal rhMax=(v.humidityMax?:0)as BigDecimal
+            BigDecimal windSpeedF=0
+            String windDir=''
             if(hourly&&hourly.size()>0){
-                def now=new Date();def cutoff=now+3*60*60*1000;def near=hourly.find{h->try{Date.parse(TS_FMT_ISO,h.startTime)<=cutoff}catch(ex){false}}
+                def now=new Date();def cutoff=now+3*60*60*1000
+                def near=hourly.find{h->try{Date.parse(TS_FMT_ISO,h.startTime)<=cutoff}catch(ex){false}}
                 if(!near)near=hourly[0]
-                def hv=near?.values?:[:];windSpeedF=(hv.windSpeed?:hv.windSpeedAvg?:hv.windSpeedMax?:0)as BigDecimal;windDir=(hv.windDirection?:hv.windDirectionAvg?:'')?.toString()
+                def hv=near?.values?:[:]
+                windSpeedF=(hv.windSpeed?:hv.windSpeedAvg?:hv.windSpeedMax?:0)as BigDecimal;windDir=(hv.windDirection?:hv.windDirectionAvg?:'')?.toString()
             }else logWarn"fetchWeatherTomorrow(): Missing hourly timeline"
-            r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,windSpeed:windSpeedF,windDir:windDir,windUnit:'mph',unit:unit,providerTs:providerTs]
+            BigDecimal windMps=((windSpeedF?:0)/2.237G*0.748G).setScale(3,BigDecimal.ROUND_HALF_UP)
+            r=[tMaxF:tMaxF,tMinF:tMinF,tMeanF:tMeanF,tMax:tMax,tMin:tMin,rainIn:rainIn,windSpeed:windSpeedF,windMps:windMps,windDir:windDir,solarRadiationMJ:solarRadiationMJ,rhMin:rhMin,rhMax:rhMax,windUnit:'mph',unit:unit,providerTs:providerTs]
             childEmitEvent(getDataChild(),"wxForecast",WX_LABEL[atomicState.wxSource],"${WX_LABEL[atomicState.wxSource]}: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rainIn=${rainIn}, wind=${windSpeedF}${unit=='C'?'kph':'mph'}")
-        };return r
+        }
+        return r
     }catch(e){logError"fetchWeatherTomorrow(): ${e.message}";return null}
 }
 
@@ -1424,32 +1442,40 @@ private Map fetchWeatherTempest(boolean force=false){
     if(!tpwsApiKey){logWarn"fetchWeatherTempest(): Missing API key";return null}
     String unit=(settings.tempUnits?:'F');def lat=state.geo?.lat;def lon=state.geo?.lon
     try{
-        def r=[:];def sParams=[uri:"https://swd.weatherflow.com/swd/rest/stations",query:[token:tpwsApiKey],headers:["User-Agent":"Hubitat-WET-IT"]]
+        def r=[:]
+        def sParams=[uri:"https://swd.weatherflow.com/swd/rest/stations",query:[token:tpwsApiKey],headers:["User-Agent":"Hubitat-WET-IT"]]
+        logDebug"fetchWeatherTempest(): sParams=${sParams?:'none'}"
         httpGet(sParams){resp->
             if(resp?.status!=200||!resp?.data?.stations){logWarn"fetchWeatherTempest(): HTTP ${resp?.status}, invalid station data";return}
-            def station=resp.data.stations[0];if(!station){logWarn"fetchWeatherTempest(): No stations available";return}
-            Integer stationId=station.station_id?:null;if(!stationId){logWarn"fetchWeatherTempest(): Missing station ID";return}
+            def station=resp.data.stations[0]
+            if(!station){logWarn"fetchWeatherTempest(): No stations available";return}
+            Integer stationId=station.station_id?:null
+            if(!stationId){logWarn"fetchWeatherTempest(): Missing station ID";return}
             def stationName=station.public_name?:station.name?:'Unnamed'
-            def sLat=station.latitude?:0,sLon=station.longitude?:0,sTz=station.timezone?:'local'
+            def sLat=station.latitude?:0;def sLon=station.longitude?:0
+            def sTz=station.timezone?:'local'
             atomicState.tpwsLocation=[name:stationName,lat:sLat,lon:sLon,tz:sTz]
             atomicState.wxLocation="Tempest Station '${stationName}' (${sLat},${sLon})"
             def oParams=[uri:"https://swd.weatherflow.com/swd/rest/observations/station/${stationId}",query:[token:tpwsApiKey],headers:["User-Agent":"Hubitat-WET-IT"]]
             httpGet(oParams){obs->
                 if(obs?.status!=200||!obs?.data?.obs){logWarn"fetchWeatherTempest(): HTTP ${obs?.status}, invalid observation data";return}
-                def o=obs.data.obs[0];if(!o){logWarn"fetchWeatherTempest(): No observation payload";return}
-                BigDecimal tC=(o.air_temperature?:0)as BigDecimal
-                BigDecimal tF=convTemp(tC,'C','F')
-                BigDecimal tMaxF=tF,tMinF=tF
-                BigDecimal tMax=convTemp(tMaxF,'F',unit),tMin=convTemp(tMinF,'F',unit)
-                BigDecimal rainMm=(o.precip_accum_local_day?:0)as BigDecimal
-                BigDecimal rainIn=etMmToIn(rainMm)
-                BigDecimal windSpeed=((o.wind_avg?:0)as BigDecimal)*2.237
-				String windDir=(o.wind_direction?:'')?.toString()
-				String ts=o.timestamp?new Date((o.timestamp as Long)*1000L).format(TS_FMT_LOCAL,location.timeZone):null
-				r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:rainIn,windSpeed:windSpeed,windUnit:'mph',windDir:windDir,unit:unit,providerTs:ts]
+                def o=obs.data.obs[0]
+                if(!o){logWarn"fetchWeatherTempest(): No observation payload";return}
+                BigDecimal tC=(o.air_temperature?:0)as BigDecimal;BigDecimal tF=convTemp(tC,'C','F')
+                BigDecimal tMaxF=tF;BigDecimal tMinF=tF
+                BigDecimal tMax=convTemp(tMaxF,'F',unit);BigDecimal tMin=convTemp(tMinF,'F',unit)
+                BigDecimal rainMm=(o.precip_accum_local_day?:0)as BigDecimal;BigDecimal rainIn=etMmToIn(rainMm)
+                BigDecimal windSpeed=((o.wind_avg?:0)as BigDecimal)*2.237;BigDecimal windMps=((windSpeed?:0)/2.237G).setScale(3,BigDecimal.ROUND_HALF_UP)
+                BigDecimal tMeanF=((tMaxF+tMinF)/2G).setScale(2,BigDecimal.ROUND_HALF_UP)
+                BigDecimal solarRadiationMJ=((o.solar_radiation?:0)as BigDecimal)*0.0864G
+                BigDecimal rhMin=(o.relative_humidity?:0)as BigDecimal;BigDecimal rhMax=rhMin
+                String windDir=(o.wind_direction?:'')?.toString()
+                String ts=o.timestamp?new Date((o.timestamp as Long)*1000L).format(TS_FMT_LOCAL,location.timeZone):null
+                r=[tMaxF:tMaxF,tMinF:tMinF,tMeanF:tMeanF,tMax:tMax,tMin:tMin,rainIn:rainIn,windSpeed:windSpeed,windMps:windMps,windDir:windDir,solarRadiationMJ:solarRadiationMJ,rhMin:rhMin,rhMax:rhMax,windUnit:'mph',unit:unit,providerTs:ts]
                 childEmitEvent(getDataChild(),"wxForecast",WX_LABEL[atomicState.wxSource],"${WX_LABEL[atomicState.wxSource]}: t=${tF}°F, rainIn=${rainIn}, wind=${r.windSpeed.setScale(1,BigDecimal.ROUND_HALF_UP)}${unit=='C'?'kph':'mph'}")
             }
-        };return r
+        }
+        return r
     }catch(e){logError"fetchWeatherTempest(): ${e.message}";return null}
 }
 
@@ -1458,19 +1484,22 @@ private Map fetchWeatherOpenMeteo(boolean force=false){
     if(lat==null||lon==null){logWarn"fetchWeatherOpenMeteo(): Missing lat/lon";return null}
     String unit=(settings.tempUnits?:'F')
     try{
-        def r=[:];def p=[uri:"https://api.open-meteo.com/v1/forecast",query:[latitude:lat,longitude:lon,daily:"temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max",temperature_unit:(unit=='C'?'celsius':'fahrenheit'),windspeed_unit:(unit=='C'?'kph':'mph'),precipitation_unit:(unit=='C'?'mm':'inch'),timezone:"auto"]]
+        def r=[:];def p=[uri:"https://api.open-meteo.com/v1/forecast",query:[latitude:lat,longitude:lon,daily:"temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,shortwave_radiation_sum,relative_humidity_2m_min,relative_humidity_2m_max",temperature_unit:(unit=='C'?'celsius':'fahrenheit'),wind_speed_unit:(unit=='C'?'kph':'mph'),precipitation_unit:(unit=='C'?'mm':'inch'),timezone:"auto"]]
+        logDebug"fetchWeatherOpenMeteo(): Uri=${p?:'none'}"
         httpGet(p){resp->
             if(resp?.status!=200||!resp?.data?.daily){logWarn"fetchWeatherOpenMeteo(): HTTP ${resp?.status}, invalid data";return}
             def d=resp.data.daily;def idx=0
-            BigDecimal tMax=(d.temperature_2m_max?.getAt(idx)?:0)as BigDecimal
-            BigDecimal tMin=(d.temperature_2m_min?.getAt(idx)?:tMax)as BigDecimal
+            BigDecimal tMax=(d.temperature_2m_max?.getAt(idx)?:0)as BigDecimal;BigDecimal tMin=(d.temperature_2m_min?.getAt(idx)?:tMax)as BigDecimal
             BigDecimal rain=(d.precipitation_sum?.getAt(idx)?:0)as BigDecimal
             BigDecimal wind=(d.windspeed_10m_max?.getAt(idx)?:0)as BigDecimal
-            BigDecimal tMaxF=(unit=='C')?convTemp(tMax,'C','F'):tMax
-            BigDecimal tMinF=(unit=='C')?convTemp(tMin,'C','F'):tMin
+            BigDecimal tMaxF=(unit=='C')?convTemp(tMax,'C','F'):tMax;BigDecimal tMinF=(unit=='C')?convTemp(tMin,'C','F'):tMin;BigDecimal tMeanF=((tMaxF+tMinF)/2G).setScale(2,BigDecimal.ROUND_HALF_UP)
+            BigDecimal solarRadiationMJ=(d.shortwave_radiation_sum?.getAt(idx)?:0)as BigDecimal
+            BigDecimal rhMin=(d.relative_humidity_2m_min?.getAt(idx)?:0)as BigDecimal;BigDecimal rhMax=(d.relative_humidity_2m_max?.getAt(idx)?:0)as BigDecimal
+            BigDecimal windMps=((wind?:0)/2.237G*0.748G).setScale(3,BigDecimal.ROUND_HALF_UP)
             String ts=d.time?.getAt(idx)?Date.parse(DATE_FMT,d.time[idx]).format(TS_FMT_LOCAL,location.timeZone):null
-            r=[tMaxF:tMaxF,tMinF:tMinF,tMax:tMax,tMin:tMin,rainIn:(unit=='C'?etMmToIn(rain):rain),windSpeed:wind,windDir:"",unit:unit,providerTs:ts]
-            childEmitEvent(getDataChild(),"wxForecast",WX_LABEL[atomicState.wxSource],"${WX_LABEL[atomicState.wxSource]}: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rain=${rain}${unit=='C'?'mm':'in'}, wind=${wind}${unit=='C'?'kph':'mph'}")}
+            r=[tMaxF:tMaxF,tMinF:tMinF,tMeanF:tMeanF,tMax:tMax,tMin:tMin,rainIn:(unit=='C'?etMmToIn(rain):rain),windSpeed:wind,windMps:windMps,windDir:"",solarRadiationMJ:solarRadiationMJ,rhMin:rhMin,rhMax:rhMax,unit:unit,providerTs:ts]
+            childEmitEvent(getDataChild(),"wxForecast",WX_LABEL[atomicState.wxSource],"${WX_LABEL[atomicState.wxSource]}: tMax=${tMax}°${unit}, tMin=${tMin}°${unit}, rain=${rain}${unit=='C'?'mm':'in'}, wind=${wind}${unit=='C'?'kph':'mph'}")
+        }
         return r
     }catch(e){logError"fetchWeatherOpenMeteo(): ${e.message}";return null}
 }
@@ -1545,7 +1574,7 @@ private Map detectFreezeAlert(Map wx){
 
 private Map detectRainAlert(Map wx){
     String unit=(settings.tempUnits?:'F');String alertText="None";boolean alert=false
-    BigDecimal rain=(wx?.rain24h?:wx?.precip24h?:0)as BigDecimal
+    BigDecimal rain=(wx?.rain24h?:wx?.precip24h?:wx?.rainIn?:0)as BigDecimal
     BigDecimal threshold=(settings.rainSkipThreshold?:(unit=='C'?3.0:0.125))as BigDecimal
     if(rain>=threshold){alert=true;alertText="Forecast ${rain.setScale(2,BigDecimal.ROUND_HALF_UP)}${unit=='C'?'mm':'in'} ≥ ${threshold}${unit=='C'?'mm':'in'}"}
     return [rainAlert:alert,rainAlertText:alertText,rainForecast:rain,unit:unit]
@@ -1590,7 +1619,7 @@ private runWeatherUpdate(){
     def nowStr=new Date().format(TS_FMT_LOCAL,tz)
     atomicState.wxChecked=nowStr
     if(wx.providerTs){atomicState.wxTimestamp=wx.providerTs}
-	def sd=atomicState.solarData?.days?.get(new Date().format(DATE_FMT,location.timeZone))?:[:];def today=new Date().format(DATE_FMT,tz);def s=sd?.days?.get(today)
+	def today=new Date().format(DATE_FMT,tz);def s=atomicState.solarData?.days?.get(today);if(!s)logWarn"⚠️ Solar cache missing for ${today}"
 	Date sr=s?.sunrise?Date.parse(TS_FMT_ISO,s.sunrise):getSunriseAndSunset().sunrise
 	Date ss=s?.sunset?Date.parse(TS_FMT_ISO,s.sunset):getSunriseAndSunset().sunset
 	Long dayLen=s?.dayLength?:((sr&&ss)?((ss.time-sr.time)/1000L):null)
@@ -2051,7 +2080,7 @@ private void irrigationTick(){
 		if(settings.schedulingActive?.toString()!="true"){logDebug"⛔ Scheduling inactive — skipping tick";return}
 		atomicState.saturationSkipPrograms=atomicState.saturationSkipPrograms?.findAll{it<=settings.programCount}
 		def skips=atomicState.skipProgramInstances;if(skips)atomicState.skipProgramInstances=skips=skips.findAll{it.epoch>now()}
-		def now=new Date();Integer pCount=(settings.programCount?:0)as Integer;if(pCount<1)return
+		def now=new Date();def pCount=(settings.programCount?:0)as Integer;if(pCount<1)return
 		def solar=atomicState.solarData?.days?.get(new Date().format(DATE_FMT,location.timeZone))
 		Date sunrise=solar?.sunrise?Date.parse(TS_FMT_ISO,solar.sunrise):null
 		Date sunset=solar?.sunset?Date.parse(TS_FMT_ISO,solar.sunset):null
@@ -2108,7 +2137,7 @@ private void irrigationTick(){
 
 private Map calcNextProgramEvent(List skipOverride=null){
 	if(settings.schedulingActive?.toString()!="true")return null
-	Integer pCount=(settings.programCount?:0)as Integer;if(pCount<1)return null
+	def pCount=(settings.programCount?:0)as Integer;if(pCount<1)return null
 	def tz=location?.timeZone?:TimeZone.getDefault();long ts=now();long today0=new Date().clearTime().time;def cal=Calendar.getInstance(tz)
 	def skips=(skipOverride!=null)?skipOverride:atomicState.skipProgramInstances;if(skips&&skipOverride==null)atomicState.skipProgramInstances=skips=skips.findAll{it.epoch>ts}
 	def df=new java.text.SimpleDateFormat(DATE_FMT);df.setTimeZone(tz);def dow=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
@@ -2329,7 +2358,7 @@ private Boolean stopActiveProgram(Map data=null){
 
 private void calcProgramDurations(String reason='manual'){
     def zoneDataset=atomicState.zoneDataset?:[]
-    Integer pCount=(settings.programCount?:0)as Integer
+    def pCount=(settings.programCount?:0)as Integer
     (1..pCount).each{Integer p->
         def zones=settings["programZones_${p}"]?:[]
         def adjMode=(settings["programAdjustMode_${p}"]?:'none').toLowerCase()
@@ -2377,7 +2406,7 @@ def skipNextProgram(){
 /* ---------- Detect Settings Change ---------- */
 private void detectSettingsChange(String page){
 	try{
-		Integer pCount=(settings.programCount?:0)as Integer
+		def pCount=(settings.programCount?:0)as Integer
 		for(int p=1;p<=pCount;p++){
 			def k="programInterval_${p}";def v=settings[k]
 			if(v instanceof CharSequence){
