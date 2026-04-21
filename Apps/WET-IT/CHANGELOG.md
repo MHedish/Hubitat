@@ -1,5 +1,5 @@
 # 🧾 WET-IT — Unified Changelog  
-> Covers development from v0.4.0.0 through v1.3.1.0
+> Covers development from v0.4.0.0 through v1.3.2.0
 > Major architectural and stability milestones.
 
 ---
@@ -165,7 +165,7 @@
     -   Annotates diagnostics for stale forecasts
     -   Optional system notifications for diurnal forecast loss
     -   User-controlled policy to suspend program scheduling when forecast authority is lost
--   Improved diagnostics, verification, and notification consistency across app and driver.
+-   Improved diagnostics, verification, and notification consistency across the app and driver.
 -   Removed legacy and deprecated weather logic; completed consistency pass on geo, ET, and weather data flow.
 
 ## ☀️ 1.1.0.0 — Public Release
@@ -236,9 +236,9 @@ Added the ability to immediately run the next scheduled program or to skip over 
 - Corrected 24-hour rain forecast for Open-Meteo, OpenWeather, and tomorrow.io
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTY5Mzc0NTc3MywtODQ0NzE5Njg0LC0xMz
-g3MTI5MDgwLC0xNzI1MTIxODc4LC0xOTI2NDUxMjMsMTIzNDYy
-NjgxMywxMTcyNTg3MTk5LDUyMzAyODIzLC0xMTc0MjMxOTE2LD
-EzODMzODA0NDYsMTcyNTI4NDU2OSwtMTAyOTk3ODQ3LC04MTIw
-NzIzNTgsMTg0NzAzNzgwM119
+eyJoaXN0b3J5IjpbOTY2MTQ5NTY3LC04NDQ3MTk2ODQsLTEzOD
+cxMjkwODAsLTE3MjUxMjE4NzgsLTE5MjY0NTEyMywxMjM0NjI2
+ODEzLDExNzI1ODcxOTksNTIzMDI4MjMsLTExNzQyMzE5MTYsMT
+M4MzM4MDQ0NiwxNzI1Mjg0NTY5LC0xMDI5OTc4NDcsLTgxMjA3
+MjM1OCwxODQ3MDM3ODAzXX0=
 -->
