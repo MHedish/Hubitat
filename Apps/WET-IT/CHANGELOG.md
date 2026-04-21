@@ -233,9 +233,10 @@ Added the ability to immediately run the next scheduled program or to skip over 
 ## ☀️ 1.3.2.0 — Public Release
 - Added Base Time to documentation tooltip.
 - Next Program UI updated.
-- Correct
+- Corrected 24-hour rain forecast for Open-Meteo, OpenWeather, and tomorrow.io
+
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTM0NDIwODQ2MCwtODQ0NzE5Njg0LC0xMz
+eyJoaXN0b3J5IjpbMTY5Mzc0NTc3MywtODQ0NzE5Njg0LC0xMz
 g3MTI5MDgwLC0xNzI1MTIxODc4LC0xOTI2NDUxMjMsMTIzNDYy
 NjgxMywxMTcyNTg3MTk5LDUyMzAyODIzLC0xMTc0MjMxOTE2LD
 EzODMzODA0NDYsMTcyNTI4NDU2OSwtMTAyOTk3ODQ3LC04MTIw
