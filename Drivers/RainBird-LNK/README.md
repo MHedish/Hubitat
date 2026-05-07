@@ -30,10 +30,10 @@ With advanced telemetry, adaptive pacing, and hourly drift correction, it’s de
 
 ## 🌟 What’s New in v1.0.0.0
 
-- Production Release
-- Verified against both LNK and LNK/2 hardwar
-- Full support for noncontiguous zone numbering 
-- Added dynamic runtime controller-state opcode-family inference (4C vs 3F)
+- Production Release.
+- Verified against both LNK and LNK/2 hardware.
+- Full support for noncontiguous zone numbering for ESP-Me expansion modules.
+- Elimination of 503 Service Unavailable errors on older hardware.
 
 ---
 
@@ -212,6 +212,6 @@ License: [Apache 2.0](./LICENSE)
 
 💧 Support development: [paypal.me/MHedish](https://paypal.me/MHedish)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTI2ODE2NjUwNCw1MDc2NzM5MCwtOTU3MT
+eyJoaXN0b3J5IjpbMTM3Nzg0MTk3Myw1MDc2NzM5MCwtOTU3MT
 gwNDI1XX0=
 -->
