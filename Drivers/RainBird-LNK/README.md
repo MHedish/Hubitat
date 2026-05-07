@@ -1,7 +1,7 @@
 # 🌧️ Rain Bird LNK/LNK2 WiFi Module Controller (Hubitat Driver)
 
 [![Version](https://img.shields.io/badge/version-1.0.0.0-blue.svg)](./CHANGELOG.md)
-[![Status](https://img.shields.io/badge/release-RC--STABLE-brightgreen.svg)](./CHANGELOG.md)
+[![Status](https://img.shields.io/badge/release-Production-brightgreen.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
 
@@ -28,9 +28,9 @@ With advanced telemetry, adaptive pacing, and hourly drift correction, it’s de
 
 ---
 
-## 🌟 What’s New in v0.1.3.15
+## 🌟 What’s New in v1.0.0.0
 
-- Fixed clock sync retry loop by suppressing false ±86400-second drift after opcode 11 (Set Time)
+- Prod
 - Improved command support probing reliability by retrying ACK-only opcode 04XX responses.
 - Hardened opcode 04XX command-support detection
 - Added dynamic runtime controller-state opcode-family inference (4C vs 3F)
@@ -212,5 +212,6 @@ License: [Apache 2.0](./LICENSE)
 
 💧 Support development: [paypal.me/MHedish](https://paypal.me/MHedish)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNTA3NjczOTAsLTk1NzE4MDQyNV19
+eyJoaXN0b3J5IjpbMjA4NTE2NDk2Miw1MDc2NzM5MCwtOTU3MT
+gwNDI1XX0=
 -->
