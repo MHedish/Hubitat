@@ -31,13 +31,24 @@
 *  0.1.3.6  –– Fixed adapter firmware probe using incorrect deviceIp variable when 3A→03 fallback path executed.
 *  0.1.3.7  –– Corrected httpGet()
 *  0.1.3.8  –– Refactored firmwarVersion to controllerFirmwareVersion and adapterFirmwareVersion
-*  0.1.3.9  –– Added automatic moduleFirmwareVersion detection with status.json → opcode 03 fallback and corrected hybrid firmware attribution.
+*  0.1.3.9  –– Added automatic moduleProtocolVersion detection with status.json → opcode 03 fallback and corrected hybrid firmware attribution.
 *  0.1.3.10 –– Increased manual zone range from 16 to 22; Fixed internal zone range from fixed to dynamic (zoneCount).
 *  0.1.3.11 –– Updated zonePref description (only use for fallback).
 *  0.1.3.12 –– Fixed clock sync retry loop by suppressing false ±86400-second drift after opcode 11 (Set Time) across firmware variants while preserving DST and legitimate drift correction.
 *  0.1.3.13 –– Improved command support probing reliability by retrying ACK-only opcode 04XX responses to reduce intermittent unknown (?) capability results across firmware variants.
 *  0.1.3.14 –– Hardened opcode 04XX command-support detection with deterministic retry after ACK-only responses to eliminate intermittent false negatives across legacy, hybrid, and LNK2 firmware variants.
 *  0.1.3.15 –– Added dynamic runtime controller-state opcode-family inference (4C vs 3F) eliminating capability-probe ambiguity and stabilizing refresh behavior across legacy, hybrid, and LNK2 firmware variants.
+*  0.1.3.16 –– Added guards to testAllSupportedCommands() and getAllProgramSchedules() to help reduce 503 (controller busy) errors.
+*  0.1.3.17 –– Fixed multi-byte station-mask decoding (83 response) and active-zone parsing (BF response) to correctly support expansion modules (>8 zones); improved ACK handling for hybrid 2.9 firmware; resolved missing availableStations and zoneCount attributes on some controllers.
+*  0.1.3.18 –– Improved station topology handling to support non-contiguous zone numbering on ESP-ME expansion-module configurations (e.g., stations 1–7 + 11–13).
+*  0.1.3.19 –– Fix advanceZone() behavior on ESP-ME 2.9 controllers by emulating front-panel advance traversal using availableStations instead of opcode 42, restoring correct sparse-slot sequencing (e.g. 7→11).
+*  0.1.3.20 –– Restored adaptive transport pacing in sendRainbirdCommand() using pauseExecution(delayMs) to prevent /stick session collisions and eliminate 503 errors on first-generation LNK modules during initialization and capability probing.
+*  0.1.3.21 –– Reverted
+*  0.1.3.22 –– Restore legacy initialize() probe cadence to prevent /stick session saturation on first-generation LNK modules; eliminates startup 503 errors while preserving modern sparse-topology and multi-byte mask support.
+*  0.1.3.23 –– Move capability and telemetry probes out of initialize() into refresh() to restore first-generation LNK session stability while preserving automatic controller feature discovery.
+*  0.1.3.24 –– Restore full first-generation LNK compatibility by correcting initialization probe cadence, hybrid-firmware opcode routing, and 04XX00 capability probing envelope; resolves 503 transport saturation while preserving LNK2 behavior and sparse station topology handling.
+*  0.1.3.25 –– Replace remaining transient state variables with atomicState equivalents to improve refresh lifecycle consistency and eliminate unnecessary persistent state usage.
+*  1.0.0.0  –– Production release.
 */
 
 import groovy.transform.Field
@@ -50,20 +61,20 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "0.1.3.15"
-@Field static final String DRIVER_MODIFIED = "2026.04.11"
-@Field static final String PAD = "\u0016"
-@Field static final int BLOCK_SIZE = 16
+@Field static final String DRIVER_VERSION  = "1.0.0.0"
+@Field static final String DRIVER_MODIFIED = "2026.05.07"
+@Field static final String PAD="\u0016"
+@Field static final int BLOCK_SIZE=16
 @Field static int delayMs=150
 @Field static int minDelay=50
 @Field static int maxDelay=500
 @Field static int successStreak=0
 @Field static Boolean reconnoiter=false
 @Field static Long lastRefreshEpoch=0
-@Field static Boolean cmdBusy = false
+@Field static Boolean cmdBusy=false
 @Field static final Integer REFRESH_GUARD_MS=15000 // debounce window (15s default; extend to 45000ms if needed)
 @Field static final MessageDigest SHA256=MessageDigest.getInstance("SHA-256")
-@Field static final Cipher AES_CIPHER=Cipher.getInstance("AES/CBC/NoPadding", "SunJCE")
+@Field static final Cipher AES_CIPHER=Cipher.getInstance("AES/CBC/NoPadding","SunJCE")
 
 metadata {
     definition(
@@ -94,7 +105,7 @@ metadata {
 		attribute "lastEventTime","string"
         attribute "lastSync","string"
         attribute "model","string"
-		attribute "moduleFirmwareVersion","string"
+		attribute "moduleProtocolVersion","string"
         attribute "programScheduleSupport","boolean"
         attribute "rainDelay","number"
 		attribute "rainSensorState","enum",["bypassed","dry","wet"]
@@ -163,10 +174,10 @@ def installed(){log.info "Installed. ${driverInfoString()}";configure()}
 def updated(){logInfo "Preferences updated.";unschedule();configure()}
 def configure(){logInfo "Configured.";zoneCount=zonePref;unschedule();initialize()}
 def initialize(){
-	reconnoiter=true;state.failCount=0;emitEvent("driverInfo",driverInfoString());logDebug"Controller IP = ${ipAddress}, Password = ${password?.replaceAll(/./, '*')}"
+	reconnoiter=true;atomicState.failCount=0;emitEvent("driverInfo",driverInfoString());logDebug"Controller IP = ${ipAddress}, Password = ${password?.replaceAll(/./, '*')}"
 	if(ipAddress&&password){
 		unschedule(autoDisableDebugLogging);if(logEnable)runIn(1800,autoDisableDebugLogging)
-		driverStatus();getControllerIdentity();getCommandSupport("4C");getCommandSupport("3F");getModuleFirmwareVersion();scheduleRefresh();reconnoiter=false;runInMillis(500,"refresh")
+		getControllerIdentity();scheduleRefresh();reconnoiter=false;runInMillis(500,"refresh")
 	}else logWarn"Cannot initialize. Preferences must be set."
 }
 
@@ -180,7 +191,7 @@ private driverStatus(String controllerContext=null){
     }
     def baseStatus=results.join(" | ")
     if(controllerContext)baseStatus+=" | ${controllerContext}"
-    def fails=state.failCount?:0
+    def fails=atomicState.failCount?:0
     if(fails>3)baseStatus+=" | Network Degraded (${fails} fails)"
     else if(fails>0)baseStatus+=" | ${fails} recent fail${fails>1?'s':''}"
     return baseStatus
@@ -217,14 +228,19 @@ private getCommandSupport(cmdToTest="4A"){
 }
 
 def testAllSupportedCommands(){
+	if(cmdBusy){logWarn"Diagnostic command skipped; another command already in progress";return}
+	if(reconnoiter){logWarn"Diagnostic command skipped during refresh cycle";return}
 	try{
 		logInfo"Running full command and firmware diagnostic..."
 		def r=parseIfString(sendRainbirdCommand("03",1),"diagnosticFirmwareReport");def d=r?.result?.data
-		def fw=(d?.size()>=6)?parseFirmwareVersion(d):'unknown';emitEvent("moduleFirmwareVersion",fw,"Module firmware ${fw}")
-		try{
-			def mv='unavailable';httpGet([uri:"http://${ipAddress}/irrigation/status.json",timeout:5]){resp->mv=resp?.data?.ver?:'unavailable'}
-			emitEvent("moduleFirmwareVersion",mv,"LNK/LNK2 module firmware ${mv}")
-		}catch(e){logDebug"Module firmware check failed: ${e.message}"}
+		def fw=(d?.size()>=6)?parseFirmwareVersion(d):'unknown';emitEvent("moduleProtocolVersion",fw,"Module protocol ${fw}")
+		def mv=device.currentValue("moduleProtocolVersion")?:fw
+		if(!mv||mv=="unknown"||mv=="unavailable"){
+			try{
+				httpGet([uri:"http://${ipAddress}/irrigation/status.json",timeout:5]){resp->mv=resp?.data?.ver?:'unavailable'}
+				emitEvent("moduleProtocolVersion",mv,"LNK/LNK2 module protocol ${mv}")
+			}catch(e){logDebug"Module protocol check failed: ${e.message}"}
+		}
 		def cmds=["02","03","04","05","10","12","4C","3F","30","32","36","37","38","39","3A","40","42","3E","48","49","4A","4B"];def results=[:]
 		cmds.each{c->try{
 			def rr=parseIfString(sendRainbirdCommand("04${c}00",2),"testCommandSupport-${c}");def dd=rr?.result?.data
@@ -256,9 +272,10 @@ private parseFirmwareVersion(d){
 private normalizeZoneInput(zone){
 	def fw=device.currentValue("controllerFirmwareVersion")?.toString()?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
 	def legacy=isLegacyFirmware(3.0);def hybrid=(fw>=2.9&&fw<3.0);def modern=getCommandSupport("39")&&(fw>=2.9)
-	def maxZones=device.currentValue("zoneCount").toInteger()
-	def reqZone=(zone?:1).toInteger();def normZone=Math.max(1,Math.min(maxZones,reqZone))
-	def z=[fw:fw,legacy:legacy,hybrid:hybrid,modern:modern,maxZones:maxZones,reqZone:reqZone,normZone:normZone]
+	def validZones=device.currentValue("availableStations")?.tokenize(",")*.toInteger()
+	def maxZones=validZones?validZones.max():(device.currentValue("zoneCount")?.toInteger()?:22)
+	def reqZone=(zone?:1).toInteger();def normZone=validZones?(validZones.contains(reqZone)?reqZone:0):Math.max(1,Math.min(maxZones,reqZone))
+	def z=[fw:fw,legacy:legacy,hybrid:hybrid,modern:modern,maxZones:maxZones,reqZone:reqZone,normZone:normZone,validZones:validZones]
 	logDebug"Normalized zone input: requested=${z.reqZone}, final=${z.normZone}, maxZones=${z.maxZones}"
 	return z
 }
@@ -268,30 +285,27 @@ def runZone(zone,duration=null){
 	if(duration==0){duration=360;logDebug"Duration set to 0 → treating as manual run (360 minutes)."}
 	logDebug"Starting zone ${zone} for ${duration} minute(s)"
 	try{
-		def z=normalizeZoneInput(zone);def normDur=Math.max(1,Math.min(360,duration.toInteger()))
+		def z=normalizeZoneInput(zone);if(!z.normZone){logWarn"runZone(): Zone ${z.reqZone} is not available on this controller (${z.validZones?.join(',')?:'unknown'})";return}
+		def normDur=Math.max(1,Math.min(360,duration.toInteger()))
 		def cmd=z.modern?"39${sprintf('%04X',z.normZone)}${sprintf('%02X',normDur)}":String.format("0300%02X%02X",z.normZone,normDur)
 		logDebug"runZone(): mode=${z.modern?'modern':'legacy'}, encoded=${cmd}"
 		def r=parseIfString(sendRainbirdCommand(cmd,z.modern?4:1),"runZone");def d=r?.result?.data
 		if(!d&&!z.modern){logInfo"runZone(): Legacy controller returned no data; using refresh() for verification";runInMillis(z.legacy?2000:1000,"refresh");return}
-		if(d?.reverse()?.endsWith("10")){logInfo"Zone ${z.normZone} start acknowledged by controller.";runInMillis(z.legacy?2000:1000,"verifyActiveZone",[data:[zone:z.normZone]])}
+		if(d && !d.endsWith("02")){logInfo"Zone ${z.normZone} start acknowledged by controller.";runInMillis(z.legacy?2000:1000,"verifyActiveZone",[data:[zone:z.normZone]])}
 		else logWarn"runZone(): Controller did not acknowledge (data=${d})"
 	}catch(e){logError"runZone() failed: ${e.message}"}
 }
 
 def advanceZone(zone=0){
 	try{
-		def fw=device.currentValue("controllerFirmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
-		def legacy=isLegacyFirmware(3.3);def encodedZone=Math.max(0,(zone?:0).toInteger());
-		def cmd=legacy?String.format("42%02X",encodedZone):String.format("4200%02X",encodedZone)
-		logDebug"advanceZone(): mode=${legacy?'legacy/hybrid':'modern'}, encoded=${cmd}"
 		if(!device.currentValue("watering")){logWarn"advanceZone(): Ignored — controller not currently watering";return}
-		def r=parseIfString(sendRainbirdCommand(cmd,legacy?2:1),"advanceZone");def d=r?.result?.data
-		if(!d){logWarn"advanceZone(): Empty response";runInMillis(legacy?2000:1000,"refresh");return}
-		if(d.reverse().endsWith("10") || d in ["004202","42000010","42000002"]){
-			if(encodedZone>0)logInfo"Controller acknowledged skip to zone ${encodedZone}."
-			else logInfo"Controller acknowledged advance to next zone."
-			runInMillis(legacy?2000:1000,"verifyActiveZone",[data:[zone:encodedZone]])
-		}else logWarn"advanceZone(): Controller did not acknowledge (data=${d})"
+		def validZones=device.currentValue("availableStations")?.tokenize(",")*.toInteger();def currentZone=device.currentValue("activeZone")?.toInteger()?:0
+		def encodedZone=Math.max(0,(zone?:0).toInteger())
+		if(encodedZone==0){
+			if(validZones&&currentZone){def idx=validZones.indexOf(currentZone);encodedZone=(idx>=0&&idx<validZones.size()-1)?validZones[idx+1]:validZones[0]}
+			else{logWarn"advanceZone(): Unable to determine next zone";return}
+		}
+		logDebug"advanceZone(): computed next zone=${encodedZone}";runZone(encodedZone)
 	}catch(e){logError"advanceZone() failed: ${e.message}"}
 }
 
@@ -316,11 +330,12 @@ private getAvailableStations(){
 		logDebug"Requesting available stations (fw=${fw})..."
 		def legacy=isLegacyFirmware(3.0);def cmd=legacy?"030000":"3A00"
 		def r=parseIfString(sendRainbirdCommand(cmd,legacy?2:1),"getAvailableStations");def d=r?.result?.data
-		if(!d){logWarn"getAvailableStations(): No response";return}
+		if(!d){logWarn"getAvailableStations(): No response";return[]}
 		def zones=[]
 		if(d.startsWith("83")){
-			def bitmask=d.substring(4,12);def maskInt=Integer.parseInt(bitmask,16)
-			zones=(1..bitmask.size()*4).findAll{i->(maskInt&(1<<(i-1)))!=0}.collect{idx->(idx>24&&idx<=31)?(idx-24):idx}
+			def bitmask=d.substring(4,12);def bytes=[];for(int i=0;i<bitmask.size();i+=2)bytes<<bitmask.substring(i,i+2)
+			zones=[];bytes.eachWithIndex{byteHex,byteIndex->def b=Integer.parseInt(byteHex,16);for(int bit=0;bit<8;bit++)if((b&(1<<bit))!=0)zones<<((byteIndex*8)+bit+1)}
+			zones=zones.findAll{it<=22}
 			emitChangedEvent("availableStations",zones.join(","),"Available stations: ${zones.join(', ')}")
 			def actualCount=zones.size();def currentAttr=device.currentValue("zoneCount")?.toInteger()?:0
 			if(actualCount&&actualCount!=currentAttr){
@@ -336,17 +351,28 @@ private getAvailableStations(){
 		}else if(d=="003A02"){
 			logDebug"getAvailableStations(): 3A returned ACK; retrying with 03..."
 			def f=parseIfString(sendRainbirdCommand("030000",2),"getAvailableStations-fallback")?.result?.data
-			if(f?.startsWith("83")){def m=Integer.parseInt(f.substring(4,12),16);zones=(1..device.currentValue("zoneCount").toInteger()).findAll{i->(m&(1<<(i-1)))!=0};emitChangedEvent("availableStations",zones.join(","),"Available stations: ${zones.join(', ')}")}
+			if(f?.startsWith("83")){
+				def bitmask=f.substring(4,12);def bytes=[];for(int i=0;i<bitmask.size();i+=2)bytes<<bitmask.substring(i,i+2)
+				zones=[];bytes.eachWithIndex{byteHex,byteIndex->def b=Integer.parseInt(byteHex,16);for(int bit=0;bit<8;bit++)if((b&(1<<bit))!=0)zones<<((byteIndex*8)+bit+1)}
+				zones=zones.findAll{it<=22}
+				emitChangedEvent("availableStations",zones.join(","),"Available stations: ${zones.join(', ')}")
+				def actualCount=zones.size();def currentAttr=device.currentValue("zoneCount")?.toInteger()?:0
+				if(actualCount&&actualCount!=currentAttr){
+					zoneCount=actualCount
+					emitChangedEvent("zoneCount",actualCount,"Zone count updated dynamically to ${actualCount} (controller)")
+					logDebug"zoneCount updated dynamically from controller fallback data: ${actualCount}"
+				}
+			}
 		}else logWarn"getAvailableStations(): Unexpected data (${d})"
 		return zones
-	}catch(e){logError"getAvailableStations() failed: ${e.message}"}
+	}catch(e){logError"getAvailableStations() failed: ${e.message}";return[]}
 }
 
 def createZoneChildren(){
     try{
         logInfo"Manually creating zone child devices..."
         def zoneCount=device.currentValue("zoneCount")?.toInteger()?:6
-        def zones=(1..zoneCount).toList()
+        def zones=device.currentValue("availableStations")?.tokenize(",")*.toInteger()?:((1..zoneCount).toList())
         zones.each{zoneNum->
             def dni = "${device.deviceNetworkId}-zone${zoneNum}"
             if(!getChildDevice(dni)){
@@ -457,7 +483,7 @@ def runProgram(programCode){
 		def r=parseIfString(sendRainbirdCommand(cmd,2),"runProgram");def d=r?.result?.data
 		if(!d){logWarn"runProgram(): Empty response";return}
 		if(d.startsWith("01")){
-			state.lastProgramRequested=programCode
+			atomicState.lastProgramRequested=programCode
 			emitChangedEvent("controllerState","Manual Program ${programCode}","Manual program ${programCode} requested.",null,true)
 			logInfo"Program ${programCode} start acknowledged; awaiting telemetry confirmation."
 		}else if(d.startsWith("00")&&d.endsWith("04"))logWarn"runProgram(): Program ${programCode} undefined or empty (ignored)."
@@ -492,6 +518,8 @@ def getProgramSchedule(prog='A'){
 }
 
 def getAllProgramSchedules(){
+	if(cmdBusy){logWarn"Get all stations command skipped; another command already in progress";return}
+	if(reconnoiter){logWarn"Get all stations command skipped during refresh cycle";return}
     if(isLegacyFirmware(2.5)){logDebug"Skipping getAllProgramSchedules(): requires firmware ≥2.6";emitEvent("programScheduleSupport",false);return}
     if(!getCommandSupport("36")&&!getCommandSupport("4A")){logWarn"Program schedule query not supported on this controller";emitEvent("programScheduleSupport",false);return}
     if(!isLegacyFirmware(3.0)){
@@ -601,8 +629,8 @@ def refresh(){
 	if(nowEpoch-lastRefreshEpoch<REFRESH_GUARD_MS){logDebug"Refresh skipped; last run ${(nowEpoch-lastRefreshEpoch)/1000}s ago.";return}
 	reconnoiter=true;lastRefreshEpoch=nowEpoch
 	if(!ipAddress||!password){logWarn"Cannot refresh. Preferences must be set and driver initialized.";reconnoiter=false;return}
-	def min=refreshInterval?.toInteger()?:15;def failCount=state.failCount?:0
-	if(failCount>=10){logWarn"Too many consecutive failures (${failCount}). Forcing reinitialization.";state.failCount=0;runIn(5,"initialize");reconnoiter=false;return}
+	def min=refreshInterval?.toInteger()?:15;def failCount=atomicState.failCount?:0
+	if(failCount>=10){logWarn"Too many consecutive failures (${failCount}). Forcing reinitialization.";atomicState.failCount=0;runIn(5,"initialize");reconnoiter=false;return}
 	if(failCount>3){
 		def backoff=Math.min(1800,300*failCount)
 		if(!atomicState.refreshPending){atomicState.refreshPending=true;logWarn"Network instability detected. Backing off refresh to ${backoff}s.";runIn(backoff,"refresh")}
@@ -610,7 +638,6 @@ def refresh(){
 		reconnoiter=false;return
 	}
 	try{
-		driverStatus()
 		def fw=device.currentValue("controllerFirmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
 		def hybrid=(fw>=2.9&&fw<3.1);def r4C=null;def r3F=null
 		if(!hybrid){
@@ -634,16 +661,12 @@ def refresh(){
 		getAvailableStations();getControllerEventTimestamp();getControllerDate();getControllerTime()
 		def cs=device.currentValue("controllerState")?.toLowerCase()
 		def ir=device.currentValue("irrigationState")?.toLowerCase()
-		if(ir=="idle"&&(cs?.startsWith("manual")||state.lastProgramRequested)){
-			logWarn"Controller idle; resetting controllerState"
-			emitEvent("controllerState","Idle",null,null,true)
-			state.remove("lastProgramRequested")
-		}
+		if(ir=="idle"&&(cs?.startsWith("manual")||atomicState.lastProgramRequested)){logWarn"Controller idle; resetting controllerState";emitEvent("controllerState","Idle",null,null,true);atomicState.remove("lastProgramRequested")}
 		logDebug"Zones: ${device.currentValue('availableStations')?:'None'} | Rain Delay: ${device.currentValue('rainDelay')} | FailCount: ${failCount}"
-		state.failCount=0;atomicState.refreshPending=false
+		atomicState.failCount=0;atomicState.refreshPending=false
 	}catch(e){
-		state.failCount=(state.failCount?:0)+1
-		logError"Refresh failed (${state.failCount}): ${e.message}"
+		atomicState.failCount=(atomicState.failCount?:0)+1
+		logError"Refresh failed (${atomicState.failCount}): ${e.message}"
 	}finally{reconnoiter=false}
 }
 
@@ -674,13 +697,17 @@ private verifyActiveZone(data=null,passive=false){
 		logDebug"verifyActiveZone(): firmware=${fw} (hybrid=${hybrid}); probing opcode 0x3F for BF response"
 		def s=parseIfString(sendRainbirdCommand("3F0000",2),"verifyActiveZone");def d=s?.result?.data;raw=d
 		if(d?.startsWith("BF")){
-			mask=Integer.parseInt(d.substring(4,6),16);def active=0;(1..device.currentValue("zoneCount").toInteger()).each{i->if((mask&(1<<(i-1)))!=0)active=i}
+			def payload=d.substring(2);def bytes=[];for(int i=0;i<payload.size();i+=2)bytes<<payload.substring(i,i+2);def active=0
+			bytes.eachWithIndex{byteHex,byteIndex->
+				if(hybrid&&byteIndex==0)return
+				def b=Integer.parseInt(byteHex,16);for(int bit=0;bit<8;bit++){if((b&(1<<bit))!=0){active=hybrid?((byteIndex-1)*8)+bit+1:(byteIndex*8)+bit+1}}
+			}
 			if(!hybrid&&isLegacyFirmware(3.0)&&active>0)active++ // only bump for pre-2.9 legacy
 			zone=active;watering=zone>0;logDebug"verifyActiveZone(): decoded BF mask=${String.format('%02X',mask)} → zone=${zone}"
 		}else if(legacy && d=="003F02"){
 			logInfo"verifyActiveZone(): Legacy firmware ≤2.10 returned minimal ACK (003F02); assuming idle."
 			watering=false;zone=0
-		}else{logWarn"verifyActiveZone(): Controller returned no valid BF header (data=${d})"}
+		}else{logWarn"verifyActiveZone(): No valid BF data (${d}) — preserving last known state";zone=device.currentValue("activeZone")?:0;watering=device.currentValue("watering")=="true"}
 	}else if(getCommandSupport("4C")){
 		def r=parseIfString(sendRainbirdCommand("4C",1),"verifyActiveZone");if(r){parseCombinedControllerState(r);return}
 	}else logWarn"No compatible controller-state opcode supported; skipping zone status check."
@@ -730,21 +757,19 @@ private getControllerIdentity() {
         def data02=extractHexData(r02);def modelID="Unknown";def fwareVersion="Unknown"
         if (data02?.startsWith("82")){
             modelID=data02.substring(2,6)
-            def major=Integer.parseInt(data02.substring(6,8),16)
-            def minor=Integer.parseInt(data02.substring(8,10),16)
+            def major=Integer.parseInt(data02.substring(6,8),16);def minor=Integer.parseInt(data02.substring(8,10),16)
             fwareVersion="${major}.${minor}"
             logDebug "Parsed legacy 0x82 → modelID=${modelID}, firmware=${fwareVersion}"
         } else if (data02?.startsWith("83")){
             modelID=data02.substring(2,6)
-            def major=Integer.parseInt(data02.substring(4,6),16)
-            def minor=Integer.parseInt(data02.substring(6,8),16)
+            def major=Integer.parseInt(data02.substring(4,6),16);def minor=Integer.parseInt(data02.substring(6,8),16)
             fwareVersion="${major}.${minor}"
             logDebug"Parsed modern 0x83 → modelID=${modelID}, firmware=${fwareVersion}"
         } else {
             logWarn"ModelAndVersionRequest failed or unexpected: ${data02}"
         }
-        emitChangedEvent("model","RainBird ${modelID}","Controller model: Rain Bird ${modelID}")
-        emitChangedEvent("controllerFirmwareVersion",fwareVersion,"Controller firmware version: ${fwareVersion}")
+        emitEvent("model","RainBird ${modelID}","Controller model: Rain Bird ${modelID}")
+        emitEvent("controllerFirmwareVersion",fwareVersion,"Controller firmware version: ${fwareVersion}")
         def r05=parseIfString(sendRainbirdCommand("05",1),"getControllerIdentity-Serial")
         def data05=extractHexData(r05)
         def serial=(data05?.startsWith("85"))?data05.substring(2):"Unavailable"
@@ -752,14 +777,14 @@ private getControllerIdentity() {
     } catch(e){logError "getControllerIdentity() failed: ${e.message}"}
 }
 
-private getModuleFirmwareVersion(){
+private getModuleProtocolVersion(){
 	def mv=null
 	try{httpGet([uri:"http://${ipAddress}/irrigation/status.json",timeout:5]){resp->mv=resp?.data?.ver}}
-	catch(e){logDebug"Module firmware probe via status.json skipped (${e.message})"}
+	catch(e){logDebug"Module protocol probe via status.json skipped (${e.message})"}
 	try{
 		if(!mv){def r=parseIfString(sendRainbirdCommand("03",1),"moduleFirmwareProbe");def d=r?.result?.data;if(d){mv=parseFirmwareVersion(d)}}
-		if(mv){emitEvent("moduleFirmwareVersion",mv,"LNK/LNK2 module firmware ${mv}")}else{logDebug"Module firmware version unavailable"}
-	}catch(e){logDebug"Module firmware probe via opcode 03 skipped (${e.message})"}
+		if(mv){emitEvent("moduleProtocolVersion",mv,"LNK/LNK2 module protocol ${mv}")}else{logDebug"Module protocol version unavailable"}
+	}catch(e){logDebug"Module protocol probe via opcode 03 skipped (${e.message})"}
 }
 
 private parseCombinedControllerState(resp,boolean summaryOnly=false){
@@ -850,27 +875,27 @@ private parseProgramZones(hex){
 }
 
 /* =============================== Communication / Crypto =============================== */
-private sendRainbirdCommand(cmdHex, length=1){
+private sendRainbirdCommand(cmdHex,length=1){
 	if(cmdBusy){logDebug"Command skipped; another command already in progress (${cmdHex})";return null}
-	cmdBusy = true;def result = null
+	cmdBusy=true;def result=null
 	try{
+		pauseExecution(delayMs?:150)
 		def id=Math.floor(now()/1000)
 		def payload=JsonOutput.toJson([id:id,jsonrpc:"2.0",method:"tunnelSip",params:[data:cmdHex,length:length]])
 		def enc=encryptRainbird(payload,password)
 		def params=[uri:"http://${ipAddress}/stick",contentType:"application/octet-stream",requestContentType:"application/octet-stream",body:enc]
 		def response=null
-		httpPost(params){resp->
-			response=decryptRainbird(resp.data.bytes,password)
-		}
+		httpPost(params){resp->response=decryptRainbird(resp.data.bytes,password)}
 		if(response){
-			successStreak=Math.min(successStreak+1,10)
+			successStreak=Math.min((successStreak?:0)+1,10)
 			if(successStreak>5&&delayMs>minDelay)delayMs=Math.max(minDelay,delayMs-10)
-			result=response;state.failCount=0
+			result=response;atomicState.failCount=0
 		}else{
-			successStreak=0;delayMs=Math.min(maxDelay,delayMs+50)
-			state.failCount=(state.failCount?:0)+1;logWarn"sendRainbirdCommand(): No valid response"
+			successStreak=0;delayMs=Math.min(maxDelay,(delayMs?:150)+50)
+			atomicState.failCount=(atomicState.failCount?:0)+1;logWarn"sendRainbirdCommand(): No valid response"
 		}
 	}catch(e){
+		successStreak=0;delayMs=Math.min(maxDelay,(delayMs?:150)+50)
 		logWarn"sendRainbirdCommand() exception: ${e.message}"
 	}finally{
 		cmdBusy=false
