@@ -13,14 +13,15 @@
 *  0.1.3.3  –– Modernized emitEvent and emitChangedEvent; Fixed child device creation.
 *  0.1.3.4  –– Added default time preference for On/Open
 *  0.1.3.5  –– Version match with parent
+*  1.0.0.0  –– Production release.
 */
 
 import groovy.transform.Field
 
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 Zone Child"
-@Field static final String DRIVER_VERSION  = "0.1.3.5"
-@Field static final String DRIVER_MODIFIED = "2026.04.07"
+@Field static final String DRIVER_VERSION  = "1.0.0.0"
+@Field static final String DRIVER_MODIFIED = "2026.05.07"
 
 metadata{
     definition(
@@ -38,7 +39,7 @@ metadata{
         command "runZone",[[name:"Duration (minutes) ",type:"NUMBER"]]
 
 	    preferences {
-	        input("docBlock", "hidden", title: driverDocBlock())
+	        input("docBlock","hidden",title:driverDocBlock())
 	        input("defaultDuration","number",title:"Default Zone Duration (minutes)",description:"Prevents valve from being left on too long via manual On/Open.<br>Default=15. Set to 0 for controller maximum (360 minutes).",defaultValue:15,range:"0..360")
 
 		}
