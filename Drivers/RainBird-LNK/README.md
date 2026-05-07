@@ -32,7 +32,7 @@ With advanced telemetry, adaptive pacing, and hourly drift correction, it’s de
 
 - Production Release.
 - Verified against both LNK and LNK/2 hardware.
-- Full support for noncontiguous zone numbering for ESP-Me expansion modules.
+- Full support for noncontiguous zone numbering for ESP-me expansion modules.
 - Elimination of 503 Service Unavailable errors on older hardware.
 
 ---
@@ -212,6 +212,6 @@ License: [Apache 2.0](./LICENSE)
 
 💧 Support development: [paypal.me/MHedish](https://paypal.me/MHedish)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTM3Nzg0MTk3Myw1MDc2NzM5MCwtOTU3MT
-gwNDI1XX0=
+eyJoaXN0b3J5IjpbMjA5NTA5OTY2OSwxMzc3ODQxOTczLDUwNz
+Y3MzkwLC05NTcxODA0MjVdfQ==
 -->
