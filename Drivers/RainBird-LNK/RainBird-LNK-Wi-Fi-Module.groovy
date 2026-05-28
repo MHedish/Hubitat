@@ -49,6 +49,7 @@
 *  0.1.3.24 –– Restore full first-generation LNK compatibility by correcting initialization probe cadence, hybrid-firmware opcode routing, and 04XX00 capability probing envelope; resolves 503 transport saturation while preserving LNK2 behavior and sparse station topology handling.
 *  0.1.3.25 –– Replace remaining transient state variables with atomicState equivalents to improve refresh lifecycle consistency and eliminate unnecessary persistent state usage.
 *  1.0.0.0  –– Production release.
+*  1.0.1.0  –– Added WaterSensor capability and lowered accompanying minver to 2.9.
 */
 
 import groovy.transform.Field
@@ -61,8 +62,8 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "1.0.0.0"
-@Field static final String DRIVER_MODIFIED = "2026.05.07"
+@Field static final String DRIVER_VERSION  = "1.0.1.0"
+@Field static final String DRIVER_MODIFIED = "2026.05.28"
 @Field static final String PAD="\u0016"
 @Field static final int BLOCK_SIZE=16
 @Field static int delayMs=150
@@ -90,6 +91,7 @@ metadata {
 		capability "Sensor"
 		capability "Switch"
 		capability "Valve"
+        capability "WaterSensor"
 
         attribute "activeZone","number"
         attribute "autoTimeSync","boolean"
@@ -453,7 +455,7 @@ private getRainSensorState(){
 	try{
 		def r=parseIfString(sendRainbirdCommand("3E",1),"getRainSensorState");def d=r?.result?.data;def fw=device.currentValue("controllerFirmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
 		if(!d){logWarn"getRainSensorState(): No valid response";return}
-		if(d.startsWith("BE")){if(isLegacyFirmware(3.0)){logDebug"getRainSensorState(): Firmware ${fw} does not expose bypass control; marking state as unknown.";emitChangedEvent("rainSensorState","unknown","Rain sensor (no bypass support): unknown");return}
+		if(d.startsWith("BE")){if(isLegacyFirmware(2.9)){logDebug"getRainSensorState(): Firmware ${fw} does not expose bypass control; marking state as unknown.";emitChangedEvent("rainSensorState","unknown","Rain sensor (no bypass support): unknown");return}
 			def s=Integer.parseInt(d.substring(2,4),16);def stateStr=(s==0)?"dry":(s==1?"wet":"bypassed");emitChangedEvent("rainSensorState",stateStr,"Rain sensor state: ${stateStr}");return
 		}
 		logWarn"getRainSensorState(): Unexpected data (${d})"
