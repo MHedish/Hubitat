@@ -1,8 +1,8 @@
 {
   "packageName": "Rain Bird LNK/LNK2 WiFi Module Controller",
   "author": "Marc Hedish",
-  "version": "1.0.1.0",
-  "releaseNotes": "v1.0.1.0 - Added WaterSensor capability.\n\nv1.0.0.0 - Production Release.  Verified on LNK and LNK/2 hardware. Now supports noncontiguous zones and older LNK Wi-Fi modules. Further details in CHANGELOG.md",
+  "version": "1.0.1.1",
+  "releaseNotes": "v1.0.1.1 – Updated normalizeZoneInput() so a null capability response does not demote firmware 2.9+ to legacy mode.\n\nv1.0.1.0 - Added WaterSensor capability.\n\nv1.0.0.0 - Production Release.  Verified on LNK and LNK/2 hardware. Now supports noncontiguous zones and older LNK Wi-Fi modules. Further details in CHANGELOG.md",
   "dateReleased": "2026-05-07",
   "minimumHEVersion": "2.3.6",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md",
@@ -17,7 +17,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Module.groovy",
       "required": true,
-      "version": "1.0.1.0"
+      "version": "1.0.1.1"
     },
     {
       "id": "rainbird-lnk-wifi-zone-child",
