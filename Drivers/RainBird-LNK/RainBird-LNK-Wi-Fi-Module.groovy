@@ -50,6 +50,7 @@
 *  0.1.3.25 –– Replace remaining transient state variables with atomicState equivalents to improve refresh lifecycle consistency and eliminate unnecessary persistent state usage.
 *  1.0.0.0  –– Production release.
 *  1.0.1.0  –– Added WaterSensor capability and lowered accompanying minver to 2.9.
+*  1.0.1.1  –– Updated normalizeZoneInput() so a null capability response does not demote firmware 2.9+ to legacy mode.
 */
 
 import groovy.transform.Field
@@ -62,8 +63,8 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "1.0.1.0"
-@Field static final String DRIVER_MODIFIED = "2026.05.28"
+@Field static final String DRIVER_VERSION  = "1.0.1.1"
+@Field static final String DRIVER_MODIFIED = "2026.06.16"
 @Field static final String PAD="\u0016"
 @Field static final int BLOCK_SIZE=16
 @Field static int delayMs=150
@@ -273,7 +274,7 @@ private parseFirmwareVersion(d){
 /* =============================== Manual Irrigation Control =============================== */
 private normalizeZoneInput(zone){
 	def fw=device.currentValue("controllerFirmwareVersion")?.toString()?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
-	def legacy=isLegacyFirmware(3.0);def hybrid=(fw>=2.9&&fw<3.0);def modern=getCommandSupport("39")&&(fw>=2.9)
+	def legacy=isLegacyFirmware(3.0);def hybrid=(fw>=2.9&&fw<3.0);def support39=getCommandSupport("39");def modern=(fw>=2.9&&support39!=false)
 	def validZones=device.currentValue("availableStations")?.tokenize(",")*.toInteger()
 	def maxZones=validZones?validZones.max():(device.currentValue("zoneCount")?.toInteger()?:22)
 	def reqZone=(zone?:1).toInteger();def normZone=validZones?(validZones.contains(reqZone)?reqZone:0):Math.max(1,Math.min(maxZones,reqZone))
@@ -293,7 +294,7 @@ def runZone(zone,duration=null){
 		logDebug"runZone(): mode=${z.modern?'modern':'legacy'}, encoded=${cmd}"
 		def r=parseIfString(sendRainbirdCommand(cmd,z.modern?4:1),"runZone");def d=r?.result?.data
 		if(!d&&!z.modern){logInfo"runZone(): Legacy controller returned no data; using refresh() for verification";runInMillis(z.legacy?2000:1000,"refresh");return}
-		if(d && !d.endsWith("02")){logInfo"Zone ${z.normZone} start acknowledged by controller.";runInMillis(z.legacy?2000:1000,"verifyActiveZone",[data:[zone:z.normZone]])}
+		if(d&&!d.endsWith("02")){logInfo"Zone ${z.normZone} start acknowledged by controller.";runInMillis(z.legacy?2000:1000,"verifyActiveZone",[data:[zone:z.normZone]])}
 		else logWarn"runZone(): Controller did not acknowledge (data=${d})"
 	}catch(e){logError"runZone() failed: ${e.message}"}
 }
@@ -706,7 +707,7 @@ private verifyActiveZone(data=null,passive=false){
 			}
 			if(!hybrid&&isLegacyFirmware(3.0)&&active>0)active++ // only bump for pre-2.9 legacy
 			zone=active;watering=zone>0;logDebug"verifyActiveZone(): decoded BF mask=${String.format('%02X',mask)} → zone=${zone}"
-		}else if(legacy && d=="003F02"){
+		}else if(legacy&&d=="003F02"){
 			logInfo"verifyActiveZone(): Legacy firmware ≤2.10 returned minimal ACK (003F02); assuming idle."
 			watering=false;zone=0
 		}else{logWarn"verifyActiveZone(): No valid BF data (${d}) — preserving last known state";zone=device.currentValue("activeZone")?:0;watering=device.currentValue("watering")=="true"}
