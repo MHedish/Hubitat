@@ -1,6 +1,6 @@
 # 🌧️ Rain Bird LNK/LNK2 WiFi Module Controller (Hubitat Driver)
 
-[![Version](https://img.shields.io/badge/version-1.0.1.0-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.1.1-blue.svg)](./CHANGELOG.md)
 [![Status](https://img.shields.io/badge/release-Production-brightgreen.svg)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Hubitat-lightgrey.svg)](https://hubitat.com/)
@@ -27,6 +27,10 @@ Fully optimized for **firmware 2.9 → 3.2**, the driver automatically adapts it
 With advanced telemetry, adaptive pacing, and hourly drift correction, it’s designed to maintain reliability season after season.
 
 ---
+## 🌟 What’s New in v1.0.1.1
+
+- Updated normalizeZoneInput() so a null capability response does not demote firmware 2.9+ to legacy mode.
+
 ## 🌟 What’s New in v1.0.1.0
 
 - Added WaterSensor capability for use with external rain sensor.
