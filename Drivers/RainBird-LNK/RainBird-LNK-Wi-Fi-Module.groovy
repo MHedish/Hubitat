@@ -51,6 +51,7 @@
 *  1.0.0.0  –– Production release.
 *  1.0.1.0  –– Added WaterSensor capability and lowered accompanying minver to 2.9.
 *  1.0.1.1  –– Updated normalizeZoneInput() so a null capability response does not demote firmware 2.9+ to legacy mode.
+*  1.0.2.0  –– Improved irrigation reliability by prioritizing zone control commands over background telemetry, reducing transport contention during active watering; gated maintenance polling to idle controller state.
 */
 
 import groovy.transform.Field
@@ -63,8 +64,8 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "1.0.1.1"
-@Field static final String DRIVER_MODIFIED = "2026.06.16"
+@Field static final String DRIVER_VERSION  = "1.0.2.0"
+@Field static final String DRIVER_MODIFIED = "2026.07.12"
 @Field static final String PAD="\u0016"
 @Field static final int BLOCK_SIZE=16
 @Field static int delayMs=150
@@ -72,11 +73,14 @@ import java.io.ByteArrayOutputStream
 @Field static int maxDelay=500
 @Field static int successStreak=0
 @Field static Boolean reconnoiter=false
+@Field static Long controllerTransitionUntil=0
 @Field static Long lastRefreshEpoch=0
 @Field static Boolean cmdBusy=false
+@Field static final Integer CONTROLLER_TRANSITION_MS=2000
 @Field static final Integer REFRESH_GUARD_MS=15000 // debounce window (15s default; extend to 45000ms if needed)
 @Field static final MessageDigest SHA256=MessageDigest.getInstance("SHA-256")
 @Field static final Cipher AES_CIPHER=Cipher.getInstance("AES/CBC/NoPadding","SunJCE")
+@Field static final java.util.concurrent.atomic.AtomicInteger controlPending=new java.util.concurrent.atomic.AtomicInteger(0)
 
 metadata {
     definition(
@@ -169,6 +173,11 @@ private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){se
 private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 private parseIfString(o,c="response"){(o instanceof String)?(new groovy.json.JsonSlurper().parseText(o)):o}
 private extractHexData(resp){def p=parseIfString(resp);return p?.result?.data?:null}
+private boolean controllerTransitionActive(){return now()<(controllerTransitionUntil?:0)}
+private Integer controllerTransitionDelay(){return Math.max(250,(controllerTransitionUntil?:0)-now()).toInteger()}
+private void beginControllerTransition(){controllerTransitionUntil=now()+CONTROLLER_TRANSITION_MS}
+private deferredRunZone(data){runZone(data.zone,data.duration)}
+private deferredRunProgram(data){runProgram(data.program)}
 def autoDisableDebugLogging(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo"Debug logging disabled (auto)"}catch(e){logDebug"autoDisableDebugLogging(): ${e.message}"}}
 def disableDebugLoggingNow(){try{unschedule(autoDisableDebugLogging);device.updateSetting("logEnable",[value:"false",type:"bool"]);logInfo"Debug logging disabled (manual)"}catch(e){logDebug"disableDebugLoggingNow(): ${e.message}"}}
 
@@ -214,7 +223,7 @@ private getCommandSupport(cmdToTest="4A"){
 	logDebug"Querying command support for 0x${cmdToTest.toUpperCase()}..."
 	try{
 		def cmd="04${cmdToTest.padLeft(2,'0')}00";def r=parseIfString(sendRainbirdCommand(cmd,2),"getCommandSupport");def d=r?.result?.data
-		if(!d){logWarn"getCommandSupport(): No valid response";return false}
+		if(!d){logWarn"getCommandSupport(): No valid response";return null}
 		if(d.startsWith("84")){
 			def echo=d.substring(2,4);def support=Integer.parseInt(d.substring(4,6),16)==1;logDebug"Command 0x${echo} is ${support?'supported':'not supported'} by controller";return support
 		}
@@ -224,10 +233,10 @@ private getCommandSupport(cmdToTest="4A"){
 			if(rd?.startsWith("84")){
 				def echo=rd.substring(2,4);def support=Integer.parseInt(rd.substring(4,6),16)==1;logDebug"Command 0x${echo} retry → ${support?'supported':'not supported'}";return support
 			}
-			logWarn"getCommandSupport(): Retry returned ${rd?:'null'}";return false
+			logWarn"getCommandSupport(): Retry returned ${rd?:'null'}";return null
 		}
-		logWarn"getCommandSupport(): Unexpected data (${d})";return false
-	}catch(e){logError"getCommandSupport() failed: ${e.message}";return false}
+		logWarn"getCommandSupport(): Unexpected data (${d})";return null
+	}catch(e){logError"getCommandSupport() failed: ${e.message}";return null}
 }
 
 def testAllSupportedCommands(){
@@ -284,18 +293,31 @@ private normalizeZoneInput(zone){
 }
 
 def runZone(zone,duration=null){
+	if(cmdBusy||reconnoiter||controllerTransitionActive()){
+		def delay=controllerTransitionActive()?controllerTransitionDelay():250
+		logDebug"runZone(${zone}): deferred ${delay}ms; controller transport unavailable"
+		runInMillis(delay,"deferredRunZone",[data:[zone:zone,duration:duration]])
+		return
+	}
 	if(duration==null){duration=2;logWarn"Duration not set for starting zone ${zone}. Defaulting to 2 minutes."}
 	if(duration==0){duration=360;logDebug"Duration set to 0 → treating as manual run (360 minutes)."}
 	logDebug"Starting zone ${zone} for ${duration} minute(s)"
 	try{
 		def z=normalizeZoneInput(zone);if(!z.normZone){logWarn"runZone(): Zone ${z.reqZone} is not available on this controller (${z.validZones?.join(',')?:'unknown'})";return}
+		if(cmdBusy||reconnoiter||controllerTransitionActive()){
+			def delay=controllerTransitionActive()?controllerTransitionDelay():250
+			logDebug"runZone(${zone}): deferred ${delay}ms after capability check; controller transport unavailable"
+			runInMillis(delay,"deferredRunZone",[data:[zone:zone,duration:duration]])
+			return
+		}
 		def normDur=Math.max(1,Math.min(360,duration.toInteger()))
 		def cmd=z.modern?"39${sprintf('%04X',z.normZone)}${sprintf('%02X',normDur)}":String.format("0300%02X%02X",z.normZone,normDur)
 		logDebug"runZone(): mode=${z.modern?'modern':'legacy'}, encoded=${cmd}"
 		def r=parseIfString(sendRainbirdCommand(cmd,z.modern?4:1),"runZone");def d=r?.result?.data
-		if(!d&&!z.modern){logInfo"runZone(): Legacy controller returned no data; using refresh() for verification";runInMillis(z.legacy?2000:1000,"refresh");return}
-		if(d&&!d.endsWith("02")){logInfo"Zone ${z.normZone} start acknowledged by controller.";runInMillis(z.legacy?2000:1000,"verifyActiveZone",[data:[zone:z.normZone]])}
-		else logWarn"runZone(): Controller did not acknowledge (data=${d})"
+		if(!d&&!z.modern){logInfo"runZone(): Legacy controller returned no data; using refresh() for verification";beginControllerTransition();runInMillis(CONTROLLER_TRANSITION_MS,"verifyActiveZone",[data:[zone:z.normZone]]);return}
+		if(d&&!d.endsWith("02")){
+			logInfo"Zone ${z.normZone} start acknowledged by controller.";beginControllerTransition();runInMillis(CONTROLLER_TRANSITION_MS,"verifyActiveZone",[data:[zone:z.normZone]])
+		}else logWarn"runZone(): Controller did not acknowledge (data=${d})"
 	}catch(e){logError"runZone() failed: ${e.message}"}
 }
 
@@ -316,13 +338,18 @@ def startIrrigation(){logInfo"startIrrigation(): Executing default program A";ru
 def pauseIrrigation(){logInfo"Pausing all irrigation activity";stopIrrigation()}
 
 def stopIrrigation(){
+	if(cmdBusy||reconnoiter||controllerTransitionActive()){
+		def delay=controllerTransitionActive()?controllerTransitionDelay():250
+		logDebug"stopIrrigation(): deferred ${delay}ms; controller transport unavailable"
+		runInMillis(delay,"stopIrrigation")
+		return
+	}
 	def cmd="40";logDebug"Stopping all irrigation (encoded ${cmd})"
 	try{
 		def r=parseIfString(sendRainbirdCommand(cmd,1),"stopIrrigation");def d=r?.result?.data
 		if(!d){logWarn"stopIrrigation(): Empty response";runInMillis(isLegacyFirmware(2.9)?2000:1000,"refresh");return}
 		if(d.reverse().endsWith("10")){
-			logInfo"Controller acknowledged stop all."
-			runInMillis(500,"verifyActiveZone",[data:[zone:0]])
+			logInfo"Controller acknowledged stop all.";beginControllerTransition();runInMillis(CONTROLLER_TRANSITION_MS,"verifyActiveZone",[data:[zone:0]])
 		}else logWarn"stopIrrigation(): Controller did not acknowledge (data=${d})"
 	}catch(e){logError"stopIrrigation() failed: ${e.message}"}
 }
@@ -479,6 +506,12 @@ private getControllerEventTimestamp(){
 
 def runProgram(programCode){
 	if(!programCode){logWarn"runProgram(): No program specified.";return}
+	if(cmdBusy||reconnoiter||controllerTransitionActive()){
+		def delay=controllerTransitionActive()?controllerTransitionDelay():250
+		logDebug"runProgram(${programCode}): deferred ${delay}ms; controller transport unavailable"
+		runInMillis(delay,"deferredRunProgram",[data:[program:programCode]])
+		return
+	}
 	def map=["A":0,"B":1,"C":2,"D":3];def code=map.get(programCode.toString().toUpperCase(),1)
 	def cmd=String.format("38%02X00",code)
 	logDebug"Manually starting Rain Bird Program ${programCode} (encoded ${cmd})"
@@ -486,13 +519,13 @@ def runProgram(programCode){
 		def r=parseIfString(sendRainbirdCommand(cmd,2),"runProgram");def d=r?.result?.data
 		if(!d){logWarn"runProgram(): Empty response";return}
 		if(d.startsWith("01")){
-			atomicState.lastProgramRequested=programCode
+			atomicState.lastProgramRequested=programCode;beginControllerTransition()
 			emitChangedEvent("controllerState","Manual Program ${programCode}","Manual program ${programCode} requested.",null,true)
 			logInfo"Program ${programCode} start acknowledged; awaiting telemetry confirmation."
 		}else if(d.startsWith("00")&&d.endsWith("04"))logWarn"runProgram(): Program ${programCode} undefined or empty (ignored)."
 		else logWarn"runProgram(): Unexpected ACK/NAK (${d})"
 	}catch(e){logError"runProgram() failed: ${e.message}"}
-	runInMillis(isLegacyFirmware(2.9)?2000:1000,"refresh")
+	runInMillis(Math.max(CONTROLLER_TRANSITION_MS,isLegacyFirmware(2.9)?2000:1000),"refresh")
 }
 
 private isStubProgramResponse(hex){return["003A02","003802","B60000"].contains(hex)}
@@ -601,7 +634,7 @@ private void hourlyClockSync(){checkAndSyncClock(true)} // CRON Helper
 
 private checkAndSyncClock(poll=false){
     if(!autoTimeSync)return
-    if(poll){logDebug"checkAndSyncClock(poll): refreshing controller clock values before drift check";getControllerDate();getControllerTime();return}
+	if(device.currentValue("irrigationState")?.toLowerCase()!="idle"){logDebug"checkAndSyncClock(${poll?'poll':'cron'}): skipped (irrigationState=${device.currentValue('irrigationState')})";return}
     try{
         def cDate=device.currentValue("controllerDate");def cTime=device.currentValue("controllerTime")
         if(!cDate||!cTime){logDebug"checkAndSyncClock(): missing controller date/time";return}
@@ -628,6 +661,7 @@ private syncRainbirdClock(drift){
 /* =============================== Refresh & Scheduling =============================== */
 def refresh(){
 	if(reconnoiter){logDebug"Refresh skipped; another refresh in progress.";return}
+	if(controllerTransitionActive()){def delay=controllerTransitionDelay();logDebug"Refresh deferred ${delay}ms; controller transition in progress.";runInMillis(delay,"refresh");return}
 	atomicState.refreshPending=false;def nowEpoch=now()
 	if(nowEpoch-lastRefreshEpoch<REFRESH_GUARD_MS){logDebug"Refresh skipped; last run ${(nowEpoch-lastRefreshEpoch)/1000}s ago.";return}
 	reconnoiter=true;lastRefreshEpoch=nowEpoch
@@ -641,6 +675,9 @@ def refresh(){
 		reconnoiter=false;return
 	}
 	try{
+		if(device.currentValue("irrigationState")?.toLowerCase()!="idle"){
+			verifyActiveZone();atomicState.refreshPending=false;return
+		}
 		def fw=device.currentValue("controllerFirmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
 		def hybrid=(fw>=2.9&&fw<3.1);def r4C=null;def r3F=null
 		if(!hybrid){
@@ -660,11 +697,16 @@ def refresh(){
 				else logWarn"No compatible controller-state opcode (4C/3F) supported; skipping zone status refresh."
 			}
 		}
+		if(device.currentValue("irrigationState")?.toLowerCase()=="watering"){atomicState.refreshPending=false;return}
 		getRainSensorState();getWaterBudget();getRainDelay();getZoneSeasonalAdjustments()
 		getAvailableStations();getControllerEventTimestamp();getControllerDate();getControllerTime()
 		def cs=device.currentValue("controllerState")?.toLowerCase()
 		def ir=device.currentValue("irrigationState")?.toLowerCase()
-		if(ir=="idle"&&(cs?.startsWith("manual")||atomicState.lastProgramRequested)){logWarn"Controller idle; resetting controllerState";emitEvent("controllerState","Idle",null,null,true);atomicState.remove("lastProgramRequested")}
+		if(ir=="idle"&&(cs?.startsWith("manual")||atomicState.lastProgramRequested)){
+			logWarn"Controller idle; resetting controllerState"
+			emitEvent("controllerState","Idle",null,null,true)
+			atomicState.remove("lastProgramRequested")
+		}
 		logDebug"Zones: ${device.currentValue('availableStations')?:'None'} | Rain Delay: ${device.currentValue('rainDelay')} | FailCount: ${failCount}"
 		atomicState.failCount=0;atomicState.refreshPending=false
 	}catch(e){
@@ -694,6 +736,7 @@ private scheduleRefresh(){
 
 /* =============================== Parsing Helpers =============================== */
 private verifyActiveZone(data=null,passive=false){
+	if(controllerTransitionActive()){def delay=controllerTransitionDelay();logDebug"verifyActiveZone(): deferred ${delay}ms; controller transition in progress.";runInMillis(delay,"verifyActiveZone",[data:data?:[:]]);return}
 	def fw=device.currentValue("controllerFirmwareVersion")?.replaceAll("[^0-9.]","")?.toBigDecimal()?:0
 	def hybrid=(fw>=2.9&&fw<3.1);def legacy=isLegacyFirmware(2.11);def watering=device.currentValue("watering")=="true";def zone=(device.currentValue("activeZone")?:0)as Integer;def raw=null;def mask=0
 	if(hybrid||getCommandSupport("3F")){
@@ -705,7 +748,7 @@ private verifyActiveZone(data=null,passive=false){
 				if(hybrid&&byteIndex==0)return
 				def b=Integer.parseInt(byteHex,16);for(int bit=0;bit<8;bit++){if((b&(1<<bit))!=0){active=hybrid?((byteIndex-1)*8)+bit+1:(byteIndex*8)+bit+1}}
 			}
-			if(!hybrid&&isLegacyFirmware(3.0)&&active>0)active++ // only bump for pre-2.9 legacy
+			if(!hybrid&&isLegacyFirmware(3.0)&&active>0)active++
 			zone=active;watering=zone>0;logDebug"verifyActiveZone(): decoded BF mask=${String.format('%02X',mask)} → zone=${zone}"
 		}else if(legacy&&d=="003F02"){
 			logInfo"verifyActiveZone(): Legacy firmware ≤2.10 returned minimal ACK (003F02); assuming idle."
@@ -725,9 +768,10 @@ private verifyActiveZone(data=null,passive=false){
 		logDebug"verifyActiveZone(): No active watering detected (mask=${String.format('%02X',mask)})."
 		if(wateringRefresh&&wasWatering)logInfo"Watering: Fast polling ended; reverting to scheduled refresh."
 	}
-	updateChildZoneStates(zone, watering)
-	runInMillis(isLegacyFirmware(2.9)?2000:1000,"refresh")
+	updateChildZoneStates(zone,watering)
+//	runInMillis(isLegacyFirmware(2.9)?2000:1000,"refresh")
 }
+
 
 private parseTimeResponse(resp){
     if(!resp)return
@@ -900,9 +944,7 @@ private sendRainbirdCommand(cmdHex,length=1){
 	}catch(e){
 		successStreak=0;delayMs=Math.min(maxDelay,(delayMs?:150)+50)
 		logWarn"sendRainbirdCommand() exception: ${e.message}"
-	}finally{
-		cmdBusy=false
-	}
+	}finally{cmdBusy=false}
 	return result
 }
 
