@@ -15,8 +15,8 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 | **0.0.8.x** | Hybrid | Firmware 2.9 compatibility, telemetry, and adaptive refresh |
 | **0.0.9.x** | Modern | Full firmware 3.x LNK2/ESP-ME support and unified logic |
 | **0.1.3.x** | Release Candidate | Hybrid/modern convergence verified under 2.9–3.2 |
-| **1.0.0.0** | Full Production | Verified for use with LNK and LNK/2 modules |
-| **1.0.1.0** | Full Production | Added WaterSensor capability |
+| **1.0.0.0** | Production – Depricated | Verified for use with LNK and LNK/2 modules |
+| **1.0.1.0** | Production – Depricated | Added WaterSensor capability |
 | **1.0.2.0** | Full Production | Reduced controller transport contention by prioritizing zone control commands and deferring maintenance polling during irrigation.  |
 
 ---
