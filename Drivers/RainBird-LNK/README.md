@@ -219,6 +219,6 @@ License: [Apache 2.0](./LICENSE)
 
 💧 Support development: [paypal.me/MHedish](https://paypal.me/MHedish)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTQ4MDgyNzk5NSwxMzc3ODQxOTczLDUwNz
-Y3MzkwLC05NTcxODA0MjVdfQ==
+eyJoaXN0b3J5IjpbNjAzOTg4MzcyLC00ODA4Mjc5OTUsMTM3Nz
+g0MTk3Myw1MDc2NzM5MCwtOTU3MTgwNDI1XX0=
 -->
