@@ -46,6 +46,7 @@
 *  1.0.4.14  –– Added emitNotification() method; corrected handleIdentificationAndSelfTest() to emitChangedEvent
 *  1.0.4.15  –– Updated authshutdown notifications.
 *  1.1.0.0   –– Version bump for public release
+*  1.1.0.0   –– Code cleanup – fixed missing 'def' bug in safeTelnetConnect() and handleBatteryData(); removed vestigal atomicState.pendingCmds; removed unused nextCheckMinutes attribute.
 */
 
 import groovy.transform.Field
@@ -53,8 +54,8 @@ import java.util.regex.Pattern
 import java.util.Collections
 
 @Field static final String DRIVER_NAME     = "APC SmartUPS Status"
-@Field static final String DRIVER_VERSION  = "1.1.0.0"
-@Field static final String DRIVER_MODIFIED = "2026.03.18"
+@Field static final String DRIVER_VERSION  = "1.1.1.0"
+@Field static final String DRIVER_MODIFIED = "2026.07.15"
 @Field static final Map transientContext   = Collections.synchronizedMap([:])
 @Field static final Pattern TELNET_IAC     = ~/\u00FF[\u00FB\u00FC\u00FD\u00FE]./
 @Field static final Pattern USER_PROMPT    = ~/(?i)(User\s+Name|Username)\s*:\s*/
@@ -101,7 +102,6 @@ metadata {
         attribute "manufactureDate","string"
         attribute "model","string"
 		attribute "nextBatteryReplacement","string"
-        attribute "nextCheckMinutes","number"
         attribute "nmcApplicationDate","string"
         attribute "nmcApplicationName","string"
         attribute "nmcApplicationVersion","string"
@@ -311,7 +311,7 @@ private void sendUPSCommand(String cmdName,List cmds){
         logDebug"sendUPSCommand(): session start timestamp = ${getTransient('sessionStart')}"
         telnetClose();updateConnectState("Connecting");initTelnetBuffer()
         def pendingQueue=[[tPrompt:"username",line:("${Username?:''}")],[tPrompt:"password",line:("${Password?:''}")]];cmds.each{c->pendingQueue<<[tPrompt:"command",line:("${c?:''}")]}
-        pendingQueue<<[tPrompt:"whoami",line:"whoami"];atomicState.pendingCmds=pendingQueue.collect{("${it?.line?:''}")as String}
+        pendingQueue<<[tPrompt:"whoami",line:"whoami"]
         setTransient("cmdQueue",pendingQueue);setTransient("queueIndex",0)
         logDebug"sendUPSCommand(): Opening transient Telnet connection to ${upsIP}:${upsPort}"
         safeTelnetConnect([ip:upsIP,port:upsPort.toInteger()])
@@ -355,7 +355,7 @@ private void sendNextTelnetLine(){
     }
 }
 
-private void clearCommandQueue(){clearTransient("cmdQueue");clearTransient("queueIndex");atomicState.remove("pendingCmds")}
+private void clearCommandQueue(){clearTransient("cmdQueue");clearTransient("queueIndex")}
 private List<Map> getPendingQueue(){def q=getTransient("cmdQueue");return(q instanceof List)?q:[]}
 private String currentPendingSendKind(){List<Map> q=getPendingQueue();Integer idx=((getTransient("queueIndex")?:0)as Integer);if(q.isEmpty()||idx<0||idx>=q.size())return "";return((q[idx]?.tPrompt?:"")as String)}
 private boolean isPendingSendReady(String tPrompt){
@@ -424,7 +424,7 @@ private safeTelnetConnect(Map m){
         }catch(e){
             logWarn"safeTelnetConnect(): attempt ${attempt} failed (${e.message})";if(attempt<retries){pauseExecution(delayMs)}
             else{
-                msg="safeTelnetConnect(): all ${retries} connection attempts failed for ${cmd}";logError msg;sendEvent(name:"pushed",value:2,descriptionText:"${msg}",isStateChange:true)
+                def msg="safeTelnetConnect(): all ${retries} connection attempts failed for ${cmd}";logError msg;sendEvent(name:"pushed",value:2,descriptionText:"${msg}",isStateChange:true)
                 emitChangedEvent("lastCommandResult","Failed","${cmd} connect failure")
                 resetTransientState("safeTelnetConnect");updateConnectState("Disconnected");closeConnection()
             }
@@ -452,7 +452,7 @@ private telnetStatus(String s){def l=s?.toLowerCase()?:"";if(l.contains("receive
 private void initTelnetBuffer(){def b=getTransient("rxBuffer");if(b instanceof List&&b.size()){def t;try{def p=b[-(Math.min(3,b.size()))..-1]*.line.findAll{it}.join(" | ");t=p[-(Math.min(80,p.size()))..-1]}catch(e){t="unavailable (${e.message})"};logDebug"initTelnetBuffer(): clearing leftover buffer (${b.size()} lines, preview='${t}')"};setTransient("rxBuffer",[]);setTransient("rxFragment","");setTransient("usernamePromptSeen",false);setTransient("passwordPromptSeen",false);setTransient("shellPromptSeen",false);clearTransient("authRxEpoch");clearTransient("commandSendWindowUntil");setTransient("sessionStart",now());logDebug"initTelnetBuffer(): Session start at ${new Date(getTransient('sessionStart'))}"}
 
 private void resetTransientState(String origin, Boolean suppressWarn=false){
-    def keys=["pendingCmds","deferredCommand","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen"];def residuals=keys.findAll{atomicState[it]}
+    def keys=["deferredCommand","authStarted","whoamiEchoSeen","whoamiAckSeen","whoamiUserSeen"];def residuals=keys.findAll{atomicState[it]}
     if(residuals&&!suppressWarn)logWarn"resetTransientState(): residuals (${residuals.join(', ')}) during ${origin}"
     if(atomicState.deferredCommand)logWarn"resetTransientState(): atomicState had deferredCommand='${atomicState.deferredCommand}' during ${origin}"
     keys.each{atomicState.remove(it)}
@@ -661,7 +661,7 @@ private handleBatteryData(def pair){
                 if(isLow!=prevLow){
                     emitChangedEvent("lowBattery",isLow,"UPS low battery state changed to ${isLow}")
                     if(isLow){
-                        msg="Battery below ${threshold} minute threshold - (${remMins} minutes remaining)";logWarn msg;emitNotification("pushed",1,msg)
+                        def msg="Battery below ${threshold} minute threshold - (${remMins} minutes remaining)";logWarn msg;emitNotification("pushed",1,msg)
                         if((settings.autoShutdownHub?:false)&&!state.hubShutdownIssued){
                             if(!(upsStatus in["Online","Off"])){
                                 logWarn"Initiating Hubitat shutdown...";emitNotification("pushed",2,"Initiating Hubitat shutdown")
