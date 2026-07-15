@@ -114,9 +114,12 @@
   - Removed residual debug artifacts from parser normalization
   - Minor internal consistency improvements
 
-**1.1.1.0 — Updated for AP9641**
-- Added NUL (0x00) stripping in parse() to ensure compatibility with AP9641 (NMC3) Telnet CR/NULL/LF line framing.
+**1.1.1.0 — Code Cleanup**
+
+- Fixed missing 'def' bug in safeTelnetConnect() and handleBatteryData()
+- Removed vestigal atomicState.pendingCmds
+- Removed unused nextCheckMinutes attribute.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMzUyNDM2MTQzLDk1MDI5MjUxMywyNDg4Nz
-Y4MzcsLTYwNTg1NjA3M119
+eyJoaXN0b3J5IjpbMTIzNzQwMzAxNiw5NTAyOTI1MTMsMjQ4OD
+c2ODM3LC02MDU4NTYwNzNdfQ==
 -->
