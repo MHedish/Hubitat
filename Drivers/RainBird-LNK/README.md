@@ -223,6 +223,7 @@ License: [Apache 2.0](./LICENSE)
 
 💧 Support development: [paypal.me/MHedish](https://paypal.me/MHedish)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNjAzOTg4MzcyLC00ODA4Mjc5OTUsMTM3Nz
-g0MTk3Myw1MDc2NzM5MCwtOTU3MTgwNDI1XX0=
+eyJoaXN0b3J5IjpbNTk1MTQ2NzU4LDYwMzk4ODM3MiwtNDgwOD
+I3OTk1LDEzNzc4NDE5NzMsNTA3NjczOTAsLTk1NzE4MDQyNV19
+
 -->
