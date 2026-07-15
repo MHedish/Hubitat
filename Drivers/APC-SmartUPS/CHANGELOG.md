@@ -1,6 +1,6 @@
 # APC SmartUPS Status Driver — Unified Changelog
 
-> This changelog consolidates all development history from v0.1.0.0 through v1.0.0.0  
+> This changelog consolidates all development history from v0.1.0.0 through v1.1.1.0  
 > Versions prior to 1.0.x.x have been summarized for brevity, focusing on key milestones and major feature sets.
 
 ---
@@ -120,6 +120,6 @@
 - Removed vestigal atomicState.pendingCmds
 - Removed unused nextCheckMinutes attribute.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTIzNzQwMzAxNiw5NTAyOTI1MTMsMjQ4OD
-c2ODM3LC02MDU4NTYwNzNdfQ==
+eyJoaXN0b3J5IjpbLTE3NDk1ODMxNTgsOTUwMjkyNTEzLDI0OD
+g3NjgzNywtNjA1ODU2MDczXX0=
 -->
