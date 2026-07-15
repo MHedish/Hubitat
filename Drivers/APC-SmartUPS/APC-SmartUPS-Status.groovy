@@ -46,7 +46,7 @@
 *  1.0.4.14  –– Added emitNotification() method; corrected handleIdentificationAndSelfTest() to emitChangedEvent
 *  1.0.4.15  –– Updated authshutdown notifications.
 *  1.1.0.0   –– Version bump for public release
-*  1.1.0.0   –– Code cleanup – fixed missing 'def' bug in safeTelnetConnect() and handleBatteryData(); removed vestigal atomicState.pendingCmds; removed unused nextCheckMinutes attribute.
+*  1.1.1.0   –– Code cleanup – fixed missing 'def' bug in safeTelnetConnect() and handleBatteryData(); removed vestigal atomicState.pendingCmds; removed unused nextCheckMinutes attribute.
 */
 
 import groovy.transform.Field
