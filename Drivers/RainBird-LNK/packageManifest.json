@@ -1,9 +1,9 @@
 {
   "packageName": "Rain Bird LNK/LNK2 WiFi Module Controller",
   "author": "Marc Hedish",
-  "version": "1.0.2.0",
-  "releaseNotes": "v1.0.2.0 – Improved irrigation reliability by prioritizing zone control commands over background telemetry, reducing controller transport contention during active watering. Further details in CHANGELOG.md",
-  "dateReleased": "2026-07-14",
+  "version": "1.0.2.10",
+  "releaseNotes": "v1.0.2.10 – runZone() rejects 0/missing/invalid durations (1–360 min); Legacy opcode 03 / BF decoding restored for non-ESP-TM2 controllers; Program schedule read (0x20) and write (0x21) with read-back verification; HTTPS transport for current LNK2 module firmware (automatic HTTP fallback for first-generation LNK), plus zone-run, active-zone, watering-state, controller-date, and model-name fixes. Further details in CHANGELOG.md",
+  "dateReleased": "2026-10-13",
   "minimumHEVersion": "2.3.6",
   "documentationLink": "https://github.com/MHedish/Hubitat/blob/main/Drivers/RainBird-LNK/README.md",
   "communityLink": "https://community.hubitat.com/t/release-rain-bird-lnk-lnk2-wifi-module-controller/159062",
@@ -17,7 +17,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Module.groovy",
       "required": true,
-      "version": "1.0.2.0"
+      "version": "1.0.2.10"
     },
     {
       "id": "rainbird-lnk-wifi-zone-child",
@@ -25,7 +25,7 @@
       "namespace": "MHedish",
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/RainBird-LNK-Wi-Fi-Zone-Child.groovy",
       "required": true,
-      "version": "1.0.0.0"
+      "version": "1.0.2.10"
     }
   ]
 }

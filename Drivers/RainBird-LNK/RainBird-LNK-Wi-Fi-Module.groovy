@@ -52,6 +52,16 @@
 *  1.0.1.0  –– Added WaterSensor capability and lowered accompanying minver to 2.9.
 *  1.0.1.1  –– Updated normalizeZoneInput() so a null capability response does not demote firmware 2.9+ to legacy mode.
 *  1.0.2.0  –– Improved irrigation reliability by prioritizing zone control commands over background telemetry, reducing transport contention during active watering; gated maintenance polling to idle controller state.
+*  1.0.2.1  –– Added HTTPS transport for LNK2 module firmware that refuses plain HTTP on /stick; new Module Transport preference (Auto tries HTTPS then falls back to HTTP for first-generation LNK; remembers the working scheme).
+*  1.0.2.2  –– Fixed runZone() on legacy (≤2.10) controllers rejecting opcode 03; now always uses ManuallyRunStation (39 + 2-byte zone + duration), matching pyrainbird.
+*  1.0.2.3  –– Fixed BF active-zone decoding reporting zone 10 instead of 1 on non-hybrid controllers; first payload byte is always skipped (pyrainbird format).
+*  1.0.2.4  –– Fixed CombinedControllerState reporting Watering while idle; watering is now derived from the active station (zone > 0), with Rain Delay when a delay is set.
+*  1.0.2.5  –– Fixed CombinedControllerState year parsing as 4026 when the controller returns a full four-digit year.
+*  1.0.2.6  –– Added controller model name mapping (e.g. 010A → ESP-TM2) to the model attribute; raw model code retained.
+*  1.0.2.7  –– Added program schedule retrieval via RetrieveScheduleRequest (opcode 0x20), as used by pyrainbird; ESP-TM2 (firmware 2.10) does not answer the 0x36/0x4A capability probes, so schedules were reported as unsupported. New programA–programD attributes.
+*  1.0.2.8  –– Added schedule writing via SetScheduleRequest (opcode 0x21): setProgramDays, setProgramStartTimes, setZoneRunTime, setProgramSeasonalAdjust, clearProgram. Each write is read back via 0x20 and verified.
+*  1.0.2.9  –– Restored original legacy opcode 03 zone-start encoding and legacy BF active-zone decoding (+1 bump) for non-ESP-TM2 controllers; the opcode 39 / pyrainbird BF paths now apply only to ESP-TM2 (model 010A), where they were verified.
+*  1.0.2.10 –– runZone() now rejects a missing, non-numeric, zero/negative, or >360 duration with a warning and sends nothing to the controller (previously 0 ran 360 minutes and null ran 2 minutes). Valid range 1–360 minutes (ESP-TM2: one minute up to six hours). advanceZone() passes its 2-minute duration explicitly; zone child On/Open maps its defaultDuration (0 = 360, unset = 15) before calling the parent.
 */
 
 import groovy.transform.Field
@@ -64,8 +74,9 @@ import javax.crypto.spec.IvParameterSpec
 import java.io.ByteArrayOutputStream
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 WiFi Module Controller"
-@Field static final String DRIVER_VERSION  = "1.0.2.0"
-@Field static final String DRIVER_MODIFIED = "2026.07.12"
+@Field static final String DRIVER_VERSION  = "1.0.2.10"
+@Field static final String DRIVER_MODIFIED = "2026.10.13"
+@Field static final Map MODEL_NAMES=["0003":"ESP-RZXe","0005":"ESP-TM2","0006":"ST8x-WiFi","0007":"ESP-Me","0008":"ST8x-WiFi2","0009":"ESP-ME3","0010":"ESP-Me2","000A":"ESP-TM2","010A":"ESP-TM2","0099":"TBOS-BT","0100":"TBOS-BT","0103":"ESP-RZXe2","0107":"ESP-Me","0812":"ARC8"]
 @Field static final String PAD="\u0016"
 @Field static final int BLOCK_SIZE=16
 @Field static int delayMs=150
@@ -114,6 +125,11 @@ metadata {
         attribute "model","string"
 		attribute "moduleProtocolVersion","string"
         attribute "programScheduleSupport","boolean"
+        attribute "programA","string"
+        attribute "programB","string"
+        attribute "programC","string"
+        attribute "programD","string"
+        attribute "scheduleWriteStatus","string"
         attribute "rainDelay","number"
 		attribute "rainSensorState","enum",["bypassed","dry","wet"]
         attribute "remainingRuntime","number"
@@ -130,8 +146,13 @@ metadata {
         command "configure"
         command "disableDebugLoggingNow"
         command "getAllProgramSchedules"
+        command "setProgramDays",[[name:"program",type:"ENUM",constraints:["A","B","C","D"]],[name:"frequency",type:"ENUM",constraints:["Custom","Cyclic","Odd","Even"]],[name:"days",type:"STRING",description:"Custom only: e.g. Sun,Tue,Thu"],[name:"cycleDays",type:"NUMBER",description:"Cyclic only: interval 1–14 days"],[name:"daysRemaining",type:"NUMBER",description:"Cyclic only: days until next watering (0 = today)"]]
+        command "setProgramStartTimes",[[name:"program",type:"ENUM",constraints:["A","B","C","D"]],[name:"startTimes",type:"STRING",description:"24h HH:mm, comma separated (blank clears all)"]]
+        command "setZoneRunTime",[[name:"program",type:"ENUM",constraints:["A","B","C","D"]],[name:"zone",type:"NUMBER"],[name:"minutes",type:"NUMBER",description:"0–360 (0 removes the zone from the program)"]]
+        command "setProgramSeasonalAdjust",[[name:"program",type:"ENUM",constraints:["A","B","C","D"]],[name:"percent",type:"NUMBER",description:"0–200 (100 = no adjustment)"]]
+        command "clearProgram",[[name:"program",type:"ENUM",constraints:["A","B","C","D"]]]
         command "runProgram",[[name:"program",type:"ENUM",description: "Select Rain Bird program to run manually ",constraints:["A","B","C","D"]]]
-        command "runZone",[[name:"Zone Number ",type:"NUMBER"],[name:"Duration (minutes) ",type:"NUMBER"]]
+        command "runZone",[[name:"Zone Number ",type:"NUMBER"],[name:"Duration (minutes) ",type:"NUMBER",description:"1–360"]]
         command "setRainDelay",[[name:"Rain Delay (0–14 days) ",type:"NUMBER"]]
         command "stopIrrigation"
         command "advanceZone",[[name:"Advance Zone ",type:"NUMBER"]]
@@ -147,6 +168,7 @@ metadata {
         input("docBlock","hidden",title: driverDocBlock())
         input("ipAddress","text",title:"Rain Bird Controller IP",required:true)
         input("password","password",title:"Rain Bird Controller Password",required:true)
+        input("transport","enum",title:"Module Transport",description:"Auto tries HTTPS first (required by newer LNK2 firmware) and falls back to HTTP (first-generation LNK).",defaultValue:"auto",options:["auto":"Auto (HTTPS, fall back to HTTP)","https":"HTTPS only","http":"HTTP only"])
         input("zonePref","number",title:"Number of Zones",description:"Used <i>only</i> if the controller does not report available stations.<br>Leave unchanged unless running legacy firmware (≤2.11) or station detection fails.",defaultValue:6,range:"1..22")
         input("autoTimeSync","bool",title:"Automatically sync Rain Bird to Hubitat clock",description:"Corrects any drift greater than ±5 seconds.<br>Automatically adjusts controller clock for DST.",defaultValue:true)
         input name:"refreshInterval", type:"enum", title:"Refresh Interval",description:"Select from the list.",defaultValue:"5",
@@ -209,6 +231,13 @@ private driverStatus(String controllerContext=null){
     return baseStatus
 }
 
+/* 1.0.2.9: Controllers verified to use pyrainbird-style encodings (opcode 39 zone start, BF skip-first-byte without +1).
+   Only ESP-TM2 model code 010A (firmware 2.10) has been verified; all others retain original upstream legacy behavior. */
+private boolean isPyrainbirdFormatController(){
+	def m=device.currentValue("model")?.toString()?.toUpperCase()
+	return m?.contains("(010A)")?:false
+}
+
 private boolean isLegacyFirmware(BigDecimal minVersion=3.0){
     try{
         def pvAttr=device.currentValue("controllerFirmwareVersion")
@@ -249,7 +278,7 @@ def testAllSupportedCommands(){
 		def mv=device.currentValue("moduleProtocolVersion")?:fw
 		if(!mv||mv=="unknown"||mv=="unavailable"){
 			try{
-				httpGet([uri:"http://${ipAddress}/irrigation/status.json",timeout:5]){resp->mv=resp?.data?.ver?:'unavailable'}
+				moduleRequest("GET","/irrigation/status.json",[timeout:5]){resp->mv=resp?.data?.ver?:'unavailable'}
 				emitEvent("moduleProtocolVersion",mv,"LNK/LNK2 module protocol ${mv}")
 			}catch(e){logDebug"Module protocol check failed: ${e.message}"}
 		}
@@ -293,14 +322,18 @@ private normalizeZoneInput(zone){
 }
 
 def runZone(zone,duration=null){
+	// 1.0.2.10: validate before anything is queued or sent; 0/missing/invalid no longer maps to a 360- or 2-minute run.
+	def durInt=null
+	if(duration instanceof Number)durInt=(duration as BigDecimal).setScale(0,BigDecimal.ROUND_DOWN).intValue()
+	else if(duration!=null&&duration.toString().trim().isNumber())durInt=new BigDecimal(duration.toString().trim()).setScale(0,BigDecimal.ROUND_DOWN).intValue()
+	if(durInt==null||durInt<1||durInt>360){logWarn"runZone(): Invalid duration '${duration}' for zone ${zone}; must be 1–360 minutes. Nothing sent to controller.";return false}
+	duration=durInt
 	if(cmdBusy||reconnoiter||controllerTransitionActive()){
 		def delay=controllerTransitionActive()?controllerTransitionDelay():250
 		logDebug"runZone(${zone}): deferred ${delay}ms; controller transport unavailable"
 		runInMillis(delay,"deferredRunZone",[data:[zone:zone,duration:duration]])
-		return
+		return true
 	}
-	if(duration==null){duration=2;logWarn"Duration not set for starting zone ${zone}. Defaulting to 2 minutes."}
-	if(duration==0){duration=360;logDebug"Duration set to 0 → treating as manual run (360 minutes)."}
 	logDebug"Starting zone ${zone} for ${duration} minute(s)"
 	try{
 		def z=normalizeZoneInput(zone);if(!z.normZone){logWarn"runZone(): Zone ${z.reqZone} is not available on this controller (${z.validZones?.join(',')?:'unknown'})";return}
@@ -310,10 +343,12 @@ def runZone(zone,duration=null){
 			runInMillis(delay,"deferredRunZone",[data:[zone:zone,duration:duration]])
 			return
 		}
-		def normDur=Math.max(1,Math.min(360,duration.toInteger()))
-		def cmd=z.modern?"39${sprintf('%04X',z.normZone)}${sprintf('%02X',normDur)}":String.format("0300%02X%02X",z.normZone,normDur)
+		def normDur=duration
+		// 1.0.2.9: ESP-TM2 (010A) rejects legacy opcode 03 → always 39 (pyrainbird); other controllers keep original upstream selection.
+		def py=isPyrainbirdFormatController();def use39=py||z.modern
+		def cmd=use39?"39${sprintf('%04X',z.normZone)}${sprintf('%02X',normDur)}":String.format("0300%02X%02X",z.normZone,normDur)
 		logDebug"runZone(): mode=${z.modern?'modern':'legacy'}, encoded=${cmd}"
-		def r=parseIfString(sendRainbirdCommand(cmd,z.modern?4:1),"runZone");def d=r?.result?.data
+		def r=parseIfString(sendRainbirdCommand(cmd,use39?4:1),"runZone");def d=r?.result?.data
 		if(!d&&!z.modern){logInfo"runZone(): Legacy controller returned no data; using refresh() for verification";beginControllerTransition();runInMillis(CONTROLLER_TRANSITION_MS,"verifyActiveZone",[data:[zone:z.normZone]]);return}
 		if(d&&!d.endsWith("02")){
 			logInfo"Zone ${z.normZone} start acknowledged by controller.";beginControllerTransition();runInMillis(CONTROLLER_TRANSITION_MS,"verifyActiveZone",[data:[zone:z.normZone]])
@@ -330,7 +365,7 @@ def advanceZone(zone=0){
 			if(validZones&&currentZone){def idx=validZones.indexOf(currentZone);encodedZone=(idx>=0&&idx<validZones.size()-1)?validZones[idx+1]:validZones[0]}
 			else{logWarn"advanceZone(): Unable to determine next zone";return}
 		}
-		logDebug"advanceZone(): computed next zone=${encodedZone}";runZone(encodedZone)
+		logDebug"advanceZone(): computed next zone=${encodedZone}";runZone(encodedZone,2)
 	}catch(e){logError"advanceZone() failed: ${e.message}"}
 }
 
@@ -419,9 +454,9 @@ def createZoneChildren(){
 
 private runChild(String dni, Object duration){
     try{
-        def zone=(dni=~/zone(\d+)/)[0][1].toInteger();def dur=(duration!=null)?duration.toInteger():null
-        runZone(zone,dur)
-    }catch(e){logError"runChild() failed: ${e.message}"}
+        def zone=(dni=~/zone(\d+)/)[0][1].toInteger()
+        return runZone(zone,duration)
+    }catch(e){logError"runChild() failed: ${e.message}";return false}
 }
 
 private stopChild(String dni){
@@ -530,6 +565,174 @@ def runProgram(programCode){
 
 private isStubProgramResponse(hex){return["003A02","003802","B60000"].contains(hex)}
 
+/* RetrieveScheduleRequest (0x20 → A0), as used by pyrainbird for ESP-TM2 / ESP-Me:
+   page 0000 = controller info, 001p = program info, 006p = start times, 0080+n = run times for stations 2n+1 and 2n+2 */
+private retrieveSchedulePage(int page){
+	def d=parseIfString(sendRainbirdCommand(String.format("20%04X",page),3),"retrieveSchedule-${String.format('%04X',page)}")?.result?.data
+	return(d?.startsWith("A0")&&d.length()>6)?d:null
+}
+
+private getRetrieveSchedules(){
+	if(!retrieveSchedulePage(0)){logDebug"getRetrieveSchedules(): opcode 0x20 not supported; using legacy program queries";return false}
+	def names=["A","B","C","D"];def progs=[]
+	for(int p=0;p<names.size();p++){
+		def info=retrieveSchedulePage(0x10|p);if(!info)break
+		def f=[];for(int i=6;i+2<=info.length();i+=2)f<<Integer.parseInt(info.substring(i,i+2),16)
+		if(f.size()<6)break
+		def st=retrieveSchedulePage(0x60|p);def starts=[]
+		if(st)for(int i=6;i+4<=st.length();i+=4){def v=Integer.parseInt(st.substring(i,i+4),16);if(v!=0xFFFF)starts<<String.format('%02d:%02d',(int)(v/60),v%60)}
+		progs<<[name:names[p],mask:f[0],period:f[1],synchro:f[2],daysOff:f[3],freq:f[5],starts:starts,runs:[:]]
+	}
+	if(!progs){logDebug"getRetrieveSchedules(): no program pages returned";return false}
+	def zc=(device.currentValue("zoneCount")?:zonePref?:6).toInteger()
+	for(int page=0;page<Math.ceil(zc/2.0);page++){
+		def d=retrieveSchedulePage(0x80|page);if(!d)continue
+		def v=[];for(int i=6;i+4<=d.length();i+=4)v<<Integer.parseInt(d.substring(i,i+4),16)
+		int n=(int)(v.size()/2)
+		[0,1].each{k->def zone=page*2+k+1;if(zone<=zc)progs.eachWithIndex{pg,idx->if(idx<n&&v[k*n+idx]>0)pg.runs[zone]=v[k*n+idx]}}
+	}
+	def dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];def summary=[]
+	progs.each{pg->
+		def days
+		switch(pg.freq){
+			case 1:days="Every ${pg.period} day(s) (next in ${pg.synchro})";break
+			case 2:days="Odd days";break
+			case 3:days="Even days";break
+			default:days=(0..6).findAll{pg.mask&(1<<it)}.collect{dayNames[it]}.join(', ')?:'None'
+		}
+		def off=pg.daysOff?(0..6).findAll{pg.daysOff&(1<<it)}.collect{dayNames[it]}.join(', '):null
+		def active=pg.starts&&pg.runs
+		def txt=active?"${days}${off?" (days off: ${off})":''} | Starts ${pg.starts.join(', ')} | Zones ${pg.runs.collect{z,m->"${z}:${m}m"}.join(', ')}":"Not scheduled"
+		emitChangedEvent("program${pg.name}",txt,"Program ${pg.name}: ${txt}");logInfo"Program ${pg.name}: ${txt}"
+		if(active)summary<<pg.name
+	}
+	emitChangedEvent("programScheduleSupport",true,"Program schedules read via opcode 0x20 (active: ${summary?summary.join(', '):'none'})")
+	return true
+}
+
+/* SetScheduleRequest (0x21 → 01 21): writes one 0x20 page back with the same layout ("21" + 2-byte page + page data),
+   per pyrainbird docs/PROTOCOL_ESP_ME_TM2.md. Every write re-reads all schedule pages and verifies only the target page changed. */
+private schedulePageList(){
+	def pages=[0];int np=0
+	for(int p=0;p<4;p++){if(retrieveSchedulePage(0x10|p)){np++}else break}
+	if(!np)return null
+	(0..<np).each{pages<<(0x10|it)};(0..<np).each{pages<<(0x60|it)}
+	int zc=(device.currentValue("zoneCount")?:zonePref?:6).toInteger();(0..<((int)Math.ceil(zc/2.0))).each{pages<<(0x80|it)}
+	return[pages:pages,programs:np,zones:zc]
+}
+private readSchedulePages(List pages){
+	def m=[:];for(p in pages){def d=retrieveSchedulePage(p);if(!d){logWarn"readSchedulePages(): page ${String.format('%04X',p)} unreadable";return null};m[p]=d.substring(6)}
+	return m
+}
+private scheduleWriteGuard(){
+	if(cmdBusy||reconnoiter||controllerTransitionActive()){logWarn"Schedule write skipped; controller busy or refresh in progress";return false}
+	if(device.currentValue("watering")?.toString()=="true"){logWarn"Schedule write skipped while watering";return false}
+	return true
+}
+private programIndex(prog,int np){
+	def i=["A","B","C","D"].indexOf(prog?.toString()?.trim()?.toUpperCase())
+	if(i<0||i>=np){logWarn"Invalid program ${prog}; controller has ${np} program(s)";return null}
+	return i
+}
+private writeSchedulePage(Map layout,Map before,int page,String body,String what){
+	def key=String.format('%04X',page)
+	if(before[page]==body){logInfo"${what}: no change";emitEvent("scheduleWriteStatus","No change: ${what}");return true}
+	if(body.length()!=before[page].length()){logError"${what}: encoded page ${key} has wrong length";return false}
+	def d=parseIfString(sendRainbirdCommand("21${key}${body}",3+(int)(body.length()/2)),"setSchedule-${key}")?.result?.data
+	if(d!="0121"){logError"${what}: controller rejected page ${key} (${d?:'no response'})";emitEvent("scheduleWriteStatus","Rejected: ${what}");return false}
+	def after=readSchedulePages(layout.pages)
+	def expected=before+[(page):body]
+	def bad=after?layout.pages.findAll{after[it]!=expected[it]}:layout.pages
+	if(bad){
+		logError"${what}: verification failed on page(s) ${bad.collect{String.format('%04X',it)}.join(', ')}; restoring page ${key}"
+		if(after?.get(page)!=before[page])sendRainbirdCommand("21${key}${before[page]}",3+(int)(before[page].length()/2))
+		emitEvent("scheduleWriteStatus","Verify FAILED: ${what}");return false
+	}
+	logInfo"${what}: written and verified (page ${key})";emitEvent("scheduleWriteStatus","OK: ${what}")
+	getRetrieveSchedules();return true
+}
+private scheduleWriteSetup(prog){
+	if(!scheduleWriteGuard())return null
+	def layout=schedulePageList();if(!layout){logWarn"Schedule write not supported (opcode 0x20 unavailable)";return null}
+	def pi=programIndex(prog,layout.programs);if(pi==null)return null
+	def before=readSchedulePages(layout.pages);if(!before)return null
+	return[layout:layout,before:before,pi:pi]
+}
+private programInfoBody(String hex,Map changes){
+	def f=[];for(int i=0;i<12;i+=2)f<<Integer.parseInt(hex.substring(i,i+2),16)
+	["mask","cycle","remaining","daysOff","seasonal","freq"].eachWithIndex{k,i->if(changes.containsKey(k))f[i]=changes[k]}
+	return f.collect{String.format('%02X',it)}.join()+hex.substring(12)
+}
+
+def setProgramDays(prog,frequency,days=null,cycleDays=null,daysRemaining=null){
+	def freqs=["CUSTOM":0,"CYCLIC":1,"ODD":2,"EVEN":3];def fc=freqs[frequency?.toString()?.trim()?.toUpperCase()]
+	if(fc==null){logWarn"setProgramDays(): frequency must be Custom, Cyclic, Odd or Even";return}
+	def ch=[freq:fc]
+	if(fc==0){
+		def names=['SUN','MON','TUE','WED','THU','FRI','SAT'];def tok=(days?:'').toString().toUpperCase().split(/[\s,]+/).findAll{it}
+		if(!tok||tok.any{!names.contains(it.take(3))||it.size()<3}){logWarn"setProgramDays(): days must be a list like Sun,Tue,Thu";return}
+		ch.mask=tok.collect{1<<names.indexOf(it.take(3))}.sum()
+	}else if(fc==1){
+		def c=cycleDays?.toString()?.isInteger()?cycleDays.toString().toInteger():null;def r=daysRemaining==null||daysRemaining.toString()==''?0:(daysRemaining.toString().isInteger()?daysRemaining.toString().toInteger():-1)
+		if(c==null||c<1||c>14){logWarn"setProgramDays(): cycleDays must be 1–14";return}
+		if(r<0||r>=c){logWarn"setProgramDays(): daysRemaining must be 0–${c-1}";return}
+		ch.cycle=c;ch.remaining=r
+	}
+	def w=scheduleWriteSetup(prog);if(!w)return
+	int page=0x10|w.pi;writeSchedulePage(w.layout,w.before,page,programInfoBody(w.before[page],ch),"Program ${prog} days → ${frequency}${fc==0?" ${days}":fc==1?" every ${ch.cycle}":''}")
+}
+
+def setProgramSeasonalAdjust(prog,percent){
+	def v=percent?.toString()?.isInteger()?percent.toString().toInteger():null
+	if(v==null||v<0||v>200){logWarn"setProgramSeasonalAdjust(): percent must be 0–200";return}
+	def w=scheduleWriteSetup(prog);if(!w)return
+	int page=0x10|w.pi;writeSchedulePage(w.layout,w.before,page,programInfoBody(w.before[page],[seasonal:v]),"Program ${prog} seasonal adjust → ${v}%")
+}
+
+def setProgramStartTimes(prog,startTimes=null){
+	def tok=(startTimes?:'').toString().split(/[\s,]+/).findAll{it};def mins=[]
+	for(t in tok){
+		def m=(t=~/^([01]?\d|2[0-3]):([0-5]\d)$/);if(!m.matches()){logWarn"setProgramStartTimes(): invalid time '${t}' (use 24h HH:mm)";return}
+		mins<<(m[0][1].toInteger()*60+m[0][2].toInteger())
+	}
+	if(mins.unique(false).size()!=mins.size()){logWarn"setProgramStartTimes(): duplicate start times";return}
+	def w=scheduleWriteSetup(prog);if(!w)return
+	int page=0x60|w.pi;int slots=(int)(w.before[page].length()/4)
+	if(mins.size()>slots){logWarn"setProgramStartTimes(): controller allows at most ${slots} start times";return}
+	def body=(mins.sort()+[0xFFFF]*(slots-mins.size())).collect{String.format('%04X',it)}.join()
+	writeSchedulePage(w.layout,w.before,page,body,"Program ${prog} start times → ${mins?tok.join(', '):'none'}")
+}
+
+def setZoneRunTime(prog,zone,minutes){
+	def z=zone?.toString()?.isInteger()?zone.toString().toInteger():null;def m=minutes?.toString()?.isInteger()?minutes.toString().toInteger():null
+	if(m==null||m<0||m>360){logWarn"setZoneRunTime(): minutes must be 0–360";return}
+	def w=scheduleWriteSetup(prog);if(!w)return
+	if(z==null||z<1||z>w.layout.zones){logWarn"setZoneRunTime(): zone must be 1–${w.layout.zones}";return}
+	int page=0x80|((int)((z-1)/2));int n=w.layout.programs;def hex=w.before[page]
+	def v=[];for(int i=0;i+4<=hex.length();i+=4)v<<Integer.parseInt(hex.substring(i,i+4),16)
+	if(v.size()!=2*n){logError"setZoneRunTime(): unexpected run time page layout (${hex})";return}
+	v[((z-1)%2)*n+w.pi]=m
+	writeSchedulePage(w.layout,w.before,page,v.collect{String.format('%04X',it)}.join(),"Program ${prog} zone ${z} run time → ${m} min")
+}
+
+def clearProgram(prog){
+	def w=scheduleWriteSetup(prog);if(!w)return
+	int pi=w.pi;int n=w.layout.programs;def ok=true
+	int sp=0x60|pi;ok=writeSchedulePage(w.layout,w.before,sp,"FFFF"*((int)(w.before[sp].length()/4)),"Program ${prog} clear start times")
+	if(!ok)return
+	def before=readSchedulePages(w.layout.pages);if(!before)return
+	int ip=0x10|pi;ok=writeSchedulePage(w.layout,before,ip,programInfoBody(before[ip],[mask:0,freq:0]),"Program ${prog} clear days")
+	w.layout.pages.findAll{it>=0x80}.each{page->
+		if(!ok)return
+		before=readSchedulePages(w.layout.pages);if(!before){ok=false;return}
+		def hex=before[page];def v=[];for(int i=0;i+4<=hex.length();i+=4)v<<Integer.parseInt(hex.substring(i,i+4),16)
+		if(v.size()!=2*n){logError"clearProgram(): unexpected run time page layout (${hex})";ok=false;return}
+		v[pi]=0;v[n+pi]=0
+		ok=writeSchedulePage(w.layout,before,page,v.collect{String.format('%04X',it)}.join(),"Program ${prog} clear run times (page ${String.format('%04X',page)})")
+	}
+	if(ok)logInfo"Program ${prog} cleared"
+}
+
 def getProgramSchedule(prog='A'){
     if(isLegacyFirmware(2.5)){logDebug"Skipping getProgramSchedule(): requires firmware ≥2.6";return false}
     def map=["A":0,"B":1,"C":2,"D":3];def pid=map[prog?.toUpperCase()]
@@ -556,6 +759,7 @@ def getProgramSchedule(prog='A'){
 def getAllProgramSchedules(){
 	if(cmdBusy){logWarn"Get all stations command skipped; another command already in progress";return}
 	if(reconnoiter){logWarn"Get all stations command skipped during refresh cycle";return}
+    if(getRetrieveSchedules())return
     if(isLegacyFirmware(2.5)){logDebug"Skipping getAllProgramSchedules(): requires firmware ≥2.6";emitEvent("programScheduleSupport",false);return}
     if(!getCommandSupport("36")&&!getCommandSupport("4A")){logWarn"Program schedule query not supported on this controller";emitEvent("programScheduleSupport",false);return}
     if(!isLegacyFirmware(3.0)){
@@ -743,12 +947,13 @@ private verifyActiveZone(data=null,passive=false){
 		logDebug"verifyActiveZone(): firmware=${fw} (hybrid=${hybrid}); probing opcode 0x3F for BF response"
 		def s=parseIfString(sendRainbirdCommand("3F0000",2),"verifyActiveZone");def d=s?.result?.data;raw=d
 		if(d?.startsWith("BF")){
-			def payload=d.substring(2);def bytes=[];for(int i=0;i<payload.size();i+=2)bytes<<payload.substring(i,i+2);def active=0
+			def pyBF=isPyrainbirdFormatController();def payload=d.substring(2);def bytes=[];for(int i=0;i<payload.size();i+=2)bytes<<payload.substring(i,i+2);def active=0
 			bytes.eachWithIndex{byteHex,byteIndex->
-				if(hybrid&&byteIndex==0)return
-				def b=Integer.parseInt(byteHex,16);for(int bit=0;bit<8;bit++){if((b&(1<<bit))!=0){active=hybrid?((byteIndex-1)*8)+bit+1:(byteIndex*8)+bit+1}}
+				if((pyBF||hybrid)&&byteIndex==0)return
+				def b=Integer.parseInt(byteHex,16);for(int bit=0;bit<8;bit++){if((b&(1<<bit))!=0){active=(pyBF||hybrid)?((byteIndex-1)*8)+bit+1:(byteIndex*8)+bit+1}}
 			}
-			if(!hybrid&&isLegacyFirmware(3.0)&&active>0)active++
+			// 1.0.2.9: ESP-TM2 (010A) uses pyrainbird BF layout (skip first byte, no +1); other controllers keep original upstream legacy decode/bump.
+			if(!pyBF&&!hybrid&&isLegacyFirmware(3.0)&&active>0)active++ // only bump for pre-2.9 legacy
 			zone=active;watering=zone>0;logDebug"verifyActiveZone(): decoded BF mask=${String.format('%02X',mask)} → zone=${zone}"
 		}else if(legacy&&d=="003F02"){
 			logInfo"verifyActiveZone(): Legacy firmware ≤2.10 returned minimal ACK (003F02); assuming idle."
@@ -815,7 +1020,8 @@ private getControllerIdentity() {
         } else {
             logWarn"ModelAndVersionRequest failed or unexpected: ${data02}"
         }
-        emitEvent("model","RainBird ${modelID}","Controller model: Rain Bird ${modelID}")
+        def mName=MODEL_NAMES[modelID?.toString()?.toUpperCase()]
+        emitEvent("model",mName?"RainBird ${mName} (${modelID})":"RainBird ${modelID}","Controller model: Rain Bird ${mName?:modelID}")
         emitEvent("controllerFirmwareVersion",fwareVersion,"Controller firmware version: ${fwareVersion}")
         def r05=parseIfString(sendRainbirdCommand("05",1),"getControllerIdentity-Serial")
         def data05=extractHexData(r05)
@@ -826,7 +1032,7 @@ private getControllerIdentity() {
 
 private getModuleProtocolVersion(){
 	def mv=null
-	try{httpGet([uri:"http://${ipAddress}/irrigation/status.json",timeout:5]){resp->mv=resp?.data?.ver}}
+	try{moduleRequest("GET","/irrigation/status.json",[timeout:5]){resp->mv=resp?.data?.ver}}
 	catch(e){logDebug"Module protocol probe via status.json skipped (${e.message})"}
 	try{
 		if(!mv){def r=parseIfString(sendRainbirdCommand("03",1),"moduleFirmwareProbe");def d=r?.result?.data;if(d){mv=parseFirmwareVersion(d)}}
@@ -857,15 +1063,15 @@ private parseCombinedControllerState(resp,boolean summaryOnly=false){
             def second=Integer.parseInt(hex[6..7],16)
             def day=Integer.parseInt(hex[8..9],16)
             def month=Integer.parseInt(hex[10..10],16)
-            def year=2000+Integer.parseInt(hex[11..13],16)
+            def year=Integer.parseInt(hex[11..13],16);if(year<100)year+=2000
             def delay=Integer.parseInt(hex[14..17],16)
             def sensor=Integer.parseInt(hex[18..19],16)
             def irrig=Integer.parseInt(hex[20..21],16)
             def season=Integer.parseInt(hex[22..25],16);if(season==0xFFFF||season>300){season=100;logWarn"CombinedControllerState(CC): Invalid or reserved seasonal value (${season}); normalizing to 100%"}
             def remain=Integer.parseInt(hex[26..29],16)
             def zone=Integer.parseInt(hex[30..31],16)
-            def irrigationText=(irrig==1?"Watering":irrig==0?"Idle":irrig==2?"Rain Delay":"Unknown (${irrig})")
-            def watering=(irrig==1)
+            def irrigationText=(zone>0?"Watering":delay>0?"Rain Delay":"Idle")
+            def watering=(zone>0)
             def timeStr=sprintf("%02d:%02d:%02d",hour,minute,second)
             def dateStr=sprintf("%04d-%02d-%02d",year,month,day)
             emitChangedEvent("controllerTime",timeStr,"Controller time=${timeStr}")
@@ -921,6 +1127,23 @@ private parseProgramZones(hex){
     return zones
 }
 
+private moduleSchemes(){def t=settings?.transport?:"auto";if(t=="https")return["https"];if(t=="http")return["http"];return atomicState.moduleScheme=="http"?["http","https"]:["https","http"]}
+private moduleRequest(String method,String path,Map extra,Closure handler){
+	def lastErr=null
+	for(scheme in moduleSchemes()){
+		def params=[uri:"${scheme}://${ipAddress}${path}"]+extra;if(scheme=="https")params.ignoreSSLIssues=true
+		try{
+			if(method=="POST"){httpPost(params,handler)}else{httpGet(params,handler)}
+			if(atomicState.moduleScheme!=scheme){atomicState.moduleScheme=scheme;logInfo"Module transport: using ${scheme.toUpperCase()}"}
+			return
+		}catch(e){
+			if(e?.class?.simpleName=="HttpResponseException")throw e
+			lastErr=e;logDebug"moduleRequest(): ${scheme.toUpperCase()} ${path} failed (${e.message})"
+		}
+	}
+	if(lastErr)throw lastErr
+}
+
 /* =============================== Communication / Crypto =============================== */
 private sendRainbirdCommand(cmdHex,length=1){
 	if(cmdBusy){logDebug"Command skipped; another command already in progress (${cmdHex})";return null}
@@ -930,9 +1153,8 @@ private sendRainbirdCommand(cmdHex,length=1){
 		def id=Math.floor(now()/1000)
 		def payload=JsonOutput.toJson([id:id,jsonrpc:"2.0",method:"tunnelSip",params:[data:cmdHex,length:length]])
 		def enc=encryptRainbird(payload,password)
-		def params=[uri:"http://${ipAddress}/stick",contentType:"application/octet-stream",requestContentType:"application/octet-stream",body:enc]
 		def response=null
-		httpPost(params){resp->response=decryptRainbird(resp.data.bytes,password)}
+		moduleRequest("POST","/stick",[contentType:"application/octet-stream",requestContentType:"application/octet-stream",body:enc]){resp->response=decryptRainbird(resp.data.bytes,password)}
 		if(response){
 			successStreak=Math.min((successStreak?:0)+1,10)
 			if(successStreak>5&&delayMs>minDelay)delayMs=Math.max(minDelay,delayMs-10)

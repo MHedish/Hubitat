@@ -18,6 +18,11 @@ Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-
 | **1.0.0.0** | Production – Depricated | Verified for use with LNK and LNK/2 modules |
 | **1.0.1.0** | Production – Depricated | Added WaterSensor capability |
 | **1.0.2.0** | Full Production | Reduced controller transport contention by prioritizing zone control commands and deferring maintenance polling during irrigation.  |
+| **1.0.2.10** | Full Production | runZone() rejects 0/missing/invalid durations (valid 1–360 min) instead of running 360 min; zone child On/Open maps defaultDuration explicitly. |
+| **1.0.2.9** | Full Production | Firmware/model-gated legacy paths: original opcode 03 zone start and legacy BF decoding restored for non-ESP-TM2 controllers. |
+| **1.0.2.8** | Full Production | Program schedule writing via opcode 0x21 with read-back verification. |
+| **1.0.2.7** | Full Production | Program schedule retrieval via opcode 0x20. |
+| **1.0.2.6** | Full Production | HTTPS transport for current LNK2 firmware (HTTP fallback for LNK) and ESP-TM2 / firmware 2.10 parsing and zone-run fixes. |
 
 ---
 
@@ -161,6 +166,28 @@ All command, telemetry, and refresh systems are now stable under both firmware l
 -   **Production Release 1.0.2.0**
 -- Improved irrigation reliability by prioritizing zone control commands over background telemetry, reducing transport contention during active watering.
 -- Gated maintenance polling to idle controller state.
+
+-   **Production Release 1.0.2.6**
+-- Added HTTPS transport for LNK2 module firmware that refuses plain HTTP on /stick; new Module Transport preference (Auto tries HTTPS, then falls back to HTTP for first-generation LNK).
+-- Zone runs now always use ManuallyRunStation (opcode 39); legacy opcode 03 was rejected by ESP-TM2 firmware 2.10.
+-- Fixed BF active-zone decoding (zone 1 was reported as 10).
+-- Watering state is now derived from the active station; idle controllers no longer show Watering.
+-- Fixed controller date year parsing as 4026.
+-- Added controller model name mapping (e.g. 010A → ESP-TM2).
+
+-   **Production Release 1.0.2.7**
+-- Added program schedule retrieval via RetrieveScheduleRequest (opcode 0x20); ESP-TM2 controllers do not answer the 0x36/0x4A capability probes, so schedules were previously reported as unsupported. New programA–programD attributes.
+
+-   **Production Release 1.0.2.8**
+-- Added schedule writing via SetScheduleRequest (opcode 0x21) for program-based controllers (ESP-TM2 / ESP-Me page layout): setProgramDays (Custom/Cyclic/Odd/Even), setProgramStartTimes, setZoneRunTime, setProgramSeasonalAdjust, clearProgram.
+-- Inputs are validated, writes are skipped while watering or during refresh, and every write is re-read via 0x20 and verified (only the target page may change; the page is restored on mismatch). New scheduleWriteStatus attribute.
+
+-   **Production Release 1.0.2.9**
+-- Restored the original legacy opcode 03 zone-start encoding and legacy BF active-zone decoding (+1 bump) for controllers other than ESP-TM2 (model 010A); opcode 39 and the pyrainbird BF layout now apply only to ESP-TM2, where they were verified on firmware 2.10.
+
+-   **Production Release 1.0.2.10**
+-- runZone() now rejects a missing, non-numeric, zero/negative, or >360 duration with a warning and sends nothing to the controller (previously 0 meant a 360-minute run and a missing duration meant 2 minutes). Valid range is 1–360 minutes, matching the ESP-TM2 manual ("one minute up to six hours").
+-- advanceZone() passes its 2-minute duration explicitly. Zone child On/Open resolves defaultDuration itself (unset → 15, 0 → 360 controller maximum) and only reports on/open when the parent accepts the run.
 
 ---
 

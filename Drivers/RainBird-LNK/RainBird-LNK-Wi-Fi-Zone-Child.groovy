@@ -14,14 +14,15 @@
 *  0.1.3.4  –– Added default time preference for On/Open
 *  0.1.3.5  –– Version match with parent
 *  1.0.0.0  –– Production release.
+*  1.0.2.10 –– On/Open resolves defaultDuration explicitly (unset → 15, 0 → 360 controller maximum) since the parent now rejects 0/missing durations; switch/valve events are only emitted when the parent accepts the run.
 */
 
 import groovy.transform.Field
 
 
 @Field static final String DRIVER_NAME     = "Rain Bird LNK/LNK2 Zone Child"
-@Field static final String DRIVER_VERSION  = "1.0.0.0"
-@Field static final String DRIVER_MODIFIED = "2026.05.07"
+@Field static final String DRIVER_VERSION  = "1.0.2.10"
+@Field static final String DRIVER_MODIFIED = "2026.10.13"
 
 metadata{
     definition(
@@ -52,7 +53,9 @@ private emitEvent(String n,def v,String d=null,String u=null,boolean f=false){se
 private emitChangedEvent(String n,def v,String d=null,String u=null,boolean f=false){def o=device.currentValue(n);if(f||o?.toString()!=v?.toString()){sendEvent(name:n,value:v,unit:u,descriptionText:d,isStateChange:true);if(logEvents)logInfo"${d?"${n}=${v} (${d})":"${n}=${v}"}"}else logDebug"No change for ${n} (still ${o})"}
 
 def on(){
-    parent.runChild(device.deviceNetworkId,defaultDuration)
+    def d=(defaultDuration==null)?15:(defaultDuration as BigDecimal).intValue()
+    if(d==0)d=360
+    if(parent.runChild(device.deviceNetworkId,d)==false)return
     emitEvent("switch","on")
     emitEvent("valve","open")
 }
@@ -67,7 +70,7 @@ def open(){on()}
 def close(){off()}
 
 def runZone(duration) {
-    parent.runChild(device.deviceNetworkId,duration)
+    if(parent.runChild(device.deviceNetworkId,duration)==false)return
     emitEvent("switch","on","Duration: ${duration} minutes")
     emitEvent("valve","open","Duration: ${duration} minutes")
 }
