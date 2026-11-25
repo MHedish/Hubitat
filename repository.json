@@ -42,14 +42,6 @@
       "location": "https://raw.githubusercontent.com/MHedish/Hubitat/refs/heads/main/Drivers/RainBird-LNK/packageManifest.json",
       "description": "Advanced Hubitat driver providing full local LAN control of Rain Bird LNK/LNK2 WiFi irrigation controllers — including zone, program, and rain delay management. Features automatic time sync, telemetry, adaptive refresh, and support for ESP-TM2 and ESP-Me controllers.",
       "tags": ["Irrigation", "Valves", "Timers", "Monitoring", "Water"]
-    },
-    {
-      "id": "d95aab44-9ed5-4f8a-8c6d-341c60c7407b",
-      "name": "WET-IT",
-      "category": "Weather",
-      "location": "https://raw.githubusercontent.com/MHedish/Hubitat/main/Apps/WET-IT/packageManifest.json",
-      "description": "Local-first evapotranspiration (ET) and soil-moisture modeling app for Hubitat. Provides professional-grade irrigation intelligence similar to Rachio, Orbit, and Hydrawise, running entirely on-hub.",
-      "tags": ["Automation", "Irrigation", "Weather"]
     }
   ]
 }
