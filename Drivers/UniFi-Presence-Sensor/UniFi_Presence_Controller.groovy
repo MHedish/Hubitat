@@ -32,6 +32,7 @@
 *  1.9.1.0  -- Stable Release
 *  1.9.1.1  -- UI improvement - description for site ID
 *  1.9.2.0  -- Stable Release
+*  1.9.3.0  -- Fixed authentication failure under UniFi Network 11.1.58 / UniFi OS 6.1.7 by preventing unrelated Set-Cookie headers from overwriting the valid TOKEN session cookie.
 */
 
 import groovy.transform.Field
@@ -40,8 +41,8 @@ import groovy.json.JsonOutput
 import java.net.URLEncoder
 
 @Field static final String DRIVER_NAME="UniFi Presence Controller"
-@Field static final String DRIVER_VERSION="1.9.2.0"
-@Field static final String DRIVER_MODIFIED="2026.04.11"
+@Field static final String DRIVER_VERSION="1.9.3.0"
+@Field static final String DRIVER_MODIFIED="2026.11.28"
 @Field static final Integer AUTO_CREATE_DAYS=1
 @Field static final Integer AUTO_CREATE_MAX=50
 @Field static final Map CHILD_DRIVER=[name:"UniFi Presence Device",minVer:"1.9.0.0",required:true]
@@ -505,7 +506,7 @@ private void login(){
         def resp=httpExec("POST",genParamsAuth("login"));def cookie=null,csrf=null
         resp?.headers?.each{
             def n=it.name,v=it.value
-            if(n?.equalsIgnoreCase("Set-Cookie"))cookie=v?.split(';')?.getAt(0)
+            if(n?.equalsIgnoreCase("Set-Cookie")&&v?.startsWith("TOKEN=")&&v.split(';')[0].length()>6)cookie=v.split(';')[0]
             else if(n?.equalsIgnoreCase("X-CSRF-Token"))csrf=v
             else if(v?.startsWith("csrf_token="))csrf=v.split('=')?.getAt(1)?.split(';')?.getAt(0)
         }
