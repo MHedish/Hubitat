@@ -2,7 +2,17 @@
 All notable changes to the UniFi Presence Drivers will be documented in this file.
 
 ---
+### v1.9.3.0 (2026-11-28) – Fixed authentication failure
+
+## Update
+
+Fixed authentication failure under UniFi Network 11.1.58 / UniFi OS 6.1.7 by preventing unrelated Set-Cookie headers from overwriting the valid TOKEN session cookie.
+
+---
+
 ### v1.9.2.0 (2026-04-11) – Notifications improvements
+
+---
 
 ## Update
 
